@@ -24,7 +24,7 @@ from atom.api import Atom, Value, Int, Bool, Bytes, ContainerList
 
 from enaml.image import Image
 from enaml.icon import Icon, IconImage
-from enaml.application import timed_call
+from enaml.application import Application, timed_call
 
 
 # -----------------------------------------------------------------------------
@@ -130,6 +130,13 @@ def capture_output():
         yield capture
     finally:
         sys.stdout = _stdout
+
+
+def process_events():
+    """ Let the event loop process events
+
+    """
+    Application.instance()._qapp.processEvents()
 
 
 def get_bootstrap_cmd():

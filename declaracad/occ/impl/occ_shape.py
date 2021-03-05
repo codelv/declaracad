@@ -224,14 +224,14 @@ class OccShape(ProxyShape):
             ais_shape = AIS_Shape(self.shape)
 
         ais_shape.SetTransparency(d.transparency)
+        if d.material.name:
+            ma = material_to_material_aspect(d.material)
+            ais_shape.SetMaterial(ma)
         if d.color:
             c, a = color_to_quantity_color(d.color)
             ais_shape.SetColor(c)
             if a is not None:
                 ais_shape.SetTransparency(a)
-        if d.material.name:
-            ma = material_to_material_aspect(d.material)
-            ais_shape.SetMaterial(ma)
         ais_shape.SetLocalTransformation(self.location.Transformation())
         return ais_shape
 
@@ -374,7 +374,8 @@ class OccPart(OccDependentShape, ProxyPart):
         ais_obj = AIS_MultipleConnectedInteractive()
         for c in self.children():
             if isinstance(c, OccShape):
-                ais_obj.Connect(c.ais_shape)
+                #ais_obj.Connect(c.ais_shape)
+                pass
         return ais_obj
 
     def update_shape(self, change=None):

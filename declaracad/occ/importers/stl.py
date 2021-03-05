@@ -20,6 +20,6 @@ def load_stl(filename):
     builder = BRep_Builder()
     shape = TopoDS_Face()
     builder.MakeFace(shape)
-    poly = RWStl.ReadFile_(filename, None)
+    poly = RWStl.ReadFile_(filename)
     builder.UpdateFace(shape, poly)
     return [TopoShape(shape=shape)]

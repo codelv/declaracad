@@ -10,13 +10,14 @@ Created on Dec 27, 2020
 @author: jrm
 """
 from atom.api import Typed, Instance
-from OCCT.AIS import AIS_Line, AIS_TextLabel, AIS_Plane
+from OCCT.AIS import AIS_Line, AIS_TextLabel, AIS_Plane, AIS_InteractiveObject
 from OCCT.gp import gp_Ax2
-from OCCT.Graphic3d import Graphic3d_Text
-from OCCT.Geom import Geom_Line, Geom_Plane
-from OCCT.Prs3d import (
-    Prs3d_Arrow, Prs3d_ArrowAspect, Prs3d_Text, Prs3d_TextAspect
+from OCCT.Graphic3d import (
+    Graphic3d_Text, Graphic3d_Group, Graphic3d_MaterialAspect,
+    Graphic3d_NOM_BRASS
 )
+from OCCT.Geom import Geom_Line, Geom_Plane, Geom_Axis2Placement
+from OCCT.Prs3d import Prs3d_Arrow
 from OCCT.TCollection import TCollection_ExtendedString
 
 from declaracad.core.utils import log
@@ -29,6 +30,36 @@ from ..display import (
 from ..shape import Point
 from .occ_shape import coerce_axis
 from .utils import color_to_quantity_color
+
+
+class AIS_Arrow(AIS_InteractiveObject):
+    def __init__(self, axis, tube_radius, axis_length,
+                 cone_radius, cone_length, number_of_facetts=360):
+        super().__init__()
+        self.params = (axis, tube_radius, axis_length,
+                 cone_radius, cone_length, int(number_of_facetts))
+        self.SetInfiniteState(True)
+
+    def Compute(self, prs_mgr, pres, mode):
+        group = pres.CurrentGroup()
+        handle = Prs3d_Arrow.DrawShaded_(*self.params)
+        group.SetPrimitivesAspect(self.Attributes().ShadingAspect().Aspect())
+        group.__class__ = Graphic3d_Group  # Hack?
+        group.AddPrimitiveArray(handle)
+
+    def ComputeSelection(self, pres, mode):
+        pass
+
+    def SetColor(self, color):
+        drawer = self.Attributes()
+        sa = drawer.ShadingAspect()
+        a = sa.Aspect()
+        a.SetColor(color)
+        a.SetInteriorColor(color)
+        ma = Graphic3d_MaterialAspect(Graphic3d_NOM_BRASS)
+        ma.SetColor(color)
+        a.SetFrontMaterial(ma)
+        drawer.SetShadingAspect(sa)
 
 
 class OccDisplayItem(ProxyDisplayItem):
@@ -60,6 +91,12 @@ class OccDisplayItem(ProxyDisplayItem):
 
         """
         pass
+
+    def update_color(self, ais_item):
+        d = self.declaration
+        color, alpha = color_to_quantity_color(d.color)
+        ais_item.SetColor(color)
+        ais_item.SetTransparency(d.transparency)
 
     # -------------------------------------------------------------------------
     # Proxy API
@@ -95,26 +132,26 @@ class OccDisplayPlane(OccDisplayItem, ProxyDisplayPlane):
         d = self.declaration
         plane = Geom_Plane(d.position.proxy, d.direction.proxy)
         ais_item = AIS_Plane(plane)
-        color, alpha = color_to_quantity_color(d.color)
-        ais_item.SetColor(color)
+        self.update_color(ais_item)
         self.item = ais_item
 
 
 class OccDisplayArrow(OccDisplayItem, ProxyDisplayArrow):
     #: A reference to the toolkit item created by the proxy.
-    item = Typed(Prs3d_Arrow)
+    item = Typed(AIS_Arrow)
 
     def create_item(self):
         d = self.declaration
-        #aspect = Prs3d_ArrowAspect()
-        #color, alpha = color_to_quantity_color(d.color)
-        #aspect.SetColor(color)
-        #context.SetPrimitivesAspect(aspect)
-        #self.context = context
-        #self.item = Prs3d_Arrow.Draw_(
-            #context, d.position.proxy, d.direction.proxy, d
-            #.angle or d.size, d.size)
+        axis = coerce_axis((d.position, d.direction, 0))
+        ais_item = AIS_Arrow(axis.Axis(), *d.tube_size, *d.cone_size)
+        self.update_color(ais_item)
+        self.item = ais_item
 
+    def set_cone_size(self, size):
+        self.create_item()
+
+    def set_tube_size(self, size):
+        self.create_item()
 
 class OccDisplayText(OccDisplayItem, ProxyDisplayText):
     #: A reference to the toolkit item created by the proxy.
@@ -129,9 +166,7 @@ class OccDisplayText(OccDisplayItem, ProxyDisplayText):
         ais_item.SetHeight(d.size)
         if d.font:
             ais_item.SetFont(d.font)
-
-        color, alpha = color_to_quantity_color(d.color)
-        ais_item.SetColor(color)
+        self.update_color(ais_item)
         self.item = ais_item
 
     def set_text(self, text):

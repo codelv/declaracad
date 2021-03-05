@@ -14,7 +14,7 @@ from enaml.layout.api import AreaLayout, TabLayout, DockBarLayout, HSplitLayout
 from enaml.stdlib.dock_area_styles import (
     register_styles, available_styles, CommonStyles, AreaStyle, ItemStyle,
     TitleBarStyle, DockBarButtonStyle, ContainerStyle,
-    TabBarTabStyle, TitleBarLabelStyle
+    TabBarTabStyle, TitleBarLabelStyle, TitleBarButtonStyle, Style, Setter
 )
 from enaml.widgets.dock_events import DockItemEvent
 from declaracad.core.api import DockArea, DockItem
@@ -55,6 +55,13 @@ template SystemStyle():
         background = 'orange'
 
     TabBarTabStyle:
+        background = get_system_color('window')
+
+    TabBarTabStyle:
+        pseudo_class = 'selected'
+        background = get_system_color('dark')
+
+    TabBarTabStyle:
         pseudo_class = 'alert(important)'
         background = 'orange'
 
@@ -62,6 +69,25 @@ template SystemStyle():
     TitleBarStyle:
         pseudo_class = 'alert(meltdown)'
         background = 'red'
+
+    TitleBarButtonStyle:
+        pseudo_class = 'hover'
+        background = get_system_color('dark')
+
+    Style:
+        element = 'DockArea'
+        pseudo_element = 'tab-bar-corner-button'
+        pseudo_class = 'hover'
+        Setter:
+            field = 'background'
+            value = get_system_color('dark')
+
+    DockBarButtonStyle:
+        border = '1px solid ' + get_system_color('window')
+
+    DockBarButtonStyle:
+        pseudo_class = 'checked'
+        background = get_system_color('dark')
 
     DockBarButtonStyle:
         pseudo_class = 'alert(meltdown)'

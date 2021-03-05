@@ -10,9 +10,9 @@ Created on March 25, 2020
 @author: jrm
 """
 from atom.api import Typed
-from OCCT.AIS import (
-    AIS_AngleDimension, AIS_DiameterDimension, AIS_LengthDimension,
-    AIS_RadiusDimension, AIS_Dimension
+from OCCT.PrsDim import (
+    PrsDim_AngleDimension, PrsDim_DiameterDimension, PrsDim_LengthDimension,
+    PrsDim_RadiusDimension, PrsDim_Dimension
 )
 from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
@@ -39,7 +39,7 @@ from .utils import color_to_quantity_color
 
 class OccDimension(ProxyDimension):
     #: A reference to the toolkit dimension created by the proxy.
-    dimension = Typed(AIS_Dimension)
+    dimension = Typed(PrsDim_Dimension)
 
     # -------------------------------------------------------------------------
     # Initialization API
@@ -137,16 +137,16 @@ class OccDimension(ProxyDimension):
 
 class OccAngleDimension(OccDimension, ProxyAngleDimension):
     #: A reference to the toolkit dimension created by the proxy.
-    dimension = Typed(AIS_AngleDimension)
+    dimension = Typed(PrsDim_AngleDimension)
 
     def create_dimension(self):
         d = self.declaration
-        self.dimension = AIS_AngleDimension(*self.get_shapes())
+        self.dimension = PrsDim_AngleDimension(*self.get_shapes())
 
 
 class OccLengthDimension(OccDimension, ProxyLengthDimension):
     #: A reference to the toolkit dimension created by the proxy.
-    dimension = Typed(AIS_LengthDimension)
+    dimension = Typed(PrsDim_LengthDimension)
 
     def make_plane(self, v1, v2):
         d = self.declaration
@@ -166,22 +166,22 @@ class OccLengthDimension(OccDimension, ProxyLengthDimension):
             args.append(self.make_plane(*topo.vertices_from_edge(s)[0:]))
         elif isinstance(s, TopoDS_Vertex) and len(args) == 2:
             args.append(self.make_plane(s, args[1]))
-        self.dimension = AIS_LengthDimension(*args)
+        self.dimension = PrsDim_LengthDimension(*args)
 
 
 class OccRadiusDimension(OccDimension, ProxyRadiusDimension):
     #: A reference to the toolkit dimension created by the proxy.
-    dimension = Typed(AIS_RadiusDimension)
+    dimension = Typed(PrsDim_RadiusDimension)
 
     def create_dimension(self):
         d = self.declaration
-        self.dimension = AIS_RadiusDimension(*self.get_shapes())
+        self.dimension = PrsDim_RadiusDimension(*self.get_shapes())
 
 
 class OccDiameterDimension(OccDimension, ProxyDiameterDimension):
     #: A reference to the toolkit dimension created by the proxy.
-    dimension = Typed(AIS_DiameterDimension)
+    dimension = Typed(PrsDim_DiameterDimension)
 
     def create_dimension(self):
         d = self.declaration
-        self.dimension = AIS_DiameterDimension(*self.get_shapes())
+        self.dimension = PrsDim_DiameterDimension(*self.get_shapes())

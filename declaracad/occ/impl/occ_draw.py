@@ -167,7 +167,8 @@ class OccLine(OccEdge, ProxyLine):
         if len(d.points) == 2:
             curve = GC_MakeLine(*self.get_transformed_points()).Value()
         else:
-            curve = GC_MakeLine(d.position.proxy, d.direction.proxy).Value()
+            axis = coerce_axis(d.axis)
+            curve = GC_MakeLine(axis.Axis()).Value()
         self.curve = curve
         self.shape = self.make_edge(curve)
 

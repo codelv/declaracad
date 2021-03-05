@@ -485,7 +485,7 @@ class OccSvgPolygon(OccSvgNode):
             x, y = map(float, m.groups())
             shape.Add(gp_Pnt(x, y, 0))
         shape.Close()
-        return shape.Face()
+        return BRepBuilderAPI_MakeFace(shape.Wire()).Shape()
 
 
 class OccSvgGroup(OccSvgNode):

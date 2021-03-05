@@ -12,7 +12,7 @@ Created on Aug 22, 2020
 import sys
 from atom.api import Atom, Bool, List
 from declaracad.occ.api import (
-    Part, Polyline, Topology, Vertex, Point, Looper, Conditional
+    Part, Polyline, Topology, Vertex, Point, Looper, Conditional, DisplayArrow
 )
 from declaracad.core.utils import log
 from declaracad.cnc.gcode import Movement, save_to_file
@@ -83,10 +83,12 @@ enamldef Toolpath(Part): toolpath:
     #: Lift and drop points
     attr show_lift: bool = False
     attr show_drop: bool = True
+    attr show_direction: bool = True
     attr lift_color: str = "lightgreen"
     attr lift_marker: str = 'circle'
     attr drop_color: str = "orange"
     attr drop_marker: str = 'cross'
+    attr direction_color: str = 'lightblue'
 
     #: If set, write to filename
     attr filename: str = ""
@@ -177,7 +179,18 @@ enamldef Toolpath(Part): toolpath:
             condition = show_drop and loop.item.rapid
             Vertex:
                 color = drop_color
-                marker = drop_marker
                 description = 'Drop'
+                marker = drop_marker
                 position = loop.item.points[-2]
+        Conditional:
+            condition = show_direction and loop.item.rapid and loop.item.points[-2] != loop.item.points[1]
+            DisplayArrow:
+                attr start = loop.item.points[1]
+                attr end = loop.item.points[-2]
+                color = direction_color
+                cone_size = (0.2, 0.5)
+                tube_size = (0.1, 1)
+                description = 'Drop'
+                position = start.midpoint(end)
+                direction = end - start
 

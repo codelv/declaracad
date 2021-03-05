@@ -17,7 +17,6 @@ from atom.api import (
     Typed, ForwardTyped, List, Enum, Event, Value, Subclass,
     observe, set_default
 )
-from enaml.application import Application
 from enaml.core.declarative import d_, d_func
 from enaml.core.api import Include
 from enaml.colors import ColorMember
@@ -25,7 +24,7 @@ from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject
 
 
-from declaracad.core.utils import log
+from declaracad.core.utils import log, process_events
 
 #: TODO: This breaks the proxy pattern
 from OCCT.TopoDS import TopoDS_Face, TopoDS_Shell, TopoDS_Shape
@@ -453,7 +452,7 @@ class Shape(ToolkitObject):
 
         # Generating the model can take a lot of time
         # so process events inbetween to keep the UI from freezing
-        Application.instance().process_events()
+        process_events()
 
         self.activate_bottom_up()
         self.proxy_is_active = True

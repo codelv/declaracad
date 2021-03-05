@@ -12,7 +12,7 @@ Created on Dec 27, 2020
 
 import math
 from atom.api import (
-    Bool, Coerced, Float, List, Str, Typed, ForwardTyped, observe
+    Bool, Coerced, Float, List, Tuple,  Str, Typed, ForwardTyped, observe
 )
 from enaml.colors import ColorMember, Color
 from enaml.core.declarative import d_
@@ -30,6 +30,9 @@ class ProxyDisplayItem(ProxyControl):
         raise NotImplementedError
 
     def set_color(self, color):
+        raise NotImplementedError
+
+    def set_transparency(self, transparency):
         raise NotImplementedError
 
     def set_direction(self, direction):
@@ -50,7 +53,10 @@ class ProxyDisplayArrow(ProxyDisplayItem):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: DisplayArrow)
 
-    def set_size(self, size):
+    def set_cone_size(self, size):
+        raise NotImplementedError
+
+    def set_tube_size(self, size):
         raise NotImplementedError
 
 
@@ -79,8 +85,14 @@ class DisplayItem(ToolkitObject):
     #: Whether the item should be displayed
     display = d_(Bool(True))
 
+    #: Description
+    description = d_(Str())
+
     #: A string representing the color of the shape.
     color = d_(ColorMember()).tag(view=True, group='Display')
+
+    #: The transparency of the item
+    transparency = d_(Float(strict=False))
 
     def _default_color(self):
         return Color(0, 0, 0)
@@ -128,6 +140,7 @@ class DisplayPlane(DisplayItem):
     #: Reference to the implementation control
     proxy = Typed(ProxyDisplayPlane)
 
+
 class DisplayArrow(DisplayItem):
     """ Add an arrow to the 3d display.
 
@@ -135,13 +148,19 @@ class DisplayArrow(DisplayItem):
     #: Reference to the implementation control
     proxy = Typed(ProxyDisplayArrow)
 
-    #: Arrow size
-    size = d_(Float(12))
+    #: A tuple of (radius, length)
+    cone_size = d_(Tuple())
 
-    #: Arrow angle
-    angle = d_(Float())
+    #: A tuple of (radius, length)
+    tube_size = d_(Tuple())
 
-    @observe('size', 'angle')
+    def _default_cone_size(self):
+        return (1, 2)
+
+    def _default_tube_size(self):
+        return (0.5, 8)
+
+    @observe('cone_size', 'tube_size')
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
