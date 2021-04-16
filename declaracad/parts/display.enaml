@@ -3,6 +3,8 @@ from declaracad.occ.api import Part, DisplayLine, Vertex, Box, Topology, Looper
 
 enamldef Axis(Part): part:
     """ Displays an XYZ lines """
+    color = 'black'
+
     DisplayLine: xaxis:
         color := part.color
         position := part.position
