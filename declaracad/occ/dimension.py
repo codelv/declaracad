@@ -9,7 +9,9 @@ Created on March 25, 2020
 
 @author: jrm
 """
-from atom.api import Bool, Coerced, Float, List, Typed, ForwardTyped, observe
+from atom.api import (
+    Bool, Coerced, Float, List, Typed, ForwardTyped, Str, observe
+)
 from enaml.colors import ColorMember, Color
 from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
@@ -41,6 +43,12 @@ class ProxyDimension(ProxyControl):
         raise NotImplementedError
 
     def set_arrow_tail_size(self, size):
+        raise NotImplementedError
+
+    def set_show_units(self, show_units):
+        raise NotImplementedError
+
+    def set_units(self, units):
         raise NotImplementedError
 
 
@@ -77,6 +85,12 @@ class Dimension(ToolkitObject):
     #: A string representing the color of the shape.
     color = d_(ColorMember()).tag(view=True, group='Display')
 
+    #: Show unbits
+    show_units = d_(Bool(False))
+
+    #: Units
+    units = d_(Str())
+
     def _default_color(self):
         return Color(0, 0, 0)
 
@@ -100,7 +114,7 @@ class Dimension(ToolkitObject):
     shapes = d_(List())
 
     @observe('display', 'shapes', 'color', 'direction', 'flyout',
-             'extension_size', 'arrow_tail_size')
+             'extension_size', 'arrow_tail_size', 'show_units', 'units')
     def _update_proxy(self, change):
         super(Dimension, self)._update_proxy(change)
 

@@ -18,6 +18,7 @@ from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
 from OCCT.GC import GC_MakePlane
 from OCCT.gp import gp_Pnt, gp_Dir
+from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TopoDS import TopoDS, TopoDS_Edge, TopoDS_Vertex, TopoDS_Shape
 from OCCT.TopAbs import TopAbs_ShapeEnum
 
@@ -28,8 +29,6 @@ from ..dimension import (
 from ..shape import Point
 
 from .occ_shape import Topology
-
-
 
 from declaracad.core.utils import log
 
@@ -54,6 +53,8 @@ class OccDimension(ProxyDimension):
             return
         if d.flyout:
             dim.SetFlyout(d.flyout)
+        if d.units:
+            dim.SetDisplayUnits(TCollection_AsciiString(d.units))
 
         aspect = dim.DimensionAspect()
         if d.color:
@@ -63,6 +64,8 @@ class OccDimension(ProxyDimension):
             aspect.SetArrowTailSize(d.arrow_tail_size)
         if d.extension_size:
             aspect.SetExtensionSize(d.extension_size)
+        if d.show_units:
+            aspect.MakeUnitsDisplayed(d.show_units)
         dim.SetDimensionAspect(aspect)
 
     def update_dimension(self):
@@ -91,6 +94,12 @@ class OccDimension(ProxyDimension):
     # -------------------------------------------------------------------------
     # Proxy API
     # -------------------------------------------------------------------------
+    def set_units(self, units):
+        self.update_dimension()
+
+    def set_show_units(self, show_units):
+        self.update_dimension()
+
     def set_shapes(self, shapes):
         self.update_dimension()
 
