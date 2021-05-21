@@ -47,6 +47,7 @@ class Application(QtApplication):
         """
         log.info("Application starting")
         self.running = True
+        self.loop.set_exception_handler(self.on_async_exception)
         with self.loop:
             try:
                 self.loop.run_until_complete(self.main())
@@ -71,6 +72,15 @@ class Application(QtApplication):
                     await asyncio.sleep(0.1)
                     continue
                 log.exception(e)
+
+    def on_async_exception(self, loop, context):
+        """ Exception handler that ignores
+
+        """
+        # HACK: Ignore this error, Qt works, shut up
+        if 'cannot enter context' in f"{context['exception']}":
+            return
+        return loop.default_exception_handler(context)
 
     def process_events(self):
         """ Let the the app process events during long-running cpu intensive
