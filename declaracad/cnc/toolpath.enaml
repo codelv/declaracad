@@ -12,7 +12,8 @@ Created on Aug 22, 2020
 import sys
 from atom.api import Atom, Bool, List
 from declaracad.occ.api import (
-    Part, Polyline, Topology, Vertex, Point, Looper, Conditional, DisplayArrow
+    Part, Polyline, Topology, Vertex, Point, Looper, Conditional, DisplayArrow,
+    Timer, Topology
 )
 from declaracad.core.utils import log
 from declaracad.cnc.gcode import Movement, save_to_file
@@ -84,6 +85,7 @@ enamldef Toolpath(Part): toolpath:
     attr show_lift: bool = False
     attr show_drop: bool = True
     attr show_direction: bool = True
+    attr show_lines: bool = True
     attr lift_color: str = "lightgreen"
     attr lift_marker: str = 'circle'
     attr drop_color: str = "orange"
@@ -162,6 +164,7 @@ enamldef Toolpath(Part): toolpath:
     Looper:
         iterable << toolpath.movements
         Polyline:
+            display = show_lines
             attr movement = loop.item
             name = 'Rapid Move' if movement.rapid else 'Move'
             description = format_move_description(movement)
@@ -194,3 +197,46 @@ enamldef Toolpath(Part): toolpath:
                 position = start.midpoint(end)
                 direction = end - start
 
+
+enamldef ToolpathAnimation(Timer):
+    #: The cutting tool
+    attr bit
+    #: The toolpath
+    attr toolpath: Toolpath
+
+    #: Speed
+    attr speed = 2
+
+    attr rapid_feedrate = 1
+    attr normal_feedrate = 10
+
+    #: Positions
+    attr positions = generate_animation(toolpath)
+    attr index: int = 0
+    attr progress: float = 0
+    attr total = max(1, len(positions))
+
+    func generate_animation(toolpath):
+        pts = []
+        feed_normal = self.normal_feedrate
+        feed_rapid = self.rapid_feedrate
+        for child in toolpath.children:
+            if isinstance(child, Polyline):
+                w = child.topology.wires[0]
+                s = feed_rapid if child.movement.rapid else feed_normal
+                l = max(2, int(child.topology.length * s * speed))
+                pts.extend(Topology.discretize(w, l, method='abscissa'))
+        return pts
+
+    func animate():
+        try:
+            self.index += 1
+            bit.position = self.positions[self.index]
+            self.progress = 100*self.index/self.total
+        except IndexError:
+            self.index = 0
+            self.stop()
+
+    interval = 16
+    activated :: self.start()
+    timeout :: self.animate()
