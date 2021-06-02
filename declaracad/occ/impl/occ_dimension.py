@@ -35,7 +35,6 @@ from declaracad.core.utils import log
 from .utils import color_to_quantity_color
 
 
-
 class OccDimension(ProxyDimension):
     #: A reference to the toolkit dimension created by the proxy.
     dimension = Typed(PrsDim_Dimension)
