@@ -125,23 +125,23 @@ enamldef DeviceConfigView(Container):
                 text = "X"
             DoubleSpinBox: sx:
                 value := config.scale_x
-                minimum = 0.000000001
+                minimum = -99999999999
                 maximum = 99999999999
-                decimals = 5
+                decimals = 9
             Label: label_sy:
                 text = "Y"
             DoubleSpinBox: sy:
                 value := config.scale_y
-                minimum = 0.000000001
+                minimum = -99999999999
                 maximum = 99999999999
-                decimals = 5
+                decimals = 9
             Label: label_sz:
                 text = "Z"
             DoubleSpinBox: sz:
                 value := config.scale_z
-                minimum = 0.000000001
+                minimum = -99999999999
                 maximum = 99999999999
-                decimals = 5
+                decimals = 9
         Label:
             text = "Origin"
         Container:
@@ -155,23 +155,23 @@ enamldef DeviceConfigView(Container):
                 text = "X"
             DoubleSpinBox: pos_x:
                 value := config.origin.x
-                minimum = 0.000000001
+                minimum = -99999999999
                 maximum = 99999999999
-                decimals = 5
+                decimals = 9
             Label: label_y:
                 text = "Y"
             DoubleSpinBox: pos_y:
                 value := config.origin.y
-                minimum = 0.000000001
+                minimum = -99999999999
                 maximum = 99999999999
-                decimals = 5
+                decimals = 9
             Label: label_z:
                 text = "Z"
             DoubleSpinBox: pos_z:
                 value := config.origin.z
-                minimum = 0.000000001
+                minimum = -99999999999
                 maximum = 99999999999
-                decimals = 5
+                decimals = 9
         Label:
             text = "Mirror"
         Container:
@@ -263,35 +263,42 @@ enamldef CncSettingsPage(Container): page:
     attr plugin << model
     padding = 0
 
-    Container:
-        padding = 0
-        TreeView: tree:
-            horizontal_headers = ['Connection']
-            horizontal_stretch = True
-            show_root = False
-            show_vertical_header = False
-            items << plugin.devices
-            Menu:
-                Action:
-                    text = 'Add'
-                    triggered :: plugin.add_device()
-            Looper:
-                iterable << plugin.devices
-                TreeViewItem:
-                    selected << loop_item == plugin.device
-                    text << loop_item.name
-                    clicked :: plugin.device = loop_item
+    Splitter:
+        orientation = 'horizontal'
+        SplitItem:
+            Container:
+                padding = 0
+        
+                TreeView: tree:
+                    horizontal_headers = ['Connection']
+                    horizontal_stretch = True
+                    show_root = False
+                    show_vertical_header = False
+                    items << plugin.devices
                     Menu:
                         Action:
-                            text = 'Remove'
-                            triggered :: plugin.remove_device(loop_item)
-        PushButton:
-            icon = load_icon('add')
-            text = 'Add'
-            clicked :: plugin.add_device()
-        Conditional:
-            condition << plugin.device is not None
-            DeviceConfigView:
+                            text = 'Add'
+                            triggered :: plugin.add_device()
+                    Looper:
+                        iterable << plugin.devices
+                        TreeViewItem:
+                            selected << loop_item == plugin.device
+                            text << loop_item.name
+                            clicked :: plugin.device = loop_item
+                            Menu:
+                                Action:
+                                    text = 'Remove'
+                                    triggered :: plugin.remove_device(loop_item)
+                PushButton:
+                    icon = load_icon('add')
+                    text = 'Add'
+                    clicked :: plugin.add_device()
+        SplitItem:
+            Container:
                 padding = 0
-                plugin << page.plugin
-                device := plugin.device
+                Conditional:
+                    condition << plugin.device is not None
+                    DeviceConfigView:
+                        padding = 0
+                        plugin << page.plugin
+                        device := plugin.device
