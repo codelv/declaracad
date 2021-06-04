@@ -1,0 +1,52 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from declaracad.cnc.toolpath import Toolpath
+from declaracad.parts.display import BoundingBox
+inch = 25.4
+enamldef Assembly(Part): part:
+    attr start_point = Point(6.5*inch, 10*inch, 2*inch)
+    
+    Transform:  svg:
+        color = 'teal'
+        attr depth = 10.5*inch/1000
+        operations = [
+            Translate(start_point.x, start_point.y, -depth),
+            Scale(0.35277987609386546),
+            #Mirror(x=1),
+        ]
+        Svg:
+            source = "/home/cnc/Downloads/paste.svg"
+            #source = "/home/cnc/Downloads/dg300z-paste.svg"
+    Part: offset_path:
+        Looper:
+            iterable = svg.topology.wires
+            Offset:
+                offset = -0.148
+                color = 'purple'
+                shape = loop.item
+    BoundingBox:
+        shapes = svg
+    Box:
+        material = 'aluminium'
+        position = (0, 0, -dz -1/16*inch)
+        dx = 12 * inch
+        dy = 24 * inch
+        dz = 1 * inch
+    Box:
+        transparency = 0.8
+        position = (3*inch, 9*inch, -dz)
+        dx = 6 * inch
+        dy = 4 * inch
+        dz = 1/16 * inch
+    Toolpath:
+        
+        wires = [
+            w for (i, w) in 
+            enumerate(offset_path.topology.wires)
+            #if i in (12, 13)
+        ]
+        start_point = part.start_point
+        end_point = Point(0, 0, 2*inch)
+        clearance = 2
+        reverse = True
+        filename = "/home/cnc/Downloads/paste.gcode"
