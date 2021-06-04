@@ -205,7 +205,7 @@ enamldef ToolpathAnimation(Timer):
     attr toolpath: Toolpath
 
     #: Speed
-    attr speed = 2
+    attr speed = 1
 
     attr rapid_feedrate = 1
     attr normal_feedrate = 10
@@ -224,7 +224,7 @@ enamldef ToolpathAnimation(Timer):
             if isinstance(child, Polyline):
                 w = child.topology.wires[0]
                 s = feed_rapid if child.movement.rapid else feed_normal
-                l = max(2, int(child.topology.length * s * speed))
+                l = max(2, int(child.topology.length * s * 1/max(1e-6, speed)))
                 pts.extend(Topology.discretize(w, l, method='abscissa'))
         return pts
 
