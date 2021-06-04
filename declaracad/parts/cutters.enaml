@@ -1,0 +1,30 @@
+from math import cos
+from declaracad.occ.api import *
+
+inch = 25.4
+
+
+enamldef VBit(Part): part:
+    attr angle = 45
+    attr diameter = 1/2*inch
+    attr cutter_radius = diameter/2
+    attr cutter_height = cutter_radius*cos(angle)
+    alias cutter
+    material = 'steel'
+    Fuse:
+        material = part.material
+        transparency = part.transparency
+        Cylinder: neck:
+            radius = (1/4*inch)/2
+            height = 1 * inch
+            position = (0, 0, cutter_height*2)
+        Cylinder: body:
+            height = 1/4*inch
+            radius = cutter_radius
+            position = (0, 0, cutter_height)
+        Cone: cutter:
+            position = body.position
+            direction = (0, 0, -1)
+            radius = cutter_radius
+            height = cutter_height
+
