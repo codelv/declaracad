@@ -1,0 +1,108 @@
+# Created in DeclaraCAD
+from math import pi
+from declaracad.occ.api import *
+
+
+enamldef HalfRoundPad(Part):
+    attr width = 0.25
+    attr depth = 0.4
+    attr thickness = 0.1
+    
+    attr w = width/2
+    attr d = depth/2
+    Extrude:
+        color = parent.color
+        vector = (0, 0, thickness)
+        Face:
+            Wire:
+                Polyline: p1:
+                    points = [
+                        (-w, d-w),
+                        (-w, -d),
+                        (w, -d),
+                        (w, d-w),
+                    ]
+                Arc:
+                    attr a = p1.points[-1]
+                    attr b = p1.points[0]
+                    position =  a.midpoint(b)
+                    radius = w
+                    points = [a, b]
+            
+
+enamldef QFN407x5(Part):
+    attr pad_spacing = 0.5
+    attr pads_vertical = 12
+    attr pads_horizontal = 8
+    
+    attr pad_color = '#999'
+    
+    func get_pad_positions():
+        d = 0.4/2 # Pad depth
+        h_start = -3.5/2
+        v_start = -5.5/2
+        
+        top_pads = [
+            ((h_start+pad_spacing*i, -package.dy/2+d), 0)
+            for i in range(pads_horizontal)
+        ]
+        bottom_pads = [
+            ((h_start+pad_spacing*i, package.dy/2-d), pi)
+            for i in range(pads_horizontal)
+        ]
+        left_pads = [
+            ((package.dx/2-d, v_start+pad_spacing*i), pi/2)
+            for i in range(pads_vertical)
+        ]
+        right_pads = [
+            ((-package.dx/2+d, v_start+pad_spacing*i), -pi/2)
+            for i in range(pads_vertical)
+        ]
+        return top_pads + bottom_pads + left_pads + right_pads
+    Cut: thermal_pad:
+        color = pad_color
+        Box: pad:
+            dx = 3.7
+            dy = 5.7
+            dz = 0.05
+            position = (-dx/2, -dy/2)
+        Wedge:
+            position = (-pad.dx/2, pad.dy/2)
+            dx = 0.3
+            dy = 0.3
+            dz = pad.dz
+            rotation = -pi/2
+    Looper:
+        iterable = get_pad_positions()
+        HalfRoundPad:
+            color = pad_color
+            name = f'Pin {loop.index + 1}'
+            position = loop.item[0]
+            rotation = loop.item[1]
+    Cut:
+        name = 'Package'
+        material = 'plastic'
+        color = '#070707'    
+        Box: package:
+            position = (-dx/2, -dy/2, 0.025)
+            dx = 5
+            dy = 7
+            dz = 1 - position.z
+        Cylinder:
+            height = 0.1
+            radius = 0.3
+            attr p = package.position
+            position = (p.x+1, package.dy/2-1, package.dz)
+        Looper:
+            iterable = get_pad_positions()
+            HalfRoundPad:
+                position = loop.item[0]
+                rotation = loop.item[1]
+        Transform:
+            shape = thermal_pad
+                
+                
+enamldef Assembly(Part):
+    QFN407x5:
+        pass
+    
