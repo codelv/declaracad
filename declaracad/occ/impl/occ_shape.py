@@ -42,7 +42,7 @@ from OCCT.TopoDS import (
 )
 from OCCT.TopLoc import TopLoc_Location
 from OCCT.TCollection import TCollection_AsciiString
-
+from OCCT.TDF import TDF_Label
 
 from ..shape import (
     ProxyShape, ProxyPart, ProxyFace, ProxyBox, ProxyCone, ProxyCylinder,
@@ -93,6 +93,9 @@ class OccShape(ProxyShape):
 
     #: The shape that was shown on the screen
     ais_shape = Instance(AIS_Shape)
+
+    #: The XCAF application label
+    tdf_label = Instance(TDF_Label)
 
     #: Whether this is currently displayed
     displayed = Bool()
