@@ -552,11 +552,9 @@ class OccTransform(OccOperation, ProxyTransform):
 
         #: Get the shape to apply the tranform to
         if d.shape:
-            make_copy = True
             original = coerce_shape(d.shape)
         else:
             # Use the first child
-            make_copy = False
             child = self.get_first_child()
             if child is None:
                 raise ValueError(
@@ -564,7 +562,7 @@ class OccTransform(OccOperation, ProxyTransform):
             original = child.shape
 
         t = self.get_transform()
-        transform = BRepBuilderAPI_Transform(original, t, make_copy)
+        transform = BRepBuilderAPI_Transform(original, t, True)
         shape = transform.Shape()
 
         # Convert it back to the original type
