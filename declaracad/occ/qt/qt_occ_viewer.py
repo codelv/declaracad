@@ -921,31 +921,33 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             if ais_context.HasSelectedShape():
                 i = None
                 found = False
-                topods_shape = Topology.cast_shape(ais_context.SelectedShape())
+                ais_shape = ais_context.SelectedInteractive()
+                topods_shape = ais_context.SelectedShape()
                 shape_type = topods_shape.ShapeType()
                 attr = str(shape_type).split("_")[-1].lower() + 's'
 
                 # Try long lookup based on topology
                 for occ_shape in occ_shapes:
-                    shape_list = getattr(occ_shape.topology, attr, None)
-                    if not shape_list:
+                    if ais_shape != occ_shape.ais_shape:
                         continue
+                    found = True
+
+                    # Lookup index
+                    shape_list = getattr(occ_shape.topology, attr, None)
                     for i, s in enumerate(shape_list):
                         if topods_shape.IsPartner(s):
-                            found = True
                             break
-                    if found:
-                        d = occ_shape.declaration
-                        shapes.append(topods_shape)
-                        # Insert what was selected into the options
-                        info = selection.get(d)
-                        if info is None:
-                            info = selection[d] = {}
-                        selection_info = info.get(attr)
-                        if selection_info is None:
-                            selection_info = info[attr] = {}
-                        selection_info[i] = topods_shape
-                        break
+
+                    d = occ_shape.declaration
+                    shapes.append(topods_shape)
+                    # Insert what was selected into the options
+                    info = selection.get(d)
+                    if info is None:
+                        info = selection[d] = {}
+                    selection_info = info.get(attr)
+                    if selection_info is None:
+                        selection_info = info[attr] = {}
+                    selection_info[i] = topods_shape
 
                 # Mark it as found we don't know what shape it's from
                 if not found:

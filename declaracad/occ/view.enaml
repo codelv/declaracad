@@ -312,20 +312,29 @@ enamldef ModelViewer(OccViewer): viewer:
                     desc.append("")
 
                 if d is not None:
+                    name = d.name
+                    description = d.description
                     if isinstance(d, Part):
                         desc.append(f"{d.__class__.__name__}:")
                     elif isinstance(d.parent, Part):
                         desc.append(f"{d.parent.__class__.__name__}:")
+                        name = name or d.parent.name
+                        description = description or d.parent.description
                     else:
                         desc.append(f"{d.__class__.__name__}:")
+
+                    if name:
+                        desc.append(f"  Name: {name}")
+                    if description:
+                        desc.append(f"  {description}")
+
                 elif len(items) == 1:
                     for shape_type, mapping in items.items():
                         shape_type = shape_type[:-1]
                         desc.append(f"{shape_type.title()}:")
                 else:
                     desc.append(f"Unknown:")
-                if d and d.name:
-                    desc.append(f"  Name: {d.name}")
+
                 #pos = d.position
                 #desc.append(f"  Position: {pos.x}, {pos.y}, {pos.z}")
                 for shape_type, mapping in items.items():
@@ -347,8 +356,7 @@ enamldef ModelViewer(OccViewer): viewer:
                         if shape_desc:
                             desc.extend(shape_desc)
 
-                if d and d.description:
-                    desc.append(f"  {d.description}")
+
         except Exception as e:
             log.exception(e)
 
