@@ -925,7 +925,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                 topods_shape = ais_context.SelectedShape()
                 shape_type = topods_shape.ShapeType()
                 attr = str(shape_type).split("_")[-1].lower() + 's'
-
                 # Try long lookup based on topology
                 for occ_shape in occ_shapes:
                     if ais_shape != occ_shape.ais_shape:
@@ -933,7 +932,10 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                     found = True
 
                     # Lookup index
-                    shape_list = getattr(occ_shape.topology, attr, None)
+                    if attr == 'vertexs':
+                        shape_list = occ_shape.topology.vertices
+                    else:
+                        shape_list = getattr(occ_shape.topology, attr, ())
                     for i, s in enumerate(shape_list):
                         if topods_shape.IsPartner(s):
                             break
