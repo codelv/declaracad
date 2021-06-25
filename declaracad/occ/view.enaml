@@ -367,6 +367,7 @@ enamldef ModelViewer(OccViewer): viewer:
             self.notification.close()
 
     func show_notification(message):
+        log.info(message)
         self.hide_notification()
         popup = NotificationPopup(self, message=message)
         popup.show()
