@@ -65,6 +65,9 @@ class ProxyPart(ProxyShape):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Part)
 
+    def set_transform(self, ops):
+        raise NotImplementedError
+
 
 class ProxyFace(ProxyShape):
     #: A reference to the Shape declaration.
@@ -509,6 +512,9 @@ class Part(Shape):
 
     #: Static cache
     cache = {}
+
+    #: Transform operations
+    transform = d_(List())
 
     @property
     def shapes(self):

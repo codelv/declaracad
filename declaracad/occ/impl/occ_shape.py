@@ -44,12 +44,14 @@ from OCCT.TopLoc import TopLoc_Location
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TDF import TDF_Label
 
-from ..shape import (
+from declaracad.occ.shape import (
     ProxyShape, ProxyPart, ProxyFace, ProxyBox, ProxyCone, ProxyCylinder,
     ProxyHalfSpace, ProxyPrism, ProxySphere, ProxyWedge, ProxyRawPart,
     ProxyTorus, ProxyRevol, ProxyRawShape, ProxyLoadShape, BBox, Shape,
     coerce_point, coerce_direction
 )
+
+from declaracad.occ.algo import Translate, Rotate, Scale, Mirror
 
 from .utils import color_to_quantity_color, material_to_material_aspect
 from .topology import Topology
@@ -370,6 +372,25 @@ class OccPart(OccDependentShape, ProxyPart):
     #: Display each sub-item
     ais_shape = Typed(AIS_MultipleConnectedInteractive)
 
+    def get_transform(self):
+        result = super().get_transform()
+        d = self.declaration
+        for op in d.transform:
+            t = gp_Trsf()
+            if isinstance(op, Translate):
+                t.SetTranslation(gp_Vec(op.x, op.y, op.z))
+            elif isinstance(op, Rotate):
+                t.SetRotation(gp_Ax1(gp_Pnt(*op.point),
+                                    gp_Dir(*op.direction)), op.angle)
+            elif isinstance(op, Mirror):
+                Ax = gp_Ax2 if op.plane else gp_Ax1
+                t.SetMirror(Ax(gp_Pnt(*op.point),
+                                gp_Dir(op.x, op.y, op.z)))
+            elif isinstance(op, Scale):
+                t.SetScale(gp_Pnt(*op.point), op.s)
+            result.Multiply(t)
+        return result
+
     def _default_location(self):
         return TopLoc_Location(self.get_transform())
 
@@ -409,6 +430,9 @@ class OccPart(OccDependentShape, ProxyPart):
         for c in self.walk_shapes():
             viewer.ais_context.SetLocation(c.ais_shape, new_location)
         viewer.update()
+
+    def set_transform(self, ops):
+        self.update_shape()
 
 
 class OccFace(OccDependentShape, ProxyFace):
