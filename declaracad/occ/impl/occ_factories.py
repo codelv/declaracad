@@ -292,6 +292,11 @@ def occ_display_plane_factory():
     return OccDisplayPlane
 
 
+def occ_mesh_factory():
+    from .occ_mesh import OccMesh
+    return OccMesh
+
+
 #: Part
 OCC_FACTORIES = {
     'Part': occ_part_factory,
@@ -364,6 +369,9 @@ OCC_FACTORIES = {
     'DisplayLine': occ_display_line_factory,
     'DisplayText': occ_display_text_factory,
     'DisplayPlane': occ_display_plane_factory,
+
+    #: Mesh
+    'Mesh': occ_mesh_factory,
 }
 
 #: Install it

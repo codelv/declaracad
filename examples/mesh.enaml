@@ -1,0 +1,21 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from SMESH.NETGENPlugin import (NETGENPlugin_SimpleHypothesis_3D,
+                                NETGENPlugin_NETGEN_2D3D)
+
+enamldef Assembly(Part):
+    Cylinder: box:
+        display = False
+        radius = 30
+        height = 100
+
+    Mesh:
+        source = box
+        
+        prepare_mesh => (gen, mesh, shape):
+            hyp = NETGENPlugin_SimpleHypothesis_3D(0, gen)
+            hyp.SetLocalLength(5)
+
+            alg = NETGENPlugin_NETGEN_2D3D(1, gen)
+            mesh.AddHypothesis(shape, 0)
+            mesh.AddHypothesis(shape, 1)

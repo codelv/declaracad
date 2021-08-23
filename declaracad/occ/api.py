@@ -38,6 +38,7 @@ from .shape import (
     Box, Cylinder, Sphere, Cone, Wedge, Torus,
     HalfSpace, Prism, Revol, TopoShape, RawPart, CachedPart
 )
+from .mesh import Mesh
 from .impl.topology import Topology
 from .loaders import LoadedPart
 from .display import DisplayLine, DisplayArrow, DisplayText, DisplayPlane
