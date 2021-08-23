@@ -1,4 +1,6 @@
-from declaracad.occ.api import Part, DisplayLine, Vertex, Box, Topology, Looper
+from declaracad.occ.api import (
+    Part, DisplayLine, Vertex, Box, Topology, Looper, Transform, Shape, Loft
+)
 
 
 enamldef Axis(Part): part:
@@ -47,3 +49,26 @@ enamldef TopologyPoints(Part): part:
             color = part.color
             position = loop.item
             description = str(self.position[:])
+
+
+enamldef LoftSections(Part): part:
+    """ Displays a copy of all sections used to generate the given lofts
+
+    """
+    attr lofts
+
+    func get_sections(shapes):
+        if isinstance(shapes, Shape):
+            shapes = [shapes]
+        sections = []
+        for shape in shapes:
+            if not isinstance(shape, Loft):
+                raise TypeError("Shapes must be a loft")
+            sections.extend(shape.children)
+        return sections
+
+    Looper:
+        iterable << get_sections(lofts)
+        Transform:
+            color << part.color
+            shape << loop.item
