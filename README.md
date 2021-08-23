@@ -130,7 +130,7 @@ conda create -n declaracad
 source activate declaracad
 
 #: Install it OCCT and dependencies
-conda install -c trelau -c conda-forge pyocct
+conda install -c trelau -c conda-forge pyocct pysmesh
 
 #: Clone the repo
 git clone https://github.com/codelv/declaracad.git
@@ -171,6 +171,7 @@ The application is released under the GPL v3 (due to the use of PyQt5 and QScint
 This project relies on the groundwork laid out by these projects:
 
 - [pyOCCT](https://github.com/LaughlinResearch/pyOCCT)
+- [pySMESH](https://github.com/LaughlinResearch/pySMESH)
 - [python-occ](https://github.com/tpaviot/pythonocc)
 - [enaml](https://github.com/nucleic/enaml)
 
