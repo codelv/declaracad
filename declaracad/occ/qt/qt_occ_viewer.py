@@ -383,6 +383,8 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         graphics_driver = self.graphics_driver = OpenGl_GraphicDriver(display)
 
         viewer = self.v3d_viewer = V3d_Viewer(graphics_driver)
+        viewer.SetDefaultShadingModel(
+            Graphic3d_TypeOfShadingModel.Graphic3d_TOSM_FRAGMENT)
         view = self.v3d_view = viewer.CreateView()
 
         # Setup window
@@ -418,7 +420,8 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             viewer.SetDefaultLights()
 
         #viewer.DisplayPrivilegedPlane(True, 1)
-        #view.SetShadingModel(Graphic3d_TypeOfShadingModel.V3d_PHONG)
+        #view.SetShadingModel(
+        #        Graphic3d_TypeOfShadingModel.Graphic3d_TOSM_FRAGMENT)
 
         # background gradient
         with self.redraw_blocked():
@@ -703,24 +706,24 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
         self.lights = new_lights
 
-    def set_draw_boundaries(self, enabled):
+    def set_draw_boundaries(self, enabled: bool):
         self.prs3d_drawer.SetFaceBoundaryDraw(enabled)
 
-    def set_hidden_line_removal(self, enabled):
+    def set_hidden_line_removal(self, enabled: bool):
         view = self.v3d_view
         view.SetComputedMode(enabled)
         self.redraw()
 
-    def set_antialiasing(self, enabled):
+    def set_antialiasing(self, enabled: bool):
         self._update_rendering_params()
 
-    def set_shadows(self, enabled):
+    def set_shadows(self, enabled: bool):
         self._update_rendering_params()
 
-    def set_reflections(self, enabled):
+    def set_reflections(self, enabled: bool):
         self._update_rendering_params()
 
-    def set_raytracing(self, enabled):
+    def set_raytracing(self, enabled: bool):
         self._update_rendering_params()
 
     def set_raytracing_depth(self, depth):
@@ -740,18 +743,23 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         rendering_params = view.ChangeRenderingParams()
         if d.raytracing:
             method = Graphic3d_RM_RAYTRACING
+            view.SetShadingModel(
+                Graphic3d_TypeOfShadingModel.Graphic3d_TOSM_PBR)
         else:
             method = Graphic3d_RM_RASTERIZATION
+            view.SetShadingModel(
+                Graphic3d_TypeOfShadingModel.Graphic3d_TOSM_FRAGMENT)
 
         defaults = dict(
             Method=method,
             RaytracingDepth=d.raytracing_depth,
-            # IsGlobalIlluminationEnabled=d.raytracing,
+            IsGlobalIlluminationEnabled=not d.raytracing,
             IsShadowEnabled=d.shadows,
             IsReflectionEnabled=d.reflections,
             IsAntialiasingEnabled=d.antialiasing,
             IsTransparentShadowEnabled=d.shadows,
             NbMsaaSamples=4,
+            NbRayTracingTiles=128,
             StereoMode=Graphic3d_StereoMode_QuadBuffer,
             AnaglyphFilter=Graphic3d_RenderingParams.Anaglyph_RedCyan_Optimized,
             ToReverseStereo=False
@@ -759,6 +767,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         defaults.update(**params)
         for attr, v in defaults.items():
             setattr(rendering_params, attr, v)
+
         self.redraw()
 
     def set_background_gradient(self, gradient):
@@ -781,13 +790,13 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     def set_shape_color(self, color):
         self.shape_color = color_to_quantity_color(color)
 
-    def set_trihedron_mode(self, mode):
+    def set_trihedron_mode(self, mode: str):
         attr = 'Aspect_TOTP_{}'.format(mode.upper().replace("-", "_"))
         position = getattr(Aspect, attr)
         self.v3d_view.TriedronDisplay(position, BLACK, 0.1, V3d.V3d_ZBUFFER)
         self.redraw()
 
-    def set_grid_mode(self, mode):
+    def set_grid_mode(self, mode: str):
         if not mode:
             self.v3d_viewer.DeactivateGrid()
         else:
@@ -805,7 +814,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     # -------------------------------------------------------------------------
     # Viewer interaction
     # -------------------------------------------------------------------------
-    def set_selection_mode(self, mode):
+    def set_selection_mode(self, mode: str):
         """ Set the selection mode.
 
         Parameters
@@ -826,14 +835,14 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         mode = getattr(TopAbs, attr, TopAbs.TopAbs_SHAPE)
         ais_context.Activate(AIS_Shape.SelectionMode_(mode))
 
-    def set_display_mode(self, mode):
+    def set_display_mode(self, mode: str):
         mode = V3D_DISPLAY_MODES.get(mode)
         if mode is None:
             return
         self.ais_context.SetDisplayMode(mode, True)
         self.redraw()
 
-    def set_view_mode(self, mode):
+    def set_view_mode(self, mode: str):
         """ Set the view mode or (or direction)
 
         Parameters
@@ -893,6 +902,26 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     # -------------------------------------------------------------------------
     # Display Handling
     # -------------------------------------------------------------------------
+    def view_stats(self):
+        """ Get view stats information
+
+        Returns
+        -------
+        stats: String
+            The formatted stat string
+
+        Example
+        -------
+        FPS:          0.2 (0.9)
+        CPU FPS:      5.5 (13.4)
+        Layers:         5
+        Structs:        4
+        Rendered          (imm.)
+            Layers:     3 (2)
+        Structs:     4 (2)
+
+        """
+        return self.view.StatisticInformation().ToCString()
 
     def update_selection(self, pos, area, shift):
         """ Update the selection state

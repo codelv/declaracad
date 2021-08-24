@@ -1,0 +1,87 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from declaracad.occ.materials import (
+    PBRMaterial, Fresnel, color_from_rgbf, Glass, Brass
+)
+
+enamldef Ball(Part): part:
+    Cut:
+        color = part.color
+        material = part.material
+        Sphere: outer:
+            radius = 10
+        Sphere: inner:
+            radius = outer.radius-1
+        Cylinder:
+            radius = 5
+            height = outer.radius
+
+enamldef Assembly(Part):
+    Plane:
+        color = 'white'
+        position = (0, 0, -14)
+        bounds = [(-200, -200), (200, 200)]
+    Ball:
+        position = (10, 0)
+        direction = (-1, 1, 1)
+        material = 'plastic'
+        color = 'white'
+    Ball:
+        position = (10, -40)
+        direction = (-1, 1, 1)
+        material = 'brass'
+        color = 'gold'
+    Ball:
+        position = (10, 40)
+        direction = (-1, 1, 1)
+        material = 'satin'
+        color = 'teal'
+    Ball:
+        position = (40, 40)
+        direction = (-1, 1, 1)
+        material = 'metalized'
+        color = 'teal'
+    Ball:
+        position = (70, 40)
+        direction = (-1, 1, 1)
+        material = 'bronze'
+        #color = 'brown'
+    Looper:
+        iterable = range(0, 10)
+        Ball:
+            position = (100+loop.index*-25, -70)
+            direction = (-1, 1, 1)
+            color = 'green'
+            description = f'shininess = {loop.index/10}'
+            material = Material(
+                name='custom',
+                shininess=loop.index/10,
+                pbr=PBRMaterial(
+                    kd=(1, 1, 1),
+                    kt=(1, 1, 1),
+                    absorption=(0.75, 0.95, 0.9, 0.05),
+                    coat=Fresnel(model='dielectric', params=1.62),
+                    base=Fresnel(model='constant', params=1),
+                )
+            )
+    Looper:
+        iterable = range(0, 10)
+        Ball:
+            position = (100+loop.index*-25, 70)
+            direction = (-1, 1, 1)
+            color = 'blue'
+            attr v = (loop.index/10)
+            description = f'roughness = {v}'
+            material = Material(
+                name='custom',
+                specular_color='black',
+                #ambient_color='red',
+                shininess = 0.001,
+                pbr=PBRMaterial(
+                    ks=(v, v, v),
+                    roughness=v,
+                    le=(0.75, 0.95, 0.9),
+                    coat=Fresnel(model='dielectric', params=1.62),
+                    base=Fresnel(model='constant', params=1),
+                )
+            )

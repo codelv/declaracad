@@ -7,7 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from OCCT import Graphic3d
-from OCCT.Graphic3d import Graphic3d_MaterialAspect
+from OCCT.Graphic3d import (
+    Graphic3d_BSDF, Graphic3d_MaterialAspect, Graphic3d_PBRMaterial,
+    Graphic3d_Fresnel, Graphic3d_Vec3, Graphic3d_Vec4
+)
 from OCCT.Quantity import Quantity_Color, Quantity_TOC_RGB
 
 
@@ -39,12 +42,96 @@ def color_to_quantity_color(color):
     return result
 
 
+def fresnel_to_g3d_fresnel(fresnel):
+    """ Create a Graphic3d_Fresnel from the declaracad Fresnel definition
+
+    Parameters
+    ----------
+    material: declaracad.occ.materials.Fresnel
+        The fresnel definition
+
+    Returns
+    -------
+    result: Graphic3d_Fresnel
+        The fresnel
+
+    """
+    model = fresnel.model.title()
+    CreateFresnel = getattr(Graphic3d_Fresnel, f'Create{model}_')
+    # Convert tuple arguments to G3d Vec
+    params = fresnel.params
+    if not isinstance(fresnel.params, (tuple, list)):
+        params = [params]
+    args = (Graphic3d_Vec3(*param) if isinstance(param, tuple) else param
+            for param in params)
+    return CreateFresnel(*args)
+
+
+def create_pbr_material(material):
+    """ Create a Graphic3d_PBRMaterial from the declaracad Material definition
+
+    Parameters
+    ----------
+    material: declaracad.occ.materials.Material
+        The material definition
+
+    Returns
+    -------
+    result: Graphic3d_PBRMaterial
+        The material
+
+    """
+    d = material.pbr
+    if d._data is not None:
+        return d._data
+
+    bsdf = Graphic3d_BSDF()
+    bsdf.Kd = Graphic3d_Vec3(*d.kd)
+    bsdf.Kt = Graphic3d_Vec3(*d.kt)
+    bsdf.Le = Graphic3d_Vec3(*d.le)
+
+    if len(d.kc) == 4:
+        *v, w = d.kc
+        bsdf.Kc = Graphic3d_Vec4(Graphic3d_Vec3(*v), w)
+    else:
+        bsdf.Kc = Graphic3d_Vec4(Graphic3d_Vec3(*d.kc))
+
+    if len(d.ks) == 4:
+        *v, w = d.ks
+        bsdf.Ks = Graphic3d_Vec4(Graphic3d_Vec3(*v), w)
+    else:
+        bsdf.Ks = Graphic3d_Vec4(Graphic3d_Vec3(*d.ks))
+
+    if len(d.absorption) == 4:
+        *v, w = d.absorption
+        bsdf.Absorption = Graphic3d_Vec4(Graphic3d_Vec3(*v), w)
+    else:
+        bsdf.Absorption = Graphic3d_Vec4(Graphic3d_Vec3(*d.absorption))
+
+    if d.coat:
+        bsdf.FresnelCoat = fresnel_to_g3d_fresnel(d.coat)
+    if d.base:
+        bsdf.FresnelBase = fresnel_to_g3d_fresnel(d.base)
+
+    mat = d._data = Graphic3d_PBRMaterial(bsdf)
+    mat.SetEmission(Graphic3d_Vec3(*d.emission))
+    mat.SetRoughness(d.roughness)
+    mat.SetMetallic(d.metallic)
+    if d.color:
+        c, t = color_to_quantity_color(d.color)
+        mat.SetColor(c)
+        if t is not None:
+            mat.SetAlpha(t)
+
+    return mat
+
+
 def material_to_material_aspect(material):
     """ Convert a material name to a Graphic3d material
 
     Parameters
     ----------
-    material: declaracad.shape.Material
+    material: declaracad.occ.materials.Material
         The material definition
 
     Returns
@@ -59,11 +146,19 @@ def material_to_material_aspect(material):
         name = material.name.upper()
     if name == 'CUSTOM':
         if material._data is not None:
-            return material._data
-        a = Graphic3d_MaterialAspect()
-        a.SetTransparency(material.transparency)
+            return material._data  # Cached value
+        a = material._data = Graphic3d_MaterialAspect(
+            Graphic3d.Graphic3d_NameOfMaterial_UserDefined)
+        a.SetMaterialType(Graphic3d.Graphic3d_MATERIAL_PHYSIC)
+        if material.transparency:
+            a.SetTransparency(material.transparency)
         a.SetShininess(material.shininess)
         a.SetRefractionIndex(material.refraction_index)
+
+        if material.pbr is not None:
+            mat = create_pbr_material(material)
+            a.SetPBRMaterial(mat)
+
         if material.color:
             c, t = color_to_quantity_color(material.color)
             a.SetColor(c)
@@ -79,7 +174,7 @@ def material_to_material_aspect(material):
         if material.emissive_color:
             c, t = color_to_quantity_color(material.emissive_color)
             a.SetEmissiveColor(c)
-        material._data = a
+
         return a
     ma = OCC_MATERIAL_CACHE.get(name)
     if ma is None:

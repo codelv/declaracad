@@ -237,6 +237,7 @@ class OccShape(ProxyShape):
             ais_shape.SetColor(c)
             if a is not None:
                 ais_shape.SetTransparency(a)
+
         ais_shape.SetLocalTransformation(self.location.Transformation())
         return ais_shape
 

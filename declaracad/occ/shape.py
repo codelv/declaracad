@@ -34,6 +34,8 @@ from .geom import (
     coerce_rotation, settings
 )
 
+from .materials import Texture, Material
+
 
 class ProxyShape(ProxyControl):
     #: A reference to the Shape declaration.
@@ -242,66 +244,6 @@ class ProxyLoadShape(ProxyShape):
         raise NotImplementedError
 
 
-class TextureParameters(Atom):
-    """ Texture parametric parameter ranges
-    """
-    enabled = Bool(True)
-    u = Float(0.0, strict=False)
-    v = Float(0.0, strict=False)
-
-
-def coerce_texture(arg):
-    if isinstance(arg, dict):
-        return TextureParameters(**arg)
-    enabled = arg[2] if len(arg) > 2 else True
-    return TextureParameters(u=arg[0], v=arg[1], enabled=enabled)
-
-
-class Texture(Atom):
-
-    #: Path to the texture file or image
-    path = Str()
-
-    #: If given, repeat in the u and v dimension
-    repeat = Coerced(TextureParameters,
-                     kwargs={'enabled': True, 'u': 1, 'v': 1},
-                     coercer=coerce_texture)
-
-    #: If given, adjust th eorigin to the u and v dimension
-    origin = Coerced(TextureParameters,
-                     kwargs={'enabled': True, 'u': 0, 'v': 0},
-                     coercer=coerce_texture)
-
-    #: If given, scale in the u and v dimension
-    scale = Coerced(TextureParameters,
-                    kwargs={'enabled': True, 'u': 1, 'v': 1},
-                    coercer=coerce_texture)
-
-
-class Material(Atom):
-    #: Name
-    name = Str()
-
-    #: Internal data
-    _data = Value()
-
-    def __init__(self, name="", **kwargs):
-        """ Constructor which accepts a material name. Use 'custom'
-        to define your own.
-
-        """
-        super().__init__(name=name, **kwargs)
-
-    transparency = FloatRange(0.0, 1.0, 0.0)
-    shininess = FloatRange(0.0, 1.0, 0.5)
-    refraction_index = FloatRange(1.0, value=1.0)
-
-    #: Color
-    color = ColorMember()
-    ambient_color = ColorMember()
-    diffuse_color = ColorMember()
-    specular_color = ColorMember()
-    emissive_color = ColorMember()
 
 
 class Shape(ToolkitObject):
