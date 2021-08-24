@@ -1,5 +1,5 @@
 """
-Copyright (c) 2018-2019, Jairus Martin.
+Copyright (c) 2018-2021, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -13,10 +13,10 @@ from enaml.qt.qt_control import QtControl
 from OCCT.gp import gp_Pnt, gp_Dir, gp_Ax3
 from OCCT.Graphic3d import Graphic3d_ClipPlane, Graphic3d_MaterialAspect
 
-from .utils import color_to_quantity_color
-from ..widgets.occ_clipped_plane import ProxyOccViewerClippedPlane
-
 from declaracad.core.utils import log
+from declaracad.occ.impl.utils import color_to_quantity_color
+from declaracad.occ.widgets.occ_clipped_plane import ProxyOccViewerClippedPlane
+
 
 
 class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
