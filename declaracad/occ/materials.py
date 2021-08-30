@@ -127,17 +127,29 @@ class Material(Atom):
     transparency = FloatRange(0.0, 1.0, 0.0)
     shininess = FloatRange(0.0, 1.0, 0.039)
     refraction_index = FloatRange(1.0, 3.0, 1.5)
-    #ambient_coef = FloatRange(0.0, 1.0, 0.25)
-    #diffuse_coef = FloatRange(0.0, 1.0, 0.25)
 
+    #: PBR Material definintion
     pbr = Typed(PBRMaterial)
 
-    #: Color
+    #: Colors
     color = ColorMember()
     ambient_color = ColorMember()
     diffuse_color = ColorMember()
     specular_color = ColorMember()
     emissive_color = ColorMember()
+
+
+def get_builtin_materials():
+    from OCCT import Graphic3d
+    prefix = "Graphic3d_NOM_"
+    n = len(prefix)
+    return [
+        d[n:].lower() for d in dir(Graphic3d) if d.startswith(prefix)
+        if 'USER' not in d.upper()]
+
+
+#: Materials builtin to opencascade
+MATERIALS = get_builtin_materials()
 
 
 Brass = Material(

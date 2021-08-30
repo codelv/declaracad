@@ -79,6 +79,7 @@ MARKERS = {
     'medium-ring': Aspect.Aspect_TOM_RING2,
     'small-ring': Aspect.Aspect_TOM_RING3,
     'ball': Aspect.Aspect_TOM_BALL,
+    'dot': Aspect.Aspect_TOM_POINT,
 }
 
 

@@ -244,8 +244,6 @@ class ProxyLoadShape(ProxyShape):
         raise NotImplementedError
 
 
-
-
 class Shape(ToolkitObject):
     """ Abstract shape component that can be displayed on the screen
     and represented by the framework.
@@ -363,7 +361,7 @@ class Shape(ToolkitObject):
     bbox = Property(_get_bounding_box, cached=True)
 
     @observe('color', 'transparency', 'display',
-             'texture', 'position', 'direction')
+             'texture', 'position', 'direction', 'rotation')
     def _update_proxy(self, change):
         super()._update_proxy(change)
 

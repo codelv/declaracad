@@ -300,6 +300,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     #: Viewer widget
     widget = Typed(QtViewer3d)
 
+    #: Use view animations
+    animations = Bool()
+
     #: Update count
     _redraw_blocked = Bool()
 
@@ -810,6 +813,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         c2, _ = color_to_quantity_color(colors[1])
         grid = self.v3d_viewer.Grid()
         grid.SetColors(c1, c2)
+
+    def set_animations(self, enabled):
+        self.animations = enabled
 
     # -------------------------------------------------------------------------
     # Viewer interaction

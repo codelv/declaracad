@@ -9,8 +9,10 @@ Created on Aug 3, 2021
 
 @author: jrm
 """
+import os
 import warnings
-from atom.api import Typed
+from atom.api import Typed, ForwardTyped
+from typing import Iterator
 from OCCT.BRepCheck import BRepCheck_Analyzer
 from OCCT.BRepMesh import (
     BRepMesh_Context,
@@ -21,11 +23,19 @@ from OCCT.BRepMesh import (
 from OCCT.ShapeBuild import ShapeBuild_ReShape
 from OCCT.ShapeFix import ShapeFix_Shape, ShapeFix_ShapeTolerance
 from OCCT.MeshVS import (
-    MeshVS_Mesh, MeshVS_MeshPrsBuilder, MeshVS_DrawerAttribute
+    MeshVS_Mesh, MeshVS_MeshPrsBuilder, MeshVS_NodalColorPrsBuilder,
+    MeshVS_ElementalColorPrsBuilder,
+    MeshVS_DA_MarkerColor, MeshVS_DA_MarkerScale,  MeshVS_DA_DisplayNodes,
+    MeshVS_DA_MarkerType, MeshVS_DA_ShowEdges, MeshVS_DA_EdgeColor,
+    MeshVS_DA_EdgeWidth, MeshVS_DA_BeamColor, MeshVS_DA_BeamWidth,
+    MeshVS_DA_BeamType, MeshVS_DA_InteriorColor, MeshVS_DA_BackInteriorColor,
+    MeshVS_DA_ColorReflection,
 )
-
+from OCCT.TColStd import TColStd_MapIteratorOfPackedMapOfInteger
 from .occ_shape import OccShape, OccDependentShape
-from ..mesh import Shape, ProxyMesh
+from .occ_draw import MARKERS
+from .utils import color_to_quantity_color
+from ..mesh import Shape, ProxyMesh, ProxyMeshTopology
 
 from declaracad.core.utils import log
 
@@ -46,15 +56,42 @@ except ImportError as e:
     SMESH_MeshVSLink = object
 
 
+class OccMeshTopology(ProxyMeshTopology):
+    mesh = ForwardTyped(lambda: OccMesh)
+
+    def _packed_map_iter(self, ref) -> Iterator[int]:
+        """ Iterate the map
+
+        """
+        it = TColStd_MapIteratorOfPackedMapOfInteger(ref)
+        while it.More():
+            yield it.Key()
+            it.Next()
+
+    def _get_nodes(self):
+        return self._packed_map_iter(self.mesh.vs_link.GetAllNodes())
+
+    def _get_elements(self):
+        return self._packed_map_iter(self.mesh.vs_link.GetAllElements())
+
+
 class OccMesh(OccDependentShape, ProxyMesh):
     """ Implementation is based on pySMESH by trelau
 
     """
     builder = Typed(MeshVS_MeshPrsBuilder)
+    node_builder = Typed(MeshVS_NodalColorPrsBuilder)
+    element_builder = Typed(MeshVS_ElementalColorPrsBuilder)
     ais_shape = Typed(MeshVS_Mesh)
     gen = Typed(SMESH_Gen)
     mesh = Typed(SMESH_Mesh)
     vs_link = Typed(SMESH_MeshVSLink)
+    topology = Typed(OccMeshTopology)
+
+    def _default_topology(self):
+        if self.ais_shape is None:
+            self.declaration.render()  # Force build the shape
+        return OccMeshTopology(mesh=self)
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -90,13 +127,72 @@ class OccMesh(OccDependentShape, ProxyMesh):
             #    vs_link = SMESH_MeshVSLink(mesh, d.group)
             #else:
             vs_link = self.vs_link = SMESH_MeshVSLink(mesh)
-
             mesh_vs.SetDataSource(vs_link)
             builder = self.builder = MeshVS_MeshPrsBuilder(mesh_vs)
+
+            node_builder = self.node_builder = MeshVS_NodalColorPrsBuilder(mesh_vs)
+            element_builder = self.element_builder = MeshVS_ElementalColorPrsBuilder(mesh_vs)
+
             mesh_vs.AddBuilder(builder)
             mesh_vs.SetDisplayMode(2)
-            #drawer = mesh.GetDrawer()
+            self.update_style()
+
+            if d.export_filename:
+                self.export(d.export_filename, d.export_type)
+
         self.shape = fixed_shape
+
+    def update_style(self):
+        d = self.declaration
+        drawer = self.ais_shape.GetDrawer()
+        # Nodes
+        if d.node_color:
+            c, t = color_to_quantity_color(d.node_color)
+            drawer.SetColor(MeshVS_DA_MarkerColor, c)
+            drawer.SetDouble(MeshVS_DA_MarkerScale, d.node_size)
+            drawer.SetBoolean(MeshVS_DA_DisplayNodes, True)
+            drawer.SetInteger(MeshVS_DA_MarkerType, MARKERS[d.node_type])
+        else:
+            drawer.SetBoolean(MeshVS_DA_DisplayNodes, False)
+
+        if d.edge_color:
+            c, t = color_to_quantity_color(d.edge_color)
+            drawer.SetColor(MeshVS_DA_EdgeColor, c)
+            drawer.SetDouble(MeshVS_DA_EdgeWidth, d.edge_size)
+            drawer.SetBoolean(MeshVS_DA_ShowEdges, True)
+        else:
+            drawer.SetBoolean(MeshVS_DA_ShowEdges, False)
+
+        if d.beam_color:
+            c, t = color_to_quantity_color(d.beam_color)
+            drawer.SetColor(MeshVS_DA_BeamColor, c)
+            drawer.SetDouble(MeshVS_DA_BeamWidth, d.beam_size)
+
+        if d.color:
+            c, t = color_to_quantity_color(d.color)
+            drawer.SetColor(MeshVS_DA_InteriorColor, c)
+        drawer.SetBoolean(MeshVS_DA_ColorReflection, True)
+
+    def export(self, filename, export_type, *args):
+        """ Export the mesh. The extension is added automatically
+
+        Parameters
+        ----------
+        filename: String
+            The base filename (excluding the extension)
+        export_type: String
+            The export type. Must map to one of the Export functions
+
+        """
+        d = self.declaration
+        filename = os.path.abspath(filename)
+        filename = f'{filename}.{export_type.lower()}'
+        log.info(f"Exporting mesh to '{filename}'")
+        export = getattr(self.mesh, f'Export{export_type.upper()}')
+        if export_type == 'stl' and not args:
+            args = [True]  # Use ascii
+        export(filename, *args)
+        log.info("Ok!")
 
     def _default_ais_shape(self):
         return self.mesh_vs

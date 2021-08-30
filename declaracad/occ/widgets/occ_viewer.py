@@ -192,6 +192,9 @@ class ProxyOccViewer(ProxyControl):
     def set_lock_zoom(self, locked):
         raise NotImplementedError
 
+    def set_animations(self, enabled):
+        raise NotImplementedError
+
     def fit_all(self):
         raise NotImplementedError
 
@@ -288,6 +291,9 @@ class OccViewer(Control):
     #: Raytracing depth
     raytracing_depth = d_(Int(3))
 
+    #: Enable animations
+    animations = d_(Bool(True))
+
     #: Enable hidden line removal
     hidden_line_removal = d_(Bool(False))
 
@@ -338,7 +344,7 @@ class OccViewer(Control):
              'shadows', 'reflections', 'antialiasing', 'lock_rotation',
              'lock_zoom', 'draw_boundaries', 'hidden_line_removal',
              'shape_color', 'raytracing_depth', 'lights', 'view_projection',
-             'grid_mode', 'grid_colors')
+             'grid_mode', 'grid_colors', 'animations')
     def _update_proxy(self, change):
         """ An observer which sends state change to the proxy.
         """

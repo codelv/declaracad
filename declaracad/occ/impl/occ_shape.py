@@ -365,7 +365,7 @@ class OccDependentShape(OccShape):
 
 class OccPart(OccDependentShape, ProxyPart):
     #: A reference to the toolkit shape created by the proxy.
-    builder = Typed(BRep_Builder)
+    builder = Typed(BRep_Builder, ())
 
     #: Location
     location = Typed(TopLoc_Location)
@@ -373,7 +373,13 @@ class OccPart(OccDependentShape, ProxyPart):
     #: Display each sub-item
     ais_shape = Typed(AIS_MultipleConnectedInteractive)
 
-    def get_transform(self):
+    def get_transform(self) -> gp_Trsf:
+        """ Compute the transform for locating the part.
+
+        This factors in the transforms applied to the part as well as the
+        position, direction and rotation attributes.
+
+        """
         result = super().get_transform()
         d = self.declaration
         for op in d.transform:
@@ -392,15 +398,18 @@ class OccPart(OccDependentShape, ProxyPart):
             result.Multiply(t)
         return result
 
-    def _default_location(self):
+    def _default_location(self) -> TopLoc_Location:
+        """ Set the location of this part based on the transformation.
+
+        """
         return TopLoc_Location(self.get_transform())
 
-    def _default_ais_shape(self):
+    def _default_ais_shape(self) -> AIS_MultipleConnectedInteractive:
         ais_obj = AIS_MultipleConnectedInteractive()
         for c in self.children():
             if isinstance(c, OccShape):
-                #ais_obj.Connect(c.ais_shape)
-                pass
+                ais_obj.Connect(c.ais_shape)
+        ais_obj.SetLocalTransformation(self.location.Transformation())
         return ais_obj
 
     def update_shape(self, change=None):
@@ -408,7 +417,7 @@ class OccPart(OccDependentShape, ProxyPart):
 
         """
         d = self.declaration
-        builder = self.builder = BRep_Builder()
+        builder = self.builder
         shape = TopoDS_Compound()
         builder.MakeCompound(shape)
         for c in self.children():
@@ -422,18 +431,33 @@ class OccPart(OccDependentShape, ProxyPart):
         shape.Location(location)
         self.shape = shape
 
-    def set_position(self, position):
-        new_location = self._default_location()
+    def update_location(self, change=None):
+        """ Recompute the location of this and all nested parts.
+
+        This only updates the viewer.
+
+        """
+        new_location = self.location = self._default_location()
         ais_shape = self.ais_shape
         viewer = self.viewer
 
-        # TODO: Not correct
+        # Recompute locations
         for c in self.walk_shapes():
-            viewer.ais_context.SetLocation(c.ais_shape, new_location)
+            loc = c.location = c._default_location()
+            viewer.ais_context.SetLocation(c.ais_shape, loc)
         viewer.update()
 
+    def set_position(self, position):
+        self.update_location()
+
+    def set_direction(self, direction):
+        self.update_location()
+
+    def set_rotation(self, rotation):
+        self.update_location()
+
     def set_transform(self, ops):
-        self.update_shape()
+        self.update_location()
 
 
 class OccFace(OccDependentShape, ProxyFace):

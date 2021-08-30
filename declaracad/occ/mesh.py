@@ -9,8 +9,11 @@ Created on Aug 3, 2021
 
 @author: jrm
 """
-from atom.api import Value, Typed, ForwardTyped, Enum, Dict, Bool
+from atom.api import (
+    Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property, Str
+)
 from enaml.core.declarative import d_, d_func
+from enaml.colors import ColorMember
 from .shape import ProxyShape, Shape
 
 
@@ -23,6 +26,47 @@ class ProxyMesh(ProxyShape):
 
     def set_disabled(self, disabled):
         raise NotImplementedError
+
+
+class ProxyMeshTopology(Atom):
+    #: Reference to the mesh
+    declaration = ForwardTyped(lambda: Mesh)
+
+    # ------------------------------------------------------------------
+    # Proxy API
+    # ------------------------------------------------------------------
+    def _get_nodes(self):
+        raise NotImplementedError
+
+    def _get_elements(self):
+        raise NotImplementedError
+
+    def _get_faces(self):
+        raise NotImplementedError
+
+    def _get_volumes(self):
+        raise NotImplementedError
+
+    def _get_groups(self):
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Pubilc API
+    # ------------------------------------------------------------------
+    #: Node iterator
+    nodes = Property(lambda s: s._get_nodes())
+
+    #: Elements iterator
+    elements = Property(lambda s: s._get_elements())
+
+    #: Faces iterator
+    faces = Property(lambda s: s._get_faces())
+
+    #: Volumes iterator
+    volumes = Property(lambda s: s._get_volumes())
+
+    #: Groups iterator
+    groups = Property(lambda s: s._get_groups())
 
 
 class Mesh(Shape):
@@ -58,6 +102,29 @@ class Mesh(Shape):
 
     #: Disable meshing
     disabled = d_(Bool())
+
+    #: Export type
+    export_type = d_(Enum('med', 'dat', 'unv', 'stl', 'cgns', 'gmf', 'sauv'))
+
+    #: If given, write the mesh to a file
+    export_filename = d_(Str())
+
+    # ---------------------------------------------------------------------
+    # Mesh display parameters
+    # ---------------------------------------------------------------------
+    node_color = d_(ColorMember())
+    node_size = d_(Float(1.0, strict=False))
+    node_type = d_(Enum(
+        'circle', 'ball', 'dot', 'plus', 'point', 'star', 'cross',
+        'point-in-circle', 'star-in-circle',
+        'plus-in-circle', 'cross-in-circle',
+        'large-ring', 'medium-ring', 'small-ring'))
+
+    edge_color = d_(ColorMember("grey"))
+    edge_size = d_(Float(1.0, strict=False))
+
+    beam_color = d_(ColorMember('black'))
+    beam_size = d_(Float(1.0, strict=False))
 
     @d_func
     def prepare_mesh(self, gen, mesh, shape):
