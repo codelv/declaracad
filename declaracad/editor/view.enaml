@@ -47,7 +47,7 @@ def detect_syntax(plugin, path):
         result = file_type
     else:
         result = plugin.file_associations.get(file_type, '')
-    log.info("Detected syntax: {}".format(result))
+    log.info("Using syntax: {}".format(result))
     return result
 
 
