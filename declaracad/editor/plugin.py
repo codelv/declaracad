@@ -22,8 +22,10 @@ from atom.api import (
 )
 
 from declaracad.core.api import Plugin, Model, log
+from .lexers import install_lexers # Install lexer
 from enaml.scintilla.themes import THEMES
 from enaml.scintilla.mono_font import MONO_FONT
+
 from enaml.application import timed_call
 from enaml.core.enaml_compiler import EnamlCompiler
 from enaml.workbench.core.execution_event import ExecutionEvent
@@ -137,6 +139,10 @@ class EditorPlugin(Plugin):
         'ts': 'javascript',
         'jsx': 'javascript',
         'md': 'markdown',
+        'gcode': 'gcode',
+        'nc': 'gcode',
+        'ncc': 'gcode',
+        'tap': 'gcode',
     }).tag(config=True)
 
     #: Key mappings
@@ -153,6 +159,7 @@ class EditorPlugin(Plugin):
     def start(self):
         """ Make sure the documents all open on startup """
         super().start()
+        install_lexers()
         self.workbench.application.deferred_call(
             self._update_area_layout, {'type': 'load'})
 
