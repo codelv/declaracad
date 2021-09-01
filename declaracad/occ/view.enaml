@@ -159,6 +159,7 @@ enamldef ModelViewer(OccViewer): viewer:
         'v': menu_view_direction.keymap,
         's': menu_selection_mode.keymap,
         'p': menu_projection.keymap,
+        'c': menu_clip_planes.keymap,
         'l': {
             'x': lambda: viewer.rotate_view(x=math.radians(-90)),
             'y': lambda: viewer.rotate_view(y=math.radians(-90)),
@@ -303,6 +304,19 @@ enamldef ModelViewer(OccViewer): viewer:
             ]
 
     func describe_selection(selection):
+        """ Create a text description of the selection.
+
+        Parameters
+        ----------
+        selection: ViewerSelection
+            The viewer selection
+
+        Returns
+        -------
+        desc: String
+            A string to display.
+
+        """
         if not selection or not selection.selection:
             return 'Nothing selected'
         desc = []
@@ -363,15 +377,61 @@ enamldef ModelViewer(OccViewer): viewer:
         return "\n".join(desc)
 
     func hide_notification():
+        """ Hide the previous notification message if any """
         if self.notification:
             self.notification.close()
 
     func show_notification(message):
+        """ Display a notification message.
+
+        Parameters
+        ----------
+        message: String
+            The message to show
+
+        """
         log.info(message)
         self.hide_notification()
         popup = NotificationPopup(self, message=message)
         popup.show()
         self.notification = popup
+
+    func toggle_clipped_plane(axis):
+        """ Show or hide the clipped plane slider for the given axis.
+
+        Parameters
+        ----------
+        axis: Int
+            The axis (0-2) for x, y, or z respectively
+        """
+        # Remove if it already exists
+        if axis in clipped_planes:
+            plns = viewer.clipped_planes.copy()
+            del plns[axis]
+        else:
+            # Create a plus and minus plane
+            maxes = viewer.bbox[3:]
+            d = [0, 0, 0]
+            d[axis] = 1
+            low_pln = OccViewerClippedPlane(
+                parent=viewer,
+                direction=tuple(d),
+                capping_color='black',
+            )
+
+            # Create for other side by flipping direction and
+            # positioning at the max
+            high_pln = OccViewerClippedPlane(
+                parent=viewer,
+                capping_color='black',
+                direction=tuple([-i for i in d]),
+                position=tuple([k*maxes[i] for i, k in enumerate(d)])
+            )
+            plns = viewer.clipped_planes.copy()
+            plns[axis] = (low_pln, high_pln)
+
+        # Update
+        viewer.clipped_planes = plns
 
     selection ::
         if selection and selection.selection:
@@ -499,48 +559,22 @@ enamldef ModelViewer(OccViewer): viewer:
                     checked << viewer.view_projection == loop_item
                     triggered :: set_projection_mode(loop_item)
 
-        Menu:
+        Menu: menu_clip_planes:
             title = 'Clip planes'
+            attr keymap = {
+                'x': lambda: viewer.toggle_clipped_plane(0),
+                'y': lambda: viewer.toggle_clipped_plane(1),
+                'z': lambda: viewer.toggle_clipped_plane(2)
+            }
             Looper:
-                iterable = (
-                    ('X', (1, 0, 0), 'red'),
-                    ('Y', (0, 1, 0), 'blue',),
-                    ('Z', (0, 0, 1), 'green')
-                )
+                iterable = 'XYZ'
                 Action:
                     text = loop_item[0]
-                    attr axis = loop_item[1].index(1)
+                    attr axis = loop.index
                     checkable = True
-                    checked << axis in viewer.clipped_planes
-                    triggered ::
-                        # Remove if it already exists
-                        if axis in clipped_planes:
-                            plns = viewer.clipped_planes.copy()
-                            del plns[axis]
-                        else:
-                            # Create a plus and minus plane
-                            maxes = viewer.bbox[3:]
+                    checked << loop.index in viewer.clipped_planes
+                    triggered :: viewer.toggle_clipped_plane(loop.index)
 
-                            d = loop_item[1]
-                            low_pln = OccViewerClippedPlane(
-                                parent=viewer,
-                                direction=d,
-                                capping_color=loop_item[2],
-                            )
-
-                            # Create for other side by flipping direction and
-                            # positioning at the max
-                            high_pln = OccViewerClippedPlane(
-                                parent=viewer,
-                                capping_color=loop_item[2],
-                                direction=tuple(-i for i in d),
-                                position=tuple(k*maxes[i] for i, k in enumerate(d))
-                            )
-                            plns = viewer.clipped_planes.copy()
-                            plns[axis] = (low_pln, high_pln)
-
-                        # Update
-                        viewer.clipped_planes = plns
             Action:
                 text = 'Clear all'
                 triggered :: viewer.clipped_planes = {}

@@ -201,6 +201,9 @@ class ProxyOccViewer(ProxyControl):
     def fit_selection(self):
         raise NotImplementedError
 
+    def clear_selection(self):
+        raise NotImplementedError
+
     def take_screenshot(self, filename):
         raise NotImplementedError
 
@@ -361,6 +364,10 @@ class OccViewer(Control):
     def fit_selection(self):
         """ Zoom in and center on the selected item(s) """
         self.proxy.fit_selection()
+
+    def clear_selection(self):
+        """ Clear selection """
+        self.proxy.clear_selection()
 
     def take_screenshot(self, filename):
         """ Take a screenshot and save it with the given filename """

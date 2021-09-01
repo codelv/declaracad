@@ -71,6 +71,7 @@ from declaracad.occ.impl.utils import (
     color_to_quantity_color, material_to_material_aspect
 )
 from declaracad.occ.impl.occ_shape import OccShape, OccPart
+from declaracad.occ.impl.occ_mesh import OccMesh
 from declaracad.occ.impl.occ_dimension import OccDimension
 from declaracad.occ.impl.occ_display import OccDisplayItem
 from declaracad.occ.widgets.occ_viewer import (
@@ -929,6 +930,12 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         """
         return self.view.StatisticInformation().ToCString()
 
+    def clear_selection(self):
+        """ Clear selection
+
+        """
+        self.ais_context.ClearSelected(True)
+
     def update_selection(self, pos, area, shift):
         """ Update the selection state
 
@@ -950,23 +957,23 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         # Lookup the shape declrations based on the selection context
         selection = {}
         shapes = []
-        displayed_shapes = self._displayed_shapes
-        occ_shapes = set(self._displayed_shapes.values())
+        occ_shapes = {s.ais_shape: s for s in self._displayed_shapes.values()}
         while ais_context.MoreSelected():
-            if ais_context.HasSelectedShape():
-                i = None
-                found = False
-                ais_shape = ais_context.SelectedInteractive()
+            ais_object = ais_context.SelectedInteractive()
+            occ_shape = occ_shapes.get(ais_object)
+            if occ_shape is not None:
+                d = occ_shape.declaration
                 topods_shape = ais_context.SelectedShape()
-                shape_type = topods_shape.ShapeType()
-                attr = str(shape_type).split("_")[-1].lower() + 's'
-                # Try long lookup based on topology
-                for occ_shape in occ_shapes:
-                    if ais_shape != occ_shape.ais_shape:
-                        continue
-                    found = True
+                if isinstance(occ_shape, OccMesh):
+                    info = selection.get(d)
+                    if info is None:
+                        info = selection[d] = {}
+                    # TODO: Ship it
 
-                    # Lookup index
+                elif not topods_shape.IsNull():
+                    # Try to lookup index based on topology
+                    shape_type = topods_shape.ShapeType()
+                    attr = str(shape_type).split("_")[-1].lower() + 's'
                     if attr == 'vertexs':
                         shape_list = occ_shape.topology.vertices
                     else:
@@ -974,8 +981,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                     for i, s in enumerate(shape_list):
                         if topods_shape.IsPartner(s):
                             break
-
-                    d = occ_shape.declaration
                     shapes.append(topods_shape)
                     # Insert what was selected into the options
                     info = selection.get(d)
@@ -987,15 +992,14 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                     selection_info[i] = topods_shape
 
                 # Mark it as found we don't know what shape it's from
-                if not found:
-                    if None not in selection:
-                        selection[None] = {}
-                    if attr not in selection[None]:
-                        selection[None][attr] = {}
-                    info = selection[None][attr]
-                    # Just keep incrementing the index
-                    info[len(info)] = topods_shape
-
+                #if not found:
+                #    if None not in selection:
+                #        selection[None] = {}
+                #    if attr not in selection[None]:
+                #        selection[None][attr] = {}
+                #    info = selection[None][attr]
+                #    # Just keep incrementing the index
+                #    info[len(info)] = topods_shape
             ais_context.NextSelected()
 
         if shift:
