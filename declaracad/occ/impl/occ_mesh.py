@@ -10,6 +10,7 @@ Created on Aug 3, 2021
 @author: jrm
 """
 import os
+import time
 import warnings
 from atom.api import Typed, ForwardTyped
 from typing import Iterator
@@ -74,6 +75,18 @@ class OccMeshTopology(ProxyMeshTopology):
     def _get_elements(self):
         return self._packed_map_iter(self.mesh.vs_link.GetAllElements())
 
+    def _default_node_count(self):
+        return self.mesh.mesh.NbNodes()
+
+    def _default_edge_count(self):
+        return self.mesh.mesh.NbEdges()
+
+    def _default_face_count(self):
+        return self.mesh.mesh.NbFaces()
+
+    def _default_volume_count(self):
+        return self.mesh.mesh.NbVolumes()
+
 
 class OccMesh(OccDependentShape, ProxyMesh):
     """ Implementation is based on pySMESH by trelau
@@ -119,9 +132,12 @@ class OccMesh(OccDependentShape, ProxyMesh):
         if not d.disabled:
             mesh.ShapeToMesh(fixed_shape)
             d.prepare_mesh(gen, mesh, fixed_shape)
+            t = time.time()
+            log.debug("Computing mesh...")
             result = gen.Compute(mesh, mesh.GetShapeToMesh())
             if not result:
                 raise RuntimeError(f"Failed to mesh {d}: {result}")
+            log.debug("Done! ({}ms)".format(round((time.time()-t)/1000, 2)))
 
             #if d.group:
             #    vs_link = SMESH_MeshVSLink(mesh, d.group)
@@ -129,13 +145,18 @@ class OccMesh(OccDependentShape, ProxyMesh):
             vs_link = self.vs_link = SMESH_MeshVSLink(mesh)
             mesh_vs.SetDataSource(vs_link)
             builder = self.builder = MeshVS_MeshPrsBuilder(mesh_vs)
-
-            node_builder = self.node_builder = MeshVS_NodalColorPrsBuilder(mesh_vs)
-            element_builder = self.element_builder = MeshVS_ElementalColorPrsBuilder(mesh_vs)
-
-            mesh_vs.AddBuilder(builder)
-            mesh_vs.SetDisplayMode(2)
+            node_builder = self.node_builder = MeshVS_NodalColorPrsBuilder(
+                mesh_vs, 3 | 8, vs_link, 1)
+            element_builder = self.element_builder = MeshVS_ElementalColorPrsBuilder(
+                mesh_vs, 3 | 10, vs_link, 2)
             self.update_style()
+            d.colorize_mesh()
+            mesh_vs.AddBuilder(builder, True)
+            mesh_vs.AddBuilder(node_builder)
+            mesh_vs.AddBuilder(element_builder)
+            mesh_vs.SetDisplayMode(2)  # Shaded
+            mesh_vs.UpdateSelectableNodes()
+            #mesh_vs.SetMeshSelMethod(30)
 
             if d.export_filename:
                 self.export(d.export_filename, d.export_type)
@@ -202,3 +223,15 @@ class OccMesh(OccDependentShape, ProxyMesh):
 
     def set_algorithm(self, algo):
         self.update_shape()
+
+    def set_node_color(self, index, color):
+        c, _ = color_to_quantity_color(color)
+        self.node_builder.SetColor(index, c)
+
+    def set_element_color(self, index, front_color, back_color=None):
+        front, _ = color_to_quantity_color(front_color)
+        if back_color is None:
+            self.element_builder.SetColor1(index, front)
+        else:
+            back, _ = color_to_quantity_color(back_color)
+            self.element_builder.SetColor2(index, front, back)

@@ -10,7 +10,8 @@ Created on Aug 3, 2021
 @author: jrm
 """
 from atom.api import (
-    Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property, Str
+    Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property,
+    Str, Int
 )
 from enaml.core.declarative import d_, d_func
 from enaml.colors import ColorMember
@@ -25,6 +26,12 @@ class ProxyMesh(ProxyShape):
         raise NotImplementedError
 
     def set_disabled(self, disabled):
+        raise NotImplementedError
+
+    def set_node_color(self, index, color):
+        raise NotImplementedError
+
+    def set_element_color(self, index, front_color, back_color=None):
         raise NotImplementedError
 
 
@@ -56,14 +63,26 @@ class ProxyMeshTopology(Atom):
     #: Node iterator
     nodes = Property(lambda s: s._get_nodes())
 
+    #: Number of nodes
+    node_count = Int()
+
     #: Elements iterator
     elements = Property(lambda s: s._get_elements())
+
+    #: Number of edges
+    edge_count = Int()
 
     #: Faces iterator
     faces = Property(lambda s: s._get_faces())
 
+    #: Number of faces
+    face_count = Int()
+
     #: Volumes iterator
     volumes = Property(lambda s: s._get_volumes())
+
+    #: Number of volumes
+    volume_count = Int()
 
     #: Groups iterator
     groups = Property(lambda s: s._get_groups())
@@ -142,3 +161,23 @@ class Mesh(Shape):
 
         """
         raise NotImplementedError
+
+    @d_func
+    def colorize_mesh(self):
+        """ This is invoked after the mesh is computed. The topology can
+        be used to apply colors to nodes and elements.
+
+        """
+        pass
+
+    def set_node_color(self, index, color):
+        """ Set the the color of the given node index
+
+        """
+        self.proxy.set_node_color(index, color)
+
+    def set_element_color(self, index, front_color, back_color=None):
+        """ Set the the front and back colors of the given element index
+
+        """
+        self.proxy.set_element_color(index, front_color, back_color)
