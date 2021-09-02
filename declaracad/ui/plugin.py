@@ -127,7 +127,7 @@ class DeclaracadPlugin(Plugin):
                 dock_items.append(item)
 
         # Update items
-        log.debug("Updating dock items: {}".format(dock_items))
+        # log.debug("Updating dock items: {}".format(dock_items))
         self.dock_items = dock_items
         self._refresh_layout(layout)
 
@@ -185,5 +185,5 @@ class DeclaracadPlugin(Plugin):
 
         #: Update items
         settings_pages.sort(key=lambda p: p.name)
-        log.debug("Updating settings pages: {}".format(settings_pages))
+        # log.debug("Updating settings pages: {}".format(settings_pages))
         self.settings_pages = settings_pages

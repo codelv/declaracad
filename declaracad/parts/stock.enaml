@@ -1,0 +1,117 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+inch = 25.4
+
+
+enamldef RectangularTube(Part): part:
+    """ Steel rectangular tubing
+
+    """
+    # Outer dimensions
+    attr width = 2*inch
+    attr height = 2*inch
+    attr thickness = 1/8*inch
+    attr length = width
+    alias profile
+    material = 'steel'
+    description = f'{round(width, 3)} x {round(height, 3)} tube'
+    Extrude:
+        material = part.material
+        color = part.color
+        transparency = part.transparency
+        vector = (0, 0, length)
+        Cut:
+            Face:
+                Rectangle: profile:
+                    position = (-width/2, -height/2)
+                    width = part.width
+                    height = part.height
+                    rx = 1/4*inch
+            Face:
+                Offset:
+                    shape = profile
+                    offset = -part.thickness
+
+
+enamldef RoundTube(Part): part:
+    attr diameter = 2*inch
+    attr thickness = 1/8*inch
+    attr length = 2*diameter
+    Extrude:
+        material = part.material
+        color = part.color
+        transparency = part.transparency
+        vector = (0, 0, length)
+        Cut:
+            Face:
+                Circle: profile:
+                    radius = diameter/2
+            Face:
+                Offset:
+                    offset = -thickness
+                    shape = profile
+
+
+enamldef AngleBar(Part): part:
+    """ Angle iron
+
+    Use `square = True` to disable fillets
+
+    """
+    # Outer dimensions
+    attr width = 2*inch
+    attr height = 2*inch
+    attr thickness = 1/8*inch
+    attr length = width
+    attr square: bool = False
+    attr inner_fillet = thickness
+    attr outer_fillet = thickness/2
+    material = 'steel'
+    description = f'{round(width, 3)} x {round(height, 3)} angle bar'
+
+    func get_ops():
+        ops = []
+        if inner_fillet > 0:
+            ops.append((inner_fillet, bar.topology.edges[13]))
+        if outer_fillet > 0:
+            ops.extend([
+                (outer_fillet, bar.topology.edges[9]),
+                (outer_fillet, bar.topology.edges[17]),
+            ])
+        return ops
+    Fillet:
+        operations = get_ops()
+        disabled = square or not operations
+        material = part.material
+        color = part.color
+        transparency = part.transparency
+        Extrude: bar:
+            vector = (0, 0, length)
+            Face:
+                Polygon: profile:
+                    points = [
+                        (0, height),
+                        (0, 0),
+                        (width, 0),
+                        (width, thickness),
+                        (thickness, thickness),
+                        (thickness, height),
+                    ]
+
+
+enamldef FlatBar(Part): part:
+    """ Flat bar in the with length in the z direction centered at the center
+    of the bar.
+
+    """
+    attr width = 1*inch
+    attr thickness = 1/4*inch
+    attr length = 2*inch
+    Box:
+        material = part.material
+        color = part.color
+        transparency = part.transparency
+        position = (-width/2, -thickness/2)
+        dx = width
+        dy = thickness
+        dz = length

@@ -67,6 +67,7 @@ from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TopLoc import TopLoc_Location
 from OCCT.V3d import V3d_Viewer, V3d_View, V3d_TypeOfOrientation
 
+from declaracad.core.utils import log
 from declaracad.occ.impl.utils import (
     color_to_quantity_color, material_to_material_aspect
 )
@@ -74,13 +75,12 @@ from declaracad.occ.impl.occ_shape import OccShape, OccPart
 from declaracad.occ.impl.occ_mesh import OccMesh
 from declaracad.occ.impl.occ_dimension import OccDimension
 from declaracad.occ.impl.occ_display import OccDisplayItem
-from declaracad.occ.widgets.occ_viewer import (
+from declaracad.occ.api import BBox, Topology
+from declaracad.viewer.widgets.occ_viewer import (
     ProxyOccViewer, ViewerSelection
 )
 
-from declaracad.occ.api import BBox, Topology
 
-from declaracad.core.utils import log
 
 if sys.platform == 'win32':
     from OCCT.WNT import WNT_Window
@@ -261,14 +261,14 @@ class QtViewer3d(QOpenGLWidget):
         modifiers = event.modifiers()
         view = self.proxy.v3d_view
         # ROTATE
-        if (buttons == Qt.LeftButton and not modifiers == Qt.ShiftModifier):
+        if buttons == Qt.LeftButton:
             #dx = pt.x() - self.dragStartPos.x()
             #dy = pt.y() - self.dragStartPos.y()
             if not self._lock_rotation:
                 view.Rotation(pt.x(), pt.y())
             self._drawbox = None
         # DYNAMIC ZOOM
-        elif (buttons == Qt.RightButton and not modifiers == Qt.ShiftModifier):
+        elif buttons == Qt.RightButton and not modifiers == Qt.ShiftModifier:
             view.Redraw()
             view.Zoom(abs(self.dragStartPos.x()), abs(self.dragStartPos.y()),
                       abs(pt.x()), abs(pt.y()))

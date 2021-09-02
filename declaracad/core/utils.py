@@ -20,7 +20,7 @@ import jsonpickle
 from contextlib import contextmanager
 from logging.handlers import RotatingFileHandler
 
-from atom.api import Atom, Value, Int, Bool, Bytes, ContainerList
+from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Int, Value
 
 from enaml.image import Image
 from enaml.icon import Icon, IconImage
@@ -154,17 +154,50 @@ def get_bootstrap_cmd():
     return cmd
 
 
-class JSONRRCProtocol(Atom, asyncio.Protocol):
+class JsonRpcProtocol(Atom, asyncio.Protocol):
     #: Process transport
     transport = Value()
 
-    def send_message(self, message):
-        response = {'jsonrpc': '2.0'}
-        response.update(message)
-        encoded_msg = jsonpickle.dumps(response).encode()+b'\r\n'
-        self.transport.write(encoded_msg)
+    #: ID count
+    _id = Int()
 
-    def data_received(self, data):
+    #: Holds responses temporarily
+    _responses = Dict()
+
+    #: Set when the protocol is ready
+    connected = Bool(False)
+
+    def invoke_method(self, method, *args, **kwargs) -> asyncio.Future:
+        """ Invoke the method with the attribute "on_{method}" on the remote
+        connection.
+
+        """
+        if args and kwargs:
+            raise ValueError("Can only use args or kwargs, not both")
+        f = asyncio.Future()
+        self._id += 1
+        self._responses[self._id] = f
+        self.send_message({
+            'method': method,
+            'params': args or kwargs,
+            'id': self._id
+        })
+        return f
+
+    def send_message(self, message: dict, attempts: int = 10):
+        if not self.connected:
+            if attempts <= 0:
+                raise RuntimeError(
+                    f"Could not send message: {message} "
+                    f"after several attempts")
+            log.debug(f"Note: Message delayed {self}: {message}")
+            timed_call(1000, self.send_message, message, attempts - 1)
+            return
+        log.debug(message)
+        encoded_msg = jsonpickle.dumps(message).encode()
+        self.transport.write(encoded_msg + b'\r\n')
+
+    def data_received(self, data: bytes):
         """ Process stdin as json-rpc request
 
         Parameters
@@ -177,7 +210,7 @@ class JSONRRCProtocol(Atom, asyncio.Protocol):
         for line in data.split(b'\n'):
             self.line_received(line.decode())
 
-    def line_received(self, line):
+    def line_received(self, line: str):
         """ Called when a newline is received
 
         Parameters
@@ -188,6 +221,7 @@ class JSONRRCProtocol(Atom, asyncio.Protocol):
         """
         if not line:
             return
+        log.debug(f"Received message '{line}'")
         try:
             request = jsonpickle.loads(line)
         except Exception as e:
@@ -197,10 +231,13 @@ class JSONRRCProtocol(Atom, asyncio.Protocol):
         request_id = request.get('id')
         method = request.get('method')
         if method is None:
-            return self.send_message({"id": request_id, "error": {
-                'code': -32600, 'message': "Invalid request"}})
+            if 'error' in request:
+                self.error_received(request_id, request['error'])
+            elif 'result' in request:
+                self.result_received(request_id, request['result'])
+            return
 
-        handler = getattr(self, 'handle_{}'.format(method), None)
+        handler = getattr(self, 'on_{}'.format(method), None)
         if handler is None:
             msg = f"Method '{method}' not found"
             return self.send_message({"id": request_id, 'error': {
@@ -214,8 +251,29 @@ class JSONRRCProtocol(Atom, asyncio.Protocol):
                 result = handler(*params)
             return self.send_message({'id': request_id, 'result': result})
         except Exception as e:
+            log.exception(e)
             return self.send_message({"id": request_id, 'error': {
                 'code': -32500, 'message': traceback.format_exc()}})
+
+    def error_received(self, request_id, error):
+        """ Standard error handler.
+
+        """
+        f = self._responses.pop(request_id, None)
+        msg = str(error.get('message', ''))
+        log.error("RemoteError: ")
+        for line in msg.split('\n'):
+            log.error(line)
+        if f is not None:
+            f.set_exception(RuntimeError(error))
+
+    def result_received(self, request_id, result):
+        """ Standard response handler.
+
+        """
+        f = self._responses.pop(request_id, None)
+        if f is not None:
+            f.set_result(result)
 
 
 class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
@@ -251,7 +309,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
         self.process_transport = transport
         self.transport = transport.get_pipe_transport(0)
 
-    def pipe_data_received(self, fd, data):
+    def pipe_data_received(self, fd: int, data: bytes):
         """ Forward calls to data_received or err_received based one the fd
 
         Parameters
@@ -270,7 +328,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
             else:
                 self.err_received(data)
 
-    def data_received(self, data):
+    def data_received(self, data: bytes):
         """ Called for stdout data and stderr data if err_to_out is True
 
         Parameters
@@ -281,7 +339,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
         """
         self.output.append(data)
 
-    def err_received(self, data):
+    def err_received(self, data: bytes):
         """ Called for stderr data if err_to_out is set to False
 
         Parameters

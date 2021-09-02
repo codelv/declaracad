@@ -21,9 +21,15 @@ from declaracad.ui.extensions import (
 
 
 def plugin_command(name, event):
+    """ Delegate the command to the plugin
+
+    """
     plugin = event.workbench.get_plugin('declaracad.viewer')
     handler = getattr(plugin, name)
-    handler(event)
+    if event.parameters:
+        handler(**event.parameters)
+    else:
+        handler()
 
 
 def export(event):
@@ -41,20 +47,6 @@ def screenshot(event):
         from .dialogs import ScreenCaptureDialog
     ScreenCaptureDialog(ui.window, plugin=plugin, event=event).exec_()
 
-
-def new_viewer(event):
-    editor_plugin = event.workbench.get_plugin('declaracad.editor')
-    viewer_plugin = event.workbench.get_plugin('declaracad.viewer')
-    dock = editor_plugin.get_dock_area()
-    position = event.parameters.get('position', 'right')
-    target = event.parameters.get('target', '')
-    with enaml.imports():
-        from declaracad.occ.view import ViewerDockItem
-    doc = event.parameters.get('document') or editor_plugin.active_document
-    item = ViewerDockItem(dock, plugin=viewer_plugin, document=doc)
-    item.renderer.document = doc
-    dock.update_layout(InsertItem(item=item.name, position=position,
-                                  target=target))
 
 def plugin_factory():
     from .plugin import ViewerPlugin
@@ -93,16 +85,16 @@ enamldef ViewerManifest(PluginManifest):
         point = 'enaml.workbench.core.commands'
         Command:
             id = 'declaracad.viewer.fit_all'
-            handler = lambda event:plugin_command('fit_all', event)
+            handler = lambda event: plugin_command('fit_all', event)
         Command:
             id = 'declaracad.viewer.run'
-            handler = lambda event:plugin_command('run', event)
+            handler = lambda event: plugin_command('run', event)
         Command:
             id = 'declaracad.viewer.export'
             handler = export
         Command:
             id = 'declaracad.viewer.new_viewer'
-            handler = new_viewer
+            handler = lambda event: plugin_command('add_viewer', event)
         Command:
             id = 'declaracad.viewer.screenshot'
             handler = screenshot

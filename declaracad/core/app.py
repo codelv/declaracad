@@ -55,6 +55,13 @@ class Application(QtApplication):
                 if 'loop stopped' not in str(e):
                     raise
 
+    def stop(self):
+        """ Stop the application
+
+        """
+        self.running = False
+        super().stop()
+
     async def main(self):
         """ Run any async deferred calls in the main ui loop.
 
@@ -78,7 +85,8 @@ class Application(QtApplication):
 
         """
         # HACK: Ignore this error, Qt works, shut up
-        if 'cannot enter context' in f"{context['exception']}":
+        msg = context.get('exception')
+        if 'cannot enter context' in str(msg):
             return
         return loop.default_exception_handler(context)
 

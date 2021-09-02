@@ -9,15 +9,17 @@ Created on Dec 7, 2017
 
 @author: jrm
 """
-from atom.api import Instance, Int, set_default
+from atom.api import Typed, ForwardTyped, Instance, Int, Bool, set_default
 from enaml.core.declarative import d_
 from enaml.widgets.api import (
     DockArea, DockItem, Window, Container, Label, RawWidget
 )
 from enaml.workbench.api import Plugin
+from enaml.qt.QtCore import Qt
 from enaml.qt.QtGui import QWindow
 from enaml.qt.QtWidgets import QWidget, QPlainTextEdit
-
+from enaml.qt.qt_window import QtWindow
+from enaml.qt.qt_factories import QT_FACTORIES
 
 # -----------------------------------------------------------------------------
 # Custom widgets
@@ -106,3 +108,25 @@ class PlainTextEdit(RawWidget):
         widget.setReadOnly(True)
         widget.setMaximumBlockCount(1000)
         return widget
+
+
+class QtFramelessWindow(QtWindow):
+    declaration = ForwardTyped(lambda: FramelessWindow)
+
+    def creation_flags(self):
+        flags = super().creation_flags()
+        if self.declaration.frameless:
+            flags |= Qt.FramelessWindowHint
+        return flags
+
+
+class FramelessWindow(Window):
+    proxy = Typed(QtFramelessWindow)
+
+    #: Frameless
+    frameless = d_(Bool())
+
+
+QT_FACTORIES.update({
+    'FramelessWindow': lambda: QtFramelessWindow,
+})

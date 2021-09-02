@@ -12,5 +12,5 @@ Created on Dec 6, 2015
 from .models import Model, Plugin
 from .widgets import PickableDockArea as DockArea
 from .widgets import PickableDockItem as DockItem
-from .widgets import EmbeddedWindow
+from .widgets import EmbeddedWindow, FramelessWindow
 from .utils import log

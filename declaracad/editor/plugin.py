@@ -22,14 +22,13 @@ from atom.api import (
 )
 
 from declaracad.core.api import Plugin, Model, log
-from .lexers import install_lexers # Install lexer
 from enaml.scintilla.themes import THEMES
 from enaml.scintilla.mono_font import MONO_FONT
-
 from enaml.application import timed_call
 from enaml.core.enaml_compiler import EnamlCompiler
 from enaml.workbench.core.execution_event import ExecutionEvent
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
+from .lexers import install_lexers  # Install lexer
 from types import ModuleType
 from glob import glob
 
@@ -67,6 +66,9 @@ class Document(Model):
 
     #: Any autocomplete suggestions
     suggestions = List()
+
+    def __repr__(self):
+        return "Document<name='{}'>".format(self.name)
 
     def _default_source(self):
         """ Load the document from the path given by `name`.
@@ -219,7 +221,6 @@ class EditorPlugin(Plugin):
 
         # Remove ops
         if ops:
-            log.debug(ops)
             area.update_layout(ops)
 
         # Add each one at a time
@@ -227,7 +228,8 @@ class EditorPlugin(Plugin):
                    if (item.name.startswith("editor-item") and
                    item.name not in removed_targets)])
 
-        log.debug("Editor added=%s removed=%s targets=%s", added, removed, targets)
+        # log.debug(
+        #    "Editor added=%s removed=%s targets=%s", added, removed, targets)
 
         # Sort documents so active is last so it's on top when we restore
         # from a previous state

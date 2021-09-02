@@ -15,28 +15,37 @@ import sys
 import json
 import time
 import enaml
-import atexit
 import asyncio
 import functools
 import jsonpickle
+from typing import List as ListType
+from typing import Optional, Iterator, TYPE_CHECKING
 from types import ModuleType
+from asyncio.base_events import Server
 from atom.api import (
-    Atom, ContainerList, Str, Float, Dict, Bool, Int, Instance, Enum,
-    ForwardInstance, Constant, observe, set_default
+    Atom, ContainerList, Str, Float, Dict, Bool, Int, Instance, Enum, Property,
+    ForwardTyped, ForwardInstance, Constant, observe, Typed, set_default
 )
 from declaracad.core.api import Plugin, Model, log
-from declaracad.core.utils import ProcessLineReceiver, get_bootstrap_cmd
-
+from declaracad.core.utils import (
+    JsonRpcProtocol, ProcessLineReceiver, get_bootstrap_cmd,
+)
+from declaracad.occ.shape import Part
 from enaml.application import timed_call, deferred_call
 from enaml.core.parser import parse
 from enaml.core.import_hooks import EnamlCompiler
 from enaml.colors import ColorMember
+from enaml.layout.api import InsertItem
 
-from .shape import Part
+
+if TYPE_CHECKING:
+    from declaracad.editor.plugin import Document
+    with enaml.imports():
+        from .view import ViewerDockItem
 
 
 @functools.lru_cache
-def is_remote_attr(name):
+def is_remote_attr(name: str):
     """ Check if the given attr name is valid on the remote viewer.
 
     """
@@ -58,6 +67,12 @@ def viewer_factory():
     return ViewerDockItem
 
 
+def remote_viewer():
+    with enaml.imports():
+        from .view import RemoteViewer
+    return RemoteViewer
+
+
 def document_type():
     from declaracad.editor.plugin import Document
     return Document
@@ -69,7 +84,7 @@ class EmptyFileError(Exception):
     """
 
 
-def load_model(filename, source=None):
+def load_model(filename: str, source: Optional[str] = None):
     """ Load a DeclaraCAD model from an enaml file, source, or a shape
     supported by the LoadShape node.
 
@@ -112,6 +127,7 @@ def load_model(filename, source=None):
 
 
 class ModelExporter(Atom):
+    """ Interface for model exporters """
     extension = ''
     path = Str()
     filename = Str()
@@ -162,17 +178,20 @@ class ScreenshotOptions(Atom):
 
 
 class ViewerProcess(ProcessLineReceiver):
-    #: Window id obtained after starting the process
-    window_id = Int()
+    #: Viewer instance
+    viewer = ForwardTyped(viewer_factory)
 
     #: Process handle
     process = Instance(object)
 
+    #: Server protocol
+    protocol = ForwardTyped(lambda: RemoteViewerServerProtocol)
+
     #: Reference to the plugin
-    plugin = ForwardInstance(lambda: ViewerPlugin)
+    plugin = ForwardTyped(lambda: ViewerPlugin)
 
     #: Document
-    document = ForwardInstance(document_type)
+    document = ForwardTyped(document_type)
 
     #: Rendering error
     errors = Str()
@@ -186,15 +205,6 @@ class ViewerProcess(ProcessLineReceiver):
     #: Max number it will attempt to restart
     max_retries = Int(10)
 
-    #: ID count
-    _id = Int()
-
-    #: Holds responses temporarily
-    _responses = Dict()
-
-    #: Seconds to ping
-    _ping_rate = Int(40)
-
     #: Capture stderr separately
     err_to_out = set_default(False)
 
@@ -202,46 +212,45 @@ class ViewerProcess(ProcessLineReceiver):
         if self.document:
             # Trigger a reload
             self.document.version += 1
-        else:
-            self.set_version(self._id)
+        elif self.protocol:
+            self.protocol.set('version', self._id)
 
-    @observe('document', 'document.version')
+    @observe('document')
     def _update_document(self, change):
-        doc = self.document
-        if doc is None:
-            self.set_filename('-')
-        else:
-            self.set_filename(doc.name)
-            self.set_version(doc.version)
-
-    def send_message(self, method, *args, **kwargs):
-        # Defer until it's ready
-        if not self.transport or not self.window_id:
-            #log.debug('renderer | message not ready deferring')
-            timed_call(1000, self.send_message, method, *args, **kwargs)
+        protocol = self.protocol
+        if protocol is None:
             return
-        _id = kwargs.pop('_id')
-        _silent = kwargs.pop('_silent', False)
+        name = self.document.name if self.document else '-'
+        protocol.set('filename', name)
 
-        request = {'jsonrpc': '2.0', 'method': method, 'params': args or kwargs}
-        if _id is not None:
-            request['id'] = _id
-        if not _silent:
-            log.debug(f'renderer | sent | {request}')
-        encoded_msg = jsonpickle.dumps(request).encode() + b'\r\n'
-        deferred_call(self.transport.write, encoded_msg)
+    @observe('document.version')
+    def _update_version(self, change):
+        protocol = self.protocol
+        if protocol is None:
+            return
+        doc = self.document
+        if doc is not None:
+            protocol.set('version', doc.version)
 
     async def start(self):
-        atexit.register(self.terminate)
         cmd = get_bootstrap_cmd()
-        cmd.extend(['view', '-', '-f'])
+        cmd.extend([
+            'view', '-',
+            '--port', str(self.plugin.port),
+            '--ref', self.viewer.name
+        ])
+        log.debug(f"Spawning '{' '.join(cmd)}'")
         loop = asyncio.get_event_loop()
         self.process = await loop.subprocess_exec(lambda: self, *cmd)
         return self.process
 
     def restart(self):
-        self.window_id = 0
         self.restarts += 1
+
+        if not self.plugin.port:
+            # The server port is not available at startup until bound
+            timed_call(100, self.restart)
+            return
 
         # TODO: 100 is probably excessive
         if self.restarts > self.max_retries:
@@ -253,63 +262,121 @@ class ViewerProcess(ProcessLineReceiver):
             raise RuntimeError(
                 "renderer | Failed to successfully start renderer aborting!")
 
-        log.debug(f"Attempting to restart viewer {self.process}")
+        log.debug(f"Attempting to restart remote viewer {self.viewer.name}")
         deferred_call(self.start)
 
     def connection_made(self, transport):
         super().connection_made(transport)
-        self.schedule_ping()
         self.terminated = False
 
-    def data_received(self, data):
-        line = data.decode()
-        try:
-            response = jsonpickle.loads(line)
-            # log.debug(f"viewer | resp | {response}")
-        except Exception as e:
-            log.debug(f"viewer | out | {line.rstrip()}")
-            response = {}
+    def err_received(self, data):
+        """ Catch and log error output attempting to decode it
 
-        doc = self.document
+        """
+        for line in data.split(b'\n'):
+            if not line:
+                continue
+            if line.startswith(b'QWidget::') or line.startswith(b'QPainter::'):
+                continue
+            try:
+                line = line.decode()
+                log.debug(f"render | err | {line}")
+                if self.document:
+                    self.document.errors.append(line)
+            except Exception as e:
+                log.debug(f"render | err | {line}")
 
-        if not isinstance(response, dict):
-            log.debug(f"viewer | out | {response.rstrip()}")
-            return
-        elif response:
-            log.debug(f"viewer | out | {response}")
+    def process_exited(self, reason=None):
+        log.warning(f"renderer | process ended: {reason}")
+        if not self.terminated:
+            # Clear the filename on crash so it works when reset
+            self.restart()
+        log.warning("renderer | stdout closed")
 
-        #: Special case for startup
+    def terminate(self):
+        self.protocol.transport.close()
+        self.terminated = True
+        super().terminate()
+
+
+class RemoteViewerServerProtocol(JsonRpcProtocol):
+    """ Protocol to talk with the remote viewer
+
+    """
+    #: Window id obtained after starting the process
+    window_id = Int()
+
+    #: Reference to the Viewer plugin
+    plugin = ForwardTyped(lambda: ViewerPlugin)
+
+    #: Reference to the Viewer dock item
+    dock_item = ForwardTyped(viewer_factory)
+
+    #: Reference to the document
+    document = Property(lambda s: s.dock_item.process.document if s.dock_item else None)
+
+    # -------------------------------------------------------------------------
+    # Remote viewer message handlers
+    # -------------------------------------------------------------------------
+    def connection_made(self, transport):
+        self.transport = transport
+        self.connected = True
+        log.debug(f"Remote viewer connected {transport}")
+
+    def connection_lost(self, err):
+        self.connected = False
+        self.window_id = 0
+        log.debug(f"Remote viewer connection lost {err}")
+
+    def set(self, attr, value):
+        return self.invoke_method('set', attr, value)
+
+    def call(self, method, *args, **kwargs):
+        return self.invoke_method('call', *args, **kwargs)
+
+    def on_welcome(self, viewer_name, window_id):
+        dock_item = self.plugin.get_viewer(viewer_name)
+        if dock_item is not None:
+            # Save reference to which viewer this is
+            self.dock_item = dock_item
+            process = dock_item.process
+            process.protocol = self
+            self.window_id = window_id
+            log.debug(f'viewer {dock_item.name} connected!')
+
+            # Set initial document
+            doc = self.document
+            if doc:
+                self.set('filename', doc.name)
+
+    def on_invoke_command(self, response):
+        command_id = response.get('command_id')
+        parameters = response.get('parameters', {})
+        log.debug(f"viewer | out | {command_id}({parameters})")
+        self.plugin.workbench.invoke_command(command_id, parameters)
+
+    def on_render_error(self, response):
+        if self.document:
+            msg = response['error']['message'].split("\n")
+            self.document.errors.extend(msg)
+
+    def on_render_success(self, response):
+        if self.document:
+            self.document.errors = []
+
+    def on_capture_output(self, response):
+        if self.document:
+            self.document.output = response['result'].split("\n")
+
+    def on_shape_selection(self, response):
+        #: TODO: Do something with this?
+        if self.document:
+            self.document.output.append(str(response['result']))
+
+    def unhandled_response(self, response):
         response_id = response.get('id')
-        if response_id == 'window_id':
-            self.window_id = response['result']
-            self.restarts = 0  # Clear the restart count
-            return
-        elif response_id == 'keep_alive':
-            return
-        elif response_id == 'invoke_command':
-            command_id = response.get('command_id')
-            parameters = response.get('parameters', {})
-            log.debug(f"viewer | out | {command_id}({parameters})")
-            self.plugin.workbench.invoke_command(command_id, parameters)
-        elif response_id == 'render_error':
-            if doc:
-                doc.errors.extend(response['error']['message'].split("\n"))
-            return
-        elif response_id == 'render_success':
-            if doc:
-                doc.errors = []
-            return
-        elif response_id == 'capture_output':
-            # Script output capture it
-            if doc:
-                doc.output = response['result'].split("\n")
-            return
-        elif response_id == 'shape_selection':
-            #: TODO: Do something with this?
-            if doc:
-                doc.output.append(str(response['result']))
-            return
-        elif response_id is not None:
+        log.warning(f"Unhandled response: {response_id}")
+        if response_id is not None:
             # Lookup the deferred object that should be stored for this id
             # when it is called and invoke the callback or errback based on the
             # result
@@ -331,70 +398,18 @@ class ViewerProcess(ProcessLineReceiver):
 
             else:
                 log.warning("Got unexpected reply")
+
+        doc = self.document
+        if doc:
             # else we got a response from something else, possibly an error?
-        if 'error' in response and doc:
-            doc.errors.extend(response['error'].get('message', '').split("\n"))
-            doc.output.append(line)
-        elif 'message' in response and doc:
-            doc.output.extend(response['message'].split("\n"))
-        elif doc:
-            # Append to output
-            doc.output.extend(line.split("\n"))
-
-    def err_received(self, data):
-        """ Catch and log error output attempting to decode it
-
-        """
-        for line in data.split(b"\n"):
-            if not line:
-                continue
-            if line.startswith(b"QWidget::") or line.startswith(b"QPainter::"):
-                continue
-            try:
-                line = line.decode()
-                log.debug(f"render | err | {line}")
-                if self.document:
-                    self.document.errors.append(line)
-            except Exception as e:
-                log.debug(f"render | err | {line}")
-
-    def process_exited(self, reason=None):
-        log.warning(f"renderer | process ended: {reason}")
-        if not self.terminated:
-            # Clear the filename on crash so it works when reset
-            self.restart()
-        log.warning("renderer | stdout closed")
-
-    def terminate(self):
-        super(ViewerProcess, self).terminate()
-        self.terminated = True
-
-    def schedule_ping(self):
-        """ Ping perioidcally so the process stays awake """
-        if self.terminated:
-            return
-        # Ping the viewer to tell it to keep alive
-        self.send_message("ping", _id="keep_alive", _silent=True)
-        timed_call(self._ping_rate*1000, self.schedule_ping)
-
-    def __getattr__(self, name):
-        """ Proxy all calls not defined here to the remote viewer.
-
-        This makes doing `setattr(renderer, attr, value)` get passed to the
-        remote viewer.
-
-        """
-        if not is_remote_attr(name):
-            raise AttributeError(f"Remote viewer has no attribute '{name}'")
-
-        def remote_viewer_call(*args, **kwargs):
-            f = asyncio.Future()
-            self._id += 1
-            kwargs['_id'] = self._id
-            self._responses[self._id] = f
-            self.send_message(name, *args, **kwargs)
-            return f
-        return remote_viewer_call
+            if 'error' in response:
+                doc.errors.extend(response['error'].get('message', '').split("\n"))
+                doc.output.append(line)
+            elif 'message' in response:
+                doc.output.extend(response['message'].split("\n"))
+            else:
+                # Append to output
+                doc.output.extend(line.split("\n"))
 
 
 class ViewerPlugin(Plugin):
@@ -426,6 +441,25 @@ class ViewerPlugin(Plugin):
     reflections = Bool(True).tag(config=True, viewer=True)
     chordial_deviation = Float(0.001).tag(config=True, viewer=True)
 
+    #: Viewer port
+    port = Int()
+    server = Instance(Server)
+
+    def start(self):
+        super().start()
+        deferred_call(self.start_server)
+
+    async def start_server(self):
+        """ Start a server to handle viewer connections
+
+        """
+        loop = asyncio.get_event_loop()
+        server = self.server = await loop.create_server(
+            lambda: RemoteViewerServerProtocol(plugin=self), '127.0.0.1', 0)
+        socket = server.sockets[0]
+        ip, self.port = socket.getsockname()
+        log.info(f"Server listening dcad://{ip}:{self.port}")
+
     # -------------------------------------------------------------------------
     # Plugin members
     # -------------------------------------------------------------------------
@@ -443,12 +477,22 @@ class ViewerPlugin(Plugin):
             if meta.get('viewer'):
                 yield m
 
-    def get_viewers(self):
+    def get_viewers(self) -> Iterator['ViewerDockItem']:
         ViewerDockItem = viewer_factory()
         dock = self.workbench.get_plugin('declaracad.ui').get_dock_area()
         for item in dock.dock_items():
             if isinstance(item, ViewerDockItem):
                 yield item
+
+    def get_viewer(self, name: Optional[str] = None) -> Optional['ViewerDockItem']:
+        """ Get the viewer with the given name
+
+        """
+        for viewer in self.get_viewers():
+            if name is None:
+                return viewer
+            elif viewer.name == name:
+                return viewer
 
     def fit_all(self, event=None):
         return
@@ -462,14 +506,7 @@ class ViewerPlugin(Plugin):
         viewer.renderer.set_source(editor.get_text())
         doc.version += 1
 
-    def get_viewer(self, name=None):
-        for viewer in self.get_viewers():
-            if name is None:
-                return viewer
-            elif viewer.name == name:
-                return viewer
-
-    def _default_exporters(self):
+    def _default_exporters(self) -> ListType['ModelExporter']:
         """ TODO: push to an ExtensionPoint """
         from .exporters.stl.exporter import StlExporter
         from .exporters.step.exporter import StepExporter
@@ -479,10 +516,8 @@ class ViewerPlugin(Plugin):
     # -------------------------------------------------------------------------
     # Plugin commands
     # -------------------------------------------------------------------------
-
-    def export(self, event):
+    def export(self, options):
         """ Export the current model to stl """
-        options = event.parameters.get('options')
         if not options:
             raise ValueError("An export `options` parameter is required")
 
@@ -497,16 +532,15 @@ class ViewerPlugin(Plugin):
         deferred_call(loop.subprocess_exec, lambda: protocol, *cmd)
         return protocol
 
-    def screenshot(self, event):
+    def screenshot(self, options: Optional[ScreenshotOptions] = None):
         """ Export the views as a screenshot """
-        if 'options' not in event.parameters:
+        if options is None:
             editor = self.workbench.get_plugin('declaracad.editor')
             filename = editor.active_document.name
             options = ScreenshotOptions(
                 filename=filename,
                 default_dir=self.screenshot_dir)
         else:
-            options = event.parameters.get('options')
             # Update the default screenshot dir
             self.screenshot_dir, _ = os.path.split(options.path)
         results = []
@@ -521,4 +555,18 @@ class ViewerPlugin(Plugin):
                 filename = "{}-{}{}".format(path, i+1, ext)
                 results.append(viewer.renderer.screenshot(filename))
         return results
+
+    def add_viewer(self, position: str = 'right', target: str = '',
+                   document: Optional['Document'] = None):
+        """ Create a new viewer window and insert it into the dock area.
+
+        """
+        editor_plugin = self.workbench.get_plugin('declaracad.editor')
+        dock = editor_plugin.get_dock_area()
+        doc = document or editor_plugin.active_document
+
+        ViewerDockItem = viewer_factory()
+        item = ViewerDockItem(dock, plugin=self, document=doc)
+        op = InsertItem(item=item.name, position=position, target=target)
+        dock.update_layout(op)
 

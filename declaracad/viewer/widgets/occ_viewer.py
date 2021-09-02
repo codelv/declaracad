@@ -18,7 +18,7 @@ from enaml.core.declarative import d_
 from enaml.colors import Color, ColorMember, parse_color
 from enaml.widgets.control import Control, ProxyControl
 
-from ..shape import BBox, Point, Direction
+from declaracad.occ.shape import BBox, Point, Direction
 
 
 def color_pair_coercer(arg):

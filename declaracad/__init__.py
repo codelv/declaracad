@@ -75,7 +75,7 @@ def launch_exporter(args):
 
 
 def launch_viewer(args):
-    if args.frameless:
+    if args.port:
         init_logging('%(message)s')
     else:
         init_logging()
@@ -108,11 +108,13 @@ def main():
     subparsers = parser.add_subparsers(help='DeclaraCAD subcommands')
     viewer = subparsers.add_parser("view", help="View the given file")
     viewer.set_defaults(func=launch_viewer)
-    viewer.add_argument("file", help="File to view")
+    viewer.add_argument("filename", help="File to view")
     viewer.add_argument("-w", "--watch", action='store_true',
                         help="Watch for file changes and autoreload")
-    viewer.add_argument("-f", "--frameless", action='store_true',
-                        help="Frameless viewer")
+    viewer.add_argument("-p", "--port", type=int, dest="port",
+                        help="Application port")
+    viewer.add_argument("--ref", type=str, dest="ref",
+                        help="Application viewer ID")
 
     exporter = subparsers.add_parser("export", help="Export the given file")
     exporter.set_defaults(func=launch_exporter)

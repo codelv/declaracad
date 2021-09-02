@@ -140,6 +140,7 @@ enamldef ToolboxDockItem(DockItem):
         TreeView: tree:
             horizontal_headers = ['Name', 'Type']
             horizontal_stretch = True
+            resize_mode = 'resize_to_contents'
             items << plugin.tools
             Looper:
                 iterable << tree.items

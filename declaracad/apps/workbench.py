@@ -11,36 +11,34 @@ Created on Dec 6, 2015
 """
 import sys
 import signal
+import enaml
 import faulthandler
 faulthandler.enable()
 
 import enamlx
 enamlx.install()
 
-from declaracad import occ
-occ.install()
-
 from declaracad.core.workbench import DeclaracadWorkbench
 from declaracad.core.utils import log
-
-import enaml
+from declaracad.occ.impl import occ_factories
+from declaracad.viewer.qt import qt_factories
 
 with enaml.imports():
     #: TODO autodiscover these
     from declaracad.core.manifest import DeclaracadManifest
     from declaracad.ui.manifest import UIManifest
-    from declaracad.occ.manifest import ViewerManifest
+    from declaracad.viewer.manifest import ViewerManifest
     from declaracad.console.manifest import ConsoleManifest
     from declaracad.docs.manifest import DocsManifest
     from declaracad.editor.manifest import EditorManifest
     from declaracad.toolbox.manifest import ToolboxManifest
     from declaracad.cnc.manifest import CncManifest
 
-# Required on Qt 5.10+
 try:
+    # Required on Qt 5.10+
     from enaml.qt import QtWebEngineWidgets
-except:
-    pass
+except Exception as e:
+    log.warning(e)
 
 
 def main(**kwargs):

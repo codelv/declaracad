@@ -47,7 +47,7 @@ def detect_syntax(plugin, path):
         result = file_type
     else:
         result = plugin.file_associations.get(file_type, '')
-    log.info("Using syntax: {}".format(result))
+    # log.info("Using syntax: {}".format(result))
     return result
 
 
@@ -611,7 +611,7 @@ enamldef OutputDockItem(DockItem):
     icon = load_icon('script')
     stretch = 1
     title_bar_right_clicked :: menu.popup()
-
+    closed :: active_document.unobserve('output', self.watch_output)
     attr active_document << plugin.active_document
 
     func rebind(change):

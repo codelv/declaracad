@@ -27,19 +27,19 @@ from enaml.widgets.api import (
     Splitter, SplitItem, Timer
 )
 
-from declaracad.core.api import DockItem, EmbeddedWindow
+from declaracad.core.api import DockItem, EmbeddedWindow, FramelessWindow
 from declaracad.core.utils import log, load_icon, capture_output, format_title
-
-
-from declaracad.occ.widgets.api import OccViewer, OccViewerClippedPlane
-from declaracad.occ.dimension import (
-    AngleDimension, LengthDimension, RadiusDimension, DiameterDimension
+from declaracad.occ.api import (
+    Topology, Point, Part, Shape, AngleDimension, LengthDimension,
+    RadiusDimension, DiameterDimension
 )
-from declaracad.occ.plugin import (
+
+from .widgets.api import OccViewer, OccViewerClippedPlane
+from .plugin import (
     ViewerPlugin, ViewerProcess, load_model, EmptyFileError
 )
 
-from declaracad.occ.api import Topology, Point, Part, Shape
+
 
 def expand_dict(p):
     for k, v in p.items():
@@ -728,7 +728,7 @@ enamldef ClippedPlaneRow(Container):
         high_value :: set_position(high_plane, change['value']/bounds[2])
 
 
-enamldef ViewerWindow(Window): window:
+enamldef ViewerWindow(FramelessWindow): window:
     #: Window title
     title = "DeclaraCAD"
 
@@ -745,9 +745,6 @@ enamldef ViewerWindow(Window): window:
     #: code changes.
     attr version: int = 1
 
-    #: Hide window frame (when embedding)
-    attr frameless: bool = False
-
     #: IPC protocol for communication with parent process
     attr protocol = None
     alias viewer
@@ -760,10 +757,6 @@ enamldef ViewerWindow(Window): window:
     # When the filename changes, clear the source so it's loaded from the file
     filename ::
         self.source = ""
-
-    activated ::
-        if frameless:
-            self.proxy.widget.setWindowFlags(Qt.FramelessWindowHint)
 
     func screenshot(filename):
         # Take a screenshot and save it
@@ -900,10 +893,11 @@ enamldef RemoteViewer(Container): remote_viewer:
     padding = 0
 
     #: Process handle for communication with the child viewer
-    attr renderer: ViewerProcess = ViewerProcess(plugin=plugin)
+    attr process: ViewerProcess = ViewerProcess(viewer=self.parent, plugin=plugin)
+    attr protocol << process.protocol
 
     #: Restart it on initial launch
-    activated :: renderer.restart()
+    activated :: process.restart()
 
     func update_background(change):
         """ Updates the background color on the viewer """
@@ -912,19 +906,18 @@ enamldef RemoteViewer(Container): remote_viewer:
             c2 = c1
         else:
             c2 = plugin.background_bottom
-        renderer.set_background_gradient((c1, c2, plugin.background_fill_method))
+        protocol.set('background_gradient', (c1, c2, plugin.background_fill_method))
 
     func update_grid_colors(change):
         c1 = plugin.grid_minor_color
         c2 = plugin.grid_major_color
-        renderer.set_grid_colors((c1, c2))
+        protocol.set('grid_colors', (c1, c2))
 
     # Since this is a remote viewer changes have to be passed manually
     func update_viewer(change):
-        setter = getattr(renderer, f'set_{change["name"]}')
-        setter(change['value'])
+        protocol.set(change["name"], change['value'])
         if change['type'] == 'update':
-            renderer.redraw()
+            protocol.redraw()
 
     #: Mapping of plugin attr name to the update function
     attr observers = {}
@@ -956,7 +949,7 @@ enamldef RemoteViewer(Container): remote_viewer:
 
     func cleanup():
         try:
-            renderer.terminate()
+            process.terminate()
             unbind_observers()
         except:
             pass
@@ -970,10 +963,10 @@ enamldef RemoteViewer(Container): remote_viewer:
         Container:
             padding = 0
             Conditional:
-                condition << bool(renderer.window_id)
+                condition << bool(protocol and protocol.window_id)
                 EmbeddedWindow: window:
                     # Embedded viewer
-                    window_id = renderer.window_id
+                    window_id = protocol.window_id
                     activated ::
                         try:
                             remote_viewer.bind()
@@ -985,7 +978,7 @@ enamldef RemoteViewer(Container): remote_viewer:
 enamldef ViewerDockItem(DockItem): view:
     name = "3d-viewer-{}".format(id(self))
 
-    alias renderer: viewer.renderer
+    alias process: viewer.process
     attr editor_plugin << plugin.workbench.get_plugin('declaracad.editor')
 
     title << "Viewer {}".format(format_title(
@@ -999,19 +992,19 @@ enamldef ViewerDockItem(DockItem): view:
 
     # When either changes update the renderer
     attr active_document << self.document or editor_plugin.active_document
-    active_document :: renderer.document = change['value']
+    active_document :: process.document = change['value']
 
     icon = load_icon("bricks")
     stretch = 3
     closed :: viewer.cleanup()
 
     func reload_document():
-        renderer.document = None
-        renderer.document = active_document
+        process.document = None
+        process.document = active_document
 
     RemoteViewer: viewer:
         plugin << view.plugin
-        activated :: renderer.document = active_document
+        activated :: process.document = active_document
 
     title_bar_right_clicked ::
         # Populate the documents
@@ -1037,7 +1030,9 @@ enamldef ViewerDockItem(DockItem): view:
             separator = True
         Action:
             text = "Restart viewer"
-            triggered :: renderer.terminate()
+            triggered ::
+                process.terminate()
+                process.restart()
         Action:
             text = "Reload document"
             triggered :: reload_document()

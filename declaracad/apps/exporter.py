@@ -11,14 +11,12 @@ Created on Aug 4, 2018
 """
 import sys
 import time
+import enaml
 import jsonpickle
 import faulthandler
-faulthandler.enable()
-
-from declaracad import occ
-occ.install()
-import enaml
 from enaml.qt.qt_application import QtApplication
+from declaracad.occ.impl import occ_factories
+from declaracad.viewer.qt import qt_factories
 
 
 def main(**kwargs):
@@ -30,6 +28,7 @@ def main(**kwargs):
         A jsonpickle dumped exporter
 
     """
+    faulthandler.enable()
     options = kwargs.pop('options')
     exporter = jsonpickle.loads(options)
     assert exporter, "Failed to load exporter from: {}".format(options)
