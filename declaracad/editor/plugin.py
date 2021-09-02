@@ -70,6 +70,14 @@ class Document(Model):
     def __repr__(self):
         return "Document<name='{}'>".format(self.name)
 
+    def append_output(self, output):
+        """ Limit output to 1000 entries
+
+        """
+        if len(self.output) > 1000:
+            self.output.pop(0)
+        self.output.append(output)
+
     def _default_source(self):
         """ Load the document from the path given by `name`.
         If it fails to load, nothing will be returned and an error

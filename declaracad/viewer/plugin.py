@@ -24,7 +24,8 @@ from types import ModuleType
 from asyncio.base_events import Server
 from atom.api import (
     Atom, ContainerList, Str, Float, Dict, Bool, Int, Instance, Enum, Property,
-    ForwardTyped, ForwardInstance, Constant, observe, Typed, set_default
+    ForwardTyped, ForwardInstance, Constant, Callable,
+    observe, Typed, set_default
 )
 from declaracad.core.api import Plugin, Model, log
 from declaracad.core.utils import (
@@ -175,6 +176,13 @@ class ScreenshotOptions(Atom):
     def format(self):
         """ Return formatted option values for the exporter app to parse """
         return json.dumps(self.__getstate__())
+
+
+
+class ViewerAction(Atom):
+    name = Str()
+    key = Str()
+    action = Callable()
 
 
 class ViewerProcess(ProcessLineReceiver):
@@ -364,14 +372,15 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
         if self.document:
             self.document.errors = []
 
-    def on_capture_output(self, response):
-        if self.document:
-            self.document.output = response['result'].split("\n")
+    def on_print(self, message):
+        m = message.strip()
+        if m and self.document:
+            self.document.append_output(m)
 
     def on_shape_selection(self, response):
         #: TODO: Do something with this?
         if self.document:
-            self.document.output.append(str(response['result']))
+            self.document.append_output(str(response['result']))
 
     def unhandled_response(self, response):
         response_id = response.get('id')

@@ -639,7 +639,9 @@ enamldef OutputDockItem(DockItem):
     Menu: menu:
         Action:
             text = "Clear window"
-            triggered :: output.proxy.widget.setPlainText("")
+            triggered ::
+                output.proxy.widget.setPlainText("")
+                active_document.output = []
 
     Container:
         minimum_size = (320, 320)

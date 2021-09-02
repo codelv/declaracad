@@ -13,7 +13,6 @@ import enaml
 from enaml.workbench.api import Extension, PluginManifest
 from enaml.workbench.core.api import Command
 from enaml.workbench.ui.api import ActionItem
-from enaml.layout.api import InsertItem
 from enaml.widgets.api import FileDialogEx
 from declaracad.ui.extensions import (
     DOCK_ITEM_POINT, DockItem, SETTINGS_PAGE_POINT, SettingsPage

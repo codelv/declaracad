@@ -9,7 +9,6 @@ Created on Jul 12, 2015
 
 @author: jrm
 """
-import io
 import os
 import sys
 import asyncio
@@ -17,10 +16,9 @@ import logging
 import functools
 import traceback
 import jsonpickle
-from contextlib import contextmanager
-from logging.handlers import RotatingFileHandler
-
-from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Int, Value
+from atom.api import (
+    Atom, Instance, Bool, Bytes, ContainerList, Dict, Int, Value
+)
 
 from enaml.image import Image
 from enaml.icon import Icon, IconImage
@@ -119,17 +117,6 @@ def format_title(docs, doc, path, unsaved):
     if unsaved:
         name += "*"
     return name
-
-
-@contextmanager
-def capture_output():
-    _stdout = sys.stdout
-    try:
-        capture = io.StringIO()
-        sys.stdout = capture
-        yield capture
-    finally:
-        sys.stdout = _stdout
 
 
 def process_events():
@@ -274,6 +261,30 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         f = self._responses.pop(request_id, None)
         if f is not None:
             f.set_result(result)
+
+
+class RemoteLogger(Atom):
+    """ Redirects stdout to the given protocol
+
+    """
+    protocol = Instance(JsonRpcProtocol)
+
+    #: Original stderr and stdout
+    stdout = Value()
+    stderr = Value()
+
+    def attach(self):
+        sys.stderr = sys.stdout = self
+
+    def detach(self):
+        sys.stdout = self.stdout
+        sys.stderr = self.stderr
+
+    def write(self, message):
+        self.protocol.invoke_method('print', message)
+
+    def flush(self):
+        pass
 
 
 class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):

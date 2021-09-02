@@ -28,7 +28,7 @@ from enaml.widgets.api import (
 )
 
 from declaracad.core.api import DockItem, EmbeddedWindow, FramelessWindow
-from declaracad.core.utils import log, load_icon, capture_output, format_title
+from declaracad.core.utils import log, load_icon, format_title
 from declaracad.occ.api import (
     Topology, Point, Part, Shape, AngleDimension, LengthDimension,
     RadiusDimension, DiameterDimension
@@ -36,7 +36,7 @@ from declaracad.occ.api import (
 
 from .widgets.api import OccViewer, OccViewerClippedPlane
 from .plugin import (
-    ViewerPlugin, ViewerProcess, load_model, EmptyFileError
+    ViewerPlugin, ViewerProcess, ViewerAction, load_model, EmptyFileError
 )
 
 
@@ -45,12 +45,6 @@ def expand_dict(p):
     for k, v in p.items():
         for p in v:
             yield p
-
-
-class ViewerAction(Atom):
-    name = Str()
-    key = Str()
-    action = Callable()
 
 
 enamldef ActionPopup(PopupView): popup:
@@ -644,37 +638,37 @@ enamldef ModelViewer(OccViewer): viewer:
                             viewer.proxy.set_display_mode(loop_item)
                         else:
                             viewer.display_mode = loop_item
-                        viewer.proxy.update_display()
+                        viewer.update_display()
             Action:
                 checkable = True
                 text = 'Hidden line removal'
                 checked := viewer.hidden_line_removal
-                checked :: viewer.proxy.update_display()
+                checked :: viewer.update_display()
             Action:
                 checkable = True
                 text = 'Shadows'
                 checked := viewer.shadows
-                checked :: viewer.proxy.update_display()
+                checked :: viewer.update_display()
             Action:
                 checkable = True
                 text = 'Raytracing'
                 checked := viewer.raytracing
-                checked :: viewer.proxy.update_display()
+                checked :: viewer.update_display()
             Action:
                 checkable = True
                 text = 'Reflections'
                 checked := viewer.reflections
-                checked :: viewer.proxy.update_display()
+                checked :: viewer.update_display()
             Action:
                 checkable = True
                 text = 'Antialiasing'
                 checked := viewer.antialiasing
-                checked :: viewer.proxy.update_display()
+                checked :: viewer.update_display()
             Action:
                 checkable = True
                 text = 'Draw boundaries'
                 checked := viewer.draw_boundaries
-                checked :: viewer.proxy.update_display()
+                checked :: viewer.update_display()
         Action:
             separator = True
         Menu:
@@ -687,7 +681,7 @@ enamldef ModelViewer(OccViewer): viewer:
                 separator = True
             Action:
                 text = 'Force update'
-                triggered :: viewer.proxy.update_display()
+                triggered :: viewer.update_display()
             Action:
                 text = 'Clear display'
                 triggered :: viewer.clear_display()
@@ -787,7 +781,7 @@ enamldef ViewerWindow(FramelessWindow): window:
                     parameters={'point': point})
         log.debug("No point found")
 
-    func send_message(**params):
+    func send_message(id, **params):
         """ Send a message to the application over the IPC interface
         if this view is being used remotely
 
@@ -798,38 +792,31 @@ enamldef ViewerWindow(FramelessWindow): window:
 
         """
         if protocol and protocol.transport:
-            protocol.send_message(params)
+            protocol.invoke_method(id, params)
 
     func load_source():
         if filename != "-":
-            with capture_output() as stdout:
-                try:
-                    start_time = datetime.now()
-                    # Load the models from source code or disk
-                    result = load_model(filename, source)
-                    end_time = datetime.now()
-                    print(f"Load took {end_time-start_time}")
-                    send_message(id='render_success')
-                    # Clear clipped planes
-                    viewer.clipped_planes = {}
-                    viewer.dimensions = []
-                    return result
-                except EmptyFileError as e:
-                    # When opening an empty / unsaved file, clear the display
-                    viewer.clear_display()
-                    send_message(id='render_success')
-                except Exception as e:
-                    # Notify the client that we got an error
-                    send_message(
-                        id='render_error',
-                        error={'message':traceback.format_exc()})
-                    traceback.print_exc()
-                finally:
-                    if protocol:
-                        send_message(id='capture_output',
-                                          result=stdout.getvalue())
-                    else:
-                        log.info(stdout.getvalue())
+            try:
+                start_time = datetime.now()
+                # Load the models from source code or disk
+                result = load_model(filename, source)
+                end_time = datetime.now()
+                print(f"Load took {end_time-start_time}")
+                send_message(id='render_success')
+                # Clear clipped planes
+                viewer.clipped_planes = {}
+                viewer.dimensions = []
+                return result
+            except EmptyFileError as e:
+                # When opening an empty / unsaved file, clear the display
+                viewer.clear_display()
+                send_message(id='render_success')
+            except Exception as e:
+                # Notify the client that we got an error
+                send_message(
+                    id='render_error',
+                    error={'message':traceback.format_exc()})
+                traceback.print_exc()
         return []
     Container:
         padding = 0

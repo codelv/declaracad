@@ -21,10 +21,10 @@ faulthandler.enable()
 # FIXME: The frozen app won't start without this before importing atom
 from enaml import qt
 
-from atom.api import Instance, Typed, Bool, Dict, Float, Str
+from atom.api import Atom, Instance, Typed, Bool, Dict, Float, Str
 from enaml.application import timed_call, deferred_call
 from declaracad.core.app import Application
-from declaracad.core.utils import log, JsonRpcProtocol
+from declaracad.core.utils import log, RemoteLogger, JsonRpcProtocol
 from declaracad.occ.impl import occ_factories
 from declaracad.viewer.qt import qt_factories
 
@@ -44,6 +44,7 @@ class ViewerProtocol(JsonRpcProtocol):
     app = Instance(Application)
     view = Typed(ViewerWindow)
     ref = Str()
+    logger = Typed(RemoteLogger)
 
     def connection_made(self, transport):
         self.transport = transport
@@ -52,7 +53,15 @@ class ViewerProtocol(JsonRpcProtocol):
         window_id = int(self.view.proxy.widget.winId())
         self.invoke_method('welcome', self.ref, window_id)
 
+        # Send stdout/stderr to remote connection
+        logger = self.logger = RemoteLogger(
+            protocol=self,
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        logger.attach()
+
     def connection_lost(self, exc):
+        self.logger.detach()
         self.app.stop()
 
     def on_call(self, method, *args, **kwargs):
@@ -98,6 +107,7 @@ async def run_remote(app: Application, view: ViewerWindow,
         return
     view.protocol = protocol
     view.filename = filename
+    protocol.start_logger()
 
 
 async def run_local(app: Application, view: ViewerWindow, filename: str,
