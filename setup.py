@@ -11,7 +11,6 @@ from setuptools import setup, find_packages
 
 
 requirements = [
-    #'twisted',
     'enaml>=0.10.4',
     'jsonpickle',
     'qtconsole',

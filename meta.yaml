@@ -8,28 +8,30 @@ channels:
   - codelv
 
 source:
-  path: "../"
+  path: "./"
 
 requirements:
   run:
   - python
   - pyocct
+  - pysmesh
+  - pychrono
+  - pyqt
+  - pyqtwebengine
+  - enaml
+  - lxml
+  - pyserial ==3.5
+  - qscintilla2
+  - qtconsole
+  - pyflakes
+  - markdown
+  - numpydoc
+  - jsonpickle
+  - pywin32 # os[win32]
   pip:
-    - PyQt5
-    - PyQtWebEngine
-    - enaml>=0.10.4
-    - qtconsole
-    - pyflakes
-    - numpydoc
-    - markdown
-    - jsonpickle
-    - QScintilla
     - enamlx
     - qt-reactor
-    - pyserial
-    - lxml
-    - service_identity
-    - pywin32 # os[win32]
+
 
 build:
   number: 0
