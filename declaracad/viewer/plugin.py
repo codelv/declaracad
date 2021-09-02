@@ -104,7 +104,8 @@ def load_model(filename: str, source: Optional[str] = None):
     """
 
     # Parse the enaml file or load from source code
-    if source or filename.endswith('.enaml'):
+    _, ext = os.path.splitext(filename.lower())
+    if source or ext in ('.enaml', '.py'):
         # Parse and compile the code
         if not source:
             with open(filename, 'r') as f:
@@ -116,8 +117,10 @@ def load_model(filename: str, source: Optional[str] = None):
         namespace = module.__dict__
         with enaml.imports():
             exec(code, namespace)
-        Assembly = namespace['Assembly']
-        return [Assembly()]
+        Assembly = namespace.get('Assembly')
+        if Assembly is not None:
+            return [Assembly()]
+        return []
     elif os.path.exists(filename):
         # Try to load from filename
         with enaml.imports():
@@ -176,7 +179,6 @@ class ScreenshotOptions(Atom):
     def format(self):
         """ Return formatted option values for the exporter app to parse """
         return json.dumps(self.__getstate__())
-
 
 
 class ViewerAction(Atom):
@@ -383,42 +385,7 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
             self.document.append_output(str(response['result']))
 
     def unhandled_response(self, response):
-        response_id = response.get('id')
-        log.warning(f"Unhandled response: {response_id}")
-        if response_id is not None:
-            # Lookup the deferred object that should be stored for this id
-            # when it is called and invoke the callback or errback based on the
-            # result
-            f = self._responses.pop(response_id, None)
-            if f is not None:
-                try:
-                    error = response.get('error')
-                    if error is not None:
-                        if doc:
-                            msgs = error.get('message', '').split("\n")
-                            doc.errors.extend(msgs)
-                        f.set_exception(RuntimeError(error))
-                    else:
-                        f.set_result(response.get('result'))
-                    return
-                except Exception as e:
-                    log.warning("RPC response not properly handled!")
-                    log.exception(e)
-
-            else:
-                log.warning("Got unexpected reply")
-
-        doc = self.document
-        if doc:
-            # else we got a response from something else, possibly an error?
-            if 'error' in response:
-                doc.errors.extend(response['error'].get('message', '').split("\n"))
-                doc.output.append(line)
-            elif 'message' in response:
-                doc.output.extend(response['message'].split("\n"))
-            else:
-                # Append to output
-                doc.output.extend(line.split("\n"))
+        log.warning(f"Unhandled response: {response}")
 
 
 class ViewerPlugin(Plugin):

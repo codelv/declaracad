@@ -166,6 +166,7 @@ class EditorPlugin(Plugin):
     sys_path = List().tag(config=True)
     _area_saves_pending = Int()
 
+
     def start(self):
         """ Make sure the documents all open on startup """
         super().start()
@@ -467,7 +468,7 @@ class EditorPlugin(Plugin):
             result: list
                 List of autocompletion strings
         """
-        return []
+        #return []
         try:
             #: TODO: Move to separate process
             line, column = cursor

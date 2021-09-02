@@ -115,8 +115,17 @@ class GCodeLexer(QsciLexerCustom):
                     self.setStyling(index, 0)
 
 
+class EnamlLexer(scintilla_lexers.EnamlLexer):
+    def keywords(self, kwset):
+        from declaracad.occ import api
+        kwds = super().keywords(kwset)
+        if kwset == 1:
+            kwds += ' '.join([a for a in dir(api) if not a.startswith("_")])
+        return kwds
+
+
 CUSTOM_LEXERS = {
-    'gcode': GCodeLexer
+    'gcode': GCodeLexer,
 }
 
 
@@ -126,6 +135,10 @@ def install_lexers():
     """
     from pprint import pformat
     items = list(Scintilla.syntax.items)
+
+    scintilla_lexers.LEXERS['enaml'] = EnamlLexer
+    scintilla_lexers.LEXERS_INV[EnamlLexer] = 'enaml'
+
     for name, LexerClass in CUSTOM_LEXERS.items():
         scintilla_lexers.LEXERS[name] = LexerClass
         scintilla_lexers.LEXERS_INV[LexerClass] = name
