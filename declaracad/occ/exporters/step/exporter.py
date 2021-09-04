@@ -13,7 +13,7 @@ import os
 import enaml
 from atom.api import Constant, Enum, Float, Str
 from declaracad.occ.api import Part
-from declaracad.occ.plugin import ModelExporter, load_model
+from declaracad.viewer.plugin import ModelExporter, load_model
 from declaracad.occ.impl.utils import color_to_quantity_color
 
 from OCCT.BinXCAFDrivers import BinXCAFDrivers

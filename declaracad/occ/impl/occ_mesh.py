@@ -36,7 +36,7 @@ from OCCT.TColStd import TColStd_MapIteratorOfPackedMapOfInteger
 from .occ_shape import OccShape, OccDependentShape
 from .occ_draw import MARKERS
 from .utils import color_to_quantity_color
-from ..mesh import Shape, ProxyMesh, ProxyMeshTopology
+from ..mesh import Shape, ProxyMesh, ProxyIterator, ProxyMeshTopology
 
 from declaracad.core.utils import log
 
@@ -57,35 +57,60 @@ except ImportError as e:
     SMESH_MeshVSLink = object
 
 
+class OccNodeIterator(ProxyIterator):
+    mesh = ForwardTyped(lambda: OccMesh)
+
+    def __iter__(self):
+        vs_link = self.mesh.vs_link
+        it = TColStd_MapIteratorOfPackedMapOfInteger(vs_link.GetAllNodes())
+        find = vs_link.FindNode
+        while it.More():
+            yield find(it.Key())
+            it.Next()
+
+    def __len__(self):
+        return self.mesh.mesh.NbNodes()
+
+    def __getitem__(self, key):
+        return self.mesh.vs_link.FindNode(key)
+
+
+class OccElementIterator(ProxyIterator):
+    mesh = ForwardTyped(lambda: OccMesh)
+
+    def __iter__(self):
+        vs_link = self.mesh.vs_link
+        it = TColStd_MapIteratorOfPackedMapOfInteger(vs_link.GetAllElements())
+        find = vs_link.FindElement
+        while it.More():
+            yield find(it.Key())
+            it.Next()
+
+    def __len__(self):
+        return self.mesh.mesh.NbElements()
+
+    def __getitem__(self, key):
+        return self.mesh.vs_link.FindElement(key)
+
+
 class OccMeshTopology(ProxyMeshTopology):
     mesh = ForwardTyped(lambda: OccMesh)
 
-    def _packed_map_iter(self, ref) -> Iterator[int]:
-        """ Iterate the map
+    def _get_node_iterator(self) -> OccNodeIterator:
+        return OccNodeIterator(mesh=self.mesh)
 
-        """
-        it = TColStd_MapIteratorOfPackedMapOfInteger(ref)
-        while it.More():
-            yield it.Key()
-            it.Next()
+    def _get_element_iterator(self) -> OccElementIterator:
+        return OccElementIterator(mesh=self.mesh)
 
-    def _get_nodes(self):
-        return self._packed_map_iter(self.mesh.vs_link.GetAllNodes())
+    #def _get_face_iterator(self) -> ProxyIterator:
+        #raise NotImplementedError
 
-    def _get_elements(self):
-        return self._packed_map_iter(self.mesh.vs_link.GetAllElements())
+    #def _get_volume_iterator(self) -> ProxyIterator:
 
-    def _default_node_count(self):
-        return self.mesh.mesh.NbNodes()
 
-    def _default_edge_count(self):
-        return self.mesh.mesh.NbEdges()
+    #def _get_group_iterator(self) -> ProxyIterator:
+    #    raise OccGroupIterator(mesh=self.mesh)
 
-    def _default_face_count(self):
-        return self.mesh.mesh.NbFaces()
-
-    def _default_volume_count(self):
-        return self.mesh.mesh.NbVolumes()
 
 
 class OccMesh(OccDependentShape, ProxyMesh):

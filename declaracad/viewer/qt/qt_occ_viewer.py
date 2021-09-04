@@ -54,7 +54,7 @@ from OCCT.Graphic3d import (
 
 from OCCT.MeshVS import (
     MeshVS_DA_DisplayNodes, MeshVS_DA_EdgeColor, MeshVS_Mesh,
-    MeshVS_MeshPrsBuilder
+    MeshVS_MeshPrsBuilder, MeshVS_MeshEntityOwner
 )
 from OCCT.OpenGl import OpenGl_GraphicDriver
 from OCCT.Quantity import (
@@ -968,7 +968,18 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                     info = selection.get(d)
                     if info is None:
                         info = selection[d] = {}
-                    # TODO: Ship it
+                    # Mesh selection works differently...
+                    ais_selection = ais_context.Selection()
+                    owner = ais_selection.Value()
+                    if isinstance(owner, MeshVS_MeshEntityOwner):
+                        item_type = owner.Type()
+                        i = owner.ID()
+                        attr = str(item_type).split("_")[-1].lower() + 's'
+                        selection_info = info.get(attr)
+                        if selection_info is None:
+                            selection_info = info[attr] = {}
+                        item_iter = getattr(d.topology, attr)
+                        selection_info[i] = item_iter[i]
 
                 elif not topods_shape.IsNull():
                     # Try to lookup index based on topology
@@ -978,6 +989,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                         shape_list = occ_shape.topology.vertices
                     else:
                         shape_list = getattr(occ_shape.topology, attr, ())
+
+                    # Lookup index
+                    # TODO: Better way to do this?
                     for i, s in enumerate(shape_list):
                         if topods_shape.IsPartner(s):
                             break

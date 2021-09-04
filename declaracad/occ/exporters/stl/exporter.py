@@ -13,7 +13,7 @@ import os
 import time
 import enaml
 from atom.api import Constant, Enum, Float, Str, Bool
-from declaracad.occ.plugin import ModelExporter, load_model
+from declaracad.viewer.plugin import ModelExporter, load_model
 
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepMesh import BRepMesh_IncrementalMesh

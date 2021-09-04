@@ -13,7 +13,7 @@ import os
 import enaml
 from textwrap import dedent
 from atom.api import Constant, Enum, Float, Str
-from declaracad.occ.plugin import ModelExporter, load_model
+from declaracad.viewer.plugin import ModelExporter, load_model
 
 from OCCT.VrmlAPI import VrmlAPI_Writer, VrmlAPI_RepresentationOfShape
 

@@ -35,57 +35,56 @@ class ProxyMesh(ProxyShape):
         raise NotImplementedError
 
 
+class ProxyIterator(Atom):
+    """ Mesh item iterator
+
+    """
+    def __iter__(self):
+        raise NotImplementedError
+
+    def __next__(self):
+        raise NotImplementedError
+
+    def __len__(self):
+        raise NotImplementedError
+
+    def __getitem__(self, key):
+        raise NotImplementedError
+
+
 class ProxyMeshTopology(Atom):
     #: Reference to the mesh
     declaration = ForwardTyped(lambda: Mesh)
 
-    # ------------------------------------------------------------------
-    # Proxy API
-    # ------------------------------------------------------------------
-    def _get_nodes(self):
+    def _get_node_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
-    def _get_elements(self):
+    def _get_element_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
-    def _get_faces(self):
+    def _get_face_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
-    def _get_volumes(self):
+    def _get_volume_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
-    def _get_groups(self):
+    def _get_group_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
-    # ------------------------------------------------------------------
-    # Pubilc API
-    # ------------------------------------------------------------------
     #: Node iterator
-    nodes = Property(lambda s: s._get_nodes())
-
-    #: Number of nodes
-    node_count = Int()
+    nodes = Property(lambda s: s._get_node_iterator())
 
     #: Elements iterator
-    elements = Property(lambda s: s._get_elements())
-
-    #: Number of edges
-    edge_count = Int()
+    elements = Property(lambda s: s._get_element_iterator())
 
     #: Faces iterator
-    faces = Property(lambda s: s._get_faces())
-
-    #: Number of faces
-    face_count = Int()
+    faces = Property(lambda s: s._get_face_iterator())
 
     #: Volumes iterator
-    volumes = Property(lambda s: s._get_volumes())
-
-    #: Number of volumes
-    volume_count = Int()
+    volumes = Property(lambda s: s._get_volume_iterator())
 
     #: Groups iterator
-    groups = Property(lambda s: s._get_groups())
+    groups = Property(lambda s: s._get_group_iterator())
 
 
 class Mesh(Shape):
