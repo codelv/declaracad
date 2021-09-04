@@ -31,8 +31,8 @@ from enaml.widgets.api import (
     MultilineField, ImageView
 )
 from enamlx.widgets.api import DoubleSpinBox
-from .plugin import ScreenshotOptions, ModelExporter, log
-
+from declaracad.viewer.plugin import ScreenshotOptions, ModelExporter, log
+from declaracad.ui.styles import DialogStyleSheet
 
 enamldef ExportOptionsForm(Form):
     attr model: ModelExporter
@@ -52,8 +52,8 @@ enamldef ExportDialog(Dialog): dialog:
         Exporter = export_type.selected
         return Exporter(filename=doc.name)
 
-    #TaskDialogStyleSheet:
-    #        pass
+    DialogStyleSheet:
+        pass
     TaskDialogBody:
         TaskDialogInstructionArea:
             Label:
@@ -149,13 +149,13 @@ enamldef ScreenCaptureDialog(Dialog): dialog:
 
     async func take_screenshot(options):
         results = []
-        for f in plugin.screenshot(event):
+        for f in plugin.screenshot(options):
             results.append(await f)
         dialog.show_preview = True
         dialog.results = results
 
-    TaskDialogStyleSheet:
-            pass
+    DialogStyleSheet:
+        pass
     TaskDialogBody:
         TaskDialogInstructionArea:
             Label:

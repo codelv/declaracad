@@ -1,0 +1,250 @@
+#------------------------------------------------------------------------------
+# Copyright (c) 2021 Jairus Martin
+#
+# Distributed under the terms of the GPL v3 License.
+#
+# The full license is in the file LICENSE, distributed with this software.
+#------------------------------------------------------------------------------
+from enaml.styling import StyleSheet, Style, Setter
+from enaml.stdlib.dock_area_styles import (
+    register_styles, available_styles, CommonStyles, AreaStyle, ItemStyle,
+    BasicStyle, TitleBarStyle, DockBarButtonStyle, ContainerStyle,
+    TabBarTabStyle, TitleBarLabelStyle, TitleBarButtonStyle
+)
+from enaml.qt.docking.xbms import TAB_BUTTON
+from enaml.qt.QtWidgets import QWidget
+
+CACHE = {}
+
+
+def get_system_color(name='window'):
+    color = CACHE.get(name)
+    if color is None:
+        palette = QWidget().palette()
+        qcolor = getattr(palette, name)().color()
+        color = CACHE[name] = qcolor.name(qcolor.HexArgb)
+    return color
+
+
+template FlatStyles():
+    Style:
+        element = 'Field, MultilineField, ComboBox, ObjectCombo, PushButton, SpinBox'
+        Setter:
+            field = 'padding'
+            value = '5px'
+        Setter:
+            field = 'border'
+            value = '1px solid ' + get_system_color('light')
+        Setter:
+            field = 'background'
+            value = get_system_color('midlight')
+    #Style:
+        #element = 'CheckBox'
+        #pseudo_element = 'indicator'
+        #Setter:
+            #field = 'padding'
+            #value = '5px'
+        #Setter:
+            #field = 'border'
+            #value = '1px solid ' + get_system_color('light')
+        #Setter:
+            #field = 'background'
+            #value = get_system_color('midlight')
+        #Setter:
+            #field = 'width'
+            #value = '13px'
+        #Setter:
+            #field = 'height'
+            #value = '13px'
+    Style:
+        element = 'ComboBox, ObjectCombo'
+        pseudo_element = 'drop-down'
+        Setter:
+            field = 'border'
+            value = 'none'
+    Style:
+        element = 'ComboBox, ObjectCombo'
+        pseudo_element = 'down-arrow'
+        Setter:
+            field = 'image'
+            value = 'downarrow'
+    Style:
+        element = 'SpinBox'
+        pseudo_element = 'up-button, down-button'
+        Setter:
+            field = 'border'
+            value = 'none'
+    Style:
+        element = 'SpinBox'
+        pseudo_element = 'up-button'
+        Setter:
+            field = 'image'
+            value = 'url(:/iamges/up_arrow.png)'
+    Style:
+        element = 'Notebook'
+        pseudo_element = 'tab'
+        Setter:
+            field = 'background'
+            value = get_system_color('midlight')
+        Setter:
+            field = 'margin-left'
+            value = '1px'
+        Setter:
+            field = 'padding'
+            value = '5px 10px'
+    Style:
+        element = 'Notebook'
+        pseudo_element = 'tab'
+        pseudo_class = 'selected'
+        Setter:
+            field = 'border-bottom'
+            value = '2px solid' + get_system_color('link')
+    Style:
+        element = 'PushButton'
+        Setter:
+            field = 'padding'
+            value = '5px'
+        Setter:
+            field = 'border'
+            value = '1px solid ' + get_system_color('light')
+        Setter:
+            field = 'background'
+            value = get_system_color('mid')
+    Style:
+        element = 'PushButton'
+        pseudo_class = 'pressed'
+        Setter:
+            field = 'background'
+            value = get_system_color('dark')
+    Style:
+        element = 'Page'
+        pseudo_element = 'tab-bar-tab'
+        Setter:
+            field = 'border'
+            value = '1px solid red'
+    Style:
+        element = 'Page'
+        #pseudo_element = 'tab-bar-tab'
+        #pseudo_class = 'selected'
+        #Setter:
+            #field = 'border-bottom'
+            #value = '2px solid ' + get_system_color('link')
+        #Setter:
+            #field = 'font-weight'
+            #value = 'bold'
+
+
+enamldef DialogStyleSheet(StyleSheet):
+    FlatStyles():
+        pass
+
+
+template SystemStyle():
+    """ DockArea style sheet styles that uses the system colors
+
+    """
+    CommonStyles():
+        pass
+    FlatStyles():
+        pass
+    AreaStyle:
+        background = get_system_color('window')
+    ItemStyle:
+        background = get_system_color('window')
+        border = '1px solid '+get_system_color('base')
+    TitleBarStyle:
+        background = get_system_color('base')
+
+    Style:
+        element = 'DockArea'
+        pseudo_element = 'tab-bar-corner-button'
+        Setter:
+            field = 'padding'
+            value = '5px'
+
+    # Add alert styles for an "important" alert.
+    TitleBarStyle:
+        pseudo_class = 'alert(important)'
+        background = 'orange'
+
+    TitleBarLabelStyle:
+        pseudo_class = 'alert(important)'
+        color = 'black'
+
+    DockBarButtonStyle:
+        pseudo_class = 'alert(important)'
+        background = 'orange'
+
+    TabBarTabStyle:
+        background = get_system_color('window')
+    TabBarTabStyle:
+        pseudo_class = 'top, bottom'
+        Setter:
+            field = 'height'
+            value = '24px'
+        Setter:
+            field = 'width'
+            value = '100px'
+
+    TabBarTabStyle:
+        pseudo_class = 'selected'
+        Setter:
+            field = 'border-bottom'
+            value = '2px solid ' + get_system_color('link')
+        Setter:
+            field = 'font-weight'
+            value = 'bold'
+
+    TabBarTabStyle:
+        pseudo_class = 'alert(important)'
+        background = 'orange'
+
+    # Add alert styles for a "meltdown" alert.
+    TitleBarStyle:
+        pseudo_class = 'alert(meltdown)'
+        background = 'red'
+
+    TitleBarButtonStyle:
+        pseudo_class = 'hover'
+        background = get_system_color('dark')
+
+
+    Style:
+        element = 'DockArea'
+        pseudo_element = 'tab-bar-corner-button'
+        pseudo_class = 'hover'
+        Setter:
+            field = 'background'
+            value = get_system_color('dark')
+
+    DockBarButtonStyle:
+        border = '1px solid ' + get_system_color('window')
+
+    DockBarButtonStyle:
+        pseudo_class = 'checked'
+        Setter:
+            field = 'border-top'
+            value = '2px solid ' + get_system_color('link')
+        Setter:
+            field = 'font-weight'
+            value = 'bold'
+
+    DockBarButtonStyle:
+        pseudo_class = 'alert(meltdown)'
+        background = 'red'
+
+    TabBarTabStyle:
+        pseudo_class = 'alert(meltdown)'
+        background = 'red'
+
+    ContainerStyle:
+        pseudo_class = 'alert(meltdown)'
+        background = 'yellow'
+
+    ItemStyle:
+        pseudo_class = 'alert(meltdown)'
+        background = 'red'
+
+
+
+register_styles('system', SystemStyle)

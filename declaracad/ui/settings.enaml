@@ -29,7 +29,7 @@ from enaml.widgets.api import (
 
 )
 from enamlx.widgets.api import TreeView, TreeViewItem
-
+from declaracad.ui.styles import DialogStyleSheet
 
 
 enamldef SystemSettingsPage(Container):
@@ -52,6 +52,8 @@ enamldef SettingsDialog(Dialog): dialog:
     attr plugin
     attr model
     attr event
+    DialogStyleSheet:
+        pass
     Conditional:
         # Only use this if not using the system theme
         condition << plugin.dock_style != 'system'

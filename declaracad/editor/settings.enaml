@@ -120,5 +120,4 @@ enamldef EditorSettingsPage(Container):
         PushButton:
             text = "Browse"
             clicked :: FileDialogEx.get_existing_directory(
-                self,
-                current_path=model.project_path)
+                self, current_path=model.project_path)

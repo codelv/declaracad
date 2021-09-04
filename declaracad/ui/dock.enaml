@@ -11,103 +11,12 @@ Created on Dec 13, 2017
 """
 from enaml.core.include import Include
 from enaml.layout.api import AreaLayout, TabLayout, DockBarLayout, HSplitLayout
-from enaml.stdlib.dock_area_styles import (
-    register_styles, available_styles, CommonStyles, AreaStyle, ItemStyle,
-    TitleBarStyle, DockBarButtonStyle, ContainerStyle,
-    TabBarTabStyle, TitleBarLabelStyle, TitleBarButtonStyle, Style, Setter
-)
 from enaml.widgets.dock_events import DockItemEvent
 from declaracad.core.api import DockArea, DockItem
 
-
-def get_system_color(name='window'):
-    from enaml.qt.QtWidgets import QWidget
-    palette = QWidget().palette()
-    qcolor = getattr(palette, name)().color()
-    return qcolor.name(qcolor.HexArgb)
+from .styles import SystemStyle
 
 
-template SystemStyle():
-    """ DockArea style sheet styles that uses the system colors
-
-    """
-    CommonStyles():
-        pass
-    AreaStyle:
-        background = get_system_color('window')
-    ItemStyle:
-        background = get_system_color('window')
-        border = '1px solid '+get_system_color('base')
-    TitleBarStyle:
-        background = get_system_color('base')
-
-    # Add alert styles for an "important" alert.
-    TitleBarStyle:
-        pseudo_class = 'alert(important)'
-        background = 'orange'
-
-    TitleBarLabelStyle:
-        pseudo_class = 'alert(important)'
-        color = 'black'
-
-    DockBarButtonStyle:
-        pseudo_class = 'alert(important)'
-        background = 'orange'
-
-    TabBarTabStyle:
-        background = get_system_color('window')
-
-    TabBarTabStyle:
-        pseudo_class = 'selected'
-        background = get_system_color('dark')
-
-    TabBarTabStyle:
-        pseudo_class = 'alert(important)'
-        background = 'orange'
-
-    # Add alert styles for a "meltdown" alert.
-    TitleBarStyle:
-        pseudo_class = 'alert(meltdown)'
-        background = 'red'
-
-    TitleBarButtonStyle:
-        pseudo_class = 'hover'
-        background = get_system_color('dark')
-
-    Style:
-        element = 'DockArea'
-        pseudo_element = 'tab-bar-corner-button'
-        pseudo_class = 'hover'
-        Setter:
-            field = 'background'
-            value = get_system_color('dark')
-
-    DockBarButtonStyle:
-        border = '1px solid ' + get_system_color('window')
-
-    DockBarButtonStyle:
-        pseudo_class = 'checked'
-        background = get_system_color('dark')
-
-    DockBarButtonStyle:
-        pseudo_class = 'alert(meltdown)'
-        background = 'red'
-
-    TabBarTabStyle:
-        pseudo_class = 'alert(meltdown)'
-        background = 'red'
-
-    ContainerStyle:
-        pseudo_class = 'alert(meltdown)'
-        background = 'yellow'
-
-    ItemStyle:
-        pseudo_class = 'alert(meltdown)'
-        background = 'red'
-
-
-if 'system' not in available_styles():
-    register_styles('system', SystemStyle)
 
 
 enamldef DockView(DockArea):

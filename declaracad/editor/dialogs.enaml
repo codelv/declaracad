@@ -21,6 +21,8 @@ from enaml.widgets.api import (
     Dialog, Field, Label, PushButton, RadioButton, CheckBox, Html,
     ProgressBar, ObjectCombo, Form, Container, SpinBox, FileDialogEx
 )
+
+from declaracad.ui.styles import DialogStyleSheet
 from .plugin import EditorPlugin
 
 
@@ -29,6 +31,8 @@ enamldef NewFileDialog(Dialog): dialog:
     initial_size = (640, 320)
     attr plugin
     attr event
+    DialogStyleSheet:
+        pass
     #TaskDialogStyleSheet:
     #        pass
     TaskDialogBody:

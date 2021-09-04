@@ -138,6 +138,7 @@ enamldef ModelViewer(OccViewer): viewer:
         ViewerAction(name="Display radius dimension (dr)", action=keymap['d']['r']),
         ViewerAction(name="Display diameter dimension (dd)", action=keymap['d']['d']),
         ViewerAction(name="Display angle dimension (da)", action=keymap['d']['a']),
+        ViewerAction(name="Toggle consle", action=lambda: viewer.toggle_console()),
     ]
     attr actions: list = get_actions()
 
@@ -426,6 +427,9 @@ enamldef ModelViewer(OccViewer): viewer:
 
         # Update
         viewer.clipped_planes = plns
+
+    func toggle_console():
+        self.show_console = not self.show_console
 
     selection ::
         if selection and selection.selection:
@@ -820,7 +824,7 @@ enamldef ViewerWindow(FramelessWindow): window:
         return []
     Container:
         padding = 0
-        Splitter:
+        Splitter: splitter:
             orientation = 'vertical'
             SplitItem:
                 Container:
@@ -904,7 +908,7 @@ enamldef RemoteViewer(Container): remote_viewer:
     func update_viewer(change):
         protocol.set(change["name"], change['value'])
         if change['type'] == 'update':
-            protocol.redraw()
+            process.redraw()
 
     #: Mapping of plugin attr name to the update function
     attr observers = {}
@@ -988,6 +992,9 @@ enamldef ViewerDockItem(DockItem): view:
     func reload_document():
         process.document = None
         process.document = active_document
+
+    func take_screenshot(path):
+        return process.protocol.call('screenshot', path)
 
     RemoteViewer: viewer:
         plugin << view.plugin

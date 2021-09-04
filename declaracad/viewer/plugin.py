@@ -283,6 +283,7 @@ class ViewerProcess(ProcessLineReceiver):
         """ Catch and log error output attempting to decode it
 
         """
+        doc = self.document
         for line in data.split(b'\n'):
             if not line:
                 continue
@@ -291,9 +292,10 @@ class ViewerProcess(ProcessLineReceiver):
             try:
                 line = line.decode()
                 log.debug(f"render | err | {line}")
-                if self.document:
-                    self.document.errors.append(line)
+                if doc:
+                    doc.append_output(line)
             except Exception as e:
+                log.exception(e)
                 log.debug(f"render | err | {line}")
 
     def process_exited(self, reason=None):
@@ -342,7 +344,7 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
         return self.invoke_method('set', attr, value)
 
     def call(self, method, *args, **kwargs):
-        return self.invoke_method('call', *args, **kwargs)
+        return self.invoke_method('call', method, *args, **kwargs)
 
     def on_welcome(self, viewer_name, window_id):
         dock_item = self.plugin.get_viewer(viewer_name)
@@ -484,9 +486,9 @@ class ViewerPlugin(Plugin):
 
     def _default_exporters(self) -> ListType['ModelExporter']:
         """ TODO: push to an ExtensionPoint """
-        from .exporters.stl.exporter import StlExporter
-        from .exporters.step.exporter import StepExporter
-        from .exporters.vrml.exporter import VrmlExporter
+        from declaracad.occ.exporters.stl.exporter import StlExporter
+        from declaracad.occ.exporters.step.exporter import StepExporter
+        from declaracad.occ.exporters.vrml.exporter import VrmlExporter
         return [StlExporter, StepExporter, VrmlExporter]
 
     # -------------------------------------------------------------------------
@@ -523,13 +525,13 @@ class ViewerPlugin(Plugin):
         if options.target:
             viewer = self.get_viewer(options.target)
             if viewer:
-                results.append(viewer.renderer.screenshot(options.path))
+                results.append(viewer.take_screenshot(options.path))
         else:
             for i, viewer in enumerate(self.get_viewers()):
                 # Insert view number
                 path, ext = os.path.splitext(options.path)
                 filename = "{}-{}{}".format(path, i+1, ext)
-                results.append(viewer.renderer.screenshot(filename))
+                results.append(viewer.take_screenshot(filename))
         return results
 
     def add_viewer(self, position: str = 'right', target: str = '',

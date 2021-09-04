@@ -502,7 +502,7 @@ enamldef EditorDockItem(DockItem): view:
         core = plugin.workbench.get_plugin("enaml.workbench.core")
         core.invoke_command('declaracad.editor.close_editor',
                             {'document':doc, 'target': view.name})
-    icon = load_icon('script_code')
+    #icon = load_icon('script_code')
     name = 'editor-item-{}'.format(id(self))
 
     stretch = 2
