@@ -62,6 +62,9 @@ class ProxyMeshTopology(Atom):
     def _get_element_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
+    def _get_link_iterator(self) -> ProxyIterator:
+        raise NotImplementedError
+
     def _get_face_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
@@ -76,6 +79,9 @@ class ProxyMeshTopology(Atom):
 
     #: Elements iterator
     elements = Property(lambda s: s._get_element_iterator())
+
+    #: Links
+    links = Property(lambda s: s._get_link_iterator())
 
     #: Faces iterator
     faces = Property(lambda s: s._get_face_iterator())
