@@ -153,7 +153,7 @@ template SystemStyle():
         background = get_system_color('window')
         border = '1px solid '+get_system_color('base')
     TitleBarStyle:
-        background = get_system_color('base')
+        background = get_system_color('window')
 
     Style:
         element = 'DockArea'
