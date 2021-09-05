@@ -833,10 +833,11 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         ais_context = self.ais_context
         ais_context.Deactivate()
         if mode == 'any':
+            SelectionMode = AIS_Shape.SelectionMode_
             for mode in (TopAbs.TopAbs_SHAPE, TopAbs.TopAbs_SHELL,
                          TopAbs.TopAbs_FACE, TopAbs.TopAbs_EDGE,
                          TopAbs.TopAbs_WIRE, TopAbs.TopAbs_VERTEX):
-                ais_context.Activate(AIS_Shape.SelectionMode_(mode))
+                ais_context.Activate(SelectionMode(mode))
             return
         attr = 'TopAbs_%s' % mode.upper()
         mode = getattr(TopAbs, attr, TopAbs.TopAbs_SHAPE)
@@ -978,8 +979,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                         selection_info = info.get(attr)
                         if selection_info is None:
                             selection_info = info[attr] = {}
-                        item_iter = getattr(d.topology, attr)
-                        selection_info[i] = item_iter[i]
+                        item_iter = getattr(d.topology, attr, None)
+                        if item_iter is not None:
+                            selection_info[i] = item_iter[i]
 
                 elif not topods_shape.IsNull():
                     # Try to lookup index based on topology
