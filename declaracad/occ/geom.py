@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec
 from OCCT.BRep import BRep_Tool
 from OCCT.TopoDS import TopoDS_Shape
+from SMESH.SMDS import SMDS_MeshNode
 
 
 class Settings(Atom):
@@ -103,8 +104,8 @@ class Point(Atom):
         if isinstance(x, TopoDS_Shape):
             pnt = BRep_Tool.Pnt_(x)
             x, y, z = pnt.X(), pnt.Y(), pnt.Z()
-        elif isinstance(x, gp_Pnt):
-            x, y, z = pnt.X(), pnt.Y(), pnt.Z()
+        elif isinstance(x, (gp_Pnt, SMDS_MeshNode)):
+            x, y, z = x.X(), x.Y(), x.Z()
         super().__init__(x=x, y=y, z=z, **kwargs)
 
     def _default_proxy(self):
