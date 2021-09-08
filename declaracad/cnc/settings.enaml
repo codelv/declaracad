@@ -262,13 +262,11 @@ enamldef CncSettingsPage(Container): page:
     attr model: CncPlugin
     attr plugin << model
     padding = 0
-
     Splitter:
         orientation = 'horizontal'
         SplitItem:
             Container:
                 padding = 0
-        
                 TreeView: tree:
                     horizontal_headers = ['Connection']
                     horizontal_stretch = True

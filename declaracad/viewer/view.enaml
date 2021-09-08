@@ -267,7 +267,7 @@ enamldef ModelViewer(OccViewer): viewer:
             v = Point(topods_shape)
             return [f"  Vertex: {v[:]}"]
         elif shape_type == 'node':
-            v = Point(topods_shape)
+            v = topods_shape
             return [f"  Node: {v[:]}"]
         elif shape_type == 'edge':
             topology = Topology(shape=topods_shape)
@@ -285,6 +285,13 @@ enamldef ModelViewer(OccViewer): viewer:
             desc = [
                 f"  Wire: {edges} edges",
                 f"  Wire Length: {length}"
+            ]
+            return desc
+        elif shape_type == 'mesh':
+            topology = topods_shape.declaration.topology
+            n = len(topology.nodes)
+            desc = [
+                f"  Nodes: {n} nodes",
             ]
             return desc
 

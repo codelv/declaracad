@@ -972,6 +972,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                     # Mesh selection works differently...
                     ais_selection = ais_context.Selection()
                     owner = ais_selection.Value()
+
                     if isinstance(owner, MeshVS_MeshEntityOwner):
                         item_type = owner.Type()
                         i = owner.ID()
@@ -982,6 +983,8 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                         item_iter = getattr(d.topology, attr, None)
                         if item_iter is not None:
                             selection_info[i] = item_iter[i]
+                    else:
+                        info['meshs'] = {0: occ_shape}
 
                 elif not topods_shape.IsNull():
                     # Try to lookup index based on topology

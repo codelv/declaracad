@@ -36,7 +36,7 @@ from OCCT.TColStd import TColStd_MapIteratorOfPackedMapOfInteger
 from .occ_shape import OccShape, OccDependentShape
 from .occ_draw import MARKERS
 from .utils import color_to_quantity_color
-from ..mesh import Shape, ProxyMesh, ProxyIterator, ProxyMeshTopology
+from ..mesh import Shape, Node, ProxyMesh, ProxyIterator, ProxyMeshTopology
 
 from declaracad.core.utils import log
 
@@ -61,18 +61,26 @@ class OccNodeIterator(ProxyIterator):
     mesh = ForwardTyped(lambda: OccMesh)
 
     def __iter__(self):
-        vs_link = self.mesh.vs_link
+        mesh = self.mesh
+        d = mesh.declaration
+        vs_link = mesh.vs_link
         it = TColStd_MapIteratorOfPackedMapOfInteger(vs_link.GetAllNodes())
         find = vs_link.FindNode
         while it.More():
-            yield find(it.Key())
+            k = it.Key()
+            node = find(k)
+            yield Node(id=k, x=node.X(), y=node.Y(), z=node.Z(),
+                       proxy=node, mesh=d)
             it.Next()
 
     def __len__(self):
         return self.mesh.mesh.NbNodes()
 
     def __getitem__(self, key):
-        return self.mesh.vs_link.FindNode(key)
+        node = self.mesh.vs_link.FindNode(key)
+        return Node(
+            id=key, x=node.X(), y=node.Y(), z=node.Z(),
+            proxy=node, mesh=self.mesh.declaration)
 
 
 class OccElementIterator(ProxyIterator):
@@ -101,6 +109,9 @@ class OccMeshTopology(ProxyMeshTopology):
 
     def _get_element_iterator(self) -> OccElementIterator:
         return OccElementIterator(mesh=self.mesh)
+
+    def _get_link_iterator(self) -> ProxyIterator:
+        raise NotImplementedError
 
     #def _get_face_iterator(self) -> ProxyIterator:
         #raise NotImplementedError
@@ -174,8 +185,11 @@ class OccMesh(OccDependentShape, ProxyMesh):
                 mesh_vs, 3 | 8, vs_link, 1)
             element_builder = self.element_builder = MeshVS_ElementalColorPrsBuilder(
                 mesh_vs, 3 | 10, vs_link, 2)
+            d.process_mesh()
             self.update_style()
+            log.debug("Colorizing mesh...")
             d.colorize_mesh()
+            log.debug("Done!")
             mesh_vs.AddBuilder(builder, True)
             mesh_vs.AddBuilder(node_builder)
             mesh_vs.AddBuilder(element_builder)

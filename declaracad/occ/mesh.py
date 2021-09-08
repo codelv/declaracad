@@ -11,11 +11,13 @@ Created on Aug 3, 2021
 """
 from atom.api import (
     Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property,
-    Str, Int
+    Str, Int, observe
 )
 from enaml.core.declarative import d_, d_func
 from enaml.colors import ColorMember
-from .shape import ProxyShape, Shape
+from .shape import ProxyShape, Shape, Point
+
+from SMESH.SMDS import SMDS_MeshNode
 
 
 class ProxyMesh(ProxyShape):
@@ -93,6 +95,29 @@ class ProxyMeshTopology(Atom):
     groups = Property(lambda s: s._get_group_iterator())
 
 
+class Node(Point):
+    """ A mesh node.
+
+    This is meant to be used as a pass through object.
+
+    """
+    #: The internal node
+    proxy = Typed(SMDS_MeshNode)
+
+    #: The mesh this node is connected to
+    mesh = ForwardTyped(lambda: Mesh)
+
+    #: ID within the mesh
+    id = Int()
+
+    #: Color of the node
+    color = ColorMember()
+
+    @observe('color')
+    def _update_node_color(self, change):
+        self.mesh.set_node_color(self.id, self.color)
+
+
 class Mesh(Shape):
     """ A Mesh
 
@@ -118,7 +143,7 @@ class Mesh(Shape):
     """
     proxy = Typed(ProxyMesh)
 
-    #: Shape to mesh
+    #: May be either a shape to mesh or a numpy array
     source = d_(Value())
 
     #: Meshing options
@@ -166,6 +191,13 @@ class Mesh(Shape):
 
         """
         raise NotImplementedError
+
+    @d_func
+    def process_mesh(self):
+        """ Process the generated mesh. This is invoked before colorizing.
+
+        """
+        pass
 
     @d_func
     def colorize_mesh(self):

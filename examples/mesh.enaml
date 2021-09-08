@@ -4,14 +4,21 @@ from SMESH.NETGENPlugin import (NETGENPlugin_SimpleHypothesis_3D,
                                 NETGENPlugin_NETGEN_2D3D)
 
 enamldef Assembly(Part):
-    Cylinder: box:
+    Box: box:
         display = False
-        radius = 30
-        height = 100
+        dx = 10
+        dy = 100
+        dz = 10
 
     Mesh:
         source = box
-        
+        color = "grey"
+        node_color = "purple"
+        node_size = 5
+        node_type = "point"
+        edge_color = "green"
+        beam_color = "black"
+
         prepare_mesh => (gen, mesh, shape):
             hyp = NETGENPlugin_SimpleHypothesis_3D(0, gen)
             hyp.SetLocalLength(5)

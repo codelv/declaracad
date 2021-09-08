@@ -1,0 +1,58 @@
+# Created in DeclaraCAD
+from enaml.colors import parse_color
+from declaracad.occ.api import *
+from SMESH.NETGENPlugin import *
+from SMESH.StdMeshers import *
+
+enamldef Assembly(Part):
+
+    Mesh:
+        name = "My mesh"
+        Cylinder: box:
+            display = False
+            #dx = 40
+            #dy = 10
+            #dz = 10
+            radius = 10
+            height = 20
+            #transparency = 0.8
+        color = "grey"
+        node_color = "purple"
+        node_size = 5
+        node_type = "point"
+        edge_color = "black"
+        beam_color = "black"
+        
+        # export_type = "stl"
+        # export_filename = "my-mesh"
+        
+        prepare_mesh => (gen, mesh, shape):
+            hyp = NETGENPlugin_SimpleHypothesis_2D(0, gen)
+            #hyp.SetQuadAllowed(True)
+            hyp.SetLocalLength(2)
+            hyp.SetAllowQuadrangles(True)
+            
+            hyp2 = NETGENPlugin_SimpleHypothesis_3D(1, gen)
+            hyp2.SetLocalLength(2)
+            hyp2.SetAllowQuadrangles(True)
+            
+
+            alg = NETGENPlugin_NETGEN_2D3D(0, gen)
+            #mesher = StdMeshers_QuadraticMesh(1, gen)
+            #algo.Arithmetic1D(1, 2, box.topology.edges[0:2])
+            
+            mesh.AddHypothesis(shape, 0)
+            mesh.AddHypothesis(shape, 1)
+    
+        #colorize_mesh => ():
+        #    blue = parse_color("blue")
+        #    red = parse_color("red")
+            
+        #    for i in self.topology.nodes:
+        #        if i & 1:
+        #            self.set_node_color(i, red)
+        #        else:
+        #            self.set_node_color(i, blue)
+                
+                
+                

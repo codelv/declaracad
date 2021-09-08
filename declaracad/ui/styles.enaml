@@ -180,9 +180,6 @@ template SystemStyle():
     TabBarTabStyle:
         pseudo_class = 'top, bottom'
         Setter:
-            field = 'height'
-            value = '24px'
-        Setter:
             field = 'width'
             value = '100px'
 
