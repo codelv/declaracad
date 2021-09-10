@@ -153,6 +153,7 @@ class OccDisplayArrow(OccDisplayItem, ProxyDisplayArrow):
     def set_tube_size(self, size):
         self.create_item()
 
+
 class OccDisplayText(OccDisplayItem, ProxyDisplayText):
     #: A reference to the toolkit item created by the proxy.
     item = Typed(AIS_TextLabel)

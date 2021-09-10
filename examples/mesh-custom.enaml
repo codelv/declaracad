@@ -1,0 +1,62 @@
+# Created in DeclaraCAD
+from enaml.colors import parse_color
+from declaracad.occ.api import *
+from declaracad.fea.api import Analysis
+from SMESH.NETGENPlugin import *
+
+
+
+enamldef Bracket(Part):
+    Cut: src:
+        Box: box:
+            position = (-dx/2, -dy/2)
+            dx = 100
+            dy = 100
+            dz = 10
+
+        Cylinder:
+            #display = False
+            radius = 10
+            height = 10
+
+
+enamldef Assembly(Part):
+    Mesh: mesh:
+        display = False
+        Box: box:
+            dx = 100
+            dy = 200
+            dz = 100
+        edge_color = 'black'
+        prepare_mesh => (gen, mesh, shape):
+            hyp = NETGENPlugin_SimpleHypothesis_3D(0, gen)
+            hyp.SetLocalLength(10)
+            hyp.SetAllowQuadrangles(True)
+            alg = NETGENPlugin_NETGEN_2D3D(1, gen)
+            mesh.AddHypothesis(shape, 0)
+            mesh.AddHypothesis(shape, 1)
+        colorize_mesh => ():
+            n = 255/box.dy
+            for node in self.topology.nodes:
+                h = int(node.y*n)
+                node.color = f'hsl({h}, 100%, 50%)'
+                node.mass = 0.1
+                if node.y == 0:
+                    node.fixed = True
+                if node.x == 100:
+                    node.force = (0, 1000,  0)
+
+    Analysis: fea:
+        source = mesh
+        solver_type = 'MINRES'
+        process_solution => (system, solver, mesh):
+            for node in source.topology.nodes:
+                chrono_node = node.proxy.fea_node.chrono_node
+                d = chrono_node.GetPos() - chrono_node.GetX0()
+                l = d.Length()
+                print(l)
+                h = 100*l
+                node.color = f'hsl({h}, 100%, 50%)'
+                
+
+

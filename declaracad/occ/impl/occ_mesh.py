@@ -10,10 +10,10 @@ Created on Aug 3, 2021
 @author: jrm
 """
 import os
-import time
 import warnings
-from atom.api import Typed, ForwardTyped
-from typing import Iterator
+from typing import Optional, Iterator, Union
+from atom.api import Dict, Typed, ForwardTyped
+from enaml.colors import Color
 from OCCT.BRepCheck import BRepCheck_Analyzer
 from OCCT.BRepMesh import (
     BRepMesh_Context,
@@ -21,6 +21,7 @@ from OCCT.BRepMesh import (
     BRepMesh_IncrementalMesh,
     BRepMesh_DelabellaMeshAlgoFactory
 )
+from OCCT.TopoDS import TopoDS_Shape
 from OCCT.ShapeBuild import ShapeBuild_ReShape
 from OCCT.ShapeFix import ShapeFix_Shape, ShapeFix_ShapeTolerance
 from OCCT.MeshVS import (
@@ -32,19 +33,26 @@ from OCCT.MeshVS import (
     MeshVS_DA_BeamType, MeshVS_DA_InteriorColor, MeshVS_DA_BackInteriorColor,
     MeshVS_DA_ColorReflection,
 )
-from OCCT.TColStd import TColStd_MapIteratorOfPackedMapOfInteger
+from OCCT.TColStd import (
+    TColStd_Array1OfInteger, TColStd_MapIteratorOfPackedMapOfInteger
+)
 from .occ_shape import OccShape, OccDependentShape
 from .occ_draw import MARKERS
 from .utils import color_to_quantity_color
-from ..mesh import Shape, Node, ProxyMesh, ProxyIterator, ProxyMeshTopology
+from declaracad.occ.mesh import (
+    Shape, Node, Element, ProxyMesh, ProxyIterator, ProxyMeshTopology,
+    ProxyNode, ProxyElement
+)
 
-from declaracad.core.utils import log
+from declaracad.core.utils import log, log_time
 
 try:
     from SMESH.SMDSAbs import SMDSAbs_Node
     from SMESH.SMESH import (
         SMESH_MeshVSLink, SMESH_Mesh, SMESH_subMesh, SMESH_Gen
     )
+    from SMESH.SMESHDS import SMESHDS_Mesh
+    from SMESH.SMDS import SMDS_MeshNode, SMDS_MeshElement, SMDS_MeshElement
     from SMESH.NETGENPlugin import (
         NETGENPlugin_SimpleHypothesis_3D, NETGENPlugin_NETGEN_2D3D
     )
@@ -55,50 +63,159 @@ except ImportError as e:
     SMESH_Gen = object
     SMESH_Mesh = object
     SMESH_MeshVSLink = object
+    SMDS_MeshNode = object
+    SMDS_MeshElement = object
+    SMESHDS_Mesh = object
 
+
+def fea_node_type():
+    from declaracad.fea.impl.fea_analysis import FeaNode
+    return FeaNode
+
+
+def fea_element_type():
+    from declaracad.fea.impl.fea_analysis import FeaElement
+    return FeaElement
+
+# ----------------------------------------------------------------------------
+# Mesh elements
+# ----------------------------------------------------------------------------
+
+class OccNode(ProxyNode):
+    mesh = ForwardTyped(lambda: OccMesh)
+    fea_node = ForwardTyped(fea_node_type)
+    smesh_node = Typed(SMDS_MeshNode)
+
+    def _default_fea_node(self):
+        FeaNode = fea_node_type()
+        return FeaNode(occ_node=self)
+
+    def set_color(self, color):
+        self.mesh.set_node_color(self.declaration.id, color)
+
+    def set_mass(self, mass):
+        self.fea_node.set_mass(mass)
+
+    def set_force(self, force):
+        self.fea_node.set_force(force)
+
+    def set_fixed(self, fixed):
+        self.fea_node.set_fixed(fixed)
+
+
+class OccElement(ProxyElement):
+    mesh = ForwardTyped(lambda: OccMesh)
+    fea_element = ForwardTyped(fea_element_type)
+    smesh_element = Typed(SMDS_MeshElement)
+
+    def _default_fea_element(self):
+        FeaElement = fea_element_type()
+        return FeaElement(occ_element=self)
+
+    def set_color(self, color):
+        self.mesh.set_element_color(self.declaration.id, color)
+
+
+def create_node(key: int, mesh: 'OccMesh', smesh_node: SMDS_MeshNode) -> Node:
+    """ Create a Node declaration from a generated mesh.
+
+    """
+    node = Node(id=key, x=smesh_node.X(), y=smesh_node.Y(), z=smesh_node.Z(),
+        mesh=mesh.declaration)
+    node.proxy = OccNode(declaration=node, mesh=mesh, smesh_node=smesh_node)
+    return node
+
+
+def create_element(
+    key: int,
+    mesh: 'OccMesh',
+    smesh_element: SMDS_MeshElement
+) -> Element:
+    """ Create an Element declaration from a generated mesh.
+
+    """
+    n = smesh_element.NbNodes()
+    array = TColStd_Array1OfInteger(0, n)
+    mesh.vs_link.GetNodesByElement(key, array, n)
+    nodes = [mesh.find_node(array.Value(i)) for i in range(1, n + 1)]
+    e = Element(id=key, nodes=nodes)
+    e.proxy = OccElement(declaration=e, smesh_element=smesh_element)
+    return e
+
+# ----------------------------------------------------------------------------
+# Mesh topology iterators
+# ----------------------------------------------------------------------------
 
 class OccNodeIterator(ProxyIterator):
     mesh = ForwardTyped(lambda: OccMesh)
 
     def __iter__(self):
-        mesh = self.mesh
-        d = mesh.declaration
-        vs_link = mesh.vs_link
-        it = TColStd_MapIteratorOfPackedMapOfInteger(vs_link.GetAllNodes())
-        find = vs_link.FindNode
-        while it.More():
-            k = it.Key()
-            node = find(k)
-            yield Node(id=k, x=node.X(), y=node.Y(), z=node.Z(),
-                       proxy=node, mesh=d)
-            it.Next()
+        it = self.mesh.smesh_ds.nodesIterator()
+        while it.more():
+            yield self[it.next()]
 
     def __len__(self):
-        return self.mesh.mesh.NbNodes()
+        return self.mesh.smesh_ds.NbNodes()
 
     def __getitem__(self, key):
-        node = self.mesh.vs_link.FindNode(key)
-        return Node(
-            id=key, x=node.X(), y=node.Y(), z=node.Z(),
-            proxy=node, mesh=self.mesh.declaration)
+        return self.mesh.find_node(key)
 
 
 class OccElementIterator(ProxyIterator):
     mesh = ForwardTyped(lambda: OccMesh)
+    nodes = Typed(OccNodeIterator)
+
+    def _default_nodes(self):
+        return OccNodeIterator(mesh=self.mesh)
 
     def __iter__(self):
-        vs_link = self.mesh.vs_link
-        it = TColStd_MapIteratorOfPackedMapOfInteger(vs_link.GetAllElements())
-        find = vs_link.FindElement
-        while it.More():
-            yield find(it.Key())
-            it.Next()
+        it = self.mesh.smesh_ds.elementsIterator()
+        while it.more():
+            yield self[it.next()]
 
     def __len__(self):
-        return self.mesh.mesh.NbElements()
+        return self.mesh.smesh_ds.NbElements()
 
     def __getitem__(self, key):
-        return self.mesh.vs_link.FindElement(key)
+        return self.mesh.find_element(key)
+
+
+class OccFaceIterator(ProxyIterator):
+    mesh = ForwardTyped(lambda: OccMesh)
+    nodes = Typed(OccNodeIterator)
+
+    def _default_nodes(self):
+        return OccNodeIterator(mesh=self.mesh)
+
+    def __iter__(self):
+        it = self.mesh.smesh_ds.facesIterator()
+        while it.more():
+            yield self[it.next()]
+
+    def __len__(self):
+        return self.mesh.smesh_ds.NbFaces()
+
+    def __getitem__(self, key):
+        return self.mesh.find_face(key)
+
+
+class OccVolumeIterator(ProxyIterator):
+    mesh = ForwardTyped(lambda: OccMesh)
+    nodes = Typed(OccNodeIterator)
+
+    def _default_nodes(self):
+        return OccNodeIterator(mesh=self.mesh)
+
+    def __iter__(self):
+        it = self.mesh.smesh_ds.volumesIterator()
+        while it.more():
+            yield self[it.next()]
+
+    def __len__(self):
+        return self.mesh.smesh_ds.NbVolumes()
+
+    def __getitem__(self, key):
+        return self.mesh.find_volume(key)
 
 
 class OccMeshTopology(ProxyMeshTopology):
@@ -113,15 +230,14 @@ class OccMeshTopology(ProxyMeshTopology):
     def _get_link_iterator(self) -> ProxyIterator:
         raise NotImplementedError
 
-    #def _get_face_iterator(self) -> ProxyIterator:
-        #raise NotImplementedError
+    def _get_face_iterator(self) -> ProxyIterator:
+        raise NotImplementedError
 
-    #def _get_volume_iterator(self) -> ProxyIterator:
-
+    def _get_volume_iterator(self) -> ProxyIterator:
+        return OccVolumeIterator(mesh=self.mesh)
 
     #def _get_group_iterator(self) -> ProxyIterator:
     #    raise OccGroupIterator(mesh=self.mesh)
-
 
 
 class OccMesh(OccDependentShape, ProxyMesh):
@@ -131,11 +247,19 @@ class OccMesh(OccDependentShape, ProxyMesh):
     builder = Typed(MeshVS_MeshPrsBuilder)
     node_builder = Typed(MeshVS_NodalColorPrsBuilder)
     element_builder = Typed(MeshVS_ElementalColorPrsBuilder)
-    ais_shape = Typed(MeshVS_Mesh)
-    gen = Typed(SMESH_Gen)
+    ais_shape = Typed(MeshVS_Mesh, ())
+    source = Typed(TopoDS_Shape)
+    gen = Typed(SMESH_Gen, ())
     mesh = Typed(SMESH_Mesh)
     vs_link = Typed(SMESH_MeshVSLink)
+    smesh_ds = Typed(SMESHDS_Mesh)
     topology = Typed(OccMeshTopology)
+
+    #: Cached items
+    nodes = Dict(int, Node)
+    elements = Dict(int, Element)
+    faces = Dict(int, Element)
+    volumes = Dict(int, Element)
 
     def _default_topology(self):
         if self.ais_shape is None:
@@ -144,7 +268,6 @@ class OccMesh(OccDependentShape, ProxyMesh):
 
     def update_shape(self, change=None):
         d = self.declaration
-
         source = None
         if d.source:
             source = d.source
@@ -155,8 +278,8 @@ class OccMesh(OccDependentShape, ProxyMesh):
             source = child.shape
 
         gen = self.gen = SMESH_Gen()
-        mesh = self.mesh = gen.CreateMesh(True)
-        mesh_vs = self.ais_shape = MeshVS_Mesh()
+        self.mesh = gen.CreateMesh(True)
+        mesh = self.ais_shape = MeshVS_Mesh()
 
         # Cleanup shape
         fixer = ShapeFix_Shape(source)
@@ -164,45 +287,56 @@ class OccMesh(OccDependentShape, ProxyMesh):
         #if not fixer.Perform():
         #    raise RuntimeError(f"Failed to fix {source}")
         fixed_shape = fixer.Shape()
-
         if not d.disabled:
-            mesh.ShapeToMesh(fixed_shape)
-            d.prepare_mesh(gen, mesh, fixed_shape)
-            t = time.time()
-            log.debug("Computing mesh...")
+            self.update_mesh(fixed_shape)
+            if d.export_filename:
+                self.export(d.export_filename, d.export_type)
+        self.shape = fixed_shape
+
+    def update_mesh(self, shape: TopoDS_Shape):
+        self.nodes = {}
+        self.elements = {}
+        d = self.declaration
+        gen = self.gen
+        mesh = self.mesh
+        mesh_vs = self.ais_shape
+        mesh.ShapeToMesh(shape)
+        d.prepare_mesh(self.gen, self.mesh, shape)
+
+        with log_time("Computing mesh..."):
             result = gen.Compute(mesh, mesh.GetShapeToMesh())
             if not result:
                 raise RuntimeError(f"Failed to mesh {d}: {result}")
-            log.debug("Done! ({}ms)".format(round((time.time()-t)/1000, 2)))
 
-            #if d.group:
-            #    vs_link = SMESH_MeshVSLink(mesh, d.group)
-            #else:
-            vs_link = self.vs_link = SMESH_MeshVSLink(mesh)
-            mesh_vs.SetDataSource(vs_link)
-            builder = self.builder = MeshVS_MeshPrsBuilder(mesh_vs)
-            node_builder = self.node_builder = MeshVS_NodalColorPrsBuilder(
-                mesh_vs, 3 | 8, vs_link, 1)
-            element_builder = self.element_builder = MeshVS_ElementalColorPrsBuilder(
-                mesh_vs, 3 | 10, vs_link, 2)
+        vs_link = self.vs_link = SMESH_MeshVSLink(mesh)
+        mesh_vs.SetDataSource(vs_link)
+        self.smesh_ds = mesh.GetMeshDS()
+
+        self.builder = MeshVS_MeshPrsBuilder(mesh_vs)
+        self.node_builder = MeshVS_NodalColorPrsBuilder(
+            mesh_vs, 3 | 8, vs_link, 1)
+        self.element_builder = MeshVS_ElementalColorPrsBuilder(
+            mesh_vs, 3 | 10, vs_link, 2)
+
+        with log_time("Processing mesh..."):
             d.process_mesh()
-            self.update_style()
-            log.debug("Colorizing mesh...")
+
+        self.update_style()
+
+        with log_time("Colorizing mesh..."):
             d.colorize_mesh()
-            log.debug("Done!")
-            mesh_vs.AddBuilder(builder, True)
-            mesh_vs.AddBuilder(node_builder)
-            mesh_vs.AddBuilder(element_builder)
-            mesh_vs.SetDisplayMode(2)  # Shaded
-            mesh_vs.UpdateSelectableNodes()
-            #mesh_vs.SetMeshSelMethod(30)
 
-            if d.export_filename:
-                self.export(d.export_filename, d.export_type)
-
-        self.shape = fixed_shape
+        mesh_vs.AddBuilder(self.builder, True)
+        mesh_vs.AddBuilder(self.node_builder)
+        mesh_vs.AddBuilder(self.element_builder)
+        mesh_vs.SetDisplayMode(2)  # Shaded
+        mesh_vs.UpdateSelectableNodes()
+        # mesh_vs.SetMeshSelMethod(30)
 
     def update_style(self):
+        """ Update mesh colors.
+
+        """
         d = self.declaration
         drawer = self.ais_shape.GetDrawer()
         # Nodes
@@ -233,7 +367,7 @@ class OccMesh(OccDependentShape, ProxyMesh):
             drawer.SetColor(MeshVS_DA_InteriorColor, c)
         drawer.SetBoolean(MeshVS_DA_ColorReflection, True)
 
-    def export(self, filename, export_type, *args):
+    def export(self, filename: str, export_type: str, *args):
         """ Export the mesh. The extension is added automatically
 
         Parameters
@@ -254,8 +388,51 @@ class OccMesh(OccDependentShape, ProxyMesh):
         export(filename, *args)
         log.info("Ok!")
 
-    def _default_ais_shape(self):
-        return self.mesh_vs
+    def find_node(self, key: Union[int, SMDS_MeshNode]) -> Node:
+        """ Find the Node with the given ID.
+
+        """
+        id = key.GetID() if isinstance(key, SMDS_MeshNode) else key
+        node = self.nodes.get(id)
+        if node is None:
+            item = self.vs_link.FindNode(id)
+            if item is None:
+                raise KeyError(id)
+            node = self.nodes[id] = create_node(id, self, item)
+        return node
+
+    def find_element(self, key: Union[int, SMDS_MeshElement]) -> Element:
+        """ Find the Element with the given ID.
+
+        """
+        id = key.GetID() if isinstance(key, SMDS_MeshElement) else key
+        element = self.elements.get(id)
+        if element is None:
+            item = self.vs_link.FindElement(id)
+            if item is None:
+                raise KeyError(id)
+            element = self.elements[id] = create_element(id, self, item)
+        return element
+
+    def find_face(self, key: Union[int, SMDS_MeshElement]) -> Element:
+        id = key.GetID() if isinstance(key, SMDS_MeshElement) else key
+        element = self.faces.get(id)
+        if element is None:
+            item = self.vs_link.FindElement(id)
+            if item is None:
+                raise KeyError(id)
+            element = self.faces[id] = create_element(id, self, item)
+        return element
+
+    def find_volume(self, key: Union[int, SMDS_MeshElement]) -> Element:
+        id = key.GetID() if isinstance(key, SMDS_MeshElement) else key
+        element = self.volumes.get(id)
+        if element is None:
+            item = self.vs_link.FindElement(id)
+            if item is None:
+                raise KeyError(id)
+            element = self.volumes[id] = create_element(id, self, item)
+        return element
 
     def set_source(self, source):
         self.update_shape()
@@ -263,11 +440,12 @@ class OccMesh(OccDependentShape, ProxyMesh):
     def set_algorithm(self, algo):
         self.update_shape()
 
-    def set_node_color(self, index, color):
+    def set_node_color(self, index: int, color: Color):
         c, _ = color_to_quantity_color(color)
         self.node_builder.SetColor(index, c)
 
-    def set_element_color(self, index, front_color, back_color=None):
+    def set_element_color(self, index: int, front_color: Color,
+                          back_color: Optional[Color] = None):
         front, _ = color_to_quantity_color(front_color)
         if back_color is None:
             self.element_builder.SetColor1(index, front)

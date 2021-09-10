@@ -289,16 +289,22 @@ enamldef ModelViewer(OccViewer): viewer:
             return desc
         elif shape_type == 'mesh':
             topology = topods_shape.declaration.topology
-            n = len(topology.nodes)
+            nodes = len(topology.nodes)
+            elements = len(topology.elements)
             desc = [
-                f"  Nodes: {n} nodes",
+                f"  Mesh: {nodes} nodes",
+                f"        {elements} elements",
             ]
             return desc
 
     func describe_shapes(shape_type, topods_shapes):
         if shape_type in ('vertexs', 'nodes') and len(topods_shapes) == 2:
-            v1 = Point(topods_shapes[0])
-            v2 = Point(topods_shapes[1])
+            if shape_type == 'vertexs':
+                v1 = Point(topods_shapes[0])
+                v2 = Point(topods_shapes[1])
+            else:
+                v1 = topods_shapes[0].declaration
+                v2 = topods_shapes[1].declaration
             delta = v2 - v1
             d = v1.distance(v2)
             what = shape_type[:-1].title()

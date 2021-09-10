@@ -20,8 +20,6 @@ enamlx.install()
 
 from declaracad.core.workbench import DeclaracadWorkbench
 from declaracad.core.utils import log
-from declaracad.occ.impl import occ_factories
-from declaracad.viewer.qt import qt_factories
 
 with enaml.imports():
     #: TODO autodiscover these

@@ -14,9 +14,8 @@ import time
 import enaml
 import jsonpickle
 import faulthandler
-from enaml.qt.qt_application import QtApplication
-from declaracad.occ.impl import occ_factories
-from declaracad.viewer.qt import qt_factories
+from declaracad.core.app import Application
+
 
 
 def main(**kwargs):
@@ -33,7 +32,7 @@ def main(**kwargs):
     exporter = jsonpickle.loads(options)
     assert exporter, "Failed to load exporter from: {}".format(options)
     # An Application is required
-    app = QtApplication()
+    app = Application()
     t0 = time.time()
     print("Exporting {e.filename} to {e.path}...".format(e=exporter))
     sys.stdout.flush()

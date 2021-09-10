@@ -11,6 +11,7 @@ Created on Jul 12, 2015
 """
 import os
 import sys
+import time
 import asyncio
 import logging
 import functools
@@ -19,7 +20,7 @@ import jsonpickle
 from atom.api import (
     Atom, Instance, Bool, Bytes, ContainerList, Dict, Int, Value
 )
-
+from contextlib import contextmanager
 from enaml.image import Image
 from enaml.icon import Icon, IconImage
 from enaml.application import Application, timed_call
@@ -139,6 +140,14 @@ def get_bootstrap_cmd():
     if not sys.executable.endswith('declaracad') and not is_frozen:
         cmd.extend(['-m', 'declaracad'])
     return cmd
+
+
+@contextmanager
+def log_time(start_message: str, done_message: str = "Done! ({} s)"):
+    log.debug(start_message)
+    t = time.time()
+    yield
+    log.debug(done_message.format(round((time.time()-t), 2)))
 
 
 class JsonRpcProtocol(Atom, asyncio.Protocol):

@@ -25,8 +25,6 @@ from atom.api import Atom, Instance, Typed, Bool, Dict, Float, Str
 from enaml.application import timed_call, deferred_call
 from declaracad.core.app import Application
 from declaracad.core.utils import log, RemoteLogger, JsonRpcProtocol
-from declaracad.occ.impl import occ_factories
-from declaracad.viewer.qt import qt_factories
 
 
 with enaml.imports():
@@ -59,6 +57,11 @@ class ViewerProtocol(JsonRpcProtocol):
             stdout=sys.stdout,
             stderr=sys.stderr)
         logger.attach()
+
+        # Reattach logger
+        #for handler in log.handlers:
+        #    if getattr(handler, 'stream', None) == logger.stdout:
+        #        handler.setStream(logger)
 
     def connection_lost(self, exc):
         self.logger.detach()

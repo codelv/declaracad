@@ -9,31 +9,53 @@ Created on Aug 3, 2021
 
 @author: jrm
 """
+from typing import Optional
 from atom.api import (
     Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property,
-    Str, Int, observe
+    List, Str, Int, Coerced, observe
 )
 from enaml.core.declarative import d_, d_func
-from enaml.colors import ColorMember
-from .shape import ProxyShape, Shape, Point
+from enaml.colors import Color, ColorMember
+from .shape import ProxyShape, Shape, Point, Direction, coerce_direction
 
-from SMESH.SMDS import SMDS_MeshNode
+
+class ProxyNode(Atom):
+    declaration = ForwardTyped(lambda: Node)
+
+    def set_color(self, color):
+        raise NotImplementedError
+
+    def set_mass(self, mass):
+        raise NotImplementedError
+
+    def set_force(self, force):
+        raise NotImplementedError
+
+    def set_fixed(self, fixed):
+        raise NotImplementedError
+
+
+class ProxyElement(Atom):
+    declaration = ForwardTyped(lambda: Element)
+
+    def set_color(self, color):
+        raise NotImplementedError
 
 
 class ProxyMesh(ProxyShape):
     #: A reference to the Shape declaration
     declaration = ForwardTyped(lambda: Mesh)
 
+    def find_node(self, id) -> 'Node':
+        raise NotImplementedError
+
+    def find_element(self, id) -> 'Element':
+        raise NotImplementedError
+
     def set_source(self, source):
         raise NotImplementedError
 
     def set_disabled(self, disabled):
-        raise NotImplementedError
-
-    def set_node_color(self, index, color):
-        raise NotImplementedError
-
-    def set_element_color(self, index, front_color, back_color=None):
         raise NotImplementedError
 
 
@@ -42,9 +64,6 @@ class ProxyIterator(Atom):
 
     """
     def __iter__(self):
-        raise NotImplementedError
-
-    def __next__(self):
         raise NotImplementedError
 
     def __len__(self):
@@ -101,8 +120,8 @@ class Node(Point):
     This is meant to be used as a pass through object.
 
     """
-    #: The internal node
-    proxy = Typed(SMDS_MeshNode)
+    #: Proxy to the internal object
+    proxy = Typed(ProxyNode)
 
     #: The mesh this node is connected to
     mesh = ForwardTyped(lambda: Mesh)
@@ -113,9 +132,80 @@ class Node(Point):
     #: Color of the node
     color = ColorMember()
 
+    #: Mass of the node
+    mass = Float(strict=False)
+
+    #: Force acting on the node
+    force = Coerced(Direction, coercer=coerce_direction)
+
+    #: Position is fixed
+    fixed = Bool()
+
     @observe('color')
-    def _update_node_color(self, change):
-        self.mesh.set_node_color(self.id, self.color)
+    def _update_color(self, change):
+        self.proxy.set_color(self.color)
+
+    @observe('mass')
+    def _update_mass(self, change):
+        self.proxy.set_mass(self.mass)
+
+    @observe('force')
+    def _update_force(self, change):
+        self.proxy.set_force(self.force)
+
+    @observe('fixed')
+    def _update_force(self, change):
+        self.proxy.set_fixed(self.fixed)
+
+    def __repr__(self):
+        return "<Node: x=%s y=%s z=%s>" % self[:]
+
+
+class Element(Atom):
+    #: Proxy to the internal object
+    proxy = Typed(ProxyElement)
+
+    #: Set of nodes that make up this element
+    nodes = List(Node)
+
+    #: The mesh this node is connected to
+    mesh = ForwardTyped(lambda: Mesh)
+
+    #: ID within the mesh
+    id = Int()
+
+    #: Color of the node
+    color = ColorMember()
+
+    #: Material definition
+    material = ForwardTyped(lambda: Material)
+
+    @observe('color')
+    def _update_color(self, change):
+        self.proxy.set_color(self.color)
+
+
+class Material(Atom):
+    #: The internal object
+    proxy = Value()
+
+    #: Density of the material in Kg/m^2
+    density = Float()
+
+    #: Youngs E elastic modulus in PA (N/m^2)
+    e = Float()
+
+    #: Posson V ratio
+    v = Float()
+
+    #: Shear modulus in PA (N/m^2)
+    g = Float()
+
+    #: Rayleigh damping
+    m = Float()
+
+    #: Rayleigh stiffness
+    k = Float()
 
 
 class Mesh(Shape):
@@ -175,6 +265,9 @@ class Mesh(Shape):
     beam_color = d_(ColorMember('black'))
     beam_size = d_(Float(1.0, strict=False))
 
+    # ---------------------------------------------------------------------
+    # Mesh API
+    # ---------------------------------------------------------------------
     @d_func
     def prepare_mesh(self, gen, mesh, shape):
         """ This is invoked before the mesh is computed. It should be
@@ -196,6 +289,8 @@ class Mesh(Shape):
     def process_mesh(self):
         """ Process the generated mesh. This is invoked before colorizing.
 
+        If you want to use your own FEA, this is a good place to hook in.
+
         """
         pass
 
@@ -207,14 +302,14 @@ class Mesh(Shape):
         """
         pass
 
-    def set_node_color(self, index, color):
-        """ Set the the color of the given node index
+    def find_node(self, id) -> Node:
+        """ Find the node with the given ID.
 
         """
-        self.proxy.set_node_color(index, color)
+        return self.proxy.find_node(id)
 
-    def set_element_color(self, index, front_color, back_color=None):
-        """ Set the the front and back colors of the given element index
+    def find_element(self, id) -> Element:
+        """ Find the node with the given ID.
 
         """
-        self.proxy.set_element_color(index, front_color, back_color)
+        return self.proxy.find_element(id)

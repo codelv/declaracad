@@ -20,6 +20,11 @@ from atom.api import Atom, Bool, Instance
 from enaml.qt.qt_application import QtApplication
 from declaracad.core.utils import log
 
+# Import factories
+from declaracad.occ.impl import occ_factories
+from declaracad.viewer.qt import qt_factories
+from declaracad.fea.impl import fea_factories
+
 
 class Application(QtApplication):
     """ Add asyncio support . Seems like a complete hack compared to twisted
