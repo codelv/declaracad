@@ -1,0 +1,79 @@
+# Created in DeclaraCAD
+from enaml.colors import parse_color
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+from declaracad.fea.api import Analysis
+from SMESH.NETGENPlugin import *
+from pychrono.fea import ChContinuumElastic
+
+
+enamldef Bracket(Part):
+    Cut: src:
+        Box: box:
+            position = (-dx/2, -dy/2)
+            dx = 100
+            dy = 100
+            dz = 10
+
+        Cylinder:
+            #display = False
+            radius = 10
+            height = 10
+
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Box: box:
+        transparency = 0.8
+        position = (-dx/2, 0, -dz/2)
+        dx = 100
+        dy = 500
+        dz = 100
+    Mesh: mesh:
+        source = box
+        display = False
+        edge_color = 'black'
+        prepare_mesh => (gen, mesh, shape):
+            hyp = NETGENPlugin_SimpleHypothesis_3D(0, gen)
+            hyp.SetLocalLength(10)
+            #hyp.SetAllowQuadrangles(True)
+            alg = NETGENPlugin_NETGEN_2D3D(1, gen)
+            mesh.AddHypothesis(shape, 0)
+            mesh.AddHypothesis(shape, 1)
+
+    Analysis: fea:
+        source = mesh
+        solver_type = 'MINRES'
+        gravity = (0, -9.8, 0)
+        create_material => ():
+            material = ChContinuumElastic()
+            material.Set_E(200e5)
+            material.Set_v(0.3)
+            return material
+
+        prepare_system => (system, solver, source, mesh):
+            for node in source.topology.nodes:
+                node.mass = 0.1
+                if node.position.y == 0:
+                    node.description = 'Fixed'
+                    node.fixed = True
+                elif node.position.y > 190 and node.position.x == 50:
+                    node.force = (1000000,  0, 0)
+
+        process_solution => (system, solver, source, mesh):
+            max_displacement = 0
+            for node in source.topology.nodes:
+                d = node.displacement.magnitude()
+                max_displacement = max(d, max_displacement)
+                node.position = node.displaced_position
+                node.data = {'d': d, }
+                node.description = f'd={d}'
+            s = 100/max_displacement
+            print(max_displacement)
+            for node in source.topology.nodes:
+                h = 120-node.data['d']*s
+                node.color = f'hsl({h}, 100%, 50%)'
+
+
+

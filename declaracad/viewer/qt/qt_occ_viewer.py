@@ -72,7 +72,6 @@ from declaracad.occ.impl.utils import (
     color_to_quantity_color, material_to_material_aspect
 )
 from declaracad.occ.impl.occ_shape import OccShape, OccPart
-from declaracad.occ.impl.occ_mesh import OccMesh
 from declaracad.occ.impl.occ_dimension import OccDimension
 from declaracad.occ.impl.occ_display import OccDisplayItem
 from declaracad.occ.api import BBox, Topology
@@ -965,7 +964,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             if occ_shape is not None:
                 d = occ_shape.declaration
                 topods_shape = ais_context.SelectedShape()
-                if isinstance(occ_shape, OccMesh):
+                if isinstance(ais_object, MeshVS_Mesh):
                     info = selection.get(d)
                     if info is None:
                         info = selection[d] = {}

@@ -12,11 +12,11 @@ Created on Sept 1, 2021
 import warnings
 from atom.api import (
     Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property,
-    Str, Int
+    Str, Int, Coerced, observe
 )
 from enaml.core.declarative import d_, d_func
 from enaml.colors import ColorMember
-from declaracad.occ.shape import ProxyShape, Shape
+from declaracad.occ.shape import ProxyShape, Shape, Direction, coerce_direction
 from declaracad.occ.mesh import Node as MeshNode
 
 
@@ -27,11 +27,17 @@ class ProxyAnalysis(ProxyShape):
     def set_source(self, source):
         raise NotImplementedError
 
+    def set_gravity(self, gravity):
+        raise NotImplementedError
+
 
 class Analysis(Shape):
-    """ A finite element analysis block
+    """ A finite element analysis block.
+
 
     """
+    #: Disable analysis
+    disabled = d_(Bool())
 
     #: System type (non-smooth contact or smooth contact)
     system_type = d_(Enum('NSC', 'SMC'))
@@ -52,17 +58,34 @@ class Analysis(Shape):
     #: Mesh to perform analysis on
     source = d_(Value())
 
+    #: Direction of gravity. The default is in the -Z direction.
+    gravity = d_(Coerced(Direction, coercer=coerce_direction))
+
+    def _default_gravity(self):
+        return Direction(0, 0, -9.8)
+
     @d_func
-    def prepare_system(self, system, solver, mesh):
-        """ Prepare the mesh for analysis. You can add constraints, etc
+    def create_material(self):
+        """
 
         """
         pass
 
     @d_func
-    def process_solution(self, system, solver, mesh):
+    def prepare_system(self, system, solver, source, mesh):
+        """ Prepare the mesh for analysis. You can add constraints, etc
+        set forces on the nodes etc here.
+
+        """
+        pass
+
+    @d_func
+    def process_solution(self, system, solver, source, mesh):
         """ Do something with the solution
 
         """
         pass
 
+    @observe('gravity')
+    def _update_proxy(self, change):
+        super()._update_proxy(change)

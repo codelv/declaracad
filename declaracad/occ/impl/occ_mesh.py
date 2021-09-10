@@ -39,6 +39,7 @@ from OCCT.TColStd import (
 from .occ_shape import OccShape, OccDependentShape
 from .occ_draw import MARKERS
 from .utils import color_to_quantity_color
+from declaracad.occ.shape import Point
 from declaracad.occ.mesh import (
     Shape, Node, Element, ProxyMesh, ProxyIterator, ProxyMeshTopology,
     ProxyNode, ProxyElement
@@ -77,10 +78,10 @@ def fea_element_type():
     from declaracad.fea.impl.fea_analysis import FeaElement
     return FeaElement
 
+
 # ----------------------------------------------------------------------------
 # Mesh elements
 # ----------------------------------------------------------------------------
-
 class OccNode(ProxyNode):
     mesh = ForwardTyped(lambda: OccMesh)
     fea_node = ForwardTyped(fea_node_type)
@@ -89,6 +90,9 @@ class OccNode(ProxyNode):
     def _default_fea_node(self):
         FeaNode = fea_node_type()
         return FeaNode(occ_node=self)
+
+    def set_position(self, position):
+        self.smesh_node.setXYZ(*position)
 
     def set_color(self, color):
         self.mesh.set_node_color(self.declaration.id, color)
@@ -102,6 +106,9 @@ class OccNode(ProxyNode):
     def set_fixed(self, fixed):
         self.fea_node.set_fixed(fixed)
 
+    def get_displaced_position(self):
+        return self.fea_node.get_displaced_position()
+
 
 class OccElement(ProxyElement):
     mesh = ForwardTyped(lambda: OccMesh)
@@ -112,17 +119,21 @@ class OccElement(ProxyElement):
         FeaElement = fea_element_type()
         return FeaElement(occ_element=self)
 
-    def set_color(self, color):
-        self.mesh.set_element_color(self.declaration.id, color)
+    def set_front_color(self, color):
+        d = self.declaration
+        self.mesh.set_element_color(d.id, d.front_color, d.back_color)
+
+    def set_back_color(self, color):
+        self.set_front_color(color)
 
 
 def create_node(key: int, mesh: 'OccMesh', smesh_node: SMDS_MeshNode) -> Node:
     """ Create a Node declaration from a generated mesh.
 
     """
-    node = Node(id=key, x=smesh_node.X(), y=smesh_node.Y(), z=smesh_node.Z(),
-        mesh=mesh.declaration)
+    node = Node(id=key, mesh=mesh.declaration)
     node.proxy = OccNode(declaration=node, mesh=mesh, smesh_node=smesh_node)
+    node.position = Point(smesh_node.X(), smesh_node.Y(), smesh_node.Z())
     return node
 
 
@@ -294,8 +305,7 @@ class OccMesh(OccDependentShape, ProxyMesh):
         self.shape = fixed_shape
 
     def update_mesh(self, shape: TopoDS_Shape):
-        self.nodes = {}
-        self.elements = {}
+        self.clear_cache()
         d = self.declaration
         gen = self.gen
         mesh = self.mesh
@@ -367,6 +377,37 @@ class OccMesh(OccDependentShape, ProxyMesh):
             drawer.SetColor(MeshVS_DA_InteriorColor, c)
         drawer.SetBoolean(MeshVS_DA_ColorReflection, True)
 
+    def clear_cache(self):
+        """ Free up cached elements
+
+        """
+        self.nodes = {}
+        self.elements = {}
+        self.faces = {}
+        self.volumes = {}
+
+    def destroy(self):
+        """ Cleanup resources
+
+        """
+        super().destroy()
+        self.clear_cache()
+
+        if self.vs_link:
+            del self.vs_link
+        if self.smesh_ds:
+            del self.smesh_ds
+        if self.ais_shape:
+            del self.ais_shape
+        if self.gen:
+            del self.gen
+        if self.builder:
+            del self.builder
+        if self.node_builder:
+            del self.node_builder
+        if self.element_builder:
+            del self.element_builder
+
     def export(self, filename: str, export_type: str, *args):
         """ Export the mesh. The extension is added automatically
 
@@ -388,6 +429,25 @@ class OccMesh(OccDependentShape, ProxyMesh):
         export(filename, *args)
         log.info("Ok!")
 
+    def _lookup_element(self, key: Union[int, SMDS_MeshElement], cache: dict) -> Element:
+        """ Get or create a cached element
+
+        """
+        id = key.GetID() if isinstance(key, SMDS_MeshElement) else key
+        element = cache.get(id)
+        if element is None:
+            if isinstance(key, SMDS_MeshElement):
+                item = key
+            else:
+                item = self.vs_link.FindElement(id)
+                if item is None:
+                    raise KeyError(id)
+            element = cache[id] = create_element(id, self, item)
+        return element
+
+    # ------------------------------------------------------------------------
+    # Proxy API
+    # ------------------------------------------------------------------------
     def find_node(self, key: Union[int, SMDS_MeshNode]) -> Node:
         """ Find the Node with the given ID.
 
@@ -395,9 +455,12 @@ class OccMesh(OccDependentShape, ProxyMesh):
         id = key.GetID() if isinstance(key, SMDS_MeshNode) else key
         node = self.nodes.get(id)
         if node is None:
-            item = self.vs_link.FindNode(id)
-            if item is None:
-                raise KeyError(id)
+            if isinstance(key, SMDS_MeshNode):
+                item = key
+            else:
+                item = self.vs_link.FindNode(id)
+                if item is None:
+                    raise KeyError(id)
             node = self.nodes[id] = create_node(id, self, item)
         return node
 
@@ -405,34 +468,19 @@ class OccMesh(OccDependentShape, ProxyMesh):
         """ Find the Element with the given ID.
 
         """
-        id = key.GetID() if isinstance(key, SMDS_MeshElement) else key
-        element = self.elements.get(id)
-        if element is None:
-            item = self.vs_link.FindElement(id)
-            if item is None:
-                raise KeyError(id)
-            element = self.elements[id] = create_element(id, self, item)
-        return element
+        return self._lookup_element(key, self.elements)
 
     def find_face(self, key: Union[int, SMDS_MeshElement]) -> Element:
-        id = key.GetID() if isinstance(key, SMDS_MeshElement) else key
-        element = self.faces.get(id)
-        if element is None:
-            item = self.vs_link.FindElement(id)
-            if item is None:
-                raise KeyError(id)
-            element = self.faces[id] = create_element(id, self, item)
-        return element
+        """ Find the Face with the given ID.
+
+        """
+        return self._lookup_element(key, self.faces)
 
     def find_volume(self, key: Union[int, SMDS_MeshElement]) -> Element:
-        id = key.GetID() if isinstance(key, SMDS_MeshElement) else key
-        element = self.volumes.get(id)
-        if element is None:
-            item = self.vs_link.FindElement(id)
-            if item is None:
-                raise KeyError(id)
-            element = self.volumes[id] = create_element(id, self, item)
-        return element
+        """ Find the Volume with the given ID.
+
+        """
+        return self._lookup_element(key, self.volumes)
 
     def set_source(self, source):
         self.update_shape()

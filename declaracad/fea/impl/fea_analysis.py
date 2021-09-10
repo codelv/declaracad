@@ -73,9 +73,9 @@ except ImportError as e:
 from OCCT.MeshVS import MeshVS_Mesh
 
 from declaracad.fea.analysis import ProxyAnalysis, Analysis
-from declaracad.occ.api import Mesh
+from declaracad.occ.api import Mesh, Point
 from declaracad.occ.impl.occ_shape import OccDependentShape
-from declaracad.occ.impl.occ_mesh import OccNode, OccElement
+from declaracad.occ.impl.occ_mesh import OccNode, OccElement, OccMeshTopology
 from declaracad.core.utils import log, log_time
 
 
@@ -144,7 +144,8 @@ class FeaNode(Atom):
 
     def _default_chrono_node(self):
         # TODO: Determine type???
-        return ChNodeFEAxyz(ChVectorD(*self.occ_node.declaration))
+        d = self.occ_node.declaration
+        return ChNodeFEAxyz(ChVectorD(*d.position))
 
     def set_fixed(self, fixed):
         self.chrono_node.SetFixed(fixed)
@@ -154,6 +155,10 @@ class FeaNode(Atom):
 
     def set_force(self, force):
         self.chrono_node.SetForce(ChVectorD(*force))
+
+    def get_displaced_position(self):
+        p = self.chrono_node.GetPos()
+        return Point(p.x, p.y, p.z)
 
 
 class FeaElement(Atom):
@@ -165,6 +170,8 @@ class FeaElement(Atom):
         n = len(d.nodes)
         if n == 4:
             element = ChElementTetra_4()
+        elif n == 2:
+            element = ChElementSpring()
         elif n == 8:
             element = ChElementHexa_8()
         elif n == 10:
@@ -174,7 +181,7 @@ class FeaElement(Atom):
         elif n == 20:
             element = ChElementHexa_20()
         else:
-            log.warning(f"Element with n={n}")
+            log.warning(f"Element with n={n} nodes={d.nodes}")
             return
         element.SetNodes(*(n.proxy.fea_node.chrono_node for n in d.nodes))
         return element
@@ -189,6 +196,14 @@ class FeaAnalysis(OccDependentShape, ProxyAnalysis):
     system = Instance(ChSystem)
     solver = Instance(ChSolver)
     mesh = Typed(ChMesh)
+
+    def _default_topology(self):
+        if self.ais_shape is None:
+            self.declaration.render()
+        return self.source.topology
+
+    #: Proxy to source mesh
+    topology = Typed(OccMeshTopology)
 
     def _default_source(self):
         d = self.declaration
@@ -205,11 +220,32 @@ class FeaAnalysis(OccDependentShape, ProxyAnalysis):
         system = self.system = System()
         mesh = self.mesh = ChMesh()
         system.Add(mesh)
+        system.Set_G_acc(ChVectorD(*d.gravity))
+
+        Solver = SOLVER_TYPES[d.solver_type]
+        solver = self.solver = Solver()
+        system.SetSolver(solver)
+
+        if not d.disabled:
+            self.do_analysis(source)
+
+        # Add each element to the mesh
+        self.shape = source.proxy.shape
+
+    def do_analysis(self, source):
+        d = self.declaration
+        system = self.system
+        solver = self.solver
+        mesh = self.mesh
+        with log_time("Preparing system..."):
+            d.prepare_system(system, solver, source, mesh)
 
         #: TODO...
-        material = ChContinuumElastic()
-        material.Set_E(207e6)
-        material.Set_v(0.3)
+        material = d.create_material()
+        if material is None:
+            material = ChContinuumElastic()
+            material.Set_E(207e6)
+            material.Set_v(0.3)
 
         # Add each node to the mesh
         with log_time("Generating FEA mesh..."):
@@ -223,22 +259,34 @@ class FeaAnalysis(OccDependentShape, ProxyAnalysis):
                     e.set_material(material)
                     mesh.AddElement(e.chrono_element)
 
-        Solver = SOLVER_TYPES[d.solver_type]
-        solver = self.solver = Solver()
-        system.SetSolver(solver)
-
-        d.prepare_system(system, solver, mesh)
-
-        #: Solve it
         with log_time("Running FEA..."):
             solution = d.solution_type.title().replace("-", "")
             solve = getattr(system, f'Do{solution}')
             solve()
 
-        d.process_solution(system, solver, mesh)
-
-        # Add each element to the mesh
-        self.shape = source.proxy.shape
+        with log_time("Processing solution..."):
+            d.process_solution(system, solver, source, mesh)
 
     def _default_ais_shape(self):
         return self.source.proxy.ais_shape
+
+    def destroy(self):
+        """ Cleanup resources
+
+        """
+        super().destroy()
+        if self.mesh:
+            del self.mesh
+        if self.solver:
+            del self.solver
+        if self.system:
+            del self.system
+
+    # ------------------------------------------------------------------------
+    # ProxyAnalysis API
+    # ------------------------------------------------------------------------
+    def set_source(self, source):
+        self.update_shape()
+
+    def set_gravity(self, gravity):
+        self.system.Set_G_acc(ChVectorD(*gravity))

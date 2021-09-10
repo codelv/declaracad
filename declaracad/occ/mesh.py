@@ -16,11 +16,16 @@ from atom.api import (
 )
 from enaml.core.declarative import d_, d_func
 from enaml.colors import Color, ColorMember
-from .shape import ProxyShape, Shape, Point, Direction, coerce_direction
+from .shape import (
+    ProxyShape, Shape, Point, Direction, coerce_direction, coerce_point
+)
 
 
 class ProxyNode(Atom):
     declaration = ForwardTyped(lambda: Node)
+
+    def set_position(self, position):
+        raise NotImplementedError
 
     def set_color(self, color):
         raise NotImplementedError
@@ -34,11 +39,17 @@ class ProxyNode(Atom):
     def set_fixed(self, fixed):
         raise NotImplementedError
 
+    def get_displaced_position(self):
+        raise NotImplementedError
+
 
 class ProxyElement(Atom):
     declaration = ForwardTyped(lambda: Element)
 
-    def set_color(self, color):
+    def set_front_color(self, color):
+        raise NotImplementedError
+
+    def set_back_color(self, color):
         raise NotImplementedError
 
 
@@ -50,6 +61,15 @@ class ProxyMesh(ProxyShape):
         raise NotImplementedError
 
     def find_element(self, id) -> 'Element':
+        raise NotImplementedError
+
+    def find_element(self, id) -> 'Element':
+        raise NotImplementedError
+
+    def find_face(self, id) -> 'Element':
+        raise NotImplementedError
+
+    def find_volume(self, id) -> 'Element':
         raise NotImplementedError
 
     def set_source(self, source):
@@ -114,7 +134,7 @@ class ProxyMeshTopology(Atom):
     groups = Property(lambda s: s._get_group_iterator())
 
 
-class Node(Point):
+class Node(Atom):
     """ A mesh node.
 
     This is meant to be used as a pass through object.
@@ -132,8 +152,27 @@ class Node(Point):
     #: Color of the node
     color = ColorMember()
 
+    #: Description displayed when selected
+    description = Str()
+
     #: Mass of the node
     mass = Float(strict=False)
+
+    #: Position of the node
+    position = Coerced(Point, coercer=coerce_point)
+
+    #: Displaced position
+    def _get_displaced_position(self):
+        return self.proxy.get_displaced_position()
+
+    #: Displaced position after analysis
+    displaced_position = Property(_get_displaced_position)
+
+    def _get_displacement(self):
+        return self.displaced_position - self.position
+
+    #: Get the delta between the original position and the displaced position
+    displacement = Property(_get_displacement)
 
     #: Force acting on the node
     force = Coerced(Direction, coercer=coerce_direction)
@@ -141,24 +180,16 @@ class Node(Point):
     #: Position is fixed
     fixed = Bool()
 
-    @observe('color')
-    def _update_color(self, change):
-        self.proxy.set_color(self.color)
+    #: Member to store any relevent data
+    data = Dict()
 
-    @observe('mass')
-    def _update_mass(self, change):
-        self.proxy.set_mass(self.mass)
-
-    @observe('force')
-    def _update_force(self, change):
-        self.proxy.set_force(self.force)
-
-    @observe('fixed')
-    def _update_force(self, change):
-        self.proxy.set_fixed(self.fixed)
+    @observe('color', 'mass', 'position', 'force', 'fixed')
+    def _update_proxy(self, change):
+        setter = getattr(self.proxy, 'set_%s' % change['name'])
+        setter(change['value'])
 
     def __repr__(self):
-        return "<Node: x=%s y=%s z=%s>" % self[:]
+        return "<Node: x=%s y=%s z=%s>" % self.position[:]
 
 
 class Element(Atom):
@@ -174,15 +205,25 @@ class Element(Atom):
     #: ID within the mesh
     id = Int()
 
-    #: Color of the node
-    color = ColorMember()
+    #: Description displayed when selected
+    description = Str()
+
+    #: Front color of the node
+    front_color = ColorMember()
+
+    #: Back color of the node
+    back_color = ColorMember()
 
     #: Material definition
     material = ForwardTyped(lambda: Material)
 
-    @observe('color')
-    def _update_color(self, change):
-        self.proxy.set_color(self.color)
+    #: Member to store any relevent data
+    data = Dict()
+
+    @observe('front_color', 'back_color')
+    def _update_proxy(self, change):
+        setter = getattr(self.proxy, 'set_%s' % change['name'])
+        setter(change['value'])
 
 
 class Material(Atom):
@@ -302,6 +343,9 @@ class Mesh(Shape):
         """
         pass
 
+    # ---------------------------------------------------------------------
+    # Mesh lookup API
+    # ---------------------------------------------------------------------
     def find_node(self, id) -> Node:
         """ Find the node with the given ID.
 
@@ -313,3 +357,15 @@ class Mesh(Shape):
 
         """
         return self.proxy.find_element(id)
+
+    def find_face(self, id) -> Element:
+        """ Find the face element with the given ID.
+
+        """
+        return self.proxy.find_face(id)
+
+    def find_volume(self, id) -> Element:
+        """ Find the volume element with the given ID.
+
+        """
+        return self.proxy.find_volume(id)

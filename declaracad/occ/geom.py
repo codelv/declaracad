@@ -178,6 +178,9 @@ class Point(Atom):
         p = self.__coerce__(other)
         return self.proxy.Distance(p.proxy)
 
+    def magnitude(self):
+        return self.proxy.Distance(gp_Pnt())
+
     def distance2d(self, other):
         p = self.__coerce__(other)
         return math.sqrt((self.x-p.x)**2 + (self.y-p.y)**2)

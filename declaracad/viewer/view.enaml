@@ -267,8 +267,11 @@ enamldef ModelViewer(OccViewer): viewer:
             v = Point(topods_shape)
             return [f"  Vertex: {v[:]}"]
         elif shape_type == 'node':
-            v = topods_shape
-            return [f"  Node: {v[:]}"]
+            node = topods_shape
+            r = [f"  Node: {node.position[:]}"]
+            if node.description:
+                r.append(f'  Desc: {node.description}')
+            return r
         elif shape_type == 'edge':
             topology = Topology(shape=topods_shape)
             verticies = len(topology.vertices)
@@ -303,8 +306,8 @@ enamldef ModelViewer(OccViewer): viewer:
                 v1 = Point(topods_shapes[0])
                 v2 = Point(topods_shapes[1])
             else:
-                v1 = topods_shapes[0].declaration
-                v2 = topods_shapes[1].declaration
+                v1 = topods_shapes[0].declaration.position
+                v2 = topods_shapes[1].declaration.position
             delta = v2 - v1
             d = v1.distance(v2)
             what = shape_type[:-1].title()
