@@ -36,6 +36,9 @@ class ProxyNode(Atom):
     def set_force(self, force):
         raise NotImplementedError
 
+    def set_torque(self, torque):
+        raise NotImplementedError
+
     def set_fixed(self, fixed):
         raise NotImplementedError
 
@@ -177,13 +180,16 @@ class Node(Atom):
     #: Force acting on the node
     force = Coerced(Direction, coercer=coerce_direction)
 
+    #: Torque acting on the node
+    torque = Coerced(Direction, coercer=coerce_direction)
+
     #: Position is fixed
     fixed = Bool()
 
     #: Member to store any relevent data
     data = Dict()
 
-    @observe('color', 'mass', 'position', 'force', 'fixed')
+    @observe('color', 'mass', 'position', 'force', 'torque', 'fixed')
     def _update_proxy(self, change):
         setter = getattr(self.proxy, 'set_%s' % change['name'])
         setter(change['value'])

@@ -156,6 +156,9 @@ class FeaNode(Atom):
     def set_force(self, force):
         self.chrono_node.SetForce(ChVectorD(*force))
 
+    def set_torque(self, torque):
+        self.chrono_node.SetTorque(ChVectorD(*torque))
+
     def get_displaced_position(self):
         p = self.chrono_node.GetPos()
         return Point(p.x, p.y, p.z)

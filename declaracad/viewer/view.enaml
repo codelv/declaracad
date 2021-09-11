@@ -306,8 +306,8 @@ enamldef ModelViewer(OccViewer): viewer:
                 v1 = Point(topods_shapes[0])
                 v2 = Point(topods_shapes[1])
             else:
-                v1 = topods_shapes[0].declaration.position
-                v2 = topods_shapes[1].declaration.position
+                v1 = topods_shapes[0].position
+                v2 = topods_shapes[1].position
             delta = v2 - v1
             d = v1.distance(v2)
             what = shape_type[:-1].title()

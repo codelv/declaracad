@@ -103,6 +103,9 @@ class OccNode(ProxyNode):
     def set_force(self, force):
         self.fea_node.set_force(force)
 
+    def set_torque(self, torque):
+        self.fea_node.set_torque(torque)
+
     def set_fixed(self, fixed):
         self.fea_node.set_fixed(fixed)
 
