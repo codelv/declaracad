@@ -386,6 +386,12 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
         if self.document:
             self.document.append_output(str(response['result']))
 
+    def error_received(self, request_id, error):
+        super().error_received(request_id, error)
+        if self.document:
+            msg = str(error.get('message', '') or error)
+            self.document.append_output(msg)
+
     def unhandled_response(self, response):
         log.warning(f"Unhandled response: {response}")
 
