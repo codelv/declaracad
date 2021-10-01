@@ -251,7 +251,7 @@ class OccViewer(Control):
 
     #: View direction
     view_mode = d_(Enum('iso', 'top', 'bottom', 'left', 'right', 'front',
-                        'rear'))
+                        'back'))
 
     #: View projection
     view_projection = d_(Enum('orthographic', 'perspective', 'stereo'))

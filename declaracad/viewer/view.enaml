@@ -265,31 +265,45 @@ enamldef ModelViewer(OccViewer): viewer:
     func describe_shape(shape_type, topods_shape):
         if shape_type == 'vertex':
             v = Point(topods_shape)
-            return [f"  Vertex: {v[:]}"]
+            return [f"  Vertex: {v}"]
         elif shape_type == 'node':
             node = topods_shape
-            r = [f"  Node: {node.position[:]}"]
+            r = [f"  Node: {node.position}"]
             if node.description:
                 r.append(f'  Desc: {node.description}')
             return r
         elif shape_type == 'edge':
             topology = Topology(shape=topods_shape)
             verticies = len(topology.vertices)
-            length = topology.length
+            length = round(topology.length, 6)
             desc = [
                 f"  Edge: {verticies} vertices",
                 f"  Edge Length: {length}"
             ]
+            if Topology.is_circle(topods_shape):
+                c1 = Topology.cast_curve(topods_shape)
+                c = Point(c1.Location())
+                r = round(c1.Radius(), 6)
+                desc.append(f"  Center: {c}")
+                desc.append(f"  Radius: {r}")
             return desc
         elif shape_type == 'wire':
             topology = Topology(shape=topods_shape)
             edges = len(topology.edges)
-            length = topology.length
+            length = round(topology.length, 6)
             desc = [
                 f"  Wire: {edges} edges",
                 f"  Wire Length: {length}"
             ]
             return desc
+        elif shape_type == 'face':
+            if Topology.is_cylinder(topods_shape):
+                c = Topology.cast_surface(topods_shape).Cylinder()
+                r = round(c.Radius(), 6)
+                desc = [
+                    f"  Radius: {r}",
+                ]
+                return desc
         elif shape_type == 'mesh':
             topology = topods_shape.declaration.topology
             nodes = len(topology.nodes)
@@ -301,22 +315,37 @@ enamldef ModelViewer(OccViewer): viewer:
             return desc
 
     func describe_shapes(shape_type, topods_shapes):
-        if shape_type in ('vertexs', 'nodes') and len(topods_shapes) == 2:
-            if shape_type == 'vertexs':
-                v1 = Point(topods_shapes[0])
-                v2 = Point(topods_shapes[1])
-            else:
-                v1 = topods_shapes[0].position
-                v2 = topods_shapes[1].position
-            delta = v2 - v1
-            d = v1.distance(v2)
-            what = shape_type[:-1].title()
-            return [
-                f"  {what} 1: {v1[:]}",
-                f"  {what} 2: {v2[:]}",
-                f"  Deltas: {delta[:]}",
-                f"  Distance: {d}",
-            ]
+        n = len(topods_shapes)
+        if n == 2:
+            if shape_type in ('vertexs', 'nodes'):
+                if shape_type == 'vertexs':
+                    v1 = Point(topods_shapes[0])
+                    v2 = Point(topods_shapes[1])
+                else:
+                    v1 = topods_shapes[0].position
+                    v2 = topods_shapes[1].position
+                delta = v2 - v1
+                d = round(v1.distance(v2), 6)
+                what = shape_type[:-1].title()
+                return [
+                    f"  {what} 1: {v1}",
+                    f"  {what} 2: {v2}",
+                    f"  Deltas: {delta}",
+                    f"  Distance: {d}",
+                ]
+            elif shape_type == 'edges':
+                if all([Topology.is_circle(s) for s in topods_shapes]):
+                    # Show distance from centers
+                    c1 = Point(Topology.cast_curve(topods_shapes[0]).Location())
+                    c2 = Point(Topology.cast_curve(topods_shapes[1]).Location())
+                    delta = c2 - c1
+                    d = round(c2.distance(c1), 6)
+                    return [
+                        f"  Center 1: {c1}",
+                        f"  Center 2: {c2}",
+                        f"  Center Deltas: {delta}",
+                        f"  Center Distance: {d}",
+                    ]
 
     func describe_selection(selection):
         """ Create a text description of the selection.
@@ -534,7 +563,7 @@ enamldef ModelViewer(OccViewer): viewer:
                     if vm not in ('bottom', 'rear')
                 }
                 km['u'] = lambda: set_view_mode('bottom')
-                km['b'] = lambda: set_view_mode('rear')
+                km['b'] = lambda: set_view_mode('back')
                 return km
 
             attr keymap = default_keymap()
