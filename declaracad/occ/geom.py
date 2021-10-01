@@ -201,6 +201,9 @@ class Point(Atom):
     def __coerce__(self, other):
         return coerce_point(other)
 
+    def __str__(self):
+        return str((round(self.x, 6), round(self.y, 6), round(self.z, 6)))
+
     def __repr__(self):
         return "<Point: x=%s y=%s z=%s>" % self[:]
 
