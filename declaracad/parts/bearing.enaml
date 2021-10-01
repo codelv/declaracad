@@ -12,7 +12,7 @@ enamldef BallBearing(Part):
     attr bore_diameter = 100
     attr pitch_diameter = (outer_diameter-bore_diameter)/2 + bore_diameter
     attr thickness = (outer_diameter-bore_diameter)/8
-    attr ball_diameter = 24
+    attr ball_diameter = (outer_diameter-bore_diameter)/2-2*thickness
     attr num_balls = 10 # Set to 0 to disable drawing them since they're hidden
     attr chamfer_distance  = thickness / 8
     alias front_shield
