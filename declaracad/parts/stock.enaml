@@ -115,3 +115,14 @@ enamldef FlatBar(Part): part:
         dx = width
         dy = thickness
         dz = length
+
+
+enamldef Assembly(Part):
+    RoundTube:
+        pass
+    AngleBar:
+        position = (-100, 0, 0)
+        
+    RectangularTube:
+        position = (100, 0, 0)
+        
