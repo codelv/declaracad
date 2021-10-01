@@ -55,6 +55,9 @@ class ProxyElement(Atom):
     def set_back_color(self, color):
         raise NotImplementedError
 
+    def get_stress(self):
+        raise NotImplementedError
+
 
 class ProxyMesh(ProxyShape):
     #: A reference to the Shape declaration
@@ -222,6 +225,18 @@ class Element(Atom):
 
     #: Material definition
     material = ForwardTyped(lambda: Material)
+
+    def _get_stress(self):
+        return self.proxy.get_stress()
+
+    #: Von mises equivalent of the stress tensor
+    stress = Property(_get_stress)
+
+    def _get_strain(self):
+        return self.proxy.get_strain()
+
+    #: Von mises equivalent of the strain tensor
+    strain = Property(_get_strain)
 
     #: Member to store any relevent data
     data = Dict()

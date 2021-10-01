@@ -192,6 +192,14 @@ class FeaElement(Atom):
     def set_material(self, material):
         self.chrono_element.SetMaterial(material)
 
+    def get_stress(self):
+        stress = self.chrono_element.GetStress()
+        return stress.GetEquivalentVonMises()
+
+    def get_strain(self):
+        strain = self.chrono_element.GetStrain()
+        return strain.GetEquivalentVonMises()
+
 
 class FeaAnalysis(OccDependentShape, ProxyAnalysis):
     ais_shape = Typed(MeshVS_Mesh)

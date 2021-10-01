@@ -129,6 +129,12 @@ class OccElement(ProxyElement):
     def set_back_color(self, color):
         self.set_front_color(color)
 
+    def get_stress(self):
+        return self.fea_element.get_stress()
+
+    def get_strain(self):
+        return self.fea_element.get_strain()
+
 
 def create_node(key: int, mesh: 'OccMesh', smesh_node: SMDS_MeshNode) -> Node:
     """ Create a Node declaration from a generated mesh.
