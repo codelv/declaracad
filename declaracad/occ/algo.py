@@ -36,6 +36,9 @@ class ProxyBooleanOperation(ProxyOperation):
     def set_unify(self, unify):
         raise NotImplementedError
 
+    def set_fix(self, fix):
+        raise NotImplementedError
+
     def _do_operation(self, shape1, shape2):
         raise NotImplementedError
 
@@ -264,7 +267,10 @@ class BooleanOperation(Operation):
     #: Unify using ShapeUpgrade_UnifySameDomain
     unify = d_(Bool(False))
 
-    @observe('shape1', 'shape2', 'unify')
+    #: Attempt to fix issues in the resulting shape
+    fix = d_(Bool(False))
+
+    @observe('shape1', 'shape2', 'unify', 'fix')
     def _update_proxy(self, change):
         super(BooleanOperation, self)._update_proxy(change)
 

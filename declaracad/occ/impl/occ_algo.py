@@ -55,6 +55,7 @@ from OCCT.gp import (
 )
 from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
 from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
+from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TColgp import TColgp_Array1OfPnt2d
 from OCCT.TopTools import TopTools_ListOfShape, TopTools_HSequenceOfShape
 from OCCT.TopoDS import (
@@ -113,6 +114,11 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
             tool = ShapeUpgrade_UnifySameDomain(shape)
             tool.Perform()
             shape = tool.Shape()
+
+        if d.fix:
+            fixer = ShapeFix_Shape(shape)
+            if fixer.Perform():
+                shape = fixer.Shape()
 
         self.shape = Topology.cast_shape(shape)
 
