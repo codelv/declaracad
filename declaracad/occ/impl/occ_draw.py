@@ -33,17 +33,25 @@ from OCCT.gp import (
     gp_Dir, gp_Pnt, gp_Lin, gp_Pln, gp_Circ, gp_Elips, gp_Vec, gp_Trsf,
     gp_Ax3, gp_Ax2, gp
 )
+from OCCT.GeomAbs import (
+    GeomAbs_C0, GeomAbs_C1, GeomAbs_C2, GeomAbs_C3, GeomAbs_CN
+)
 from OCCT.TopTools import TopTools_ListOfShape
 from OCCT.TopoDS import (
     TopoDS, TopoDS_Shape, TopoDS_Edge, TopoDS_Wire, TopoDS_Vertex
 )
-from OCCT.GeomAPI import GeomAPI_PointsToBSpline, GeomAPI
+from OCCT.GeomAPI import GeomAPI_PointsToBSpline, GeomAPI, GeomAPI_Interpolate
 from OCCT.Geom import (
     Geom_BezierCurve, Geom_BSplineCurve, Geom_TrimmedCurve, Geom_Plane,
     Geom_Ellipse, Geom_Circle, Geom_Parabola, Geom_Hyperbola, Geom_Line,
     Geom_CartesianPoint
 )
-from OCCT.TColgp import TColgp_Array1OfPnt
+from OCCT.TColgp import (
+    TColgp_Array1OfPnt, TColgp_Array1OfVec, TColgp_HArray1OfPnt
+)
+from OCCT.TColStd import (
+    TColStd_Array1OfReal, TColStd_HArray1OfReal, TColStd_HArray1OfBoolean
+)
 
 from ..shape import coerce_point, coerce_direction
 from ..draw import (
@@ -80,6 +88,14 @@ MARKERS = {
     'small-ring': Aspect.Aspect_TOM_RING3,
     'ball': Aspect.Aspect_TOM_BALL,
     'dot': Aspect.Aspect_TOM_POINT,
+}
+
+CONTINUITY = {
+    0: GeomAbs_C0,
+    1: GeomAbs_C1,
+    2: GeomAbs_C2,
+    3: GeomAbs_C3,
+    None: GeomAbs_CN,
 }
 
 
@@ -346,15 +362,53 @@ class OccBSpline(OccLine, ProxyBSpline):
         d = self.declaration
         if not d.points:
             raise ValueError("Must have at least two points")
+
         # Poles and weights
         points = self.get_transformed_points()
-        pts = TColgp_Array1OfPnt(1, len(points))
-        set_value = pts.SetValue
 
-        # TODO: Support weights
-        for i, p in enumerate(points):
-            set_value(i+1, p)
-        curve = self.curve = GeomAPI_PointsToBSpline(pts).Curve()
+        if d.interpolate or d.tangents or d.periodic:
+            pts = TColgp_HArray1OfPnt(1, len(points))
+            for i, p in enumerate(points):
+                pts.SetValue(i+1, p)
+
+            if d.parameters:
+                params = TColStd_HArray1OfReal(1, len(points))
+                for i, p in enumerate(d.parameters):
+                    params.SetValue(i+1, p)
+                f = GeomAPI_Interpolate(pts, params, d.periodic, d.tolerance)
+            else:
+                f = GeomAPI_Interpolate(pts, d.periodic, d.tolerance)
+
+            if d.tangents:
+                n = len(d.tangents)
+                if n == 2:
+                    start, end = d.tangents
+                    f.Load(gp_Vec(*start), gp_Vec(*end))
+                else:
+                    tangents = TColgp_Array1OfVec(1, n)
+                    flags = TColStd_HArray1OfBoolean(1, n)
+                    for i, p in enumerate(d.parameters):
+                        tangents.SetValue(i+1, p)
+                        flags.SetValue(i+1, True)
+                    f.Load(tangents, flags)
+
+            f.Perform()
+        else:
+            cty = CONTINUITY[d.continuity]
+            pts = TColgp_Array1OfPnt(1, len(points))
+            for i, p in enumerate(points):
+                pts.SetValue(i+1, p)
+
+            if d.parameters:
+                params = TColStd_Array1OfReal(1, len(points))
+                for i, p in enumerate(d.parameters):
+                    params.SetValue(i+1, p)
+                f = GeomAPI_PointsToBSpline(
+                    pts, params, d.deg_min, d.deg_max, cty, d.tolerance)
+            else:
+                f = GeomAPI_PointsToBSpline(
+                    pts, d.deg_min, d.deg_max, cty, d.tolerance)
+        curve = self.curve = f.Curve()
         self.shape = self.make_edge(curve)
 
 

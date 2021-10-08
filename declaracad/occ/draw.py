@@ -11,12 +11,13 @@ Created on Sept 27, 2016
 """
 from math import sin, cos, tan, pi
 from atom.api import (
-    Bool, List, Float, Typed, ForwardTyped, Str, Enum, Property,
+    Bool, List, Float, Typed, ForwardTyped, Str, Enum, Property, Int,
     Coerced, Instance, Range, set_default, observe
 )
 from enaml.core.declarative import d_
 
-from .shape import ProxyShape, Shape, Point as Pt, coerce_point
+from .shape import ProxyShape, Shape
+from .geom import Point as Pt, Direction, coerce_point, coerce_direction
 
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Wire, TopoDS_Face
 
@@ -563,6 +564,26 @@ class BSpline(Line):
 
     """
     proxy = Typed(ProxyBSpline)
+
+    #: Use interpolation method. This will automatically be used if periodic
+    #: is True or tangents are given.
+    interpolate = d_(Bool())
+
+    #: Whether the spline will be periodic
+    periodic = d_(Bool())
+
+    # Min and max degree
+    deg_min = d_(Int(3))
+    deg_max = d_(Int(8))
+
+    #: Degree of continuity
+    continuity = d_(Enum(2, 0, 1, 3, None))
+
+    #: List of tangent vectors for each point (optional)
+    tangents = d_(List(Coerced(Direction, coercer=coerce_direction)))
+
+    #: List of parameters
+    parameters = d_(List(Float(strict=False)))
 
 
 class Bezier(Line):
