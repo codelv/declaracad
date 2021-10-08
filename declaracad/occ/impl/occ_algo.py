@@ -433,7 +433,7 @@ class OccPipe(OccOperation, ProxyPipe):
     _old_spline = Instance(OccShape)
     _old_profile = Instance(OccShape)
 
-    fill_modes = Dict(default={
+    fill_modes = {
         'corrected_frenet': GeomFill_IsCorrectedFrenet,
         'fixed': GeomFill_IsFixed,
         'frenet': GeomFill_IsFrenet,
@@ -444,7 +444,7 @@ class OccPipe(OccOperation, ProxyPipe):
         'guide_ac_contact': GeomFill_IsGuideACWithContact,
         'guide_plan_contact': GeomFill_IsGuidePlanWithContact,
         'discrete_trihedron': GeomFill_IsDiscreteTrihedron
-    })
+    }
 
     def update_shape(self, change=None):
         d = self.declaration
