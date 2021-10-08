@@ -1,0 +1,33 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    
+    #ThickSolid:
+    #    attr topo = self.children[0].topology
+    #    faces = [
+    #        f for i, f in enumerate(topo.faces)
+    #        if i in [0, 2, 6, 7, 8]
+    #    ]
+    #    offset = 0.1
+    #    transparency = 0.8
+    Fuse:
+        fix = True
+        material = 'steel'
+        Looper:
+            iterable = [-60, -20, 20, 60]
+            Pipe:
+                attr shift = loop.item
+                BSpline:
+                    tangents = [(0, 0, 1), (0, 1, 0)]
+                    points = [
+                        (shift, 0, 0),
+                        (0, 45, 45),
+                    ]
+                Face:
+                    Circle:
+                        position = (shift, 0)
+                        radius = 13 # TWF??
