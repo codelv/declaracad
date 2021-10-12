@@ -502,6 +502,9 @@ class Offset(Operation):
     #: Offset
     offset = d_(Float(1, strict=False)).tag(view=True, group='Offset')
 
+    #: Make the offset at a distance parallel to the normal plane.
+    normal_distance = d_(Float(0, strict=False))
+
     #: Offset mode
     offset_mode = d_(Enum('skin', 'pipe', 'recto_verso')).tag(
         view=True, group='Offset')
@@ -517,7 +520,7 @@ class Offset(Operation):
     shape = d_(Instance((Shape, TopoDS_Shape)))
 
     @observe('offset', 'offset_mode', 'intersection', 'join_type', 'closed',
-             'shape')
+             'normal_distance', 'shape')
     def _update_proxy(self, change):
         super(Offset, self)._update_proxy(change)
 

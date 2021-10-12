@@ -335,10 +335,9 @@ class OccOffset(OccOperation, ProxyOffset):
             t = type(shape)
             raise TypeError(
                 "Unsupported child shape %s when using planar mode" % t)
-
-        offset_shape = BRepOffsetAPI_MakeOffset(
-            shape, self.join_types[d.join_type], not d.closed)
-        offset_shape.Perform(d.offset)
+        join_type = self.join_types[d.join_type]
+        offset_shape = BRepOffsetAPI_MakeOffset(shape, join_type, not d.closed)
+        offset_shape.Perform(d.offset, d.normal_distance)
         if not offset_shape.IsDone():
             # Note: Lines cannot be offset as they have no plane of reference
             raise ValueError("Could not perform offset: %s" % d)
