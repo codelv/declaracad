@@ -108,7 +108,7 @@ enamldef ExportDialog(Dialog): dialog:
             Conditional:
                 condition << dialog.protocol is not None
                 MultilineField:
-                    text << b'\n'.join(dialog.protocol.output)
+                    text << '\n'.join([it.decode() for it in dialog.protocol.output])
         TaskDialogCommandArea:
             constraints = [
                 hbox(show_options, spacer, btn_yes, btn_no),
@@ -126,9 +126,7 @@ enamldef ExportDialog(Dialog): dialog:
             PushButton: btn_yes:
                 enabled << bool(options.path)
                 text = "Export"
-                clicked ::
-                    event.parameters['options'] = options
-                    dialog.protocol = plugin.export(event)
+                clicked :: dialog.protocol = plugin.export(options)
 
 
 enamldef ScreenCaptureDialog(Dialog): dialog:
