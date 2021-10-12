@@ -319,8 +319,8 @@ enamldef ModelViewer(OccViewer): viewer:
         if n == 2:
             if shape_type in ('vertexs', 'nodes'):
                 if shape_type == 'vertexs':
-                    v1 = Point(topods_shapes[0])
-                    v2 = Point(topods_shapes[1])
+                    v1 = Point(Topology.cast_shape(topods_shapes[0]))
+                    v2 = Point(Topology.cast_shape(topods_shapes[1]))
                 else:
                     v1 = topods_shapes[0].position
                     v2 = topods_shapes[1].position
@@ -1051,7 +1051,9 @@ enamldef ViewerDockItem(DockItem): view:
 
     title_bar_right_clicked ::
         # Populate the documents
-        looper.iterable = editor_plugin.documents[:]
+        looper.iterable = sorted(
+            editor_plugin.documents[:],
+            key=lambda d: os.path.split(d.name)[-1])
         menu.popup()
 
     Menu: menu:

@@ -1,30 +1,69 @@
 # Created in DeclaraCAD
 from declaracad.occ.api import *
-from declaracad.cnc.toolpath import Toolpath
+from declaracad.cnc.toolpath import Toolpath, ToolpathAnimation
 from declaracad.parts.display import BoundingBox
+from declaracad.parts.cutters import VBit
+from OCCT.ShapeFix import ShapeFix_Shape
 inch = 25.4
 enamldef Assembly(Part): part:
-    attr start_point = Point(6.5*inch, 10*inch, 2*inch)
-    
+    attr start_point = Point(5.5*inch, 10.5*inch, 2*inch)
     Transform:  svg:
         color = 'teal'
-        attr depth = 10.5*inch/1000
+        attr depth = 5.0*inch/1000
         operations = [
             Translate(start_point.x, start_point.y, -depth),
-            Scale(0.35277987609386546),
+            # Set scale to 1 and enter bbox height
+            # then divider inkscape height by dcad height
+            # Scale(21.926/82.771) DRV8316,
+            #Scale(1),#1/3.5433070866*72/96), # tb67s128ftg
+            Scale(1/3.5433070866*90/96), # Convert px to mm 
             #Mirror(x=1),
         ]
         Svg:
-            source = "/home/cnc/Downloads/paste.svg"
+            #source = "/home/cnc/Downloads/tb67s209.svg"
+            #source = "/home/cnc/Downloads/drv8316-paste.svg"
+            #source = "/home/cnc/Downloads/tb67s128ftg-paste.svg"
+            #source = "/home/cnc/Downloads/drv10987.svg"
+            source = "/home/cnc/Downloads/tb67s128x3-paste-split.svg"
             #source = "/home/cnc/Downloads/dg300z-paste.svg"
     Part: offset_path:
-        Looper:
-            iterable = svg.topology.wires
-            Offset:
-                offset = -0.148
-                color = 'purple'
-                shape = loop.item
+        Include:
+            func get_paths():
+                results = []
+                for i, w in enumerate(svg.topology.wires):
+                    try:
+                        offset = Offset(
+                            shape=w, 
+                            offset=-0.118,
+                            color='purple',
+                        )
+                        offset.render()
+                        results.append(offset)
+                    except Exception as e:
+                        print(f'wire at {i} is jacked')
+                        t = Transform(
+                            shape=w, 
+                            color="orange",
+                            description=f"{i}"
+                        )
+                        results.append(t)
+                return results
+
+            objects = get_paths()
+            #iterable = svg.topology.wires[0:]
+            #Offset:
+            #    offset = -0.12# if loop.index in (100, 101, 103) else -0.118
+            #    color = 'purple'
+            #    shape = loop.item
+    #Transform:
+    #    color = 'orange'
+    #    shape = svg.topology.wires[170]
+    #Offset:
+    #    offset = -0.15
+    #    color = 'purple'
+    #    shape = svg.topology.wires[24]
     BoundingBox:
+        name = f'dx={round(self.dx,3)}mm dy={round(self.dy,3)}mm'
         shapes = svg
     Box:
         material = 'aluminium'
@@ -32,21 +71,39 @@ enamldef Assembly(Part): part:
         dx = 12 * inch
         dy = 24 * inch
         dz = 1 * inch
+    
     Box:
+        #display = False
         transparency = 0.8
+        color = "white"
         position = (3*inch, 9*inch, -dz)
         dx = 6 * inch
         dy = 4 * inch
         dz = 1/16 * inch
-    Toolpath:
+    VBit: vbit:
+        position = start_point
+    Toolpath: cutting_path:
+        attr repeats: int = 3
+        func get_wires():
+            wires = [
+                w for (i, w) in 
+                enumerate(offset_path.topology.wires)
+                #if i in (12, 13)
+            ]
+            # Double cut?
+            results = []
+            for r in range(max(1, repeats+1)):
+                results.extend(wires)
+            return results
         
-        wires = [
-            w for (i, w) in 
-            enumerate(offset_path.topology.wires)
-            #if i in (12, 13)
-        ]
+        wires = get_wires()
+        show_direction = False
         start_point = part.start_point
         end_point = Point(0, 0, 2*inch)
         clearance = 2
-        reverse = True
+        #reverse = True
         filename = "/home/cnc/Downloads/paste.gcode"
+    ToolpathAnimation:
+        toolpath = cutting_path
+        bit = vbit 
+        run = False
