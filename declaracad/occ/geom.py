@@ -10,13 +10,22 @@ Created on Dec 26, 2020
 @author: jrm
 """
 import math
+import warnings
 from atom.api import Atom, Float, Typed, Property
 from contextlib import contextmanager
 
 from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec
 from OCCT.BRep import BRep_Tool
 from OCCT.TopoDS import TopoDS_Shape
-from SMESH.SMDS import SMDS_MeshNode
+
+try:
+    from SMESH.SMDS import SMDS_MeshNode
+except ImportError as e:
+    warnings.warn(e)
+
+    class SMDS_MeshNode:
+        pass
+
 
 
 class Settings(Atom):

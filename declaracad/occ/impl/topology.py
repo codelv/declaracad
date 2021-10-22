@@ -32,7 +32,7 @@ from OCCT.Geom import (
 from OCCT.GeomAbs import (
     GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
     GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve,
-    GeomAbs_OffsetCurve, GeomAbs_OtherCurve,
+    GeomAbs_OffsetCurve, GeomAbs_OtherCurve, GeomAbs_Cylinder
 )
 from OCCT.GProp import GProp_GProps
 from OCCT.gp import gp_Pnt, gp_Vec
@@ -156,6 +156,10 @@ class Topology(Atom):
         GeomAbs_BSplineCurve: BRepAdaptor_Curve.BSpline,
         GeomAbs_OffsetCurve: BRepAdaptor_Curve.OffsetCurve,
         GeomAbs_OtherCurve: BRepAdaptor_CompCurve,
+    }
+
+    surface_factory = {
+        GeomAbs_Cylinder: lambda s: s.Cylinder(),
     }
 
     #: The shape which topology will be traversed
@@ -811,6 +815,7 @@ class Topology(Atom):
         """
         curve = BRepAdaptor_CompCurve(self.shape)
         return self.get_value_at(curve, curve.LastParameter())
+
 
     # -------------------------------------------------------------------------
     # Shape Properties

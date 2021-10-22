@@ -58,7 +58,7 @@ try:
         NETGENPlugin_SimpleHypothesis_3D, NETGENPlugin_NETGEN_2D3D
     )
 except ImportError as e:
-    warnings.log(e)
+    warnings.warn(e)
 
     # Dummy imports
     SMESH_Gen = object
