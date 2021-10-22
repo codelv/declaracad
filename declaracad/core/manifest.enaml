@@ -76,11 +76,14 @@ enamldef DeclaracadManifest(PluginManifest):
                 id = 'document'
             ItemGroup:
                 id = 'impexp'
+            ItemGroup:
+                id = 'quit'
 
         ActionItem:
             path = '/file/quit'
             label = 'Quit'
             shortcut = 'Ctrl+Q'
+            group = 'quit'
             command = 'enaml.workbench.ui.close_window'
         MenuItem:
             path = '/view'
