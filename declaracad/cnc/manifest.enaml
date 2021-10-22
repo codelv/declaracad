@@ -87,6 +87,7 @@ enamldef CncManifest(PluginManifest):
         point = 'enaml.workbench.ui.actions'
         ActionItem:
             path = '/file/send-to-device'
+            group = 'impexp'
             label = 'Send to device'
             command = 'declaracad.cnc.send_file'
     Extension:

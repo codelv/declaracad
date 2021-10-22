@@ -193,6 +193,7 @@ enamldef DeviceConfigView(Container):
             CheckBox: mz:
                 checked := config.mirror_z
 
+
 enamldef JobConfigView(Container):
     attr config: DeviceConfig
     Form:
@@ -205,6 +206,12 @@ enamldef JobConfigView(Container):
             single_step = 0.001
             decimals = 5
             tool_tip = "Delay in seconds before sending each line of G-Code"
+        Label:
+            text = "Manual flow control"
+        CheckBox:
+            checked := config.manual_flow_control
+            tool_tip = "If an XOFF (0x13) is received pause sending " \
+                       "until an XON (0x11) is received"
         Label:
             text = "Init Commands"
         MultilineField:

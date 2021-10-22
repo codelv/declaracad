@@ -17,7 +17,7 @@ from atom.api import (
     Atom, Instance, Subclass, Str, Int, Bool, ContainerList, Bytes, Enum,
     List, Float, observe
 )
-from enaml.application import deferred_call
+from enaml.application import Application, deferred_call
 from serial.tools.list_ports import comports
 
 from declaracad.core.api import Plugin, Model, log
@@ -175,6 +175,9 @@ class DeviceConfig(Model):
     #: Commands sent after a job
     finalize_commands = Str().tag(config=True)
 
+    #: Manually throttle output based on xon/xoff
+    manual_flow_control = Bool().tag(config=True)
+
 
 class Device(Model, asyncio.Protocol):
     #: Name
@@ -189,6 +192,7 @@ class Device(Model, asyncio.Protocol):
     #: Device state
     connected = Bool()
     busy = Bool()
+    paused = Bool()
     last_read = Bytes()
     last_write = Bytes()
     errors = Str()
@@ -210,6 +214,11 @@ class Device(Model, asyncio.Protocol):
             return False
         return self.uuid == other.uuid
 
+    def _observe_paused(self, change):
+        log.debug("{} {}".format(
+            self.name,
+            "paused" if self.paused else "resumed"))
+
     # -------------------------------------------------------------------------
     # Protocol API
     # -------------------------------------------------------------------------
@@ -222,6 +231,13 @@ class Device(Model, asyncio.Protocol):
         self.errors = f'{exc}'
 
     def data_received(self, data):
+        if self.config.manual_flow_control:
+            for c in data:
+                if c == 0x13:
+                    self.paused = True
+                elif c == 0x11:
+                    self.paused = False
+
         self.last_read = data
 
     def pause_writing(self):
@@ -282,8 +298,14 @@ class Device(Model, asyncio.Protocol):
             return IOError("Not connected")
         if not isinstance(data, bytes):
             data = data.encode()
-        self.last_write = data
 
+        # Manual flow control sleep until unpaused
+        while self.paused and self.connected:
+            await asyncio.sleep(0.001)
+        if not self.connected:
+            return IOError("Connection lost")
+
+        self.last_write = data
         # Write just puts it into the write buffer
         # So wait until the buffer is empty (all written)
         # or the connection drops
@@ -431,14 +453,18 @@ class CncPlugin(Plugin):
             return
         device.busy = True
         rate = device.config.send_rate
+        app = Application.instance()
         try:
             with open(filename, 'rb') as f:
                 await device.connect()
                 for line in f:
                     if not device.connected:
                         raise IOError("Device disconnected")
+                    if not device.busy:
+                        raise RuntimeError("Send cancelled")
                     if rate:
                         await asyncio.sleep(rate)
+                    app.process_events()
                     await device.write(line)
 
         finally:

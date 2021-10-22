@@ -11,10 +11,12 @@ Created on Dec 10, 2015
 """
 from enaml.layout.api import vbox, hbox, align
 from enaml.widgets.api import (
-    Container, ObjectCombo, Menu, Action, Field, MultilineField, PushButton
+    Container, ObjectCombo, Menu, Action, Field, MultilineField, PushButton,
+    RawWidget
 )
 from enaml.qt.QtCore import Qt
 from enaml.qt.QtGui import QTextCursor
+from enaml.qt.QtWidgets import QPlainTextEdit
 from enaml.application import deferred_call
 from enamlx.widgets.api import KeyEvent
 from declaracad.core.api import DockItem, log
@@ -22,6 +24,18 @@ from declaracad.core.utils import load_icon
 
 
 from .plugin import CncPlugin, Device
+
+
+class PlainTextEdit(RawWidget):
+    """ QTextEdit used by the MultiLineField is horribly slow at appending
+    text. This widget is significantly faster.
+
+    """
+    def create_widget(self, parent):
+        widget = QPlainTextEdit(parent)
+        widget.setReadOnly(True)
+        widget.setMaximumBlockCount(10000)
+        return widget
 
 
 enamldef CommView(Container): view:
@@ -121,6 +135,7 @@ enamldef CommView(Container): view:
             tool_tip << "Connected. Click to disconnect" if device and device.connected else "Disconnected. Click to Connect"
             clicked ::
                 if device and device.connected:
+                    device.busy = False # Force send to quit
                     deferred_call(device.disconnect)
                 else:
                     deferred_call(device.connect)
@@ -133,11 +148,9 @@ enamldef CommView(Container): view:
             tool_tip = "Auto scroll"
             checkable = True
             checked := plugin.autoscroll
-        MultilineField: comm_log:
-            activated ::
-                widget = self.proxy.widget
-                widget.setReadOnly(True)
-                widget.document().setMaximumBlockCount(5000)
+        PlainTextEdit: comm_log:
+            hug_height = 'weak'
+            hug_width = 'weak'
         Field: to_send:
             enabled << bool(device and device.connected)
             placeholder << "Enter a command.." if enabled else "Disconnected... reconnect first."
