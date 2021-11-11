@@ -237,6 +237,9 @@ enamldef ToolpathAnimation(Timer):
         except IndexError:
             self.index = 0
             self.stop()
+        except Exception as e:
+            print(e)
+            self.stop()
 
     interval = 16
     activated :: self.start()
