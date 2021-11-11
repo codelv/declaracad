@@ -13,6 +13,7 @@ import time
 import uuid
 import serial
 import asyncio
+from typing import Union
 from atom.api import (
     Atom, Instance, Subclass, Str, Int, Bool, ContainerList, Bytes, Enum,
     List, Float, observe
@@ -37,13 +38,13 @@ class Connection(Model):
         """
         raise NotImplementedError
 
-    async def connect(self, protocol):
+    async def connect(self, protocol: asyncio.Protocol):
         """ Make the connection
 
         """
         raise NotImplementedError
 
-    async def write(self, data):
+    async def write(self, data: Union[str, bytes]):
         """ Write data to the connection
 
         """
@@ -105,7 +106,7 @@ class SerialConnection(Connection):
             connections.append(conn)
         return connections
 
-    async def connect(self, protocol):
+    async def connect(self, protocol: asyncio.Protocol):
         if self.handle is not None:
             transport, _ = self.handle
             transport.close()
@@ -123,7 +124,7 @@ class SerialConnection(Connection):
             xonxoff=config.xonxoff,
             rtscts=config.rtscts)
 
-    async def write(self, data):
+    async def write(self, data: Union[str, bytes]):
         self.transport.write(data)
 
     async def disconnect(self):
@@ -230,7 +231,7 @@ class Device(Model, asyncio.Protocol):
         self.connected = False
         self.errors = f'{exc}'
 
-    def data_received(self, data):
+    def data_received(self, data: bytes):
         if self.config.manual_flow_control:
             for c in data:
                 if c == 0x13:
@@ -285,7 +286,7 @@ class Device(Model, asyncio.Protocol):
         await self.wait_until(lambda: self.connected, 30,
                               message="Connection timeout")
 
-    async def write(self, data):
+    async def write(self, data: Union[str, bytes]):
         """ Write the data and wait until the write buffer is empty.
 
         Parameters
@@ -326,7 +327,7 @@ class Device(Model, asyncio.Protocol):
             return
         await self.connection.disconnect()
 
-    def convert(self, point):
+    def convert(self, point: Point):
         """ Convert a point based on this device's configuration
 
         Parameters
@@ -353,7 +354,7 @@ class Device(Model, asyncio.Protocol):
             x, y = y, x
         return (x, y, z)
 
-    async def rapid_move_to(self, point):
+    async def rapid_move_to(self, point: Point):
         """ Send a G0 to the point
 
         """
@@ -402,14 +403,14 @@ class CncPlugin(Plugin):
         self.device = conn
         self.devices = devices
 
-    def remove_device(self, device):
+    def remove_device(self, device: Device):
         if device in self.devices and len(self.devices) > 1:
             devices = self.devices[:]
             devices.remove(device)
             self.device = devices[0]
             self.devices = devices
 
-    def set_default_device(self, device):
+    def set_default_device(self, device: Device):
         for d in self.devices:
             d.default = d == device
 
@@ -424,7 +425,7 @@ class CncPlugin(Plugin):
         if self.device:
             await self.device.disconnect()
 
-    async def rapid_move_to(self, point):
+    async def rapid_move_to(self, point: Point):
         """ Send a rapid move to command to the given point if the device
         is connected and not in use.
 
@@ -440,7 +441,7 @@ class CncPlugin(Plugin):
                 await device.connect()
             await device.rapid_move_to(point)
 
-    async def send_file(self, filename):
+    async def send_file(self, filename: str):
         """ Send a file to the device line by line
 
         Parameters
