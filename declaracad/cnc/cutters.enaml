@@ -1,0 +1,67 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 10, 2021
+
+@author: jrm
+"""
+from math import sin, cos, radians, pi
+from atom.api import Int
+from declaracad.occ.api import Part, Chamfer, Cylinder
+from enaml.core.declarative import d_, d_func
+from typing import List as ListType
+
+
+class Tool(Part):
+    #: Tool number
+    number = d_(Int(1))
+
+    @d_func
+    def generate_gcode(self) -> ListType[str]:
+        """ Tool change gcode """
+        cmds = [
+            f'T{self.number} M6'
+        ]
+        if self.description:
+            cmds.insert(0, f'(Tool change: {self.description})')
+        return cmds
+
+
+enamldef TwistDrill(Tool): drill:
+    attr diameter = 3
+    attr length = 30
+    attr angle = 60
+    attr flutes = 2
+    description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
+                  f"twist drill {self.diameter} Ø by {self.length} mm"
+    Chamfer:
+        material = 'steel'
+        attr r = diameter/2*0.99
+        attr d1 = r
+        attr d2 = r*(pi/2-sin(radians(angle)))
+        operations = [
+            (d1, d2, self.children[0].topology.faces[2])
+        ]
+        Cylinder:
+            radius = diameter/2
+            height = length
+
+
+enamldef EndMill(Tool): drill:
+    attr diameter = 3
+    attr length = 30
+    attr flutes = 4
+    description = f"T{self.number} - {self.flutes} flute " \
+                  f"end mill {self.diameter} Ø by {self.length} mm"
+    Cylinder:
+        radius = diameter/2
+        height = length
+
+
+enamldef Assembly(Part):
+    TwistDrill:
+        angle = 60

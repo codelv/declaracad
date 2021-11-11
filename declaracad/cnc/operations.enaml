@@ -1,0 +1,406 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 9, 2021
+
+@author: jrm
+"""
+import traceback
+from math import ceil
+from typing import List as ListType
+from atom.api import Bool, Enum, Float, Instance, Str
+from datetime import datetime
+from declaracad.occ.geom import coerce_point
+from declaracad.occ.api import (
+    DisplayArrow, Point, Part, Polyline, Topology, Vertex,
+    Timer, Looper, Include, Conditional
+)
+from declaracad.cnc.optimize import optimize_points
+from declaracad.cnc.cutters import Tool
+from enaml.core.declarative import d_, d_func
+
+
+class Operation(Part):
+    """ A single machining operation.
+
+    """
+    #: Set to True to disable this operation
+    disabled = d_(Bool())
+
+    #: Cutting tool
+    tool = d_(Instance(Tool))
+
+    #: Spindle control
+    #: If zero off, if positive, CW, if negative CCW
+    spindle_speed = d_(Float(strict=False))
+
+    #: Dwell after spindle speed to allow time for ramp up/down
+    spindle_dwell = d_(Float(1.0, strict=False))
+
+    #: Coolant control
+    #: If mist or flood on, otherwise off
+    coolant = d_(Enum('', 'mist', 'flood'))
+
+    #: Generated gcode
+    gcode = d_(Str())
+
+    @d_func
+    def generate_gcode(self) -> ListType[str]:
+        cmds = []
+        job = self.parent
+        if self.spindle_speed:
+            s = abs(self.spindle_speed)
+            mcode = 'M3' if self.spindle_speed > 0 else 'M3'
+            cmds.append(f'S{s} {mcode}')
+
+            if self.spindle_dwell:
+                pause = job.format_value(self.spindle_dwell)
+                cmds.append(f'P{pause}') # Wait for spindle to ramp up
+
+        if self.coolant == 'mist':
+            cmds.append('M7')
+        elif self.coolant == 'flood':
+            cmds.append('M8')
+        else:
+            cmds.append(f'M9')
+
+        return cmds
+
+    def _default_gcode(self):
+        return '\n'.join(self.generate_gcode())
+
+    def _default_description(self):
+        return "G-Code: \n" + self.gcode
+
+
+enamldef DrillingCycle(Operation): operation:
+    """ Perform a peck drilling cycle using a G73, G81, G82, or G83 G-Code.
+
+    All values are in mm. Use the job to convert to inches.
+
+    """
+
+    #: List of circular edges, cylinder faces, or points
+    attr holes: list = []
+
+    #: A point or tuple
+    attr start_point
+
+    #: A point or tuple
+    attr end_point = start_point
+
+    # ------------------------------------------------------------------------
+    # Operation options
+    # ------------------------------------------------------------------------
+    #: Feedrate F
+    attr feedrate = 0
+
+    #: Retract value R
+    attr retract = 1.0
+
+    #: Depth of hole Z
+    attr depth = 0.0
+
+    #: Dwell time
+    attr dwell = 0
+
+    #: Peck amount Q
+    #: If non-zero it will use a G73 or G83.
+    #: Otherwise it will use a G81 or G82 (based on dwell)
+    attr peck = 1.0 # TODO: Compute based on tool radius?
+
+    #: Retract to R after each peck.
+    #: If True this uses a G83, otherwise it uses a G73
+    attr full_retract: bool = False
+
+    # ------------------------------------------------------------------------
+    # Display options
+    # ------------------------------------------------------------------------
+    attr vertex_color: str = "yellow"
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+    attr lift_point = get_lift_point()
+    attr drop_point = get_drop_point()
+    attr hole_positions << [get_center(h) for h in holes]
+    attr optimized_positions << optimize_points(hole_positions, start_point)
+    attr path = generate_path()
+
+    func get_center(hole):
+        """ Find center position of a hole
+        """
+        if isinstance(hole, Point):
+            return hole
+        elif Topology.is_cylinder(hole):
+            s = Topology.cast_surface(hole).Cylinder()
+        elif Topology.is_circle(hole):
+            s = Topology.cast_curve(hole)
+        else:
+            raise ValueError(f"Cannot get center of {hole}")
+        return Point(s.Location())
+
+    func get_lift_point():
+        last_point = self.optimized_positions[-1]
+        z = coerce_point(start_point).z
+        return Point(last_point.x, last_point.y, z)
+
+    func get_drop_point():
+        first_point = coerce_point(self.optimized_positions[0])
+        z = coerce_point(start_point).z
+        return Point(first_point.x, first_point.y, z)
+
+    func generate_path():
+        """ Generate the path to display including the drilling cycle options.
+
+        """
+        path = [coerce_point(start_point), drop_point]
+        steps = int(ceil(abs((retract-depth) / peck))) if peck else 0
+        for p in self.optimized_positions:
+            retract_pos = Point(p.x, p.y, retract)
+            bottom_pos = Point(p.x, p.y, depth)
+
+            # Go to top of hole
+            path.append(retract_pos)
+
+            # Start pecking
+            z = retract_pos.z - peck
+            for step in range(steps):
+                step_pos = Point(p.x, p.y, max(z, bottom_pos.z))
+                if full_retract:
+                    return_pos = retract_pos
+                else:
+                    return_pos = Point(p.x, p.y, step_pos.z+peck)
+                path.append(step_pos)
+                path.append(return_pos)
+                z -= peck
+
+            # Go to bottom
+            path.append(bottom_pos)
+            # Return to top
+            path.append(retract_pos)
+
+        path.append(lift_point)
+        path.append(coerce_point(end_point))
+        return path
+
+    generate_gcode => ():
+        """ Generate gcode output for this operation
+
+        """
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+            # Change tool
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a drilling cycle."
+                    "Use spindle_speed=value."
+                )
+
+            job = self.parent
+            fmt = job.format_value
+            p = self.path[0]
+            d = fmt(depth)
+            r = fmt(retract)
+
+            # Move to top of first hole
+            for p in self.path[0:2]:
+                cmds.append(f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}')
+
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+
+            if peck:
+                code = 'G83' if full_retract else 'G73'
+            elif dwell:
+                code = 'G82'
+            else:
+                code = 'G81'
+
+            if code == 'G73' and dwell:
+                raise ValueError("Cannot use dwell with G73. Disable dwell or use full_peck=True")
+
+            for p in self.optimized_positions:
+                cmd = [
+                    'G90', # Absolute
+                    code,
+                    'G98',
+                    f'X{fmt(p.x)}',
+                    f'Y{fmt(p.y)}',
+                    f'Z{d}',
+                    f'R{r}',
+                ]
+                if peck:
+                    cmd.append(f'Q{fmt(peck)}')
+                if dwell:
+                    cmd.append(f'P{dwell}')
+                if feedrate:
+                    cmd.append(f'F{feedrate}')
+                cmds.append(' '.join(cmd))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            # Add lift and return point
+            for p in self.path[-2:]:
+                cmds.append(
+                    f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
+                )
+            cmds.append('') # Ensure Add newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+
+    Conditional:
+        condition << not operation.disabled
+        Looper:
+            iterable << optimized_positions
+            Vertex:
+                color = vertex_color
+                position = (loop.item.x, loop.item.y, retract)
+        Polyline:
+            color = operation.color
+            points << path
+        DisplayArrow: drop_arrow:
+            color = 'red'
+            cone_size = (0.6, 1.5)
+            tube_size = (0.3, 3)
+            description = 'Drop'
+            direction = (0, 0, -1)
+            position = drop_point + (0, 0, 3)
+        DisplayArrow:
+            color = 'green'
+            cone_size = drop_arrow.cone_size
+            tube_size = drop_arrow.tube_size
+            description = 'Lift'
+            direction = (0, 0, 1)
+            position = lift_point
+
+
+enamldef Job(Part):
+    """ A CNC job. Nest different operations within this and call save
+    to write the gcode to a file.
+
+    """
+    #: Precision to use when formatting values
+    attr precision: int = 6
+
+    #: Output distance values in inches
+    attr inches: bool = False
+
+    #: Filename to write to
+    attr filename: str = f"{self.name}.nc"
+
+    #: Mapping of tool to tool number
+    attr tools: dict = {}
+
+    #: Generate gcode file when all shapes are constructed
+    constructed :: self.generate_job()
+
+    func format_value(v):
+        """ Write formated value """
+        if self.inches:
+            v = v / 25.4
+        return round(v, self.precision)
+
+    func generate_job():
+        """ Generate gcode """
+        try:
+            tools = {}
+            with open(self.filename, 'w') as f:
+                f.write("(Generated with DeclaraCAD)\n")
+                f.write(f"(File: {self.filename})\n")
+                f.write(f"(Date: {datetime.now().strftime('%c')})\n")
+                # Absolute mode, feed per minute, activate xy plane
+                f.write("G90 G94 G17\n")
+                if self.inches:
+                    f.write("G20\n")
+                else:
+                    f.write("G21\n")
+
+                for c in self.children:
+                    if isinstance(c, Operation):
+                        # Validate tool
+                        tool = c.tool
+                        num = tool.number
+
+                        if num in tools and tools[num] != tool:
+                            raise ValueError(
+                                f"Tool number {num} is duplicated! "
+                                "Set another number or use a reference if "
+                                "multiple operations use the same tool."
+                            )
+                        tools[num] = tool
+
+                        # Write gcode
+                        f.write(c.gcode)
+
+            self.tools = tools
+            print(f"Wrote job to {self.filename}")
+        except Exception as e:
+            print(f"Error generating job: {e}")
+
+
+enamldef JobSimulation(Part): simulation:
+    attr job: Job
+    attr rate = 0.2
+    attr disabled: bool = False
+    attr index: int = 0
+    attr frames: list = []
+    attr current_tool: Part
+
+    func start():
+        if self.disabled:
+            return
+        frames = []
+        for c in self.job.children:
+            if isinstance(c, Operation):
+                frames.append(c.tool)
+                for w in c.topology.wires:
+                    path = Topology.discretize(w, rate, method='abscissa')
+                    frames.extend(path)
+        self.frames = frames
+        timer.start()
+
+    func animate():
+        try:
+            i = self.index
+            self.index += 1
+            frame = self.frames[i]
+            if isinstance(frame, Part):
+                self.current_tool = frame
+            elif isinstance(frame, Point):
+                self.current_tool.position = frame
+        except IndexError:
+            print("Simulation complete")
+            self.index = 0
+            timer.stop()
+        except Exception as e:
+            print(f"Simulation error: {e}")
+            timer.stop()
+
+    Include:
+        #destroy_old = False
+        objects << list(job.tools.values())
+
+    Timer: timer:
+        interval = 16
+        activated :: simulation.start()
+        timeout :: simulation.animate()
