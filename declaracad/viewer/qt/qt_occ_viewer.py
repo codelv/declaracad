@@ -63,6 +63,7 @@ from OCCT.Quantity import (
 from OCCT.Prs3d import Prs3d_Drawer
 from OCCT.PrsMgr import PrsMgr_PresentationManager
 from OCCT.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_WIRE
+from OCCT.TopoDS import TopoDS_Shape
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TopLoc import TopLoc_Location
 from OCCT.V3d import V3d_Viewer, V3d_View, V3d_TypeOfOrientation
@@ -307,7 +308,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     _redraw_blocked = Bool()
 
     #: Displayed Shapes
-    _displayed_shapes = Dict()
+    _displayed_shapes = Dict(TopoDS_Shape, OccShape)
     _displayed_dimensions = Dict()
     _displayed_graphics = Dict()
     _selected_shapes = List()
@@ -499,21 +500,21 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
     def child_added(self, child):
         if isinstance(child, OccShape):
-            self._add_shape_to_display(child)
+            self.add_shape_to_display(child)
         elif isinstance(child, OccDimension):
-            self._add_dimension_to_display(child)
+            self.add_dimension_to_display(child)
         else:
             super().child_added(child)
 
     def child_removed(self, child):
         if isinstance(child, OccShape):
-            self._remove_shape_from_display(child)
+            self.remove_shape_from_display(child)
         elif isinstance(child, OccDimension):
-            self._remove_dimension_from_display(child)
+            self.remove_dimension_from_display(child)
         else:
             super().child_removed(child)
 
-    def _add_shape_to_display(self, occ_shape):
+    def add_shape_to_display(self, occ_shape):
         """ Add an OccShape to the display
 
         """
@@ -525,12 +526,13 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         qt_app = self._qt_app
         occ_shape.displayed = True
         for s in occ_shape.walk_shapes():
-            s.observe('ais_shape', self.on_ais_shape_changed)
+            #print(f'viewer added {s.declaration} parent={s.parent()}')
+            #s.observe('ais_shape', self.on_ais_shape_changed)
             ais_shape = s.ais_shape
             if ais_shape is not None:
                 try:
-                    display(ais_shape, False)
                     s.displayed = True
+                    display(ais_shape, False)
                     displayed_shapes[s.shape] = s
                 except RuntimeError as e:
                     log.exception(e)
@@ -544,78 +546,81 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                 if proxy is None:
                     continue
                 if isinstance(proxy, OccDimension):
-                    self._add_dimension_to_display(proxy)
+                    self.add_dimension_to_display(proxy)
                 elif isinstance(proxy, OccDisplayItem):
-                    self._add_item_to_display(proxy)
+                    self.add_item_to_display(proxy)
 
         self._redisplay_timer.start()
 
-    def _remove_shape_from_display(self, occ_shape):
+    def remove_shape_from_display(self, occ_shape):
         displayed_shapes = self._displayed_shapes
         remove = self.ais_context.Remove
         occ_shape.displayed = False
         for s in occ_shape.walk_shapes():
-            s.unobserve('ais_shape', self.on_ais_shape_changed)
+            s.displayed = False
+            #s.unobserve('ais_shape', self.on_ais_shape_changed)
             if s.get_member('ais_shape').get_slot(s) is None:
-                continue
+                continue  # Do not trigger creationg
             ais_shape = s.ais_shape
             if ais_shape is not None:
-                s.displayed = False
-                displayed_shapes.pop(ais_shape, None)
+                displayed_shapes.pop(s.shape, None)
                 remove(ais_shape, False)
 
         if isinstance(occ_shape, OccPart):
+            if occ_shape.get_member('ais_shape').get_slot(occ_shape) is not None:
+                remove(occ_shape.ais_shape, False)
+
             for d in occ_shape.declaration.traverse():
                 proxy = getattr(d, 'proxy', None)
                 if proxy is None:
                     continue
                 if isinstance(proxy, OccDimension):
-                    self._remove_dimension_from_display(proxy)
+                    self.remove_dimension_from_display(proxy)
                 elif isinstance(proxy, OccDisplayItem):
-                    self._remove_item_from_display(proxy)
+                    self.remove_item_from_display(proxy)
 
         self._redisplay_timer.start()
 
     def on_ais_shape_changed(self, change):
+        """ Handle updates to the shape. This occurs when parts
+        add or remove shapes (which may occur during animations).
+
+        """
+        if change['type'] != 'update':
+            return
+        occ_shape = change['owner']
         ais_context = self.ais_context
         displayed_shapes = self._displayed_shapes
-        occ_shape = change['object']
-        if change['type'] == 'update':
-            old_ais_shape = change['oldvalue']
-            if old_ais_shape is not None:
-                old_shape = old_ais_shape.Shape()
-                displayed_shapes.pop(old_shape, None)
-                ais_context.Remove(old_ais_shape, False)
-                occ_shape.displayed = False
-            new_ais_shape = change['value']
-            if new_ais_shape is not None:
-                displayed_shapes[occ_shape.shape] = occ_shape
-                ais_context.Display(new_ais_shape, False)
-                occ_shape.displayed = True
+        old_ais_shape = change['oldvalue']
+        if old_ais_shape is not None:
+            self.remove_shape_from_display(occ_shape)
+        new_ais_shape = change['value']
+        if new_ais_shape is not None:
+            self.add_shape_to_display(occ_shape)
         self._redisplay_timer.start()
 
-    def _add_dimension_to_display(self, occ_dim):
+    def add_dimension_to_display(self, occ_dim):
         ais_dimension = occ_dim.dimension
         if ais_dimension is not None:
             self.ais_context.Display(ais_dimension, False)
             self._displayed_dimensions[ais_dimension] = occ_dim
         self._redisplay_timer.start()
 
-    def _remove_dimension_from_display(self, occ_dim):
+    def remove_dimension_from_display(self, occ_dim):
         ais_dimension = occ_dim.dimension
         if ais_dimension is not None:
             self.ais_context.Remove(ais_dimension, False)
             self._displayed_dimensions.pop(ais_dimension, None)
         self._redisplay_timer.start()
 
-    def _add_item_to_display(self, occ_disp_item):
+    def add_item_to_display(self, occ_disp_item):
         ais_object = occ_disp_item.item
         if ais_object is not None:
             self.ais_context.Display(ais_object, False)
             self._displayed_graphics[ais_object] = occ_disp_item
         self._redisplay_timer.start()
 
-    def _remove_item_from_display(self, occ_disp_item):
+    def remove_item_from_display(self, occ_disp_item):
         ais_object = occ_disp_item.item
         if ais_object is not None:
             self.ais_context.Remove(ais_object, False)

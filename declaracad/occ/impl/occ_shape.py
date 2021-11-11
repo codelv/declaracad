@@ -169,6 +169,12 @@ class OccShape(ProxyShape):
             self.declaration.render()  # Force build the shape
         return Topology(shape=self.shape)
 
+    def _observe_displayed(self, change):
+        if self.displayed:
+            parent = self.parent()
+            if isinstance(parent, OccShape):
+                parent.displayed = True
+
     @observe('shape')
     def on_shape_changed(self, change):
         if self.shape is not None:
@@ -194,14 +200,14 @@ class OccShape(ProxyShape):
 
     def walk_shapes(self):
         """ Iterator of all child shapes """
+        if not self.declaration.display:
+            return
         if isinstance(self, OccPart):
-            if self.declaration.display:
-                for s in self.children():
-                    if isinstance(s, OccShape):
-                        yield from s.walk_shapes()
-        elif isinstance(self, OccShape):
-            if self.declaration.display:
-                yield self
+            for s in self.children():
+                if isinstance(s, OccShape):
+                    yield from s.walk_shapes()
+        else:
+            yield self
 
     def _default_ais_shape(self):
         """ Generate the AIS shape for the viewer to display.
@@ -350,11 +356,15 @@ class OccDependentShape(OccShape):
         super().child_added(child)
         if isinstance(child, OccShape):
             child.observe('shape', self.update_shape)
+            if self.displayed:
+                self.viewer.add_shape_to_display(child)
 
     def child_removed(self, child):
         super().child_removed(child)
         if isinstance(child, OccShape):
             child.unobserve('shape', self.update_shape)
+            if child.displayed:
+                self.viewer.remove_shape_from_display(child)
 
     def set_direction(self, direction):
         self.update_shape()
@@ -406,9 +416,18 @@ class OccPart(OccDependentShape, ProxyPart):
 
     def _default_ais_shape(self) -> AIS_MultipleConnectedInteractive:
         ais_obj = AIS_MultipleConnectedInteractive()
+        viewer = self.viewer
+        ais_context = viewer.ais_context
         for c in self.children():
             if isinstance(c, OccShape):
-                ais_obj.Connect(c.ais_shape)
+                # HACK: WTF???
+                if ais_context.IsDisplayed(c.ais_shape):
+                    viewer.remove_shape_from_display(c)
+                    ais_obj.Connect(c.ais_shape)
+                    viewer.add_shape_to_display(c)
+                else:
+                    ais_obj.Connect(c.ais_shape)
+
         ais_obj.SetLocalTransformation(self.location.Transformation())
         return ais_obj
 
