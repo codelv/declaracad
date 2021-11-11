@@ -300,7 +300,9 @@ enamldef ModelViewer(OccViewer): viewer:
             if Topology.is_cylinder(topods_shape):
                 c = Topology.cast_surface(topods_shape).Cylinder()
                 r = round(c.Radius(), 6)
+                ctr = Point(c.Location())
                 desc = [
+                    f"  Center: {ctr}",
                     f"  Radius: {r}",
                 ]
                 return desc
@@ -434,7 +436,7 @@ enamldef ModelViewer(OccViewer): viewer:
             The message to show
 
         """
-        log.info(message)
+        print(message) # Print gets forwarded to remote workbench
         self.hide_notification()
         popup = NotificationPopup(self, message=message)
         popup.show()
