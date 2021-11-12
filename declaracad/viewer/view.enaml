@@ -264,7 +264,7 @@ enamldef ModelViewer(OccViewer): viewer:
 
     func describe_shape(shape_type, topods_shape):
         if shape_type == 'vertex':
-            v = Point(topods_shape)
+            v = Point(Topology.cast_shape(topods_shape))
             return [f"  Vertex: {v}"]
         elif shape_type == 'node':
             node = topods_shape
@@ -418,7 +418,7 @@ enamldef ModelViewer(OccViewer): viewer:
 
 
         except Exception as e:
-            log.exception(e)
+            print(e)
 
         return "\n".join(desc)
 
