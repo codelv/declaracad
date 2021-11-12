@@ -356,14 +356,14 @@ class OccDependentShape(OccShape):
         super().child_added(child)
         if isinstance(child, OccShape):
             child.observe('shape', self.update_shape)
-            if self.displayed:
+            if self.displayed and self.viewer:
                 self.viewer.add_shape_to_display(child)
 
     def child_removed(self, child):
         super().child_removed(child)
         if isinstance(child, OccShape):
             child.unobserve('shape', self.update_shape)
-            if child.displayed:
+            if child.displayed and self.viewer:
                 self.viewer.remove_shape_from_display(child)
 
     def set_direction(self, direction):
