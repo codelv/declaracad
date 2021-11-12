@@ -18,7 +18,7 @@ from OCCT.BRepAdaptor import (
     BRepAdaptor_Curve, BRepAdaptor_CompCurve, BRepAdaptor_Surface
 )
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.BRepTools import BRepTools_WireExplorer
+from OCCT.BRepTools import BRepTools, BRepTools_WireExplorer
 from OCCT.BRepGProp import BRepGProp
 from OCCT.GC import GC_MakeSegment
 from OCCT.GCPnts import (
@@ -40,7 +40,7 @@ from OCCT.gp import gp_Pnt, gp_Vec
 from OCCT.TopAbs import (
     TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE, TopAbs_WIRE,
     TopAbs_SHELL, TopAbs_SOLID, TopAbs_COMPOUND,
-    TopAbs_COMPSOLID
+    TopAbs_COMPSOLID, TopAbs_REVERSED
 )
 from OCCT.TopExp import TopExp, TopExp_Explorer
 from OCCT.TopoDS import (
@@ -674,6 +674,18 @@ class Topology(Atom):
         return surface.GetType() == GeomAbs.GeomAbs_Cylinder
 
     @classmethod
+    def is_reversed(cls, shape):
+        """ Check if the shape's orentation is reversed.
+
+        Returns
+        -------
+        result: bool
+            Whether the shape's orentation is reversed.
+
+        """
+        return shape.Orientation() == TopAbs_REVERSED
+
+    @classmethod
     def is_shape_in_list(cls, shape, shapes):
         """ Check if an shape is in a list of shapes using the IsSame method.
 
@@ -731,6 +743,18 @@ class Topology(Atom):
             return (coerce_point(p), coerce_direction(v1),
                     coerce_direction(v2), coerce_direction(v3))
         raise ValueError("Invalid derivative")
+
+    def get_face_bounds(self):
+        """ Get the UV bounds of a face.
+
+        Returns
+        -------
+        bounds: Tuple[float, float, float, float]
+            Returns in UMin, UMax, VMin, VMax the bounding values in the
+            parametric space of F.
+
+        """
+        return BRepTools.UVBounds_(self.shape, 0, 0, 0, 0)
 
     @classmethod
     def discretize(cls, wire, deflection, method='quasi-deflection'):
