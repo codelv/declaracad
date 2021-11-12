@@ -418,6 +418,12 @@ class Shape(ToolkitObject):
             self.activate_proxy()
         return self.proxy.shape
 
+    def __repr__(self):
+        qualname = self.__class__.__qualname__
+        addr = f'0x{hex(id(self))}'
+        name = self.name
+        return f"<{qualname} name={name} at {addr}>"
+
 
 class Part(Shape):
     """ A Part is a compound shape. It may contain
