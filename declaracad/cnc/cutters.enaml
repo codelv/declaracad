@@ -32,12 +32,22 @@ class Tool(Part):
 
 
 enamldef TwistDrill(Tool): drill:
+    #: Drill diameter
+    #: This is used to check for errors
     attr diameter = 3
+
+    #: Tool length from bottom of tool holder to tip of drill
+    #: Used to check clearance for maximum cut depth
     attr length = 30
+
+    #: For description
     attr angle = 60
-    attr flutes = 2
+
+    #: Used to calculate feed and speed
+    attr flutes: int = 2
+
     description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
-                  f"twist drill {self.diameter} Ø by {self.length} mm"
+                  f"twist drill {self.diameter} dia by {self.length} len"
     Chamfer:
         material = 'steel'
         attr r = diameter/2*0.99
@@ -52,16 +62,64 @@ enamldef TwistDrill(Tool): drill:
 
 
 enamldef EndMill(Tool): drill:
+    #: Tool diameter
+    #: This is used to determine the step over distance and pocket offsets
     attr diameter = 3
+
+    #: Cutting edge length
+    #: This is used to set the step down distance
+    attr cut = 10
+
+    #: Tool length from bottom of tool holder to tip of mill
+    #: Used to check clearances for maximum cut depth
     attr length = 30
-    attr flutes = 4
+
+    #: Used to calculate feed and speed
+    attr flutes: int = 4
+
     description = f"T{self.number} - {self.flutes} flute " \
-                  f"end mill {self.diameter} Ø by {self.length} mm"
+                  f"end mill {self.diameter} dia x {self.cut} cut"
     Cylinder:
+        material = 'steel'
         radius = diameter/2
         height = length
+
+
+enamldef ChamferMill(Tool): drill:
+    #: Tool diameter
+    attr diameter = 3
+
+    #: Tool length from bottom of tool holder to tip of mill
+    #: Used to check clearances for maximum cut depth
+    attr length = 30
+
+    #: Tip angle
+    attr angle = 90
+
+    #: Can be used to calculate feed and speed
+    attr flutes: int = 2
+
+    description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
+                  f"chamfer mill {self.diameter} dia by {self.length} len"
+    Chamfer:
+        material = 'steel'
+        attr r = diameter/2*0.99
+        attr d1 = r
+        attr d2 = r*(pi/2-sin(radians(angle)))
+        operations = [
+            (d1, d2, self.children[0].topology.faces[2])
+        ]
+        Cylinder:
+            radius = diameter/2
+            height = length
 
 
 enamldef Assembly(Part):
     TwistDrill:
         angle = 60
+
+    ChamferMill:
+        position = (10, 0)
+
+    EndMill:
+        position = (20, 0)
