@@ -119,7 +119,10 @@ def load_model(filename: str, source: Optional[str] = None):
             exec(code, namespace)
         Assembly = namespace.get('Assembly')
         if Assembly is not None:
-            return [Assembly()]
+            assembly = Assembly()
+            if not assembly.name:
+                assembly.name = filename or "Source"
+            return [assembly]
         return []
     elif os.path.exists(filename):
         # Try to load from filename
