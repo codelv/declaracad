@@ -10,13 +10,13 @@ Created on Nov 9, 2021
 @author: jrm
 """
 import traceback
-from math import ceil
+from math import ceil, sqrt
 from typing import List as ListType
 from atom.api import Bool, Enum, Float, Instance, Str
 from datetime import datetime
 from declaracad.occ.geom import coerce_point
 from declaracad.occ.api import (
-    DisplayArrow, Point, Part, Polyline, Topology, Vertex,
+    DisplayArrow, Point, Part, Polyline, Topology, Vertex, Wire, Arc,
     Timer, Looper, Include, Conditional
 )
 from declaracad.cnc.optimize import optimize_points
@@ -68,6 +68,52 @@ class Operation(Part):
         else:
             cmds.append(f'M9')
 
+        return cmds
+
+    def generate_arc_gcode(self, arc: Arc, format_value) -> ListType[str]:
+        """ Generate gcodee for an Arc """
+
+        code = 'G2' if arc.clockwise else 'G3'
+        cmds = []
+        d = arc.direction
+        center = arc.position
+        start, end = arc.points
+        delta = start-center
+        if d == (0, 0, 1) or d == (0, 0, -1):
+            if d[2] == -1:
+                code = 'G2' if code == 'G3' else 'G3'
+            # XY plane
+            i, j = format_value(delta.x), format_value(delta.y)
+            x, y = format_value(end.x), format_value(end.y)
+            cmds.append(f'{code} X{x} Y{y} I{i} J{j}')
+        elif d == (0, 1, 0) or d == (0, -1, 0):
+            if d[1] == -1:
+                code = 'G2' if code == 'G3' else 'G3'
+            # XZ plane
+            i, k = format_value(delta.x), format_value(delta.z)
+            x, z = format_value(end.x), format_value(end.z)
+            cmds.append("G18 (XZ-plane)")
+            cmds.append(f'{code} X{x} Z{z} I{i} K{k}')
+        elif d == (1, 0, 0) or d == (-1, 0, 0):
+            if d[0] == -1:
+                code = 'G2' if code == 'G3' else 'G3'
+            # YZ plane
+            j, k = format_value(delta.y), format_value(delta.z)
+            y, z = format_value(end.y), format_value(end.z)
+            cmds.append("G19 (YZ-plane)")
+            cmds.append(f'{code} Y{y} Z{z} J{j} K{k}')
+        else:
+            raise NotImplementedError(f"Arc direction {d} cannot be converted")
+        if d != (0, 0, 1):
+            cmds.append('G17 (XY-plane)') # Restore G17
+        return cmds
+
+    def generate_polyline_gcode(self, polyline: Polyline, format_value) -> ListType[str]:
+        """ Generate gcodee for a Polyline """
+        cmds = []
+        for p in polyline.points:
+            x, y, z = map(format_value, p)
+            cmds.append(f'G0 X{x} Y{y} Z{z}')
         return cmds
 
     def _default_gcode(self):
@@ -211,6 +257,7 @@ enamldef DrillingCycle(Operation): operation:
             p = self.path[0]
             d = fmt(depth)
             r = fmt(retract)
+            cmds.append("(Drilling cycle)")
 
             # Move to top of first hole
             for p in self.path[0:2]:
@@ -292,6 +339,453 @@ enamldef DrillingCycle(Operation): operation:
             description = 'Lift'
             direction = (0, 0, 1)
             position = lift_point
+
+
+enamldef ArcHelix(Part): part:
+    """ Utility for creating a helix using arcs.
+
+    """
+    #: Radius of helix
+    attr radius
+
+    #: Height of helix
+    #: This can be ignored if the pitch and revolutions are given
+    attr height
+
+    #: Maximum pitch
+    #: If height is given calculate the pitch to reach the given height
+    attr max_pitch
+
+    # ------------------------------------------------------------------------
+    # Calculated Inputs
+    # ------------------------------------------------------------------------
+    #: Actual pitch used
+    attr pitch = calculate_pitch(self.height, self.max_pitch)
+
+    #: Revolutions
+    attr revolutions = int(self.height/self.pitch)
+
+    # ------------------------------------------------------------------------
+    # G Code Options
+    # ------------------------------------------------------------------------
+
+    #: Feedrate used for gcode
+    attr feedrate = 0
+
+    #: Clockwise helix
+    attr clockwise: bool = True
+
+    attr gcode: str = generate_gcode()
+
+    func generate_gcode():
+        cmds = []
+        code = 'G2' if self.clockwise else 'G3'
+        feedrate = self.feedrate
+        pos = self.position
+        for arc in helix.children:
+            if not isinstance(arc, Arc):
+                continue
+            center = arc.position + pos
+            start = arc.points[0] + pos[0:2]
+            end = arc.points[-1] + pos[0:2] # Ingore Z
+            delta = center - start
+            i = format_value(delta.x)
+            j = format_value(delta.y)
+            x = format_value(end.x)
+            y = format_value(end.y)
+            z = format_value(center.z + pitch/4) # Arc is centered at pitch/2
+            cmd = f'{code} X{x} Y{y} I{i} J{j} Z{z}'
+            if feedrate:
+                cmd += f'F{feedrate}'
+            cmds.append(cmd)
+
+        return cmds
+
+    func calculate_pitch(height, max_pitch):
+        """ Determine actual pitch to reach the desired depth
+        using helix_pitch as the maximum value.
+        """
+        r = height/max_pitch
+        if r <= 1:
+            # Depth is less than one pitch so adjust
+            # pitch to just do one revolution
+            return height
+        n = int(r)
+        if n == r:
+            # Max pitch is a multiple of the depth
+            return max_pitch
+        # Solve n + 1 = height / new_pitch
+        new_pitch = height/(n+1)
+        assert new_pitch < max_pitch
+        return new_pitch
+
+    Wire: helix:
+        color = parent.color
+
+        # Desired radius in x y plane
+        attr a = radius
+
+        # Step down of quarter of a  revolution
+        attr b = pitch/4
+        attr arc_radius = sqrt(radius**2+b**2)
+        attr cw = 1 if clockwise else -1
+
+        Looper:
+            iterable = range(int(revolutions*2))
+            Arc:
+                #color = 'blue' if loop.index & 1 else 'red'
+                radius = arc_radius
+                attr dz = loop.index*pitch/2
+                attr rot = -cw if loop.index & 1 else cw
+                direction = (rot*-b, 0, a)
+                position = (0, 0, -b-dz)
+                points = [(rot * radius, 0), (rot * -radius, 0)]
+
+
+enamldef ArcSpiral(Part): part:
+    """ Create an archimedean spiral in the xy plane
+
+    """
+
+    #: Starting radius
+    attr start_radius
+
+    #: Stopping radius
+    attr end_radius
+
+    #: Step over amount
+    attr max_step_over
+
+    #: Description
+    description = f'Arc spiral start {start_radius}, end {end_radius}, step over {step_over}'
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+
+    #: Calculated step over amount. Will always be less than or equal to
+    #: max_step_over.
+    attr step_over = calculate_step_over(start_radius, end_radius, max_step_over)
+
+    #: Change in radius
+    attr dr = end_radius - start_radius
+    attr path = generate_path()
+
+    # ------------------------------------------------------------------------
+    # G Code Options
+    # ------------------------------------------------------------------------
+
+    #: Feedrate used for gcode
+    attr feedrate = 0
+
+    #: Clockwise helix
+    attr clockwise: bool = True
+
+    attr gcode: str = generate_gcode()
+
+    func generate_gcode():
+        cmds = []
+        code = 'G2' if self.clockwise else 'G3'
+        feedrate = self.feedrate
+        pos = self.position
+        for arc in spiral.children:
+            if not isinstance(arc, Arc):
+                continue
+            center = arc.position + pos
+            start = arc.points[0] + pos[0:2]
+            end = arc.points[-1] + pos[0:2] # Ingore Z
+            delta = center - start
+            i = format_value(delta.x)
+            j = format_value(delta.y)
+            x = format_value(end.x)
+            y = format_value(end.y)
+            cmd = f'{code} X{x} Y{y} I{i} J{j}'
+            if feedrate:
+                cmd += f'F{feedrate}'
+            cmds.append(cmd)
+
+        return cmds
+
+    func calculate_step_over(r1, r2, max_step):
+        """ Adjust step over so it lands exactly on the end radius
+
+        """
+        rmin = min(r1, r2)
+        rmax = max(r1, r2)
+        delta = rmax-rmin
+        r = delta/max_step
+        if r <= 1:
+            # Do one revoluation
+            return delta
+        n = int(r)
+        if n == r:
+            # Stepover is multiple of max step
+            return max_step
+        # Solve n + 1 = delta/new_step
+        new_step_over = delta/(n+1)
+        assert new_step_over < max_step
+        return new_step_over
+
+    func generate_path():
+        steps = int(dr/step_over)
+        arcs = []
+        r = start_radius
+        arcs.append((start_radius, 0, 1))
+        for i in range(steps):
+            r += step_over
+            if i & 1:
+                x = 0
+                direction = 1
+            else:
+                x = step_over
+                direction = -1
+
+            arcs.append((r, x, direction))
+
+        # Add full circle
+        arcs.append((end_radius, 0, -1))
+        arcs.append((end_radius, 0, 1))
+
+        return arcs
+    Wire: spiral:
+        color = parent.color
+        Looper:
+            iterable = path
+            Arc:
+                attr rot = loop.item[2]
+                radius = loop.item[0]
+                position = (loop.item[1], 0)
+                points = [(rot*radius, 0), (-rot*radius, 0)]
+
+
+enamldef CircularPocket(Operation): operation:
+    """ Circular pocket does a helix down to the bottom of the hole
+    or step limit, then performs an archimedean spiral out to the
+    cylinder radius - tool.radius. Repeating for each step as needed based on
+    the tool's cutter dimension.
+
+    """
+    #: List of faces to pocket
+    attr pockets: list = []
+    attr feedrate = 0
+    attr step_down = 1
+
+    attr start_point
+    attr end_point = start_point
+
+    #: Helix radius
+    attr helix_radius = tool.diameter*1/3
+
+    # Change in z per revolution of helix
+    attr helix_pitch = helix_radius/4
+
+    #: Spiral step over
+    attr step_over = tool.diameter*0.08723
+
+    attr cylinders = [get_cylinder(p) for p in pockets]
+
+    func get_cylinder(pocket):
+        if not Topology.is_cylinder(pocket):
+                raise ValueError("Pocket must be a cylindrical face")
+        surface = Topology.cast_surface(pocket)
+        cylinder = surface.Cylinder()
+        center = Point(cylinder.Location())
+        return {
+            'radius': cylinder.Radius(),
+            'center': center,
+            'bottom': center + (0, 0, surface.FirstUParameter()),
+            'top': center + (0, 0, surface.LastUParameter()),
+        }
+
+    generate_gcode => ():
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+            # Change tool
+            cmds.append("(Circular pocket)")
+
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a cylindrical pocket."
+                    "Use spindle_speed=value."
+                )
+
+            job = self.parent
+            fmt = job.format_value
+            for child in self.children:
+                if hasattr(child, 'generate_gcode'):
+                    cmds.extend(child.generate_gcode())
+
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            p = coerce_point(end_point)
+            cmds.append(
+                f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
+            )
+
+            cmds.append('') # Ensure Add newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+    Conditional:
+        condition << not operation.disabled
+        Looper:
+            iterable << cylinders
+            Part:
+                attr outside_radius = loop.item['radius'] - tool.diameter/2
+                attr start_point = coerce_point(operation.start_point)
+                attr center = loop.item['center']
+                attr drop_point = Point(center.x, center.y, start_point.z)
+                attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
+                attr top_point = loop.item['top']
+                attr bottom_point = loop.item['bottom']
+                attr depth = top_point.z - bottom_point.z
+                attr arc_start = top_point + (0, 0, helix_radius/4)
+                name = 'Pocket'
+
+                func generate_gcode():
+                    cmds = []
+                    for child in self.children:
+                        if hasattr(child, 'generate_gcode'):
+                            cmds.extend(child.generate_gcode())
+                        elif isinstance(child, Arc):
+                            cmds.extend(operation.generate_arc_gcode(child, format_value))
+                        elif isinstance(child, Polyline):
+                            cmds.extend(operation.generate_polyline_gcode(child, format_value))
+                    return cmds
+
+                DisplayArrow: drop_arrow:
+                    color = 'red'
+                    cone_size = (0.6, 1.5)
+                    tube_size = (0.3, 3)
+                    description = 'Drop'
+                    direction = (0, 0, -1)
+                    position = drop_point + (0, 0, 3)
+
+                # Heliz down to bottom of hole or max step
+                Vertex:
+                    color = 'lime'
+                    description = 'Top of circular pocket'
+                    position = top_point
+                Vertex:
+                    description = 'Bottom of circular pocket'
+                    color = 'blue'
+                    position = bottom_point
+                Polyline: move_to_point:
+                    points = [start_point, drop_point, arc_start]
+
+                    func generate_gcode():
+                        cmds = []
+                        for p in self.points:
+                            x, y, z = map(format_value, p)
+                            cmds.append(f'G0 X{x} Y{y} Z{z}')
+                        return cmds
+
+                Arc: arc_in:
+                    # Arc into center
+                    color = 'purple'
+                    name = 'Arc in'
+                    clockwise = True
+                    direction = (1, 0, 0)
+                    radius = helix_radius/4
+                    position = top_point + (0, radius, radius)
+                    points = [
+                        top_point+(0, 0, radius),
+                        top_point+(0, radius, 0)
+                    ]
+
+                Arc: arc_merge:
+                    color = 'teal'
+                    name = 'Arc union'
+                    attr p = arc_in.points[-1]
+                    attr r = arc_in.radius
+                    position = p + (r, 0)
+                    radius = r
+                    points = [
+                        p,
+                        p + (r, r)
+                    ]
+                #Vertex:
+                #    color = 'red'
+                #    position = arc_merge.position
+
+                Arc: arc_back:
+                    color = 'teal'
+                    name = 'Arc union'
+                    attr p = arc_merge.points[-1]
+                    position = top_point + (arc_merge.radius, 0)
+                    radius = arc_merge.radius*2
+                    points = [
+                        p,
+                        top_point + (arc_merge.radius * 2, 0)
+                    ]
+                #Vertex:
+                #    color = 'lime'
+                #    position = arc_back.position
+
+                ArcHelix: helix:
+                    color = 'green'
+                    radius = helix_radius*3/4
+                    max_pitch = helix_pitch
+                    height = depth
+                    position = top_point
+                    feedrate = operation.feedrate
+
+                ArcSpiral: spiral:
+                    name = 'Spiral'
+                    color = 'purple'
+                    position = bottom_point
+                    start_radius = helix.radius
+                    end_radius = outside_radius
+                    max_step_over = operation.step_over
+                    feedrate = operation.feedrate
+
+                Arc: arc_out:
+                    color = 'orange'
+                    name = 'Arc out'
+                    radius = arc_in.radius
+                    # Spiral end point
+                    attr p = bottom_point + (-spiral.end_radius, 0)
+                    position = p + (radius, 0)
+                    points = [p, position + (0, radius)]
+
+                Arc: arc_up:
+                    color = 'orange'
+                    name = 'Arc out'
+                    direction = (0, 1, 0)
+                    radius = arc_out.radius
+                    #clockwise = True
+                    # Spiral end point
+                    attr p = arc_out.points[-1]
+                    position = p + (0, 0, radius)
+                    points = [p, position + (radius, 0)]
+
+                Polyline:
+                    name = 'Return path'
+                    attr p = arc_up.points[-1]
+                    points = [p, lift_point, end_point]
+
+                DisplayArrow: drop_arrow:
+                    color = 'green'
+                    cone_size = (0.6, 1.5)
+                    tube_size = (0.3, 3)
+                    description = 'Lift'
+                    direction = (0, 0, 1)
+                    position = lift_point
 
 
 enamldef Job(Part):
