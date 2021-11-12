@@ -124,7 +124,7 @@ def load_model(filename: str, source: Optional[str] = None):
     elif os.path.exists(filename):
         # Try to load from filename
         with enaml.imports():
-            from .loader import LoadedPart
+            from declaracad.occ.loader import LoadedPart
         return [LoadedPart(filename=filename)]
     else:
         return []
