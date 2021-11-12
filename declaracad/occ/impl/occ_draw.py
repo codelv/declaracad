@@ -228,7 +228,7 @@ class OccArc(OccLine, ProxyArc):
             v = d.direction.proxy
             # TODO: This technially isn't correct because the z axis could
             # already be flipped
-            if not d.clockwise:
+            if d.clockwise:
                 v = v.Reversed()
             axis = gp_Ax2(d.position.proxy, v)
             c = gp_Circ(axis, d.radius)
@@ -254,7 +254,7 @@ class OccArc(OccLine, ProxyArc):
                              "- radius, alpha1 and one point\n\t"
                              "- radius, alpha1 and alpha2")
         if d.reverse:
-            arc = arc.Reversed()
+            arc.Reverse()
         self.curve = arc
         self.shape = self.make_edge(arc)
 
@@ -575,7 +575,11 @@ class OccWire(OccDependentShape, ProxyWire):
             builder.Add(w)
         if not builder.IsDone():
             log.warning('Edges must be connected %s' % d)
-        wire = builder.Wire()
+        try:
+            wire = builder.Wire()
+        except RuntimeError as e:
+            msg = f'Error creating wire for {d}: {e}'
+            raise RuntimeError(msg)
         if d.reverse:
             wire.Reverse()
         self.curve = BRepAdaptor_CompCurve(wire)

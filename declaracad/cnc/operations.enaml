@@ -17,7 +17,7 @@ from datetime import datetime
 from declaracad.occ.geom import coerce_point
 from declaracad.occ.api import (
     DisplayArrow, Point, Part, Polyline, Topology, Vertex, Wire, Arc,
-    Timer, Looper, Include, Conditional
+    Cylinder, Timer, Looper, Include, Conditional
 )
 from declaracad.cnc.optimize import optimize_points
 from declaracad.cnc.cutters import Tool
@@ -73,39 +73,36 @@ class Operation(Part):
     def generate_arc_gcode(self, arc: Arc, format_value) -> ListType[str]:
         """ Generate gcodee for an Arc """
 
-        code = 'G2' if arc.clockwise else 'G3'
         cmds = []
         d = arc.direction
         center = arc.position
         start, end = arc.points
-        delta = start-center
+        delta = center - start
         if d == (0, 0, 1) or d == (0, 0, -1):
-            if d[2] == -1:
-                code = 'G2' if code == 'G3' else 'G3'
+            code = 'G2' if arc.clockwise or d[2] == -1 else 'G3'
             # XY plane
             i, j = format_value(delta.x), format_value(delta.y)
             x, y = format_value(end.x), format_value(end.y)
             cmds.append(f'{code} X{x} Y{y} I{i} J{j}')
         elif d == (0, 1, 0) or d == (0, -1, 0):
-            if d[1] == -1:
-                code = 'G2' if code == 'G3' else 'G3'
+            code = 'G2' if arc.clockwise or d[1] == -1 else 'G3'
             # XZ plane
             i, k = format_value(delta.x), format_value(delta.z)
             x, z = format_value(end.x), format_value(end.z)
             cmds.append("G18 (XZ-plane)")
             cmds.append(f'{code} X{x} Z{z} I{i} K{k}')
+            cmds.append('G17 (XY-plane)') # Restore G17
         elif d == (1, 0, 0) or d == (-1, 0, 0):
-            if d[0] == -1:
-                code = 'G2' if code == 'G3' else 'G3'
+            code = 'G2' if arc.clockwise or d[0] == -1 else 'G3'
             # YZ plane
             j, k = format_value(delta.y), format_value(delta.z)
             y, z = format_value(end.y), format_value(end.z)
             cmds.append("G19 (YZ-plane)")
             cmds.append(f'{code} Y{y} Z{z} J{j} K{k}')
+            cmds.append('G17 (XY-plane)') # Restore G17
         else:
             raise NotImplementedError(f"Arc direction {d} cannot be converted")
-        if d != (0, 0, 1):
-            cmds.append('G17 (XY-plane)') # Restore G17
+
         return cmds
 
     def generate_polyline_gcode(self, polyline: Polyline, format_value) -> ListType[str]:
@@ -415,12 +412,16 @@ enamldef ArcHelix(Part): part:
             # Max pitch is a multiple of the depth
             return max_pitch
         # Solve n + 1 = height / new_pitch
-        new_pitch = height/(n+1)
+        if n & 1:
+            new_pitch = height/(n+1)
+        else:
+            new_pitch = height/(n+2) # Force even number of revolutions
         assert new_pitch < max_pitch
         return new_pitch
 
     Wire: helix:
         color = parent.color
+        name = 'ArcHelix'
 
         # Desired radius in x y plane
         attr a = radius
@@ -438,6 +439,7 @@ enamldef ArcHelix(Part): part:
                 attr dz = loop.index*pitch/2
                 attr rot = -cw if loop.index & 1 else cw
                 direction = (rot*-b, 0, a)
+                clockwise = part.clockwise
                 position = (0, 0, -b-dz)
                 points = [(rot * radius, 0), (rot * -radius, 0)]
 
@@ -522,7 +524,10 @@ enamldef ArcSpiral(Part): part:
             # Stepover is multiple of max step
             return max_step
         # Solve n + 1 = delta/new_step
-        new_step_over = delta/(n+1)
+        if n & 1:
+            new_step_over = delta/(n+1)
+        else:
+            new_step_over = delta/(n+2) # Force even number of steps
         assert new_step_over < max_step
         return new_step_over
 
@@ -542,6 +547,8 @@ enamldef ArcSpiral(Part): part:
 
             arcs.append((r, x, direction))
 
+        #assert r == end_radius
+
         # Add full circle
         arcs.append((end_radius, 0, -1))
         arcs.append((end_radius, 0, 1))
@@ -549,11 +556,13 @@ enamldef ArcSpiral(Part): part:
         return arcs
     Wire: spiral:
         color = parent.color
+        name = 'ArcSpiral'
         Looper:
             iterable = path
             Arc:
                 attr rot = loop.item[2]
                 radius = loop.item[0]
+                clockwise = part.clockwise
                 position = (loop.item[1], 0)
                 points = [(rot*radius, 0), (-rot*radius, 0)]
 
@@ -573,28 +582,40 @@ enamldef CircularPocket(Operation): operation:
     attr start_point
     attr end_point = start_point
 
+    #: Clearance added to start above the top
+    attr top_clearance = 1
+
     #: Helix radius
     attr helix_radius = tool.diameter*1/3
 
     # Change in z per revolution of helix
-    attr helix_pitch = helix_radius/4
+    attr helix_pitch = tool.diameter * 0.06
 
     #: Spiral step over
-    attr step_over = tool.diameter*0.08723
+    attr step_over = tool.diameter * 0.06
 
-    attr cylinders = [get_cylinder(p) for p in pockets]
+    #: Internal pocket data
+    attr data = [get_cylinder(p) for p in pockets]
 
     func get_cylinder(pocket):
-        if not Topology.is_cylinder(pocket):
-                raise ValueError("Pocket must be a cylindrical face")
-        surface = Topology.cast_surface(pocket)
-        cylinder = surface.Cylinder()
-        center = Point(cylinder.Location())
+        if Topology.is_cylinder(pocket):
+            surface = Topology.cast_surface(pocket)
+            cylinder = surface.Cylinder()
+            radius = cylinder.Radius()
+            center = Point(cylinder.Location())
+            topo = Topology(shape=pocket)
+            umin, umax, bottom, top = topo.get_face_bounds()
+            if Topology.is_reversed(pocket):
+                top = bottom - top # Invert
+                bottom, top = top, bottom # Swap
+        else:
+            raise ValueError("Pocket must be a cylinder or cylindrical face")
+
         return {
-            'radius': cylinder.Radius(),
+            'radius': radius,
             'center': center,
-            'bottom': center + (0, 0, surface.FirstUParameter()),
-            'top': center + (0, 0, surface.LastUParameter()),
+            'bottom': center + (0, 0, bottom),
+            'top': center + (0, 0, top + top_clearance),
         }
 
     generate_gcode => ():
@@ -644,7 +665,7 @@ enamldef CircularPocket(Operation): operation:
     Conditional:
         condition << not operation.disabled
         Looper:
-            iterable << cylinders
+            iterable << operation.data
             Part:
                 attr outside_radius = loop.item['radius'] - tool.diameter/2
                 attr start_point = coerce_point(operation.start_point)
@@ -688,18 +709,10 @@ enamldef CircularPocket(Operation): operation:
                 Polyline: move_to_point:
                     points = [start_point, drop_point, arc_start]
 
-                    func generate_gcode():
-                        cmds = []
-                        for p in self.points:
-                            x, y, z = map(format_value, p)
-                            cmds.append(f'G0 X{x} Y{y} Z{z}')
-                        return cmds
-
                 Arc: arc_in:
                     # Arc into center
                     color = 'purple'
                     name = 'Arc in'
-                    clockwise = True
                     direction = (1, 0, 0)
                     radius = helix_radius/4
                     position = top_point + (0, radius, radius)
@@ -710,10 +723,11 @@ enamldef CircularPocket(Operation): operation:
 
                 Arc: arc_merge:
                     color = 'teal'
-                    name = 'Arc union'
+                    name = 'Arc merge'
                     attr p = arc_in.points[-1]
                     attr r = arc_in.radius
                     position = p + (r, 0)
+                    clockwise = True
                     radius = r
                     points = [
                         p,
@@ -723,10 +737,11 @@ enamldef CircularPocket(Operation): operation:
                 #    color = 'red'
                 #    position = arc_merge.position
 
-                Arc: arc_back:
+                Arc: arc_union:
                     color = 'teal'
                     name = 'Arc union'
                     attr p = arc_merge.points[-1]
+                    clockwise = True
                     position = top_point + (arc_merge.radius, 0)
                     radius = arc_merge.radius*2
                     points = [
@@ -758,17 +773,20 @@ enamldef CircularPocket(Operation): operation:
                     color = 'orange'
                     name = 'Arc out'
                     radius = arc_in.radius
+                    direction = (0, 0, -1)
                     # Spiral end point
                     attr p = bottom_point + (-spiral.end_radius, 0)
                     position = p + (radius, 0)
-                    points = [p, position + (0, radius)]
+                    points = [
+                        p,
+                        p + (radius, radius)
+                    ]
 
                 Arc: arc_up:
                     color = 'orange'
-                    name = 'Arc out'
-                    direction = (0, 1, 0)
+                    name = 'Arc up'
+                    direction = (0, -1, 0)
                     radius = arc_out.radius
-                    #clockwise = True
                     # Spiral end point
                     attr p = arc_out.points[-1]
                     position = p + (0, 0, radius)
@@ -779,10 +797,10 @@ enamldef CircularPocket(Operation): operation:
                     attr p = arc_up.points[-1]
                     points = [p, lift_point, end_point]
 
-                DisplayArrow: drop_arrow:
+                DisplayArrow: lift_arrow:
                     color = 'green'
-                    cone_size = (0.6, 1.5)
-                    tube_size = (0.3, 3)
+                    cone_size = drop_arrow.cone_size
+                    tube_size = drop_arrow.tube_size
                     description = 'Lift'
                     direction = (0, 0, 1)
                     position = lift_point
