@@ -228,7 +228,7 @@ class OccArc(OccLine, ProxyArc):
             v = d.direction.proxy
             # TODO: This technially isn't correct because the z axis could
             # already be flipped
-            if d.clockwise:
+            if not d.clockwise:
                 v = v.Reversed()
             axis = gp_Ax2(d.position.proxy, v)
             c = gp_Circ(axis, d.radius)
