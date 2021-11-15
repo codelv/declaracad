@@ -12,17 +12,84 @@ Created on Nov 9, 2021
 import traceback
 from math import ceil, sqrt
 from typing import List as ListType
-from atom.api import Bool, Enum, Float, Instance, Str
+from atom.api import Atom, Bool, Enum, Float, Instance, Str
 from datetime import datetime
 from declaracad.occ.geom import coerce_point
 from declaracad.occ.api import (
     DisplayArrow, Point, Part, Polyline, Topology, Vertex, Wire, Arc,
-    Cylinder, Timer, Looper, Include, Conditional
+    HalfSpace, Cylinder, Timer, Looper, Include, Conditional
 )
 from declaracad.cnc.optimize import optimize_points
 from declaracad.cnc.cutters import Tool
 from enaml.core.declarative import d_, d_func
 
+
+
+def generate_arc_gcode(
+    arc: Arc,
+    format_value,
+    incremental: bool = True
+) -> ListType[str]:
+    """ Generate gcodee for an Arc """
+
+    cmds = []
+    d = arc.direction
+    center = arc.position
+    start, end = arc.points
+    delta = center - start if incremental else center
+    x, y, z = map(format_value, end)
+    if d == (0, 0, 1) or d == (0, 0, -1):
+        axis = 2
+        if arc.clockwise:
+            code = 'G3' if d[axis] == -1 else 'G2'
+        else:
+            code = 'G3' if d[axis] == 1 else 'G2'
+        # XY plane
+        i, j = format_value(delta.x), format_value(delta.y)
+        cmds.append(f'{code} X{x} Y{y} Z{z} I{i} J{j}')
+    elif d == (0, 1, 0) or d == (0, -1, 0):
+        axis = 1
+        if arc.clockwise:
+            code = 'G3' if d[axis] == -1 else 'G2'
+        else:
+            code = 'G3' if d[axis] == 1 else 'G2'
+        # XZ plane
+        i, k = format_value(delta.x), format_value(delta.z)
+        cmds.append("G18 (XZ-plane)")
+        cmds.append(f'{code} X{x} Z{z} Y{y} I{i} K{k}')
+        cmds.append('G17 (XY-plane)') # Restore G17
+    elif d == (1, 0, 0) or d == (-1, 0, 0):
+        axis = 0
+        if arc.clockwise:
+            code = 'G3' if d[axis] == -1 else 'G2'
+        else:
+            code = 'G3' if d[axis] == 1 else 'G2'
+
+        # YZ plane
+        j, k = format_value(delta.y), format_value(delta.z)
+        cmds.append("G19 (YZ-plane)")
+        cmds.append(f'{code} Y{y} Z{z} X{x} J{j} K{k}')
+        cmds.append('G17 (XY-plane)') # Restore G17
+    else:
+        raise NotImplementedError(f"Arc direction {d} cannot be converted")
+
+    if not arc.description:
+        arc.description = "Gcode: \n%s\n" % '\n'.join(cmds)
+
+    return cmds
+
+def generate_polyline_gcode(
+    polyline: Polyline,
+    format_value,
+    rapid: bool = False
+) -> ListType[str]:
+    """ Generate gcodee for a Polyline """
+    cmds = []
+    code = 'G0' if rapid else 'G1'
+    for p in polyline.points:
+        x, y, z = map(format_value, p)
+        cmds.append(f'{code} X{x} Y{y} Z{z}')
+    return cmds
 
 class Operation(Part):
     """ A single machining operation.
@@ -70,54 +137,11 @@ class Operation(Part):
 
         return cmds
 
-    def generate_arc_gcode(self, arc: Arc, format_value) -> ListType[str]:
-        """ Generate gcodee for an Arc """
-
-        cmds = []
-        d = arc.direction
-        center = arc.position
-        start, end = arc.points
-        delta = center - start
-        if d == (0, 0, 1) or d == (0, 0, -1):
-            code = 'G2' if arc.clockwise or d[2] == -1 else 'G3'
-            # XY plane
-            i, j = format_value(delta.x), format_value(delta.y)
-            x, y = format_value(end.x), format_value(end.y)
-            cmds.append(f'{code} X{x} Y{y} I{i} J{j}')
-        elif d == (0, 1, 0) or d == (0, -1, 0):
-            code = 'G2' if arc.clockwise or d[1] == -1 else 'G3'
-            # XZ plane
-            i, k = format_value(delta.x), format_value(delta.z)
-            x, z = format_value(end.x), format_value(end.z)
-            cmds.append("G18 (XZ-plane)")
-            cmds.append(f'{code} X{x} Z{z} I{i} K{k}')
-            cmds.append('G17 (XY-plane)') # Restore G17
-        elif d == (1, 0, 0) or d == (-1, 0, 0):
-            code = 'G2' if arc.clockwise or d[0] == -1 else 'G3'
-            # YZ plane
-            j, k = format_value(delta.y), format_value(delta.z)
-            y, z = format_value(end.y), format_value(end.z)
-            cmds.append("G19 (YZ-plane)")
-            cmds.append(f'{code} Y{y} Z{z} J{j} K{k}')
-            cmds.append('G17 (XY-plane)') # Restore G17
-        else:
-            raise NotImplementedError(f"Arc direction {d} cannot be converted")
-
-        return cmds
-
-    def generate_polyline_gcode(self, polyline: Polyline, format_value) -> ListType[str]:
-        """ Generate gcodee for a Polyline """
-        cmds = []
-        for p in polyline.points:
-            x, y, z = map(format_value, p)
-            cmds.append(f'G0 X{x} Y{y} Z{z}')
-        return cmds
-
     def _default_gcode(self):
         return '\n'.join(self.generate_gcode())
 
     def _default_description(self):
-        return "G-Code: \n" + self.gcode
+        return "G-Code: \n" + self.gcode[0:100]
 
 
 enamldef DrillingCycle(Operation): operation:
@@ -304,7 +328,7 @@ enamldef DrillingCycle(Operation): operation:
                 cmds.append(
                     f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
                 )
-            cmds.append('') # Ensure Add newline
+            cmds.append('') # Ensure newline
             return cmds
         except Exception as e:
             msg = f"(Error generating gcode: {e} for {self})"
@@ -372,30 +396,31 @@ enamldef ArcHelix(Part): part:
     #: Clockwise helix
     attr clockwise: bool = True
 
+    #: Use incremental arc commands
+    attr incremental: bool = True
+
     attr gcode: str = generate_gcode()
 
     func generate_gcode():
         cmds = []
         code = 'G2' if self.clockwise else 'G3'
-        feedrate = self.feedrate
         pos = self.position
+        if self.feedrate:
+            cmds.append(f"F{self.feedrate}")
         for arc in helix.children:
             if not isinstance(arc, Arc):
                 continue
             center = arc.position + pos
             start = arc.points[0] + pos[0:2]
             end = arc.points[-1] + pos[0:2] # Ingore Z
-            delta = center - start
+            delta = center - start if incremental else center
             i = format_value(delta.x)
             j = format_value(delta.y)
             x = format_value(end.x)
             y = format_value(end.y)
             z = format_value(center.z + pitch/4) # Arc is centered at pitch/2
-            cmd = f'{code} X{x} Y{y} I{i} J{j} Z{z}'
-            if feedrate:
-                cmd += f'F{feedrate}'
+            cmd = f'{code} X{x} Y{y} Z{z} I{i} J{j}'
             cmds.append(cmd)
-
         return cmds
 
     func calculate_pitch(height, max_pitch):
@@ -480,32 +505,31 @@ enamldef ArcSpiral(Part): part:
     #: Feedrate used for gcode
     attr feedrate = 0
 
-    #: Clockwise helix
+    #: Clockwise spiral
     attr clockwise: bool = True
+    attr incremental: bool = True
 
     attr gcode: str = generate_gcode()
 
     func generate_gcode():
         cmds = []
         code = 'G2' if self.clockwise else 'G3'
-        feedrate = self.feedrate
         pos = self.position
+        if self.feedrate:
+            cmds.append(f"F{self.feedrate}")
         for arc in spiral.children:
             if not isinstance(arc, Arc):
                 continue
             center = arc.position + pos
             start = arc.points[0] + pos[0:2]
             end = arc.points[-1] + pos[0:2] # Ingore Z
-            delta = center - start
+            delta = center - start if incremental else center
             i = format_value(delta.x)
             j = format_value(delta.y)
             x = format_value(end.x)
             y = format_value(end.y)
             cmd = f'{code} X{x} Y{y} I{i} J{j}'
-            if feedrate:
-                cmd += f'F{feedrate}'
             cmds.append(cmd)
-
         return cmds
 
     func calculate_step_over(r1, r2, max_step):
@@ -567,6 +591,13 @@ enamldef ArcSpiral(Part): part:
                 points = [(rot*radius, 0), (-rot*radius, 0)]
 
 
+class CircularPocketData(Atom):
+    radius = Float(strict=False)
+    center = Instance(Point)
+    top = Instance(Point)
+    bottom = Instance(Point)
+
+
 enamldef CircularPocket(Operation): operation:
     """ Circular pocket does a helix down to the bottom of the hole
     or step limit, then performs an archimedean spiral out to the
@@ -585,6 +616,16 @@ enamldef CircularPocket(Operation): operation:
     #: Clearance added to start above the top
     attr top_clearance = 1
 
+    #: Clearance added to the bottom of the hole
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom (if closed)
+    attr bottom_clearance = 0
+
+    #: Clearance added to the diameter.
+    #: A positive number will make the cut diameter bigger.
+    #: A negative number will make it smaller
+    attr radial_clearance = 0
+
     #: Helix radius
     attr helix_radius = tool.diameter*1/3
 
@@ -595,28 +636,60 @@ enamldef CircularPocket(Operation): operation:
     attr step_over = tool.diameter * 0.06
 
     #: Internal pocket data
-    attr data = [get_cylinder(p) for p in pockets]
+    attr data = [validate_data(get_pocket_data(p)) for p in pockets]
 
-    func get_cylinder(pocket):
-        if Topology.is_cylinder(pocket):
-            surface = Topology.cast_surface(pocket)
+    func validate_data(pocket_data: CircularPocketData):
+        """ Make sure the tool can be used
+
+        """
+        cut_diameter = pocket_data.radius * 2
+        helix_diameter = 2*helix_radius
+        if cut_diameter < (tool.diameter + helix_diameter):
+            #: TODO: What about helix radius??
+            raise ValueError(
+                f"The tool {tool.description} is too large to cut "
+                f"a {cut_diameter} diameter pocket. Use a smaller tool "
+                f"or decrease the helix radius.")
+        return pocket_data
+
+    func get_pocket_data(shape):
+        """ Create CircularPocketData from a cylindrical surface or a tuple
+        of cylindrical surface and the bottom depth, surface, or edge of the pocket.
+
+        """
+        if isinstance(shape, CircularPocketData):
+            return shape
+        if isinstance(shape, dict):
+            return CircularPocketData(**shape)
+
+        bottom_edge_or_surface = None
+        if isinstance(shape, (tuple, list)):
+            shape, bottom_edge_or_surface = shape
+        if Topology.is_cylinder(shape):
+            surface = Topology.cast_surface(shape)
             cylinder = surface.Cylinder()
             radius = cylinder.Radius()
             center = Point(cylinder.Location())
-            topo = Topology(shape=pocket)
-            umin, umax, bottom, top = topo.get_face_bounds()
-            if Topology.is_reversed(pocket):
-                top = bottom - top # Invert
-                bottom, top = top, bottom # Swap
+            vertices = [Point(v) for v in Topology(shape=shape).vertices]
+            bottom = min([v.z for v in vertices])
+            top = max([v.z for v in vertices])
         else:
-            raise ValueError("Pocket must be a cylinder or cylindrical face")
+            raise ValueError("Pocket must be a cylindrical face")
 
-        return {
-            'radius': radius,
-            'center': center,
-            'bottom': center + (0, 0, bottom),
-            'top': center + (0, 0, top + top_clearance),
-        }
+        if bottom_edge_or_surface is not None:
+            if isinstance(bottom_edge_or_surface, (float, int)):
+                bottom = min(bottom, bottom_edge_or_surface)
+            elif Topology.is_circle(bottom_edge_or_surface):
+                bottom_edge = Topology.cast_curve(bottom_edge_or_surface)
+                bottom = min(bottom, Point(bottom_edge.Location()).z)
+            else:
+                raise ValueError("Pocket bottom must be a depth or cirular edge")
+        return CircularPocketData(
+            radius=radius + radial_clearance / 2,
+            center=center,
+            bottom=Point(center.x, center.y, bottom + bottom_clearance),
+            top=Point(center.x, center.y, top + top_clearance),
+        )
 
     generate_gcode => ():
         cmds = []
@@ -667,13 +740,13 @@ enamldef CircularPocket(Operation): operation:
         Looper:
             iterable << operation.data
             Part:
-                attr outside_radius = loop.item['radius'] - tool.diameter/2
+                attr outside_radius = loop.item.radius - tool.diameter/2
                 attr start_point = coerce_point(operation.start_point)
-                attr center = loop.item['center']
+                attr center = loop.item.center
                 attr drop_point = Point(center.x, center.y, start_point.z)
                 attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
-                attr top_point = loop.item['top']
-                attr bottom_point = loop.item['bottom']
+                attr top_point = loop.item.top
+                attr bottom_point = loop.item.bottom
                 attr depth = top_point.z - bottom_point.z
                 attr arc_start = top_point + (0, 0, helix_radius/4)
                 name = 'Pocket'
@@ -684,9 +757,10 @@ enamldef CircularPocket(Operation): operation:
                         if hasattr(child, 'generate_gcode'):
                             cmds.extend(child.generate_gcode())
                         elif isinstance(child, Arc):
-                            cmds.extend(operation.generate_arc_gcode(child, format_value))
+                            cmds.extend(generate_arc_gcode(child, format_value))
                         elif isinstance(child, Polyline):
-                            cmds.extend(operation.generate_polyline_gcode(child, format_value))
+                            cmds.extend(generate_polyline_gcode(
+                                child, format_value, rapid=True))
                     return cmds
 
                 DisplayArrow: drop_arrow:
@@ -733,9 +807,6 @@ enamldef CircularPocket(Operation): operation:
                         p,
                         p + (r, r)
                     ]
-                #Vertex:
-                #    color = 'red'
-                #    position = arc_merge.position
 
                 Arc: arc_union:
                     color = 'teal'
@@ -748,9 +819,7 @@ enamldef CircularPocket(Operation): operation:
                         p,
                         top_point + (arc_merge.radius * 2, 0)
                     ]
-                #Vertex:
-                #    color = 'lime'
-                #    position = arc_back.position
+
 
                 ArcHelix: helix:
                     color = 'green'
@@ -764,7 +833,7 @@ enamldef CircularPocket(Operation): operation:
                     name = 'Spiral'
                     color = 'purple'
                     position = bottom_point
-                    start_radius = helix.radius
+                    start_radius = helix_radius*3/4
                     end_radius = outside_radius
                     max_step_over = operation.step_over
                     feedrate = operation.feedrate
@@ -772,7 +841,7 @@ enamldef CircularPocket(Operation): operation:
                 Arc: arc_out:
                     color = 'orange'
                     name = 'Arc out'
-                    radius = arc_in.radius
+                    radius = helix_radius/4
                     direction = (0, 0, -1)
                     # Spiral end point
                     attr p = bottom_point + (-spiral.end_radius, 0)
@@ -806,11 +875,328 @@ enamldef CircularPocket(Operation): operation:
                     position = lift_point
 
 
+enamldef FacingOperation(Operation):
+    """ A multi-layer Zig-zag facing operation.
+
+    This does not (currently) support hole avoidance.
+
+    """
+    #: The face to clear
+    attr face
+
+    #: Total depth to cut
+    attr cut_depth
+
+    # ------------------------------------------------------------------------
+    # Toolpath parameters
+    # ------------------------------------------------------------------------
+
+    #: Height to clear above
+    attr clearance_height = 5
+
+    #: Stock to leave above face
+    attr top_clearance = 0
+
+    #: Height to lift up when moving from end to start of next layer
+    attr feed_height = 5
+
+    #: Amount to step over
+    attr step_over = tool.diameter*0.9
+
+    #: Distance to cut each step
+    attr step_down = cut_depth
+
+    #: Amount to go past the edge of the face
+    attr step_past = tool.diameter/4
+
+    attr start_point
+    attr end_point = start_point
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+    attr first_point = toolpath[0][0][1]
+    attr drop_point = Point(first_point.x - lead_in_radius, first_point.y, coerce_point(start_point).z)
+
+    #: Radius of lead in arc
+    attr lead_in_radius = 5
+
+    #: Bounding box of the face
+    attr bounding_box = Topology.bbox(face)
+
+    #: Generated toolpath
+    attr toolpath = generate_toolpath(face)
+
+    func generate_toolpath(face):
+        if face is None:
+            raise ValueError("A face must be given")
+        ymin = bounding_box.ymin
+        ymax = bounding_box.ymax
+
+        topo = Topology(shape=face)
+
+        i = 0
+        last = None
+        shift = Point(0, -tool.diameter/2)
+        #shift = Point(0, 0)
+
+        z = top_clearance + bounding_box.zmin + cut_depth
+        zmin = z - cut_depth
+        layers = []
+        while z > zmin:
+            points = []
+            z = max(z-step_down, zmin)
+            y = ymin
+
+            start_shift = shift + (step_past, 0)
+            end_shift = shift + (-step_past, 0)
+            while y <= ymax:
+                i += 1
+                y += step_over
+
+                # Just use bbox
+                start_point = Point(bounding_box.xmax, y, z) + start_shift
+                end_point = Point(bounding_box.xmin, y, z) + end_shift
+
+
+                # Find edge intersections
+                #space = HalfSpace(position=(0, y, 0), direction=(0, 1, 0))
+                #results = topo.intersection(space.render())
+
+                #if results:
+                    #TODO: To handle avoidance regions intersections here...
+                    #if len(results) != 1:
+                       #raise NotImplementedError("TODO: Handle islands")
+                    #start_point = end_point = None
+                    #for r in results:
+                        #line = Topology.cast_curve(r)
+                        #p0 = Topology.get_value_at(line, line.FirstParameter()) + start_shift
+                        #p1 = Topology.get_value_at(line, line.LastParameter()) + end_shift
+
+                        #Use point with min x as start point
+                        #TODO: IDK why this is switched but whatever
+                        #if start_point is None or p0.x > start_point.x:
+                            #start_point = p0
+                        #if end_point is None or p1.x < end_point.x:
+                            #end_point = p1
+
+                #elif i > 1 and y > ymax:
+                    #If it goes past the end there will be no intersection
+                    #so add it anyways for the last pass
+                    #start_point = start_point + (0, step_over, 0)
+                    #end_point = end_point + (0, step_over, 0)
+
+                #start_point.z = z
+                #end_point.z = z
+
+                if i & 1 == 0:
+                    item = [last, start_point, end_point]
+                else:
+                    item = [last, end_point, start_point]
+                last = item[-1]
+                points.append(item)
+            layers.append(points)
+        return layers
+
+    generate_gcode => ():
+        """ Generate gcode output for this operation
+
+        """
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+
+            job = self.parent
+            fmt = job.format_value
+
+            cmds.append("(Facing operation)")
+            # Change tool
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a facing cycle."
+                    "Use spindle_speed=value."
+                )
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+            for child in self.children:
+                if isinstance(child, Polyline):
+                    rapid = child.name == 'Rapid move'
+                    cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
+                elif isinstance(child, Arc):
+                    cmds.extend(generate_arc_gcode(child, fmt))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            cmds.append('') # Ensure newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+
+    Conditional:
+        condition << not disabled
+        DisplayArrow: drop_arrow:
+            color = 'red'
+            cone_size = (0.6, 1.5)
+            tube_size = (0.3, 3)
+            description = 'Drop'
+            direction = (0, 0, -1)
+            position = drop_point + (0, 0, 3)
+
+        Polyline: move_in:
+            name = 'Rapid move'
+            color = 'lime'
+            points = [start_point, drop_point, lead_in_arc.points[0]]
+
+        Arc: lead_in_arc:
+            #attr s = move_in.points[-1]
+            name = 'Lead in arc'
+            color = 'orange'
+            radius = lead_in_radius
+            clockwise = True
+            position = first_point + (0, 0, radius)
+            points = [
+                first_point + (-radius, 0, radius),
+                first_point
+            ]
+            direction = (0, 1, 0)
+
+        Looper: layer_looper:
+            iterable = toolpath
+            Conditional: connection_line:
+                # This block is the connection line between two layers
+                # If not the first layer draw a connection between this layer and the last
+                condition = loop.index > 0
+                # Section between layers
+                attr arc_radius = min(lead_in_radius, step_over/2)
+                attr arc_count = len(loop.item) * loop.index
+                attr dx = arc_radius if arc_count & 1 else -arc_radius
+
+                Arc: exit_arc:
+                    attr start_point = loop.item[0][0]
+                    attr end_point = start_point + (connection_line.dx, 0, radius)
+                    direction = (0, 1, 0)
+                    clockwise = connection_line.arc_count & 1 == 1
+                    name = f'Layer connection lift arc {arc_count}'
+                    radius = connection_line.arc_radius
+                    color = 'purple'
+                    position = (start_point.x, start_point.y, end_point.z)
+                    points = [start_point, end_point]
+                Arc: exit_turn_arc:
+                    # Arc that smoothly re-joins the layer exit arc and rapid across
+                    attr start_point = exit_arc.points[-1]
+                    attr end_point = start_point + (0, -radius, radius)
+                    direction = (1, 0, 0)
+                    radius = exit_arc.radius
+                    color = 'purple'
+                    name = f'Layer connection exit turn arc {exit_arc.arc_count}'
+                    position = (start_point.x, end_point.y, start_point.z)
+                    points = [start_point, end_point]
+
+                Conditional:
+                    condition = exit_turn_arc.points[-1] != enter_turn_arc.points[0]
+                    Polyline:
+                        name = 'Rapid move'
+                        color = 'lime'
+                        points = [exit_turn_arc.points[-1], enter_turn_arc.points[0]]
+
+                Arc: enter_turn_arc:
+                    # Arc that smoothly re-joins the layer enter arc
+                    attr end_point = enter_arc.points[0]
+                    attr start_point = end_point + (0, radius, radius)
+                    direction = (1, 0, 0)
+                    clockwise = not exit_arc.clockwise
+                    radius = exit_arc.radius
+                    color = 'purple'
+                    position = (end_point.x, start_point.y, end_point.z)
+                    points = [start_point, end_point]
+                Arc: enter_arc:
+                    # Arc that enters into the next layer
+                    attr end_point = loop.item[0][1]
+                    attr start_point = end_point + (connection_line.dx, 0, radius)
+                    direction = (0, 1, 0)
+                    clockwise = not exit_arc.clockwise
+                    radius = exit_arc.radius
+                    color = 'purple'
+                    position = (end_point.x, end_point.y, start_point.z)
+                    points = [start_point, end_point]
+
+            # Zig zag along face
+            Looper: point_looper:
+                #: Count of arcs up until this layer
+                attr arc_count = len(loop.item) * loop.index
+                attr layer = loop.item
+                attr last_index = len(loop.item) - 1
+                iterable = layer
+                Polyline:
+                    # This is the line going across the surface
+                    color = 'blue'
+                    name = f'Pass {str(points[0])} to {str(points[1])}'
+                    points = loop.item[1:3]
+                Conditional:
+                    condition << loop.index != point_looper.last_index
+                    Arc:
+                        # This is the arc that forms a union between two zig-zags
+                        # The direction of the arc depends on the count of arcs
+                        attr current_arc_count = point_looper.arc_count + loop.index
+                        name = f'Union arc {current_arc_count}'
+                        color = 'orange'
+                        radius = step_over/2
+                        clockwise = current_arc_count & 1 == 1
+                        attr next_point = point_looper.layer[loop.index + 1][1]
+                        attr current_point = loop.item[2]
+                        position = current_point.midpoint(next_point)
+                        points = [current_point, next_point]
+
+        # Final lead out
+        Arc: lead_out_arc:
+            name = 'Final out arc'
+            attr layer = toolpath[-1]
+            attr total_arc_count = len(layer)*len(toolpath)
+            attr dstep = 1 if self.clockwise else -1
+            attr s = layer[-1][-1]
+            attr e = s + (dstep * lead_in_radius, 0, lead_in_radius)
+            clockwise = total_arc_count & 1 == 1
+            color = 'orange'
+            radius = lead_in_radius
+            position = (s.x, s.y, e.z)
+            points = [s, e]
+            direction = (0, 1, 0)
+        Polyline: move_out:
+            color = 'lime'
+            name = 'Rapid move'
+            attr p = lead_out_arc.points[-1]
+            attr lift_point = p + (0, 0, coerce_point(end_point).z)
+            points = [p, lift_point, end_point]
+        DisplayArrow: lift_arrow:
+            color = 'green'
+            cone_size = drop_arrow.cone_size
+            tube_size = drop_arrow.tube_size
+            description = 'Lift'
+            direction = (0, 0, 1)
+            position = move_out.lift_point
+
+
 enamldef Job(Part):
     """ A CNC job. Nest different operations within this and call save
     to write the gcode to a file.
 
     """
+    #: Set to true to disable the whole job
+    attr disabled: bool = False
+
     #: Precision to use when formatting values
     attr precision: int = 6
 
@@ -826,6 +1212,13 @@ enamldef Job(Part):
     #: Generate gcode file when all shapes are constructed
     constructed :: self.generate_job()
 
+    activated ::
+        if self.disabled:
+            # Propagate disabled to all operations
+            for c in self.children:
+                if isinstance(c, Operation):
+                    c.disabled = True
+
     func format_value(v):
         """ Write formated value """
         if self.inches:
@@ -835,13 +1228,15 @@ enamldef Job(Part):
     func generate_job():
         """ Generate gcode """
         try:
+            if self.disabled:
+                return
             tools = {}
             with open(self.filename, 'w') as f:
                 f.write("(Generated with DeclaraCAD)\n")
                 f.write(f"(File: {self.filename})\n")
                 f.write(f"(Date: {datetime.now().strftime('%c')})\n")
-                # Absolute mode, feed per minute, activate xy plane
-                f.write("G90 G94 G17\n")
+                # Absolute mode, incremental arc mode, feed per minute, activate xy plane
+                f.write("G90 G91.1 G94 G17\n")
                 if self.inches:
                     f.write("G20\n")
                 else:

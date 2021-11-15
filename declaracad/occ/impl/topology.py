@@ -744,7 +744,8 @@ class Topology(Atom):
                     coerce_direction(v2), coerce_direction(v3))
         raise ValueError("Invalid derivative")
 
-    def get_face_bounds(self):
+    @property
+    def face_bounds(self):
         """ Get the UV bounds of a face.
 
         Returns
@@ -839,7 +840,6 @@ class Topology(Atom):
         """
         curve = BRepAdaptor_CompCurve(self.shape)
         return self.get_value_at(curve, curve.LastParameter())
-
 
     # -------------------------------------------------------------------------
     # Shape Properties

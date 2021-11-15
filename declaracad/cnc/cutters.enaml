@@ -20,6 +20,9 @@ class Tool(Part):
     #: Tool number
     number = d_(Int(1))
 
+    #: Feed per tooth
+    feed_per_tooth = d_(Float(strict=False))
+
     @d_func
     def generate_gcode(self) -> ListType[str]:
         """ Tool change gcode """
@@ -114,6 +117,35 @@ enamldef ChamferMill(Tool): drill:
             height = length
 
 
+enamldef FaceMill(Tool): cutter:
+    #: Tool diameter
+    attr diameter = 100
+
+    #: Tool length from bottom of tool holder to tip of mill
+    #: Used to check clearances for maximum cut depth
+    attr length = 30
+
+    #: Angle of carbide inserts
+    attr angle = 90
+
+    #: Number of inserts / cutting teeth
+    attr inserts: int = 6
+
+    description = f"T{self.number} - {self.angle}° {self.inserts} cutter " \
+                  f"face mill {self.diameter} dia"
+    Cylinder:
+        material = 'steel'
+        transparency = parent.transparency
+        radius = diameter/2
+        height = length
+    Cylinder:
+        material = 'steel'
+        radius = 6
+        position = (0, 0, length)
+        height = length
+
+
+
 enamldef Assembly(Part):
     TwistDrill:
         angle = 60
@@ -123,3 +155,6 @@ enamldef Assembly(Part):
 
     EndMill:
         position = (20, 0)
+
+    FaceMill:
+        position = (200, 0)
