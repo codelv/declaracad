@@ -156,7 +156,10 @@ class OccEdge(OccShape, ProxyEdge):
             pln = gp_Pln(d.position.proxy, d.direction.proxy)
             args[0] = GeomAPI.To2d_(args[0], pln)
             args.insert(1,  BRep_Tool.Surface_(d.surface))
-        return BRepBuilderAPI_MakeEdge(*args).Edge()
+        edge = BRepBuilderAPI_MakeEdge(*args).Edge()
+        if d.as_wire:
+           return BRepBuilderAPI_MakeWire(edge).Wire()
+        return edge
 
     def get_value_at(self, t, derivative=0):
         if self.curve is None:
@@ -164,6 +167,9 @@ class OccEdge(OccShape, ProxyEdge):
         return Topology.get_value_at(self.curve, t, derivative)
 
     def set_surface(self, surface):
+        self.create_shape()
+
+    def set_as_wire(self, enabled):
         self.create_shape()
 
 

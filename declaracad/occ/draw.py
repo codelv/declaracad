@@ -45,6 +45,9 @@ class ProxyEdge(ProxyShape):
     def set_surface(self, surface):
         raise NotImplementedError
 
+    def set_as_wire(self, enabled):
+        raise NotImplementedError
+
     def get_value_at(self, t, derivative=0):
         raise NotImplementedError
 
@@ -256,6 +259,9 @@ class Edge(Shape):
 
     #: The parametric surface to wrap this edge on
     surface = d_(Instance(TopoDS_Face))
+
+    #: If True, convert the edge into a wire
+    as_wire = d_(Bool())
 
     def get_value_at(self, t, derivative=0):
         """ Get the value of the curve derivative at t. If the edge has no
