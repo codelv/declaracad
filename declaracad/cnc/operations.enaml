@@ -108,6 +108,9 @@ class Operation(Part):
     #: Dwell after spindle speed to allow time for ramp up/down
     spindle_dwell = d_(Float(1.0, strict=False))
 
+    #: Feedrate of the operation
+    feedrate = d_(Float(strict=False))
+
     #: Coolant control
     #: If mist or flood on, otherwise off
     coolant = d_(Enum('', 'mist', 'flood'))
@@ -119,6 +122,9 @@ class Operation(Part):
     def generate_gcode(self) -> ListType[str]:
         cmds = []
         job = self.parent
+        if self.feedrate:
+            cmds.append(f"F{self.feedrate}")
+
         if self.spindle_speed:
             s = abs(self.spindle_speed)
             mcode = 'M3' if self.spindle_speed > 0 else 'M3'
@@ -163,9 +169,6 @@ enamldef DrillingCycle(Operation): operation:
     # ------------------------------------------------------------------------
     # Operation options
     # ------------------------------------------------------------------------
-    #: Feedrate F
-    attr feedrate = 0
-
     #: Retract value R
     attr retract = 1.0
 
@@ -607,11 +610,13 @@ enamldef CircularPocket(Operation): operation:
     """
     #: List of faces to pocket
     attr pockets: list = []
-    attr feedrate = 0
-    attr step_down = 1
 
     attr start_point
     attr end_point = start_point
+
+    # ------------------------------------------------------------------------
+    # Operation parameters
+    # ------------------------------------------------------------------------
 
     #: Clearance added to start above the top
     attr top_clearance = 1
@@ -634,6 +639,14 @@ enamldef CircularPocket(Operation): operation:
 
     #: Spiral step over
     attr step_over = tool.diameter * 0.06
+
+    #: If multiple passes are needed
+    #: WARNING: Currently unused
+    attr step_down = 1
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
 
     #: Internal pocket data
     attr data = [validate_data(get_pocket_data(p)) for p in pockets]
@@ -897,9 +910,6 @@ enamldef FacingOperation(Operation):
     #: Stock to leave above face
     attr top_clearance = 0
 
-    #: Height to lift up when moving from end to start of next layer
-    attr feed_height = 5
-
     #: Amount to step over
     attr step_over = tool.diameter*0.9
 
@@ -907,7 +917,7 @@ enamldef FacingOperation(Operation):
     attr step_down = cut_depth
 
     #: Amount to go past the edge of the face
-    attr step_past = tool.diameter/4
+    attr step_past = tool.diameter/2 + 10
 
     attr start_point
     attr end_point = start_point
@@ -939,6 +949,12 @@ enamldef FacingOperation(Operation):
         last = None
         shift = Point(0, -tool.diameter/2)
         #shift = Point(0, 0)
+
+        if step_past < tool.diameter/2 and depth > step_down:
+            raise ValueError(
+                f"Step past must be greater than the tool radius to avoid "
+                f"contact with the edge of the face when using multiple steps."
+            )
 
         z = top_clearance + bounding_box.zmin + cut_depth
         zmin = z - cut_depth
@@ -1066,6 +1082,7 @@ enamldef FacingOperation(Operation):
             color = 'orange'
             radius = lead_in_radius
             clockwise = True
+            as_wire = True
             position = first_point + (0, 0, radius)
             points = [
                 first_point + (-radius, 0, radius),
@@ -1088,6 +1105,7 @@ enamldef FacingOperation(Operation):
                     attr start_point = loop.item[0][0]
                     attr end_point = start_point + (connection_line.dx, 0, radius)
                     direction = (0, 1, 0)
+                    as_wire = True
                     clockwise = connection_line.arc_count & 1 == 1
                     name = f'Layer connection lift arc {arc_count}'
                     radius = connection_line.arc_radius
@@ -1099,6 +1117,7 @@ enamldef FacingOperation(Operation):
                     attr start_point = exit_arc.points[-1]
                     attr end_point = start_point + (0, -radius, radius)
                     direction = (1, 0, 0)
+                    as_wire = True
                     radius = exit_arc.radius
                     color = 'purple'
                     name = f'Layer connection exit turn arc {exit_arc.arc_count}'
@@ -1117,6 +1136,7 @@ enamldef FacingOperation(Operation):
                     attr end_point = enter_arc.points[0]
                     attr start_point = end_point + (0, radius, radius)
                     direction = (1, 0, 0)
+                    as_wire = True
                     clockwise = not exit_arc.clockwise
                     radius = exit_arc.radius
                     color = 'purple'
@@ -1127,6 +1147,7 @@ enamldef FacingOperation(Operation):
                     attr end_point = loop.item[0][1]
                     attr start_point = end_point + (connection_line.dx, 0, radius)
                     direction = (0, 1, 0)
+                    as_wire = True
                     clockwise = not exit_arc.clockwise
                     radius = exit_arc.radius
                     color = 'purple'
@@ -1153,6 +1174,7 @@ enamldef FacingOperation(Operation):
                         attr current_arc_count = point_looper.arc_count + loop.index
                         name = f'Union arc {current_arc_count}'
                         color = 'orange'
+                        as_wire = True
                         radius = step_over/2
                         clockwise = current_arc_count & 1 == 1
                         attr next_point = point_looper.layer[loop.index + 1][1]
@@ -1170,6 +1192,7 @@ enamldef FacingOperation(Operation):
             attr e = s + (dstep * lead_in_radius, 0, lead_in_radius)
             clockwise = total_arc_count & 1 == 1
             color = 'orange'
+            as_wire = True
             radius = lead_in_radius
             position = (s.x, s.y, e.z)
             points = [s, e]

@@ -10,7 +10,7 @@ Created on Nov 10, 2021
 @author: jrm
 """
 from math import sin, cos, radians, pi
-from atom.api import Int
+from atom.api import Int, Float
 from declaracad.occ.api import Part, Chamfer, Cylinder
 from enaml.core.declarative import d_, d_func
 from typing import List as ListType
