@@ -10,7 +10,9 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from atom.api import Atom, Instance, Typed, Bool, List
-
+from typing import Any, Optional, TypeVar, Union
+from typing import Dict as DictType
+from typing import List as ListType
 from OCCT import GeomAbs
 from OCCT.BOPAlgo import BOPAlgo_Section
 from OCCT.Bnd import Bnd_Box
@@ -27,12 +29,15 @@ from OCCT.GCPnts import (
 )
 from OCCT.Geom import (
     Geom_Ellipse, Geom_Circle, Geom_Parabola, Geom_Hyperbola, Geom_Line,
-    Geom_TrimmedCurve
+    Geom_TrimmedCurve, Geom_Curve, Geom_Surface
 )
 from OCCT.GeomAbs import (
     GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
     GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve,
-    GeomAbs_OffsetCurve, GeomAbs_OtherCurve, GeomAbs_Cylinder
+    GeomAbs_OffsetCurve, GeomAbs_OtherCurve,
+    GeomAbs_SurfaceType, GeomAbs_CurveType,
+    GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Torus,
+    GeomAbs_Sphere
 )
 from OCCT.GProp import GProp_GProps
 from OCCT.gp import gp_Pnt, gp_Vec
@@ -40,7 +45,7 @@ from OCCT.gp import gp_Pnt, gp_Vec
 from OCCT.TopAbs import (
     TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE, TopAbs_WIRE,
     TopAbs_SHELL, TopAbs_SOLID, TopAbs_COMPOUND,
-    TopAbs_COMPSOLID, TopAbs_REVERSED
+    TopAbs_COMPSOLID, TopAbs_REVERSED, TopAbs_ShapeEnum
 )
 from OCCT.TopExp import TopExp, TopExp_Explorer
 from OCCT.TopoDS import (
@@ -56,6 +61,7 @@ from OCCT.TopTools import (
 
 from ..shape import BBox, coerce_point, coerce_direction
 
+T = TypeVar('T')
 
 DISCRETIZE_METHODS = {
     'deflection': GCPnts_UniformDeflection,
@@ -72,7 +78,7 @@ class WireExplorer(Atom):
     wire = Instance(TopoDS_Wire)
     wire_explorer = Typed(BRepTools_WireExplorer)
 
-    def _loop_topo(self, edges=True):
+    def _loop_topo(self, edges: bool = True) -> list:
         wexp = self.wire_explorer = BRepTools_WireExplorer(self.wire)
 
         items = set()  # list that stores hashes to avoid redundancy
@@ -97,10 +103,10 @@ class WireExplorer(Atom):
             occ_iterator.Next()
         return seq
 
-    def ordered_edges(self):
+    def ordered_edges(self) -> ListType[TopoDS_Edge]:
         return self._loop_topo(edges=True)
 
-    def ordered_vertices(self):
+    def ordered_vertices(self) -> ListType[TopoDS_Vertex]:
         return self._loop_topo(edges=False)
 
 
@@ -160,6 +166,10 @@ class Topology(Atom):
 
     surface_factory = {
         GeomAbs_Cylinder: lambda s: s.Cylinder(),
+        GeomAbs_Cone: lambda s: s.Cone(),
+        GeomAbs_Plane: lambda s: s.Plane(),
+        GeomAbs_Sphere: lambda s: s.Sphere(),
+        GeomAbs_Torus: lambda s: s.Torus(),
     }
 
     #: The shape which topology will be traversed
@@ -288,7 +298,10 @@ class Topology(Atom):
     def _default_compounds(self):
         return self._loop_topo(TopAbs_COMPOUND)
 
-    def ordered_vertices_from_wire(self, wire):
+    def ordered_vertices_from_wire(
+        self,
+        wire: TopoDS_Wire
+    ) -> ListType[TopoDS_Vertex]:
         """ Get verticies from a wire.
 
         Parameters
@@ -297,7 +310,10 @@ class Topology(Atom):
         """
         return WireExplorer(wire=wire).ordered_vertices()
 
-    def ordered_edges_from_wire(self, wire):
+    def ordered_edges_from_wire(
+        self,
+        wire: TopoDS_Wire
+    ) -> ListType[TopoDS_Edge]:
         """ Get edges from a wire.
 
         Parameters
@@ -306,7 +322,12 @@ class Topology(Atom):
         """
         return WireExplorer(wire=wire).ordered_edges()
 
-    def _map_shapes_and_ancestors(self, topo_type_a, topo_type_b, topo_entity):
+    def _map_shapes_and_ancestors(
+        self,
+        topo_type_a: TopAbs_ShapeEnum,
+        topo_type_b: TopAbs_ShapeEnum,
+        topo_entity: TopoDS_Shape
+    ) -> ListType[TopoDS_Shape]:
         '''
         using the same method
         @param topoTypeA:
@@ -349,76 +370,79 @@ class Topology(Atom):
     # ----------------------------------------------------------------------
     # EDGE <-> FACE
     # ----------------------------------------------------------------------
-    def faces_from_edge(self, edge):
-        """
-
-        :param edge:
-        :return:
-        """
+    def faces_from_edge(self, edge: TopoDS_Edge) -> ListType[TopoDS_Face]:
         return self._map_shapes_and_ancestors(TopAbs_EDGE, TopAbs_FACE, edge)
 
-    def edges_from_face(self, face):
-        """
-
-        :param face:
-        :return:
-        """
+    def edges_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Edge]:
         return self._loop_topo(TopAbs_EDGE, face)
 
     # ----------------------------------------------------------------------
     # VERTEX <-> EDGE
     # ----------------------------------------------------------------------
-    def vertices_from_edge(self, edg):
-        return self._loop_topo(TopAbs_VERTEX, edg)
+    def vertices_from_edge(self, edge: TopoDS_Edge) -> ListType[TopoDS_Vertex]:
+        return self._loop_topo(TopAbs_VERTEX, edge)
 
-    def edges_from_vertex(self, vertex):
+    def edges_from_vertex(
+        self,
+        vertex: TopoDS_Vertex
+    ) -> ListType[TopoDS_Edge]:
         return self._map_shapes_and_ancestors(
             TopAbs_VERTEX, TopAbs_EDGE, vertex)
 
     # ----------------------------------------------------------------------
     # WIRE <-> EDGE
     # ----------------------------------------------------------------------
-    def edges_from_wire(self, wire):
+    def edges_from_wire(self, wire: TopoDS_Wire) -> ListType[TopoDS_Edge]:
         return self._loop_topo(TopAbs_EDGE, wire)
 
-    def wires_from_edge(self, edg):
-        return self._map_shapes_and_ancestors(TopAbs_EDGE, TopAbs_WIRE, edg)
+    def wires_from_edge(self, edge: TopoDS_Edge) -> ListType[TopoDS_Wire]:
+        return self._map_shapes_and_ancestors(TopAbs_EDGE, TopAbs_WIRE, edge)
 
-    def wires_from_vertex(self, edg):
-        return self._map_shapes_and_ancestors(TopAbs_VERTEX, TopAbs_WIRE, edg)
+    def wires_from_vertex(
+        self,
+        vertex: TopoDS_Vertex
+    ) -> ListType[TopoDS_Vertex]:
+        return self._map_shapes_and_ancestors(
+            TopAbs_VERTEX, TopAbs_WIRE, vertex)
 
     # ----------------------------------------------------------------------
     # WIRE <-> FACE
     # ----------------------------------------------------------------------
-    def wires_from_face(self, face):
+    def wires_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Wire]:
         return self._loop_topo(TopAbs_WIRE, face)
 
-    def faces_from_wire(self, wire):
+    def faces_from_wire(self, wire: TopoDS_Wire) -> ListType[TopoDS_Face]:
         return self._map_shapes_and_ancestors(TopAbs_WIRE, TopAbs_FACE, wire)
 
     # ----------------------------------------------------------------------
     # VERTEX <-> FACE
     # ----------------------------------------------------------------------
-    def faces_from_vertex(self, vertex):
+    def faces_from_vertex(
+        self,
+        vertex: TopoDS_Vertex
+    ) -> ListType[TopoDS_Face]:
         return self._map_shapes_and_ancestors(
             TopAbs_VERTEX, TopAbs_FACE, vertex)
 
-    def vertices_from_face(self, face):
+    def vertices_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Vertex]:
         return self._loop_topo(TopAbs_VERTEX, face)
 
     # ----------------------------------------------------------------------
     # FACE <-> SOLID
     # ----------------------------------------------------------------------
-    def solids_from_face(self, face):
+    def solids_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Solid]:
         return self._map_shapes_and_ancestors(TopAbs_FACE, TopAbs_SOLID, face)
 
-    def faces_from_solids(self, solid):
+    def faces_from_solids(self, solid: TopoDS_Solid) -> ListType[TopoDS_Face]:
         return self._loop_topo(TopAbs_FACE, solid)
 
     # -------------------------------------------------------------------------
     # Surface Types
     # -------------------------------------------------------------------------
-    def extract_surfaces(self, surface_type):
+    def extract_surfaces(
+        self,
+        surface_type: GeomAbs_SurfaceType
+    ) -> ListType[DictType[str, Any]]:
         """ Returns a list of dicts containing the face and surface
 
         """
@@ -427,39 +451,33 @@ class Topology(Atom):
         for f in self.faces:
             surface = self.cast_surface(f, surface_type)
             if surface is not None:
-                surfaces.append({
-                    'face': f, 'surface': getattr(surface, attr)()})
+                surfaces.append({'face': f, 'surface': surface})
         return surfaces
 
     plane_surfaces = List()
 
     def _default_plane_surfaces(self):
-        return self.extract_surfaces(GeomAbs.GeomAbs_Plane)
-
-    cone_surfaces = List()
-
-    def _default_cone_surfaces(self):
-        return self.extract_surfaces(GeomAbs.GeomAbs_Cone)
+        return self.extract_surfaces(GeomAbs_Plane)
 
     sphere_surfaces = List()
 
     def _default_sphere_surfaces(self):
-        return self.extract_surfaces(GeomAbs.GeomAbs_Sphere)
+        return self.extract_surfaces(GeomAbs_Sphere)
 
     torus_surfaces = List()
 
     def _default_torus_surfaces(self):
-        return self.extract_surfaces(GeomAbs.GeomAbs_Torus)
+        return self.extract_surfaces(GeomAbs_Torus)
 
     cone_surfaces = List()
 
     def _default_cone_surfaces(self):
-        return self.extract_surfaces(GeomAbs.GeomAbs_Cone)
+        return self.extract_surfaces(GeomAbs_Cone)
 
     cylinder_surfaces = List()
 
     def _default_cylinder_surface(self):
-        return self.extract_surfaces(GeomAbs.GeomAbs_Cylinder)
+        return self.extract_surfaces(GeomAbs_Cylinder)
 
     bezier_surfaces = List()
 
@@ -539,7 +557,7 @@ class Topology(Atom):
     # Utilities
     # -------------------------------------------------------------------------
     @classmethod
-    def cast_shape(cls, topods_shape):
+    def cast_shape(cls, topods_shape: TopoDS_Shape) -> TopoDS_Shape:
         """ Convert a TopoDS_Shape into it's actual type, ex an TopoDS_Edge
 
         Parameters
@@ -556,7 +574,12 @@ class Topology(Atom):
         return cls.topo_factory[topods_shape.ShapeType()](topods_shape)
 
     @classmethod
-    def cast_curve(cls, shape, expected_type=None):
+    def cast_curve(
+        cls,
+        shape: TopoDS_Edge,
+        expected_type: Optional[GeomAbs_CurveType] = None,
+        convert: bool = True,
+    ) -> Optional[Union[Geom_Curve, BRepAdaptor_Curve]]:
         """ Attempt to cast the shape (an edge or wire) to a curve
 
         Parameters
@@ -575,10 +598,21 @@ class Topology(Atom):
         edge = TopoDS.Edge_(shape)
         curve = BRepAdaptor_Curve(edge)
         t = curve.GetType()
-        return cls.curve_factory[t](curve)
+        if expected_type is not None and t != expected_type:
+            return None
+        if convert:
+            factory = cls.curve_factory.get(t)
+            if factory:
+                return factory(curve)
+        return curve
 
     @classmethod
-    def cast_surface(cls, shape, expected_type=None):
+    def cast_surface(
+        cls,
+        shape: TopoDS_Face,
+        expected_type: Optional[GeomAbs_SurfaceType] = None,
+        convert: bool = True,
+    ) -> Optional[Union[Geom_Surface, BRepAdaptor_Surface]]:
         """ Attempt to cast the shape (a face) to a surface
 
         Parameters
@@ -594,17 +628,103 @@ class Topology(Atom):
             The surface or None if it could not be created or did not
             match the expected type (if given).
         """
-        if isinstance(shape, TopoDS_Face):
-            face = shape
-        else:
-            face = TopoDS.Face_(shape)
+        face = TopoDS.Face_(shape)
         surface = BRepAdaptor_Surface(face, True)
-        if expected_type is not None and surface.GetType() != expected_type:
+        t = surface.GetType()
+        if expected_type is not None and t != expected_type:
             return None
+        if convert:
+            factory = cls.surface_factory.get(t)
+            if factory:
+                return factory(surface)
         return surface
 
     @classmethod
-    def is_circle(cls, shape):
+    def is_vertex(cls, shape) -> bool:
+        """ Check if the given shape is a vertex.
+
+        Returns
+        -------
+        result: Bool
+            Whether the shape is an vertex.
+
+        """
+        if isinstance(shape, TopoDS_Shape):
+            return shape.ShapeType() == TopAbs_VERTEX
+        return False
+
+    @classmethod
+    def is_edge(cls, shape) -> bool:
+        """ Check if the given shape is an edge.
+
+        Returns
+        -------
+        result: Bool
+            Whether the shape is an edge.
+
+        """
+        if isinstance(shape, TopoDS_Shape):
+            return shape.ShapeType() == TopAbs_EDGE
+        return False
+
+    @classmethod
+    def is_wire(cls, shape) -> bool:
+        """ Check if the given shape is a face.
+
+        Returns
+        -------
+        result: Bool
+            Whether the shape is a face.
+
+        """
+        if isinstance(shape, TopoDS_Shape):
+            return shape.ShapeType() == TopAbs_WIRE
+        return False
+
+    @classmethod
+    def is_face(cls, shape) -> bool:
+        """ Check if the given shape is a face.
+
+        Returns
+        -------
+        result: Bool
+            Whether the shape is a face.
+
+        """
+        if isinstance(shape, TopoDS_Shape):
+            return shape.ShapeType() == TopAbs_FACE
+        return False
+
+    @classmethod
+    def is_shell(cls, shape) -> bool:
+        """ Check if the given shape is a shell.
+
+        Returns
+        -------
+        result: Bool
+            Whether the shape is a shell.
+
+        """
+        if isinstance(shape, TopoDS_Shape):
+            return shape.ShapeType() == TopAbs_SHELL
+        return False
+
+    @classmethod
+    def is_solid(cls, shape) -> bool:
+        """ Check if the given shape is a solid.
+
+        Returns
+        -------
+        result: Bool
+            Whether the shape is a solid.
+
+        """
+        if isinstance(shape, TopoDS_Shape):
+            return shape.ShapeType() == TopAbs_SOLID
+        return False
+
+    @classmethod
+    def is_circle(cls, shape) -> bool:
         """ Check if an edge or wire is a part of a circle.
         This can be used to see if an edge can be used for radius dimensions.
 
@@ -618,7 +738,7 @@ class Topology(Atom):
         return curve.GetType() == GeomAbs.GeomAbs_Circle
 
     @classmethod
-    def is_ellipse(cls, shape):
+    def is_ellipse(cls, shape) -> bool:
         """ Check if an edge or wire is a part of an ellipse.
         This can be used to see if an edge can be used for radius dimensions.
 
@@ -632,7 +752,7 @@ class Topology(Atom):
         return curve.GetType() == GeomAbs.GeomAbs_Ellipse
 
     @classmethod
-    def is_line(cls, shape):
+    def is_line(cls, shape) -> bool:
         """ Check if an edge or wire is a line.
         This can be used to see if an edge can be used for length dimensions.
 
@@ -646,7 +766,7 @@ class Topology(Atom):
         return curve.GetType() == GeomAbs.GeomAbs_Line
 
     @classmethod
-    def is_plane(cls, shape):
+    def is_plane(cls, shape) -> bool:
         """ Check if a surface is a plane.
 
         Returns
@@ -654,27 +774,41 @@ class Topology(Atom):
         bool: Bool
             Whether the shape is a part of a line
         """
-        surface = cls.cast_surface(shape)
-        if surface is None:
-            return False
-        return surface.GetType() == GeomAbs.GeomAbs_Plane
+        return cls.cast_surface(
+            shape,
+            expected_type=GeomAbs_Plane,
+            convert=False) is not None
 
     @classmethod
-    def is_cylinder(cls, shape):
+    def is_cylinder(cls, shape) -> bool:
         """ Check if a surface is a cylinder.
 
         Returns
         -------
-        bool: Bool
-            Whether the shape is a part of a line
+        result: Bool
+            Whether the shape is a cylinder
         """
-        surface = cls.cast_surface(shape)
-        if surface is None:
-            return False
-        return surface.GetType() == GeomAbs.GeomAbs_Cylinder
+        return cls.cast_surface(
+            shape,
+            expected_type=GeomAbs_Cylinder,
+            convert=False) is not None
 
     @classmethod
-    def is_reversed(cls, shape):
+    def is_cone(cls, shape) -> bool:
+        """ Check if a surface is a cone.
+
+        Returns
+        -------
+        bool: Bool
+            Whether the shape is a cone
+        """
+        return cls.cast_surface(
+            shape,
+            expected_type=GeomAbs_Cone,
+            convert=False) is not None
+
+    @classmethod
+    def is_reversed(cls, shape) -> bool:
         """ Check if the shape's orentation is reversed.
 
         Returns
@@ -707,6 +841,10 @@ class Topology(Atom):
 
     @classmethod
     def get_value_at(cls, curve, t, derivative=0):
+        return Topology.curve_value_at(curve, t, derivative)
+
+    @classmethod
+    def curve_value_at(cls, curve, t, derivative=0):
         """ Get the value of the curve at parameter t with it's derivatives.
 
         Parameters
@@ -740,6 +878,47 @@ class Topology(Atom):
         v3 = gp_Vec()
         if derivative == 3:
             curve.D3(t, p, v1, v2, v3)
+            return (coerce_point(p), coerce_direction(v1),
+                    coerce_direction(v2), coerce_direction(v3))
+        raise ValueError("Invalid derivative")
+
+
+
+    @classmethod
+    def surface_value_at(cls, surface, u, v, derivative=0):
+        """ Get the value of the surface at parameter t with it's derivatives.
+
+        Parameters
+        ----------
+        surface: BRepAdaptor_Surface
+            The curve to get the value from
+        t: Float
+            The parameter value from 0 to 1
+        derivative: Int
+            The derivative from 0 to 4
+
+        Returns
+        -------
+        results: Point or Tuple
+            If the derivative is 0 only the position at t is returned,
+            otherwise a tuple of the position and all deriviatives.
+        """
+        p = gp_Pnt()
+        if derivative == 0:
+            surface.D0(u, v, p)
+            return coerce_point(p)
+        v1 = gp_Vec()
+        if derivative == 1:
+            surface.D1(u, v, p, v1)
+            return (coerce_point(p), coerce_direction(v1))
+        v2 = gp_Vec()
+        if derivative == 2:
+            surface.D1(u, v, p, v1, v2)
+            return (coerce_point(p), coerce_direction(v1),
+                    coerce_direction(v2))
+        v3 = gp_Vec()
+        if derivative == 3:
+            surface.D3(u, v, p, v1, v2, v3)
             return (coerce_point(p), coerce_direction(v1),
                     coerce_direction(v2), coerce_direction(v3))
         raise ValueError("Invalid derivative")
