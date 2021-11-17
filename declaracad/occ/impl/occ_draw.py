@@ -10,6 +10,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 import os
+from math import pi
 from atom.api import Typed, Int, Tuple, List, set_default
 
 from OCCT import Aspect, TCollection, NCollection, Graphic3d
@@ -158,7 +159,7 @@ class OccEdge(OccShape, ProxyEdge):
             args.insert(1,  BRep_Tool.Surface_(d.surface))
         edge = BRepBuilderAPI_MakeEdge(*args).Edge()
         if d.as_wire:
-           return BRepBuilderAPI_MakeWire(edge).Wire()
+            return BRepBuilderAPI_MakeWire(edge).Wire()
         return edge
 
     def get_value_at(self, t, derivative=0):
@@ -240,9 +241,18 @@ class OccArc(OccLine, ProxyArc):
             c = gp_Circ(axis, d.radius)
 
             if n == 2:
-                arc = GC_MakeArcOfCircle(c, points[0], points[1], True).Value()
+                start, end = points
+                if start == end:
+                    # Full circle
+                    center = d.position.proxy
+                    start_direction = gp_Dir(gp_Vec(center, start))
+                    start_angle = axis.XDirection().Angle(start_direction)
+                    angle = start_angle + 2 * pi
+                    arc = GC_MakeArcOfCircle(c, start, angle, True).Value()
+                else:
+                    arc = GC_MakeArcOfCircle(c, start, end, True).Value()
             elif n == 1:
-                arc = GC_MakeArcOfCircle(c, d.alpha1, points[0], True).Value()
+                arc = GC_MakeArcOfCircle(c, points[0], d.alpha1, True).Value()
             else:
                 arc = GC_MakeArcOfCircle(c, d.alpha1, d.alpha2, True).Value()
         #elif n == 2:
