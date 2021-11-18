@@ -17,7 +17,7 @@ from lxml import etree
 from math import radians, sqrt, tan, atan, atan2, cos, acos, sin, pi
 
 from OCCT.BRep import BRep_Builder
-from OCCT.BRepAdaptor import BRepAdaptor_CompCurve, BRepAdaptor_HCompCurve
+from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace,
     BRepBuilderAPI_MakePolygon, BRepBuilderAPI_Transform
