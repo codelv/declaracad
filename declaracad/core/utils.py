@@ -183,9 +183,10 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
     def send_message(self, message: dict, attempts: int = 10):
         if not self.connected:
             if attempts <= 0:
-                raise RuntimeError(
+                log.error(
                     f"Could not send message: {message} "
                     f"after several attempts")
+                return
             log.debug(f"Note: Message delayed {self}: {message}")
             timed_call(1000, self.send_message, message, attempts - 1)
             return
