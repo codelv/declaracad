@@ -108,7 +108,7 @@ enamldef ChamferMill(Tool): drill:
         material = 'steel'
         attr r = diameter/2*0.99
         attr d1 = r
-        attr d2 = r*(pi/2-sin(radians(angle)))
+        attr d2 = r*(pi/2-sin(radians(angle/2)))
         operations = [
             (d1, d2, self.children[0].topology.faces[2])
         ]
