@@ -12,11 +12,11 @@ Created on Nov 9, 2021
 import traceback
 from math import ceil, sqrt
 from typing import List as ListType
-from atom.api import Atom, Bool, Enum, Float, Instance, Str
+from atom.api import Atom, Bool, Enum, Float, Instance, Str, Coerced
 from datetime import datetime
 from declaracad.occ.geom import coerce_point
 from declaracad.occ.api import (
-    DisplayArrow, Point, Part, Polyline, Topology, Vertex, Wire, Arc,
+    DisplayArrow, Direction, Point, Part, Polyline, Topology, Vertex, Wire, Arc,
     HalfSpace, Cylinder, Timer, Looper, Include, Conditional
 )
 from declaracad.cnc.optimize import optimize_points
@@ -91,6 +91,35 @@ def generate_polyline_gcode(
         cmds.append(f'{code} X{x} Y{y} Z{z}')
     return cmds
 
+
+def generate_wire_gcode(wire: Wire, format_value) -> ListType[str]:
+    """ Generate code for a Wire """
+    cmds = []
+    for edge in wire.topology.edges:
+        topo = Topology(shape=edge)
+        if Topology.is_line(edge):
+            for p in (topo.start_point, topo.end_point):
+                x, y, z = map(format_value, p)
+                cmds.append(f'G1 X{x} Y{y} Z{z}')
+        elif Topology.is_circle(edge):
+            curve = Topology.cast_curve(edge)
+            arc = Arc(
+                direction=Direction(curve.Axis().Direction()),
+                position=Point(curve.Location()),
+                radius=curve.Radius(),
+                points=[topo.start_point, topo.end_point]
+            )
+            cmds.extend(generate_arc_gcode(arc, format_value))
+        else:
+            raise NotImplementedError("TODO: Cannot create gcode for wire")
+
+    if not wire.description:
+        wire.description = "Gcode: \n%s\n" % '\n'.join(cmds)
+
+    return cmds
+
+
+
 class Operation(Part):
     """ A single machining operation.
 
@@ -114,6 +143,15 @@ class Operation(Part):
     #: Coolant control
     #: If mist or flood on, otherwise off
     coolant = d_(Enum('', 'mist', 'flood'))
+
+    #: Starting point of operation
+    start_point = d_(Coerced(Point, coercer=coerce_point))
+
+    #: Ending point of operation
+    end_point = d_(Coerced(Point, coercer=coerce_point))
+
+    def _default_end_point(self):
+        return self.start_point
 
     #: Generated gcode
     gcode = d_(Str())
@@ -160,12 +198,6 @@ enamldef DrillingCycle(Operation): operation:
     #: List of circular edges, cylinder faces, or points
     attr holes: list = []
 
-    #: A point or tuple
-    attr start_point
-
-    #: A point or tuple
-    attr end_point = start_point
-
     # ------------------------------------------------------------------------
     # Operation options
     # ------------------------------------------------------------------------
@@ -207,7 +239,7 @@ enamldef DrillingCycle(Operation): operation:
         if isinstance(hole, Point):
             return hole
         elif Topology.is_cylinder(hole):
-            s = Topology.cast_surface(hole).Cylinder()
+            s = Topology.cast_surface(hole)
         elif Topology.is_circle(hole):
             s = Topology.cast_curve(hole)
         else:
@@ -611,9 +643,6 @@ enamldef CircularPocket(Operation): operation:
     #: List of faces to pocket
     attr pockets: list = []
 
-    attr start_point
-    attr end_point = start_point
-
     # ------------------------------------------------------------------------
     # Operation parameters
     # ------------------------------------------------------------------------
@@ -679,7 +708,7 @@ enamldef CircularPocket(Operation): operation:
         if isinstance(shape, (tuple, list)):
             shape, bottom_edge_or_surface = shape
         if Topology.is_cylinder(shape):
-            surface = Topology.cast_surface(shape)
+            surface = Topology.cast_surface(shape, convert=False)
             cylinder = surface.Cylinder()
             radius = cylinder.Radius()
             center = Point(cylinder.Location())
@@ -720,6 +749,9 @@ enamldef CircularPocket(Operation): operation:
                     "Spindle speed must be set for a cylindrical pocket."
                     "Use spindle_speed=value."
                 )
+
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
 
             job = self.parent
             fmt = job.format_value
@@ -918,9 +950,6 @@ enamldef FacingOperation(Operation):
 
     #: Amount to go past the edge of the face
     attr step_past = tool.diameter/2 + 10
-
-    attr start_point
-    attr end_point = start_point
 
     # ------------------------------------------------------------------------
     # Internal variables
@@ -1212,6 +1241,189 @@ enamldef FacingOperation(Operation):
             position = move_out.lift_point
 
 
+
+enamldef ChamferOperation(Operation):
+    #: List of edges to cut. Each item can be a Chamfer refernce,
+    #: a chamfered surface, or a set of edges or wires
+    attr edges: list
+
+    #: Distance to offset the bit
+    attr bit_offset = 0
+
+    # ----------------------------------------------------------------------------
+    # Internal data
+    # ----------------------------------------------------------------------------
+    #: Generated toolpath data
+    attr toolpath = generate_toolpath()
+
+
+    func find_curve_on_point(topo, point):
+        for v in topo.vertices:
+            if Point(v) != point:
+                continue
+            for edge in topo.edges_from_vertex(v):
+                if not Topology.is_circle(edge):
+                    continue
+                return edge
+
+    func generate_for_hole(face):
+        assert Topology.is_cone(face)
+        topo = Topology(shape=face)
+        surface = Topology.cast_surface(face, convert=False)
+        cone = surface.Cone()
+        center = Point(cone.Location())
+        angle = round(math.degrees(cone.SemiAngle()), 6)
+        if abs(angle*2) != tool.angle:
+            raise ValueError(
+                f"Tool {tool.description} cannot cut a chamfer of angle "
+                f"{angle} (this operation does not support it)."
+            )
+        radius = cone.RefRadius()
+        vertices = [Point(v) for v in topo.vertices]
+        umin, umax, vmin, vmax = topo.face_bounds
+        alpha = umax - umin
+        top = bottom = vertices[0]
+        for v in vertices[1:]:
+            if v.z < bottom.z:
+                bottom = v
+            if v.z > top.z:
+                top = v
+        depth = top.z - bottom.z
+        bottom_edge = find_curve_on_point(topo, bottom)
+
+        start, end = [Point(v) for v in topo.vertices_from_edge(bottom_edge)]
+        wire = Arc(
+            position = center,
+            radius = radius,
+            as_wire = True,
+            direction=(0, 0, -1),
+            points = [start, end]).render()
+        return generate_offset(wire, -1)
+
+    func generate_for_faces(face, connected_faces):
+        all_faces = connected_faces.union(set([face]))
+        edges = Topology.find_unique_edges(all_faces)
+        wires = Topology.join_edges(edges)
+        wires.sort(key=lambda w: Topology.bbox(w).zmin)
+        wire = wires[0]
+        return generate_offset(wire)
+
+    func generate_offset(wire, direction=1):
+        if bit_offset:
+            a = math.radians(tool.angle/2)
+            wire = Offset(
+                shape=wire,
+                offset=bit_offset*sin(a) * direction,
+                normal_distance=bit_offset*cos(a) * -direction
+            ).render()
+
+        curve_topo = Topology(shape=wire)
+        start = curve_topo.start_point
+        end = curve_topo.end_point
+        return {
+            'type': 'path',
+            'start': start,
+            'end': end,
+            'drop': Point(start.x, start.y, start_point.z),
+            'lift': Point(end.x, end.y, start_point.z),
+            'path': wire,
+        }
+
+    func generate_toolpath():
+        tool_radius = tool.diameter/2
+        data = []
+        faces = []
+        for shape in self.edges:
+            if isinstance(shape, (tuple, list)):
+                pass
+            elif Topology.is_face(shape):
+                faces.append(Topology.cast_shape(shape))
+
+        connections = group_connected_faces(faces)
+        for face, connected_faces in connections.items():
+            if connected_faces:
+                data.append(generate_for_faces(face, connected_faces))
+            elif Topology.is_cone(face):
+                data.append(generate_for_hole(face))
+            else:
+                raise NotImplementedError("TODO")
+
+        ordered_data = []
+        lift_points = [d['lift'] for d in data]
+        for lift_point in optimize_points(lift_points[:], start_point):
+            i = lift_points.index(lift_point)
+            ordered_data.append(data[i])
+        return ordered_data
+
+    generate_gcode => ():
+        """ Generate gcode output for this operation
+
+        """
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+
+            job = self.parent
+            fmt = job.format_value
+
+            cmds.append("(Chamfer operation)")
+            # Change tool
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a chamfer operation."
+                    "Use spindle_speed=value."
+                )
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+            for child in self.children:
+                if isinstance(child, Polyline):
+                    rapid = child.name == 'Rapid move'
+                    cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
+                elif isinstance(child, Wire):
+                    cmds.extend(generate_wire_gcode(child, fmt))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            cmds.append('') # Ensure newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+
+    Looper:
+        iterable << [] if disabled else toolpath
+        Polyline:
+            attr last_point = start_point if loop.index == 0 else toolpath[loop.index-1]['lift']
+            name = 'Rapid move'
+            points = [
+                last_point,
+                loop.item['drop'],
+                loop.item['start']
+            ]
+        Wire:
+            color = 'purple'
+            edges = [loop.item['path']]
+        Polyline:
+            name = 'Rapid move'
+            func get_points():
+                pts = [loop.item['end'], loop.item['lift']]
+                if loop.index + 1 == len(toolpath):
+                    pts.append(end_point)
+                return pts
+            points = get_points()
+
 enamldef Job(Part):
     """ A CNC job. Nest different operations within this and call save
     to write the gcode to a file.
@@ -1231,6 +1443,9 @@ enamldef Job(Part):
 
     #: Mapping of tool to tool number
     attr tools: dict = {}
+
+    #: Tools that are not disabled
+    attr active_tools: dict = {}
 
     #: Generate gcode file when all shapes are constructed
     constructed :: self.generate_job()
@@ -1254,6 +1469,7 @@ enamldef Job(Part):
             if self.disabled:
                 return
             tools = {}
+            active_tools = {}
             with open(self.filename, 'w') as f:
                 f.write("(Generated with DeclaraCAD)\n")
                 f.write(f"(File: {self.filename})\n")
@@ -1279,10 +1495,14 @@ enamldef Job(Part):
                             )
                         tools[num] = tool
 
+                        if not c.disabled:
+                            active_tools[num] = tool
+
                         # Write gcode
                         f.write(c.gcode)
 
             self.tools = tools
+            self.active_tools = active_tools
             print(f"Wrote job to {self.filename}")
         except Exception as e:
             print(f"Error generating job: {e}")
@@ -1328,7 +1548,7 @@ enamldef JobSimulation(Part): simulation:
 
     Include:
         #destroy_old = False
-        objects << list(job.tools.values())
+        objects << list(job.active_tools.values())
 
     Timer: timer:
         interval = 16
