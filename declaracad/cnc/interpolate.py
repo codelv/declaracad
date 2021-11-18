@@ -9,10 +9,20 @@ Created on Dec 27, 2020
 
 @author: jrm
 """
-from declaracad.occ.api import Topology, Wire
+from typing import Any, Optional, Iterable
+from typing import List as ListType
+from typing import Dict as DictType
+from typing import Set as SetType
+from declaracad.occ.api import Topology, Wire, Point
+from OCCT.TopoDS import TopoDS_Shape, TopoDS_Face, TopoDS_Edge
 
 
-def distance(points, start, end, scale=-1):
+def distance(
+    points: ListType[Point],
+    start: float,
+    end: float,
+    scale: float = -1
+) -> Optional[ListType[Point]]:
     """ Set the z-value of the points by interpolating the
     distance from start and end points. If the first two points are equal
     None is returned.
@@ -36,7 +46,7 @@ def distance(points, start, end, scale=-1):
     """
     p0, p1 = points[0:2]
     if p0 == p1:
-        None  # Line is vertical
+        return None  # Line is vertical
 
     p0.z = start * scale
     p1.z = end * scale
@@ -65,7 +75,7 @@ def distance(points, start, end, scale=-1):
     return points
 
 
-def lookup_vertex(graph, v):
+def lookup_vertex(graph: DictType[Point, Any], v: Point):
     """ Lookup the vertex in the graph using the hash, if that fails,
     fallback to using equals to find points that are equal within
     the tolerance.
@@ -90,8 +100,10 @@ def lookup_vertex(graph, v):
             return (vertex, item)
 
 
-def build_edge_graph(shapes):
-    """ Build a graph of verticies and edges that connect them. This assumes
+def build_edge_graph(
+    shapes: Iterable[TopoDS_Shape]
+) -> DictType[Point, ListType[TopoDS_Shape]]:
+    """ Build a graph of vertices and edges that connect them. This assumes
     that all edges are unique.
 
     Parameters
@@ -143,7 +155,7 @@ def walk_edges(graph, vertex, edge):
         the edge is None.
 
     """
-    used = set() # TODO: Detect loops
+    used = set()  # TODO: Detect loops
     vertex, topos = lookup_vertex(graph, vertex)
     topo = None
     for t in topos:
@@ -161,7 +173,7 @@ def walk_edges(graph, vertex, edge):
         assert vertex != next_vertex
         vertex, topos = lookup_vertex(graph, next_vertex)
         if len(topos) != 2:
-            yield (vertex, None) # Final vertex, done
+            yield (vertex, None)  # Final vertex, done
             break
 
         # Find other edge
@@ -205,7 +217,9 @@ def split_wires(graph):
                 visited_edges.append(edges[-1])
 
 
-def group_connected_wires(wires):
+def group_connected_wires(
+    wires: Iterable[TopoDS_Shape]
+) -> ListType[ListType[TopoDS_Shape]]:
     """ Put the list of wires into a group if they are connected in the same
     graph.
 
@@ -231,3 +245,57 @@ def group_connected_wires(wires):
         if group is None:
             groups.append([w])
     return groups
+
+
+def group_connected_faces(
+    faces: Iterable[TopoDS_Face],
+    merge: bool = True
+) -> DictType[TopoDS_Face, SetType[TopoDS_Face]]:
+    """ Create a mapping of each face and the faces which connect to it.
+
+    Parameters
+    ----------
+    faces: Iterable[TopoDS_Face]
+        The set of faces to group together
+
+    merge: bool
+        Merge all faces that are connected into a single key
+
+    Returns
+    -------
+    connections: Dict[TopoDS_Face, Set[TopoDS_Face]]
+        The face and it's connected faces.
+
+    """
+    remaining = [f for f in faces]
+    all_connections = {}
+    while remaining:
+        face = remaining.pop()
+        results = all_connections[face] = set()
+        for other_face in remaining:
+            if Topology.are_faces_connected(face, other_face):
+                results.add(other_face)
+
+    if not merge:
+        return all_connections
+
+    # Merge all connections
+    used = set()
+    connections = {}
+    for face, connected_faces in all_connections.items():
+        if face in used:
+            continue
+        used.add(face)
+        if connected_faces:
+            # Walk the graph
+            stack = set(connected_faces)
+            while stack:
+                other_face = stack.pop()
+                used.add(other_face)
+                for f in all_connections[other_face]:
+                    if f not in used:
+                        connected_faces.add(f)
+                        stack.add(f)
+        connections[face] = connected_faces
+
+    return connections
