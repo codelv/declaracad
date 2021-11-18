@@ -274,10 +274,10 @@ enamldef ModelViewer(OccViewer): viewer:
             return r
         elif shape_type == 'edge':
             topology = Topology(shape=topods_shape)
-            verticies = len(topology.vertices)
+            vertices = len(topology.vertices)
             length = round(topology.length, 6)
             desc = [
-                f"  Edge: {verticies} vertices",
+                f"  Edge: {vertices} vertices",
                 f"  Edge Length: {length}"
             ]
             if Topology.is_circle(topods_shape):
@@ -298,11 +298,22 @@ enamldef ModelViewer(OccViewer): viewer:
             return desc
         elif shape_type == 'face':
             if Topology.is_cylinder(topods_shape):
-                c = Topology.cast_surface(topods_shape).Cylinder()
+                c = Topology.cast_surface(topods_shape)
                 r = round(c.Radius(), 6)
                 ctr = Point(c.Location())
                 desc = [
                     f"  Center: {ctr}",
+                    f"  Radius: {r}",
+                ]
+                return desc
+            if Topology.is_cone(topods_shape):
+                c = Topology.cast_surface(topods_shape)
+                ctr = Point(c.Location())
+                angle = round(math.degrees(c.SemiAngle()), 6)
+                r = round(c.RefRadius(), 6)
+                desc = [
+                    f"  Center: {ctr}",
+                    f"  Angle: {angle}°",
                     f"  Radius: {r}",
                 ]
                 return desc
@@ -416,9 +427,10 @@ enamldef ModelViewer(OccViewer): viewer:
                         if shape_desc:
                             desc.extend(shape_desc)
 
-
         except Exception as e:
-            print(e)
+            print("Error describing selection: ")
+            print(f"Selection: {selection.selection}")
+            traceback.print_exc()
 
         return "\n".join(desc)
 
@@ -1037,7 +1049,7 @@ enamldef ViewerDockItem(DockItem): view:
     active_document :: process.document = change['value']
 
     icon = load_icon("bricks")
-    stretch = 3
+    stretch = 4
     closed :: viewer.cleanup()
 
     func reload_document():
