@@ -10,12 +10,14 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from atom.api import Atom, Instance, Typed, Bool, List
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Iterable, Optional, TypeVar, Union
 from typing import Dict as DictType
 from typing import List as ListType
+from typing import Set as SetType
 from OCCT import GeomAbs
 from OCCT.BOPAlgo import BOPAlgo_Section
 from OCCT.Bnd import Bnd_Box
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepAdaptor import (
     BRepAdaptor_Curve, BRepAdaptor_CompCurve, BRepAdaptor_Surface
 )
@@ -56,8 +58,11 @@ from OCCT.TopoDS import (
 from OCCT.TopTools import (
     TopTools_ListOfShape,
     TopTools_ListIteratorOfListOfShape,
-    TopTools_IndexedDataMapOfShapeListOfShape
+    TopTools_IndexedDataMapOfShapeListOfShape,
+    TopTools_HSequenceOfShape
 )
+
+from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
 
 from ..shape import BBox, coerce_point, coerce_direction
 
@@ -262,7 +267,7 @@ class Topology(Atom):
     def _default_vertices(self):
         return self._loop_topo(TopAbs_VERTEX)
 
-    #: Get a list of points from verticies
+    #: Get a list of points from vertices
     points = List()
 
     def _default_points(self):
@@ -302,7 +307,7 @@ class Topology(Atom):
         self,
         wire: TopoDS_Wire
     ) -> ListType[TopoDS_Vertex]:
-        """ Get verticies from a wire.
+        """ Get vertices from a wire.
 
         Parameters
         ----------
@@ -376,6 +381,84 @@ class Topology(Atom):
     def edges_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Edge]:
         return self._loop_topo(TopAbs_EDGE, face)
 
+    def find_common_edges(self, shape: TopoDS_Shape) -> SetType[TopoDS_Edge]:
+        """ Find edges common to this shape and the given shape
+
+        Parameters
+        ----------
+        shape: TopoDS_Shape
+            The other shape to find common edges with
+
+        Returns
+        -------
+        edges: List[TopoDS_Edge]
+            The edges that are considered the same in both shapes.
+
+        """
+        common = set()
+        other_edges = Topology(shape=shape).edges
+        for edge in self.edges:
+            for other_edge in other_edges:
+                if edge.IsSame(other_edge):
+                    common.add(edge)
+        return common
+
+    @classmethod
+    def find_unique_edges(
+        cls,
+        shapes: Iterable[TopoDS_Shape]
+    ) -> SetType[TopoDS_Edge]:
+        """ Find edges unique to only one shape in the set of shapes.
+
+        Parameters
+        ----------
+        shapes: Iterable[TopoDS_Shape]
+            The shapes to find the set of unique edges from.
+
+        """
+        unique_edges = set()
+        edge_map = {s: Topology(shape=s).edges for s in shapes}
+        remaining = [s for s in shapes]
+        while remaining:
+            shape = remaining.pop()
+            for edge in edge_map.pop(shape):
+                unique = True
+                for other_shape in remaining:
+                    other_edges = edge_map[other_shape]
+                    for other_edge in other_edges[:]:
+                        if edge.IsSame(other_edge):
+                            other_edges.remove(other_edge)
+                            unique = False
+                if unique:
+                    unique_edges.add(edge)
+        return unique_edges
+
+    @classmethod
+    def join_edges(
+        cls,
+        edges: Iterable[TopoDS_Edge],
+        tolerance=1e-6
+    ) -> ListType[TopoDS_Wire]:
+        """ Join a set of edges into a set of wires.
+
+        Parameters
+        ----------
+        edges: Iterable[TopoDS_Edge]
+            The edges to join
+
+        Returns
+        -------
+        wires: List[TopoDS_Wire]
+            The wires connected.
+
+        """
+        seq = TopTools_HSequenceOfShape()
+        for e in edges:
+            seq.Append(e)
+        r = ShapeAnalysis_FreeBounds.ConnectEdgesToWires_(
+            seq, tolerance, False)
+        return [Topology.cast_shape(r.Value(i)) for i in range(1, r.Size()+1)]
+
     # ----------------------------------------------------------------------
     # VERTEX <-> EDGE
     # ----------------------------------------------------------------------
@@ -388,6 +471,28 @@ class Topology(Atom):
     ) -> ListType[TopoDS_Edge]:
         return self._map_shapes_and_ancestors(
             TopAbs_VERTEX, TopAbs_EDGE, vertex)
+
+    def find_common_vertices(self, shape: TopoDS_Shape) -> SetType[TopoDS_Vertex]:
+        """ Find edges common to this shape and the given shape
+
+        Parameters
+        ----------
+        shape: TopoDS_Shape
+            The other shape to find common edges with
+
+        Returns
+        -------
+        edges: List[TopoDS_Edge]
+            The edges that are considered the same in both shapes.
+
+        """
+        common = set()
+        other_vertices = Topology(shape=shape).vertices
+        for vertex in self.vertices:
+            for other_vertex in other_vertices:
+                if vertex.IsSame(other_vertices):
+                    common.add(vertex)
+        return common
 
     # ----------------------------------------------------------------------
     # WIRE <-> EDGE
@@ -840,8 +945,36 @@ class Topology(Atom):
         return any(shape.IsSame(s) for s in shapes)
 
     @classmethod
+    def are_faces_connected(
+        cls,
+        face: TopoDS_Face,
+        other_face: TopoDS_Face
+    ) -> bool:
+        """ Check if two faces are connected by one of their edges.
+
+        Parameters
+        ----------
+        face: TopoDS_Face
+            Face to check connection with
+        other_face: TopoDS_Face
+            Face to check connection to
+
+        Returns
+        -------
+        result: bool
+            True if any of the edges are the same
+
+        """
+        # TODO: Is there a OCCT function to do this?
+        other_edges = cls(shape=other_face).edges
+        for e in cls(shape=face).edges:
+            if cls.is_shape_in_list(e, other_edges):
+                return True
+        return False
+
+    @classmethod
     def get_value_at(cls, curve, t, derivative=0):
-        return Topology.curve_value_at(curve, t, derivative)
+        return cls.curve_value_at(curve, t, derivative)
 
     @classmethod
     def curve_value_at(cls, curve, t, derivative=0):
@@ -881,8 +1014,6 @@ class Topology(Atom):
             return (coerce_point(p), coerce_direction(v1),
                     coerce_direction(v2), coerce_direction(v3))
         raise ValueError("Invalid derivative")
-
-
 
     @classmethod
     def surface_value_at(cls, surface, u, v, derivative=0):
@@ -978,7 +1109,7 @@ class Topology(Atom):
         Returns
         -------
         bbox: BBox
-            The boudning g
+            The bounding box of the given shapes
 
         """
         from .occ_shape import coerce_shape
@@ -1009,7 +1140,10 @@ class Topology(Atom):
         """ Get the first / start point of a TopoDS_Wire or TopoDS_Edge
 
         """
-        curve = BRepAdaptor_CompCurve(self.shape)
+        wire = self.shape
+        if isinstance(wire, TopoDS_Edge):
+            wire = BRepBuilderAPI_MakeWire(wire).Wire()
+        curve = BRepAdaptor_CompCurve(wire)
         return self.get_value_at(curve, curve.FirstParameter())
 
     @property
@@ -1017,7 +1151,10 @@ class Topology(Atom):
         """ Get the end / last point of a TopoDS_Wire or TopoDS_Edge
 
         """
-        curve = BRepAdaptor_CompCurve(self.shape)
+        wire = self.shape
+        if isinstance(wire, TopoDS_Edge):
+            wire = BRepBuilderAPI_MakeWire(wire).Wire()
+        curve = BRepAdaptor_CompCurve(wire)
         return self.get_value_at(curve, curve.LastParameter())
 
     # -------------------------------------------------------------------------
