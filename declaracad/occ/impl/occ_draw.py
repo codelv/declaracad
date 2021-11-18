@@ -242,7 +242,7 @@ class OccArc(OccLine, ProxyArc):
 
             if n == 2:
                 start, end = points
-                if start == end:
+                if start.IsEqual(end, d.tolerance):
                     # Full circle
                     center = d.position.proxy
                     start_direction = gp_Dir(gp_Vec(center, start))
