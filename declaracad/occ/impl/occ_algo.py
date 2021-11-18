@@ -341,7 +341,7 @@ class OccOffset(OccOperation, ProxyOffset):
         if not offset_shape.IsDone():
             # Note: Lines cannot be offset as they have no plane of reference
             raise ValueError("Could not perform offset: %s" % d)
-        self.shape = offset_shape.Shape()
+        self.shape = Topology.cast_shape(offset_shape.Shape())
 
     def set_shape(self, shape):
         self.update_shape()
