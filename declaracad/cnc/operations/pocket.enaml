@@ -1,0 +1,329 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 11, 2021
+
+@author: jrm
+"""
+import traceback
+from atom.api import Atom, Float, Instance
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.operation import (
+    Operation, generate_arc_gcode, generate_polyline_gcode
+)
+from declaracad.occ.api import (
+    Arc, DisplayArrow, Point, Polyline, Part, Topology, Vertex
+)
+from declaracad.occ.geom import coerce_point
+from .helix import ArcHelix
+from .spiral import ArcSpiral
+
+
+class CircularPocketData(Atom):
+    radius = Float(strict=False)
+    center = Instance(Point)
+    top = Instance(Point)
+    bottom = Instance(Point)
+
+
+enamldef CircularPocket(Operation): operation:
+    """ Circular pocket does a helix down to the bottom of the hole
+    or step limit, then performs an archimedean spiral out to the
+    cylinder radius - tool.radius. Repeating for each step as needed based on
+    the tool's cutter dimension.
+
+    """
+    #: List of faces to pocket
+    attr pockets: list = []
+
+    # ------------------------------------------------------------------------
+    # Operation parameters
+    # ------------------------------------------------------------------------
+
+    #: Clearance added to start above the top
+    attr top_clearance = 1
+
+    #: Clearance added to the bottom of the hole
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom (if closed)
+    attr bottom_clearance = 0
+
+    #: Clearance added to the diameter.
+    #: A positive number will make the cut diameter bigger.
+    #: A negative number will make it smaller
+    attr radial_clearance = 0
+
+    #: Helix radius
+    attr helix_radius = tool.diameter*1/3
+
+    # Change in z per revolution of helix
+    attr helix_pitch = tool.diameter * 0.06
+
+    #: Spiral step over
+    attr step_over = tool.diameter * 0.06
+
+    #: If multiple passes are needed
+    #: WARNING: Currently unused
+    attr step_down = 1
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+
+    #: Internal pocket data
+    attr data = [validate_data(get_pocket_data(p)) for p in pockets]
+
+    func validate_data(pocket_data: CircularPocketData):
+        """ Make sure the tool can be used
+
+        """
+        cut_diameter = pocket_data.radius * 2
+        helix_diameter = 2*helix_radius
+        if cut_diameter < (tool.diameter + helix_diameter):
+            #: TODO: What about helix radius??
+            raise ValueError(
+                f"The tool {tool.description} is too large to cut "
+                f"a {cut_diameter} diameter pocket. Use a smaller tool "
+                f"or decrease the helix radius.")
+
+        cut_depth = pocket_data.top.z - pocket_data.bottom.z
+        if cut_depth > tool.cut:
+            raise ValueError(
+                f"The pocket is too deep for tool {tool.description} to cut. "
+                f"A tool with a longer 'cut' is need.")
+
+        return pocket_data
+
+    func get_pocket_data(shape):
+        """ Create CircularPocketData from a cylindrical surface or a tuple
+        of cylindrical surface and the bottom depth, surface, or edge of the pocket.
+
+        """
+        if isinstance(shape, CircularPocketData):
+            return shape
+        if isinstance(shape, dict):
+            return CircularPocketData(**shape)
+
+        bottom_edge_or_surface = None
+        if isinstance(shape, (tuple, list)):
+            shape, bottom_edge_or_surface = shape
+        if Topology.is_cylinder(shape):
+            surface = Topology.cast_surface(shape, convert=False)
+            cylinder = surface.Cylinder()
+            radius = cylinder.Radius()
+            center = Point(cylinder.Location())
+            vertices = [Point(v) for v in Topology(shape=shape).vertices]
+            bottom = min([v.z for v in vertices])
+            top = max([v.z for v in vertices])
+        else:
+            raise ValueError("Pocket must be a cylindrical face")
+
+        if bottom_edge_or_surface is not None:
+            if isinstance(bottom_edge_or_surface, (float, int)):
+                bottom = min(bottom, bottom_edge_or_surface)
+            elif Topology.is_circle(bottom_edge_or_surface):
+                bottom_edge = Topology.cast_curve(bottom_edge_or_surface)
+                bottom = min(bottom, Point(bottom_edge.Location()).z)
+            else:
+                raise ValueError("Pocket bottom must be a depth or cirular edge")
+        return CircularPocketData(
+            radius=radius + radial_clearance / 2,
+            center=center,
+            bottom=Point(center.x, center.y, bottom + bottom_clearance),
+            top=Point(center.x, center.y, top + top_clearance),
+        )
+
+    generate_gcode => ():
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+            # Change tool
+            cmds.append("(Circular pocket)")
+
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a cylindrical pocket."
+                    "Use spindle_speed=value."
+                )
+
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+
+            job = self.parent
+            fmt = job.format_value
+            for child in self.children:
+                if hasattr(child, 'generate_gcode'):
+                    cmds.extend(child.generate_gcode())
+
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            p = coerce_point(end_point)
+            cmds.append(
+                f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
+            )
+
+            cmds.append('') # Ensure Add newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+    Conditional:
+        condition << not operation.disabled
+        Looper:
+            iterable << operation.data
+            Part:
+                attr outside_radius = loop.item.radius - tool.diameter/2
+                attr start_point = coerce_point(operation.start_point)
+                attr center = loop.item.center
+                attr drop_point = Point(center.x, center.y, start_point.z)
+                attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
+                attr top_point = loop.item.top
+                attr bottom_point = loop.item.bottom
+                attr depth = top_point.z - bottom_point.z
+                attr arc_start = top_point + (0, 0, helix_radius/4)
+                name = 'Pocket'
+
+                func generate_gcode():
+                    cmds = []
+                    for child in self.children:
+                        if hasattr(child, 'generate_gcode'):
+                            cmds.extend(child.generate_gcode())
+                        elif isinstance(child, Arc):
+                            cmds.extend(generate_arc_gcode(child, format_value))
+                        elif isinstance(child, Polyline):
+                            cmds.extend(generate_polyline_gcode(
+                                child, format_value, rapid=True))
+                    return cmds
+
+                DisplayArrow: drop_arrow:
+                    color = 'red'
+                    cone_size = (0.6, 1.5)
+                    tube_size = (0.3, 3)
+                    description = 'Drop'
+                    direction = (0, 0, -1)
+                    position = drop_point + (0, 0, 3)
+
+                # Heliz down to bottom of hole or max step
+                Vertex:
+                    color = 'lime'
+                    description = 'Top of circular pocket'
+                    position = top_point
+                Vertex:
+                    description = 'Bottom of circular pocket'
+                    color = 'blue'
+                    position = bottom_point
+                Polyline: move_to_point:
+                    line_style = 'dashed'
+                    color = 'lime'
+                    points = [start_point, drop_point, arc_start]
+
+                Arc: arc_in:
+                    # Arc into center
+                    color = 'purple'
+                    name = 'Arc in'
+                    direction = (1, 0, 0)
+                    radius = helix_radius/4
+                    position = top_point + (0, radius, radius)
+                    points = [
+                        top_point+(0, 0, radius),
+                        top_point+(0, radius, 0)
+                    ]
+
+                Arc: arc_merge:
+                    color = 'teal'
+                    name = 'Arc merge'
+                    attr p = arc_in.points[-1]
+                    attr r = arc_in.radius
+                    position = p + (r, 0)
+                    clockwise = True
+                    radius = r
+                    points = [
+                        p,
+                        p + (r, r)
+                    ]
+
+                Arc: arc_union:
+                    color = 'teal'
+                    name = 'Arc union'
+                    attr p = arc_merge.points[-1]
+                    clockwise = True
+                    position = top_point + (arc_merge.radius, 0)
+                    radius = arc_merge.radius*2
+                    points = [
+                        p,
+                        top_point + (arc_merge.radius * 2, 0)
+                    ]
+
+
+                ArcHelix: helix:
+                    color = 'teal'
+                    radius = helix_radius*3/4
+                    max_pitch = helix_pitch
+                    height = depth
+                    position = top_point
+                    feedrate = operation.feedrate
+
+                ArcSpiral: spiral:
+                    name = 'Spiral'
+                    color = 'purple'
+                    position = bottom_point
+                    start_radius = helix_radius*3/4
+                    end_radius = outside_radius
+                    max_step_over = operation.step_over
+                    feedrate = operation.feedrate
+
+                Arc: arc_out:
+                    color = 'orange'
+                    name = 'Arc out'
+                    radius = helix_radius/4
+                    direction = (0, 0, -1)
+                    # Spiral end point
+                    attr p = bottom_point + (-spiral.end_radius, 0)
+                    position = p + (radius, 0)
+                    points = [
+                        p,
+                        p + (radius, radius)
+                    ]
+
+                Arc: arc_up:
+                    color = 'orange'
+                    name = 'Arc up'
+                    direction = (0, -1, 0)
+                    radius = arc_out.radius
+                    # Spiral end point
+                    attr p = arc_out.points[-1]
+                    position = p + (0, 0, radius)
+                    points = [p, position + (radius, 0)]
+
+                Polyline:
+                    name = 'Return path'
+                    line_style = 'dashed'
+                    color = 'lime'
+                    attr p = arc_up.points[-1]
+                    points = [p, lift_point, end_point]
+
+                DisplayArrow: lift_arrow:
+                    color = 'green'
+                    cone_size = drop_arrow.cone_size
+                    tube_size = drop_arrow.tube_size
+                    description = 'Lift'
+                    direction = (0, 0, 1)
+                    position = lift_point
+

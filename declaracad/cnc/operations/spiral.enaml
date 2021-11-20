@@ -1,0 +1,134 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 10, 2021
+
+@author: jrm
+"""
+from declaracad.occ.api import Arc, Part, Looper, Wire
+
+
+enamldef ArcSpiral(Part): part:
+    """ Create an archimedean spiral in the xy plane
+
+    """
+
+    #: Starting radius
+    attr start_radius
+
+    #: Stopping radius
+    attr end_radius
+
+    #: Step over amount
+    attr max_step_over
+
+    #: Description
+    description = f'Arc spiral start {start_radius}, end {end_radius}, step over {step_over}'
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+
+    #: Calculated step over amount. Will always be less than or equal to
+    #: max_step_over.
+    attr step_over = calculate_step_over(start_radius, end_radius, max_step_over)
+
+    #: Change in radius
+    attr dr = end_radius - start_radius
+    attr path = generate_path()
+
+    # ------------------------------------------------------------------------
+    # G Code Options
+    # ------------------------------------------------------------------------
+
+    #: Feedrate used for gcode
+    attr feedrate = 0
+
+    #: Clockwise spiral
+    attr clockwise: bool = True
+    attr incremental: bool = True
+
+    attr gcode: str = generate_gcode()
+
+    func generate_gcode():
+        cmds = []
+        code = 'G2' if self.clockwise else 'G3'
+        pos = self.position
+        if self.feedrate:
+            cmds.append(f"F{self.feedrate}")
+        for arc in spiral.children:
+            if not isinstance(arc, Arc):
+                continue
+            center = arc.position + pos
+            start = arc.points[0] + pos[0:2]
+            end = arc.points[-1] + pos[0:2] # Ingore Z
+            delta = center - start if incremental else center
+            i = format_value(delta.x)
+            j = format_value(delta.y)
+            x = format_value(end.x)
+            y = format_value(end.y)
+            cmd = f'{code} X{x} Y{y} I{i} J{j}'
+            cmds.append(cmd)
+        return cmds
+
+    func calculate_step_over(r1, r2, max_step):
+        """ Adjust step over so it lands exactly on the end radius
+
+        """
+        rmin = min(r1, r2)
+        rmax = max(r1, r2)
+        delta = rmax-rmin
+        r = delta/max_step
+        if r <= 1:
+            # Do one revoluation
+            return delta
+        n = int(r)
+        if n == r:
+            # Stepover is multiple of max step
+            return max_step
+        # Solve n + 1 = delta/new_step
+        if n & 1:
+            new_step_over = delta/(n+1)
+        else:
+            new_step_over = delta/(n+2) # Force even number of steps
+        assert new_step_over < max_step
+        return new_step_over
+
+    func generate_path():
+        steps = int(dr/step_over)
+        arcs = []
+        r = start_radius
+        arcs.append((start_radius, 0, 1))
+        for i in range(steps):
+            r += step_over
+            if i & 1:
+                x = 0
+                direction = 1
+            else:
+                x = step_over
+                direction = -1
+
+            arcs.append((r, x, direction))
+
+        #assert r == end_radius
+
+        # Add full circle
+        arcs.append((end_radius, 0, -1))
+        arcs.append((end_radius, 0, 1))
+
+        return arcs
+    Wire: spiral:
+        color = parent.color
+        name = 'ArcSpiral'
+        Looper:
+            iterable = path
+            Arc:
+                attr rot = loop.item[2]
+                radius = loop.item[0]
+                clockwise = part.clockwise
+                position = (loop.item[1], 0)
+                points = [(rot*radius, 0), (-rot*radius, 0)]

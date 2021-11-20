@@ -1,0 +1,341 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 9, 2021
+
+@author: jrm
+"""
+import traceback
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.operation import (
+    Operation, generate_arc_gcode, generate_polyline_gcode
+)
+from declaracad.occ.api import (
+    Arc, Point, Topology, Polyline, DisplayArrow, Vertex
+)
+from declaracad.occ.geom import coerce_point
+
+
+enamldef FacingOperation(Operation):
+    """ A multi-layer Zig-zag facing operation.
+
+    This does not (currently) support hole avoidance.
+
+    """
+    #: The face to clear
+    attr face
+
+    #: Total depth to cut
+    attr cut_depth
+
+    # ------------------------------------------------------------------------
+    # Toolpath parameters
+    # ------------------------------------------------------------------------
+
+    #: Height to clear above
+    attr clearance_height = 2
+
+    #: Stock to leave above face
+    attr top_clearance = 0
+
+    #: Amount to step over
+    attr step_over = tool.diameter*0.9
+
+    #: Distance to cut each step
+    attr step_down = cut_depth
+
+    #: Amount to go past the edge of the face
+    attr step_past = tool.diameter/2 + 10
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+    attr first_point = toolpath[0][0][1]
+    attr drop_point = Point(first_point.x - lead_in_radius, first_point.y, coerce_point(start_point).z)
+
+    #: Radius of lead in arc
+    attr lead_in_radius = 5
+
+    #: Bounding box of the face
+    attr bounding_box = Topology.bbox(face)
+
+    #: Generated toolpath
+    attr toolpath = generate_toolpath(face)
+
+    func generate_toolpath(face):
+        if face is None:
+            raise ValueError("A face must be given")
+        ymin = bounding_box.ymin
+        ymax = bounding_box.ymax
+
+        topo = Topology(shape=face)
+
+        shift = Point(0, -tool.diameter/2)
+        start_shift = shift + (step_past, 0)
+        end_shift = shift + (-step_past, 0)
+
+        if step_past < tool.diameter/2 and depth > step_down:
+            raise ValueError(
+                f"Step past must be greater than the tool radius to avoid "
+                f"contact with the edge of the face when using multiple steps."
+            )
+
+        z = bounding_box.zmax + top_clearance
+        zmin = z - cut_depth
+        layers = []
+        passes = 0
+        last = None
+        while z > zmin:
+            points = []
+            z = max(z - step_down, zmin)
+            y = ymin
+            while y <= ymax:
+                passes += 1
+                y += step_over
+
+                # Just use bbox
+                start_point = Point(bounding_box.xmax, y, z) + start_shift
+                end_point = Point(bounding_box.xmin, y, z) + end_shift
+
+
+                # Find edge intersections
+                #space = HalfSpace(position=(0, y, 0), direction=(0, 1, 0))
+                #results = topo.intersection(space.render())
+
+                #if results:
+                    #TODO: To handle avoidance regions intersections here...
+                    #if len(results) != 1:
+                       #raise NotImplementedError("TODO: Handle islands")
+                    #start_point = end_point = None
+                    #for r in results:
+                        #line = Topology.cast_curve(r)
+                        #p0 = Topology.get_value_at(line, line.FirstParameter()) + start_shift
+                        #p1 = Topology.get_value_at(line, line.LastParameter()) + end_shift
+
+                        #Use point with min x as start point
+                        #TODO: IDK why this is switched but whatever
+                        #if start_point is None or p0.x > start_point.x:
+                            #start_point = p0
+                        #if end_point is None or p1.x < end_point.x:
+                            #end_point = p1
+
+                #elif i > 1 and y > ymax:
+                    #If it goes past the end there will be no intersection
+                    #so add it anyways for the last pass
+                    #start_point = start_point + (0, step_over, 0)
+                    #end_point = end_point + (0, step_over, 0)
+
+                #start_point.z = z
+                #end_point.z = z
+
+                if passes & 1 == 0:
+                    item = [last, start_point, end_point]
+                else:
+                    item = [last, end_point, start_point]
+                last = item[-1]
+                points.append(item)
+            layers.append(points)
+        return layers
+
+    generate_gcode => ():
+        """ Generate gcode output for this operation
+
+        """
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+
+            job = self.parent
+            fmt = job.format_value
+
+            cmds.append("(Facing operation)")
+            # Change tool
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a facing cycle."
+                    "Use spindle_speed=value."
+                )
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+            for child in self.children:
+                if isinstance(child, Polyline):
+                    rapid = child.name == 'Rapid move'
+                    cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
+                elif isinstance(child, Arc):
+                    cmds.extend(generate_arc_gcode(child, fmt))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            cmds.append('') # Ensure newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+
+    Conditional:
+        condition << not disabled
+        DisplayArrow: drop_arrow:
+            color = 'red'
+            cone_size = (0.6, 1.5)
+            tube_size = (0.3, 3)
+            description = 'Drop'
+            direction = (0, 0, -1)
+            position = drop_point + (0, 0, 3)
+
+        Polyline: move_in:
+            name = 'Rapid move'
+            line_style = 'dashed'
+            color = 'lime'
+            points = [start_point, drop_point, lead_in_arc.points[0]]
+
+        Arc: lead_in_arc:
+            #attr s = move_in.points[-1]
+            name = 'Lead in arc'
+            color = 'orange'
+            radius = lead_in_radius
+            clockwise = True
+            as_wire = True
+            position = first_point + (0, 0, radius)
+            points = [
+                first_point + (-radius, 0, radius),
+                first_point
+            ]
+            direction = (0, 1, 0)
+
+        Looper: layer_looper:
+            iterable = toolpath
+            Conditional: connection_line:
+                # This block is the connection line between two layers
+                # If not the first layer draw a connection between this layer and the last
+                condition = loop.index > 0
+                # Section between layers
+                attr arc_radius = min(lead_in_radius, step_over/2)
+                attr arc_count = len(loop.item) * loop.index
+                attr dx = arc_radius if arc_count & 1 else -arc_radius
+
+                Arc: exit_arc:
+                    attr start_point = loop.item[0][0]
+                    attr end_point = start_point + (connection_line.dx, 0, radius)
+                    direction = (0, 1, 0)
+                    as_wire = True
+                    clockwise = connection_line.arc_count & 1 == 1
+                    name = f'Layer connection lift arc {arc_count}'
+                    radius = connection_line.arc_radius
+                    color = 'purple'
+                    position = (start_point.x, start_point.y, end_point.z)
+                    points = [start_point, end_point]
+                Arc: exit_turn_arc:
+                    # Arc that smoothly re-joins the layer exit arc and rapid across
+                    attr start_point = exit_arc.points[-1]
+                    attr end_point = start_point + (0, -radius, radius)
+                    direction = (1, 0, 0)
+                    as_wire = True
+                    radius = exit_arc.radius
+                    color = 'purple'
+                    name = f'Layer connection exit turn arc {exit_arc.arc_count}'
+                    position = (start_point.x, end_point.y, start_point.z)
+                    points = [start_point, end_point]
+
+                Conditional:
+                    condition = exit_turn_arc.points[-1] != enter_turn_arc.points[0]
+                    Polyline:
+                        name = 'Rapid move'
+                        color = 'lime'
+                        points = [exit_turn_arc.points[-1], enter_turn_arc.points[0]]
+
+                Arc: enter_turn_arc:
+                    # Arc that smoothly re-joins the layer enter arc
+                    attr end_point = enter_arc.points[0]
+                    attr start_point = end_point + (0, radius, radius)
+                    direction = (1, 0, 0)
+                    as_wire = True
+                    clockwise = False
+                    radius = exit_arc.radius
+                    color = 'purple'
+                    position = (end_point.x, start_point.y, end_point.z)
+                    points = [start_point, end_point]
+                Arc: enter_arc:
+                    # Arc that enters into the next layer
+                    attr end_point = loop.item[0][1]
+                    attr start_point = end_point + (connection_line.dx, 0, radius)
+                    direction = (0, 1, 0)
+                    as_wire = True
+                    clockwise = not exit_arc.clockwise
+                    radius = exit_arc.radius
+                    color = 'purple'
+                    position = (end_point.x, end_point.y, start_point.z)
+                    points = [start_point, end_point]
+
+            # Zig zag along face
+            Looper: point_looper:
+                #: Count of arcs up until this layer
+                attr arc_count = len(loop.item) * loop.index
+                attr layer = loop.item
+                attr last_index = len(loop.item) - 1
+                iterable = layer
+                Polyline:
+                    # This is the line going across the surface
+                    color = 'blue'
+                    name = f'Pass {str(points[0])} to {str(points[1])}'
+                    points = loop.item[1:3]
+                Conditional:
+                    condition << loop.index != point_looper.last_index
+                    Arc:
+                        # This is the arc that forms a union between two zig-zags
+                        # The direction of the arc depends on the count of arcs
+                        attr current_arc_count = point_looper.arc_count + loop.index
+                        name = f'Union arc {current_arc_count}'
+                        color = 'orange'
+                        as_wire = True
+                        radius = step_over/2
+                        clockwise = current_arc_count & 1 == 1
+                        attr next_point = point_looper.layer[loop.index + 1][1]
+                        attr current_point = loop.item[2]
+                        position = current_point.midpoint(next_point)
+                        points = [current_point, next_point]
+
+        # Final lead out
+        Arc: lead_out_arc:
+            name = 'Final out arc'
+            attr layer = toolpath[-1]
+            attr total_arc_count = len(layer)*len(toolpath)
+            attr dstep = 1 if self.clockwise else -1
+            attr s = layer[-1][-1]
+            attr e = s + (dstep * lead_in_radius, 0, lead_in_radius)
+            clockwise = total_arc_count & 1 == 1
+            color = 'orange'
+            as_wire = True
+            radius = lead_in_radius
+            position = (s.x, s.y, e.z)
+            points = [s, e]
+            direction = (0, 1, 0)
+        Polyline: move_out:
+            line_style = 'dashed'
+            color = 'lime'
+            name = 'Rapid move'
+            attr p = lead_out_arc.points[-1]
+            attr lift_point = p + (0, 0, coerce_point(end_point).z)
+            points = [p, lift_point, end_point]
+        DisplayArrow: lift_arrow:
+            color = 'green'
+            cone_size = drop_arrow.cone_size
+            tube_size = drop_arrow.tube_size
+            description = 'Lift'
+            direction = (0, 0, 1)
+            position = move_out.lift_point

@@ -91,6 +91,15 @@ MARKERS = {
     'dot': Aspect.Aspect_TOM_POINT,
 }
 
+
+LINE_TYPES = {
+    'solid': Aspect.Aspect_TOL_SOLID,
+    'dashed': Aspect.Aspect_TOL_DASH,
+    'dotted': Aspect.Aspect_TOL_DOT,
+    'dot_dash': Aspect.Aspect_TOL_DOTDASH,
+}
+
+
 CONTINUITY = {
     0: GeomAbs_C0,
     1: GeomAbs_C1,
@@ -148,6 +157,25 @@ class OccEdge(OccShape, ProxyEdge):
                             'class_b_rep_builder_a_p_i___make_edge.html')
 
     curve = Typed(Geom_TrimmedCurve)
+
+    def _default_ais_shape(self):
+        d = self.declaration
+        ais_shape = super()._default_ais_shape()
+        if d.line_style != 'solid':
+            type_of_line = LINE_TYPES[d.line_style]
+            attrs = ais_shape.Attributes()
+            if d.as_wire:
+                aspect = attrs.WireAspect()
+                aspect.SetTypeOfLine(type_of_line)
+                attrs.SetWireAspect(aspect)
+            else:
+                aspect = attrs.LineAspect()
+                aspect.SetTypeOfLine(type_of_line)
+                attrs.SetLineAspect(aspect)
+            ais_shape.SetAttributes(aspect)
+        if d.line_width > 0:
+            ais_shape.SetWidth(d.line_width)
+        return ais_shape
 
     def make_edge(self, *args):
         d = self.declaration
@@ -564,6 +592,20 @@ class OccWire(OccDependentShape, ProxyWire):
                             'class_b_rep_builder_a_p_i___make_wire.html')
 
     curve = Typed(BRepAdaptor_CompCurve)
+
+    def _default_ais_shape(self):
+        d = self.declaration
+        ais_shape = super()._default_ais_shape()
+        if d.line_style != 'solid':
+            type_of_line = LINE_TYPES[d.line_style]
+            attrs = ais_shape.Attributes()
+            aspect = attrs.WireAspect()
+            aspect.SetTypeOfLine(type_of_line)
+            attrs.SetWireAspect(aspect)
+            ais_shape.SetAttributes(attrs)
+        if d.line_width > 0:
+            ais_shape.SetWidth(d.line_width)
+        return ais_shape
 
     def create_shape(self):
         pass

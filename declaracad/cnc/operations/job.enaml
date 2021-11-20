@@ -1,0 +1,146 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 9, 2021
+
+@author: jrm
+"""
+from datetime import datetime
+from declaracad.cnc.operation import Operation
+from declaracad.occ.api import Include, Part, Point, Timer, Topology
+
+
+enamldef Job(Part):
+    """ A CNC job. Nest different operations within this and call save
+    to write the gcode to a file.
+
+    """
+    #: Set to true to disable the whole job
+    attr disabled: bool = False
+
+    #: Precision to use when formatting values
+    attr precision: int = 6
+
+    #: Output distance values in inches
+    attr inches: bool = True
+
+    #: Filename to write to
+    attr filename: str = f"{self.name}.nc"
+
+    #: Mapping of tool to tool number
+    attr tools: dict = {}
+
+    #: Tools that are not disabled
+    attr active_tools: dict = {}
+
+    #: Generate gcode file when all shapes are constructed
+    constructed :: self.generate_job()
+
+    activated ::
+        if self.disabled:
+            # Propagate disabled to all operations
+            for c in self.children:
+                if isinstance(c, Operation):
+                    c.disabled = True
+
+    func format_value(v):
+        """ Write formated value """
+        if self.inches:
+            v = v / 25.4
+        return round(v, self.precision)
+
+    func generate_job():
+        """ Generate gcode """
+        try:
+            if self.disabled:
+                return
+            tools = {}
+            active_tools = {}
+            with open(self.filename, 'w') as f:
+                f.write("(Generated with DeclaraCAD)\n")
+                f.write(f"(File: {self.filename})\n")
+                f.write(f"(Date: {datetime.now().strftime('%c')})\n")
+                # Absolute mode, incremental arc mode, feed per minute, activate xy plane
+                f.write("G90 G91.1 G94 G17\n")
+                if self.inches:
+                    f.write("G20\n")
+                else:
+                    f.write("G21\n")
+
+                for c in self.children:
+                    if isinstance(c, Operation):
+                        # Validate tool
+                        tool = c.tool
+                        num = tool.number
+
+                        if num in tools and tools[num] != tool:
+                            raise ValueError(
+                                f"Tool number {num} is duplicated! "
+                                "Set another number or use a reference if "
+                                "multiple operations use the same tool."
+                            )
+                        tools[num] = tool
+
+                        if not c.disabled:
+                            active_tools[num] = tool
+
+                        # Write gcode
+                        f.write(c.gcode)
+
+            self.tools = tools
+            self.active_tools = active_tools
+            print(f"Wrote job to {self.filename}")
+        except Exception as e:
+            print(f"Error generating job: {e}")
+
+
+enamldef JobSimulation(Part): simulation:
+    attr job: Job
+    attr rate = 0.2
+    attr disabled: bool = False
+    attr index: int = 0
+    attr frames: list = []
+    attr current_tool: Part
+
+    func start():
+        if self.disabled:
+            return
+        frames = []
+        for c in self.job.children:
+            if isinstance(c, Operation):
+                frames.append(c.tool)
+                for w in c.topology.wires:
+                    path = Topology.discretize(w, rate, method='abscissa')
+                    frames.extend(path)
+        self.frames = frames
+        timer.start()
+
+    func animate():
+        try:
+            i = self.index
+            self.index += 1
+            frame = self.frames[i]
+            if isinstance(frame, Part):
+                self.current_tool = frame
+            elif isinstance(frame, Point):
+                self.current_tool.position = frame
+        except IndexError:
+            print("Simulation complete")
+            self.index = 0
+            timer.stop()
+        except Exception as e:
+            print(f"Simulation error: {e}")
+            timer.stop()
+
+    Include:
+        #destroy_old = False
+        objects << list(job.active_tools.values())
+
+    Timer: timer:
+        interval = 16
+        activated :: simulation.start()
+        timeout :: simulation.animate()

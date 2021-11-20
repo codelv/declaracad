@@ -48,6 +48,12 @@ class ProxyEdge(ProxyShape):
     def set_as_wire(self, enabled):
         raise NotImplementedError
 
+    def set_line_style(self, style):
+        raise NotImplementedError
+
+    def set_line_width(self, width):
+        raise NotImplementedError
+
     def get_value_at(self, t, derivative=0):
         raise NotImplementedError
 
@@ -259,6 +265,12 @@ class Edge(Shape):
 
     #: The parametric surface to wrap this edge on
     surface = d_(Instance(TopoDS_Face))
+
+    #: Style for line
+    line_style = d_(Enum('solid', 'dashed', 'dotted', 'dot_dash'))
+
+    #: Line width style
+    line_width = d_(Float(strict=False))
 
     #: If True, convert the edge into a wire
     as_wire = d_(Bool())
@@ -652,6 +664,9 @@ class Wire(Edge):
 
     """
     proxy = Typed(ProxyWire)
+
+    #: Fixed
+    as_wire = True
 
     #: Edges used to create this wire
     edges = d_(List())

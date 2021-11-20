@@ -1,0 +1,229 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 9, 2021
+
+@author: jrm
+"""
+import traceback
+from math import ceil
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.operation import Operation
+from declaracad.cnc.optimize import optimize_points
+from declaracad.occ.api import Point, Topology, Polyline, DisplayArrow, Vertex
+from declaracad.occ.geom import coerce_point
+
+
+enamldef DrillingCycle(Operation): operation:
+    """ Perform a peck drilling cycle using a G73, G81, G82, or G83 G-Code.
+
+    All values are in mm. Use the job to convert to inches.
+
+    """
+
+    #: List of circular edges, cylinder faces, or points
+    attr holes: list = []
+
+    # ------------------------------------------------------------------------
+    # Operation options
+    # ------------------------------------------------------------------------
+    #: Retract value R
+    attr retract = 1.0
+
+    #: Depth of hole Z
+    attr depth = 0.0
+
+    #: Dwell time
+    attr dwell = 0
+
+    #: Peck amount Q
+    #: If non-zero it will use a G73 or G83.
+    #: Otherwise it will use a G81 or G82 (based on dwell)
+    attr peck = 1.0 # TODO: Compute based on tool radius?
+
+    #: Retract to R after each peck.
+    #: If True this uses a G83, otherwise it uses a G73
+    attr full_retract: bool = False
+
+    # ------------------------------------------------------------------------
+    # Display options
+    # ------------------------------------------------------------------------
+    attr vertex_color: str = "yellow"
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+    attr lift_point = get_lift_point()
+    attr drop_point = get_drop_point()
+    attr hole_positions << [get_center(h) for h in holes]
+    attr optimized_positions << optimize_points(hole_positions, start_point)
+    attr path = generate_path()
+
+    func get_center(hole):
+        """ Find center position of a hole
+        """
+        if isinstance(hole, Point):
+            return hole
+        elif Topology.is_cylinder(hole):
+            s = Topology.cast_surface(hole)
+        elif Topology.is_circle(hole):
+            s = Topology.cast_curve(hole)
+        else:
+            raise ValueError(f"Cannot get center of {hole}")
+        return Point(s.Location())
+
+    func get_lift_point():
+        last_point = self.optimized_positions[-1]
+        z = coerce_point(start_point).z
+        return Point(last_point.x, last_point.y, z)
+
+    func get_drop_point():
+        first_point = coerce_point(self.optimized_positions[0])
+        z = coerce_point(start_point).z
+        return Point(first_point.x, first_point.y, z)
+
+    func generate_path():
+        """ Generate the path to display including the drilling cycle options.
+
+        """
+        path = [coerce_point(start_point), drop_point]
+        steps = int(ceil(abs((retract-depth) / peck))) if peck else 0
+        for p in self.optimized_positions:
+            retract_pos = Point(p.x, p.y, retract)
+            bottom_pos = Point(p.x, p.y, depth)
+
+            # Go to top of hole
+            path.append(retract_pos)
+
+            # Start pecking
+            z = retract_pos.z - peck
+            for step in range(steps):
+                step_pos = Point(p.x, p.y, max(z, bottom_pos.z))
+                if full_retract:
+                    return_pos = retract_pos
+                else:
+                    return_pos = Point(p.x, p.y, step_pos.z+peck)
+                path.append(step_pos)
+                path.append(return_pos)
+                z -= peck
+
+            # Go to bottom
+            path.append(bottom_pos)
+            # Return to top
+            path.append(retract_pos)
+
+        path.append(lift_point)
+        path.append(coerce_point(end_point))
+        return path
+
+    generate_gcode => ():
+        """ Generate gcode output for this operation
+
+        """
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+            # Change tool
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a drilling cycle."
+                    "Use spindle_speed=value."
+                )
+
+            job = self.parent
+            fmt = job.format_value
+            p = self.path[0]
+            d = fmt(depth)
+            r = fmt(retract)
+            cmds.append("(Drilling cycle)")
+
+            # Move to top of first hole
+            for p in self.path[0:2]:
+                cmds.append(f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}')
+
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+
+            if peck:
+                code = 'G83' if full_retract else 'G73'
+            elif dwell:
+                code = 'G82'
+            else:
+                code = 'G81'
+
+            if code == 'G73' and dwell:
+                raise ValueError("Cannot use dwell with G73. Disable dwell or use full_peck=True")
+
+            for p in self.optimized_positions:
+                cmd = [
+                    'G90', # Absolute
+                    code,
+                    'G98',
+                    f'X{fmt(p.x)}',
+                    f'Y{fmt(p.y)}',
+                    f'Z{d}',
+                    f'R{r}',
+                ]
+                if peck:
+                    cmd.append(f'Q{fmt(peck)}')
+                if dwell:
+                    cmd.append(f'P{dwell}')
+                if feedrate:
+                    cmd.append(f'F{feedrate}')
+                cmds.append(' '.join(cmd))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            # Add lift and return point
+            for p in self.path[-2:]:
+                cmds.append(
+                    f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
+                )
+            cmds.append('') # Ensure newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+
+    Conditional:
+        condition << not operation.disabled
+        Looper:
+            iterable << optimized_positions
+            Vertex:
+                color = vertex_color
+                position = (loop.item.x, loop.item.y, retract)
+        Polyline:
+            color = operation.color
+            line_style = 'dashed'
+            color = 'lime'
+            points << path
+        DisplayArrow: drop_arrow:
+            color = 'red'
+            cone_size = (0.6, 1.5)
+            tube_size = (0.3, 3)
+            description = 'Drop'
+            direction = (0, 0, -1)
+            position = drop_point + (0, 0, 3)
+        DisplayArrow:
+            color = 'green'
+            cone_size = drop_arrow.cone_size
+            tube_size = drop_arrow.tube_size
+            description = 'Lift'
+            direction = (0, 0, 1)
+            position = lift_point

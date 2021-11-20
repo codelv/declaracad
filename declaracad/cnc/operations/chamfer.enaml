@@ -1,0 +1,314 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 9, 2021
+
+@author: jrm
+"""
+import math
+import traceback
+from math import sin, cos
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.interpolate import group_connected_faces
+from declaracad.cnc.optimize import optimize_points
+from declaracad.cnc.operation import (
+    Operation, generate_polyline_gcode, generate_arc_gcode, generate_wire_gcode
+)
+
+from declaracad.occ.api import (
+    Arc, Offset, Part, Point, Polyline, Topology, Wire
+)
+
+
+
+enamldef ChamferOperation(Operation):
+    #: List of edges to cut. Each item can be a Chamfer refernce,
+    #: a chamfered surface, or a set of edges or wires
+    attr edges: list
+
+    #: Distance to offset the bit
+    attr bit_offset = 1
+
+    attr clearance_height = start_point.z
+
+    # ----------------------------------------------------------------------------
+    # Internal data
+    # ----------------------------------------------------------------------------
+    #: Generated toolpath data
+    attr toolpath = generate_toolpath()
+
+
+    func find_curve_on_point(topo, point):
+        for v in topo.vertices:
+            if Point(v) != point:
+                continue
+            for edge in topo.edges_from_vertex(v):
+                if not Topology.is_circle(edge):
+                    continue
+                return edge
+
+    func generate_for_hole(face):
+        assert Topology.is_cone(face)
+        topo = Topology(shape=face)
+        surface = Topology.cast_surface(face, convert=False)
+        cone = surface.Cone()
+        center = Point(cone.Location())
+        angle = round(math.degrees(cone.SemiAngle()), 6)
+        if abs(angle*2) != tool.angle:
+            raise ValueError(
+                f"Tool {tool.description} cannot cut a chamfer of angle "
+                f"{angle} (this operation does not support it)."
+            )
+        radius = cone.RefRadius()
+        vertices = [Point(v) for v in topo.vertices]
+        umin, umax, vmin, vmax = topo.face_bounds
+        alpha = umax - umin
+        top = bottom = vertices[0]
+        for v in vertices[1:]:
+            if v.z < bottom.z:
+                bottom = v
+            if v.z > top.z:
+                top = v
+        depth = top.z - bottom.z
+        bottom_edge = find_curve_on_point(topo, bottom)
+
+        start, end = [Point(v) for v in topo.vertices_from_edge(bottom_edge)]
+        wire = Arc(
+            position = center,
+            radius = radius,
+            as_wire = True,
+            direction=(0, 0, -1),
+            points = [start, end]).render()
+        lift = drop = Point(center.x, center.y, clearance_height)
+        return generate_offset(wire, 'hole', -1, center=center, lift=lift, drop=drop, radius=radius)
+
+    func generate_for_faces(face, connected_faces):
+        all_faces = connected_faces.union(set([face]))
+        edges = Topology.find_unique_edges(all_faces)
+        wires = Topology.join_edges(edges)
+        wires.sort(key=lambda w: Topology.bbox(w).zmin)
+        wire = wires[0]
+        return generate_offset(wire, 'path')
+
+    func generate_offset(wire, path_type, direction=1, drop=None, lift=None, radius=None, **kwargs):
+        if bit_offset:
+            a = math.radians(tool.angle/2)
+            offset = bit_offset*sin(a) * direction
+            wire = Offset(
+                shape=wire,
+                offset=offset,
+                normal_distance=bit_offset*cos(a) * -direction
+            ).render()
+            if radius is not None:
+                radius -= offset/2
+
+        curve_topo = Topology(shape=wire)
+        start = curve_topo.start_point
+        end = curve_topo.end_point
+        if path_type == 'hole':
+            r = min(radius/2, tool.diameter/2)/2
+            drop = lift = Point(start.x, start.y-r, clearance_height)
+            enter = exit = Point(start.x, start.y-r, start.z+r)
+        else:
+            exit = end
+            enter = start
+            drop = Point(start.x, start.y, clearance_height)
+            lift = Point(end.x, end.y, clearance_height)
+
+        return {
+            'type': path_type,
+            'start': start,
+            'end': end,
+            'enter': enter,
+            'exit': exit,
+            'path': wire,
+            'lift': lift,
+            'drop': drop,
+            'radius': radius,
+            **kwargs
+        }
+
+    func generate_toolpath():
+        tool_radius = tool.diameter/2
+        data = []
+        faces = []
+        for shape in self.edges:
+            if isinstance(shape, (tuple, list)):
+                pass
+            elif Topology.is_face(shape):
+                faces.append(Topology.cast_shape(shape))
+
+        connections = group_connected_faces(faces)
+        for face, connected_faces in connections.items():
+            if connected_faces:
+                data.append(generate_for_faces(face, connected_faces))
+            elif Topology.is_cone(face):
+                data.append(generate_for_hole(face))
+            else:
+                raise NotImplementedError("TODO")
+
+        ordered_data = []
+        lift_points = [d['lift'] for d in data]
+        for lift_point in optimize_points(lift_points[:], start_point):
+            i = lift_points.index(lift_point)
+            ordered_data.append(data[i])
+        return ordered_data
+
+    generate_gcode => ():
+        """ Generate gcode output for this operation
+
+        """
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+
+            job = self.parent
+            fmt = job.format_value
+
+            cmds.append("(Chamfer operation)")
+            # Change tool
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    "Spindle speed must be set for a chamfer operation."
+                    "Use spindle_speed=value."
+                )
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+            for child in self.children:
+                if hasattr(child, 'generate_gcode'):
+                    cmds.extend(child.generate_gcode(fmt))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            cmds.append('') # Ensure newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+
+    Looper:
+        iterable << [] if disabled else toolpath
+        Part: path:
+
+            func generate_gcode(fmt):
+                cmds = []
+                for child in self.children:
+                    if isinstance(child, Polyline):
+                        rapid = child.name == 'Rapid move'
+                        cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
+                    elif isinstance(child, Arc):
+                        cmds.extend(generate_arc_gcode(child, fmt))
+                    elif isinstance(child, Wire):
+                        cmds.extend(generate_wire_gcode(child, fmt))
+                return cmds
+
+            Polyline:
+                attr last_point = start_point if loop.index == 0 else toolpath[loop.index-1]['lift']
+                name = 'Rapid move'
+                line_style = 'dashed'
+                color = 'lime'
+                points = [
+                    last_point,
+                    loop.item['drop'],
+                    loop.item['enter']
+                ]
+            Conditional:
+                condition << loop.item['type'] == 'hole'
+                Wire:
+                    color = 'orange'
+                    Arc: arc_enter:
+                        # Work backwards from the start point
+                        direction = (1, 0, 0)
+                        clockwise = True
+                        color = 'lime'
+                        attr arc_start = arc_center.points[0]
+                        radius = arc_center.radius
+                        position = arc_start + (0, 0, radius)
+                        points = [
+                            arc_start + (0, radius, radius),
+                            arc_start
+                        ]
+                    Arc: arc_center:
+                        color = 'lime'
+                        clockwise = True
+                        attr arc_in_start = arc_in.points[0]
+                        radius = arc_in.radius/2
+                        position = arc_in_start + (radius, 0)
+                        points = [
+                            arc_in_start + (2*radius, 0),
+                            arc_in_start
+                        ]
+                    Arc: arc_in:
+                        color = 'lime'
+                        clockwise = True
+                        attr path_start = loop.item['start']
+                        radius = min(loop.item['radius']/2, tool.diameter/2)
+                        position = path_start + (0, -radius)
+                        points = [
+                            path_start - (radius, radius),
+                            path_start
+                        ]
+
+            Wire:
+                color = 'purple'
+                edges = [loop.item['path']]
+
+            Conditional:
+                condition << loop.item['type'] == 'hole'
+                Wire:
+                    color = 'teal'
+                    Arc: arc_out:
+                        clockwise = True
+                        attr path_end = loop.item['end']
+                        radius = min(loop.item['radius']/2, tool.diameter/2)
+                        position = path_end + (0, -radius)
+                        points = [
+                            path_end,
+                            path_end + (radius, -radius),
+                        ]
+
+                    Arc: arc_back_to_center:
+                        clockwise = True
+                        attr arc_in_start = arc_out.points[-1]
+                        radius = arc_out.radius/2
+                        position = arc_in_start + (-radius, 0)
+                        points = [
+                            arc_in_start,
+                            arc_in_start + (-2*radius, 0),
+                        ]
+                    Arc: arc_lift:
+                        direction = (1, 0, 0)
+                        attr arc_start = arc_back_to_center.points[-1]
+                        radius = arc_back_to_center.radius
+                        position = arc_start + (0, 0, radius)
+                        points = [
+                            arc_start,
+                            arc_start + (0, radius, radius),
+                        ]
+
+            Polyline:
+                name = 'Rapid move'
+                line_style = 'dashed'
+                color = 'lime'
+                func get_points():
+                    pts = [loop.item['exit'], loop.item['lift']]
+                    if loop.index + 1 == len(toolpath):
+                        pts.append(end_point)
+                    return pts
+                points = get_points()

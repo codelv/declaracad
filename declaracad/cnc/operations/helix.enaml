@@ -1,0 +1,120 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 10, 2021
+
+@author: jrm
+"""
+from math import sqrt
+from declaracad.occ.api import Arc, Part, Looper, Wire
+
+
+enamldef ArcHelix(Part): part:
+    """ Utility for creating a helix using arcs.
+
+    """
+    #: Radius of helix
+    attr radius
+
+    #: Height of helix
+    #: This can be ignored if the pitch and revolutions are given
+    attr height
+
+    #: Maximum pitch
+    #: If height is given calculate the pitch to reach the given height
+    attr max_pitch
+
+    # ------------------------------------------------------------------------
+    # Calculated Inputs
+    # ------------------------------------------------------------------------
+    #: Actual pitch used
+    attr pitch = calculate_pitch(self.height, self.max_pitch)
+
+    #: Revolutions
+    attr revolutions = int(self.height/self.pitch)
+
+    # ------------------------------------------------------------------------
+    # G Code Options
+    # ------------------------------------------------------------------------
+
+    #: Feedrate used for gcode
+    attr feedrate = 0
+
+    #: Clockwise helix
+    attr clockwise: bool = True
+
+    #: Use incremental arc commands
+    attr incremental: bool = True
+
+    attr gcode: str = generate_gcode()
+
+    func generate_gcode():
+        cmds = []
+        code = 'G2' if self.clockwise else 'G3'
+        pos = self.position
+        if self.feedrate:
+            cmds.append(f"F{self.feedrate}")
+        for arc in helix.children:
+            if not isinstance(arc, Arc):
+                continue
+            center = arc.position + pos
+            start = arc.points[0] + pos[0:2]
+            end = arc.points[-1] + pos[0:2] # Ingore Z
+            delta = center - start if incremental else center
+            i = format_value(delta.x)
+            j = format_value(delta.y)
+            x = format_value(end.x)
+            y = format_value(end.y)
+            z = format_value(center.z + pitch/4) # Arc is centered at pitch/2
+            cmd = f'{code} X{x} Y{y} Z{z} I{i} J{j}'
+            cmds.append(cmd)
+        return cmds
+
+    func calculate_pitch(height, max_pitch):
+        """ Determine actual pitch to reach the desired depth
+        using helix_pitch as the maximum value.
+        """
+        r = height/max_pitch
+        if r <= 1:
+            # Depth is less than one pitch so adjust
+            # pitch to just do one revolution
+            return height
+        n = int(r)
+        if n == r:
+            # Max pitch is a multiple of the depth
+            return max_pitch
+        # Solve n + 1 = height / new_pitch
+        if n & 1:
+            new_pitch = height/(n+1)
+        else:
+            new_pitch = height/(n+2) # Force even number of revolutions
+        assert new_pitch < max_pitch
+        return new_pitch
+
+    Wire: helix:
+        color = parent.color
+        name = 'ArcHelix'
+
+        # Desired radius in x y plane
+        attr a = radius
+
+        # Step down of quarter of a  revolution
+        attr b = pitch/4
+        attr arc_radius = sqrt(radius**2+b**2)
+        attr cw = 1 if clockwise else -1
+
+        Looper:
+            iterable = range(int(revolutions*2))
+            Arc:
+                #color = 'blue' if loop.index & 1 else 'red'
+                radius = arc_radius
+                attr dz = loop.index*pitch/2
+                attr rot = -cw if loop.index & 1 else cw
+                direction = (rot*-b, 0, a)
+                clockwise = part.clockwise
+                position = (0, 0, -b-dz)
+                points = [(rot * radius, 0), (rot * -radius, 0)]
