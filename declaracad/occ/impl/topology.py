@@ -17,12 +17,13 @@ from typing import Set as SetType
 from OCCT import GeomAbs
 from OCCT.BOPAlgo import BOPAlgo_Section
 from OCCT.Bnd import Bnd_Box
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeVertex
 from OCCT.BRepAdaptor import (
     BRepAdaptor_Curve, BRepAdaptor_CompCurve, BRepAdaptor_Surface
 )
 from OCCT.BRepBndLib import BRepBndLib
 from OCCT.BRepTools import BRepTools, BRepTools_WireExplorer
+from OCCT.BRepExtrema import BRepExtrema_DistShapeShape
 from OCCT.BRepGProp import BRepGProp
 from OCCT.GC import GC_MakeSegment
 from OCCT.GCPnts import (
@@ -43,7 +44,7 @@ from OCCT.GeomAbs import (
 )
 from OCCT.GProp import GProp_GProps
 from OCCT.gp import gp_Pnt, gp_Vec
-
+from OCCT.Extrema import Extrema_ExtFlag_MAX, Extrema_ExtFlag_MIN
 from OCCT.TopAbs import (
     TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE, TopAbs_WIRE,
     TopAbs_SHELL, TopAbs_SOLID, TopAbs_COMPOUND,
@@ -64,7 +65,7 @@ from OCCT.TopTools import (
 
 from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
 
-from ..shape import BBox, coerce_point, coerce_direction
+from ..shape import Point, BBox, coerce_point, coerce_direction
 
 T = TypeVar('T')
 
@@ -1067,6 +1068,20 @@ class Topology(Atom):
         """
         return BRepTools.UVBounds_(self.shape, 0, 0, 0, 0)
 
+    @property
+    def outer_wire(self) -> Optional[TopoDS_Wire]:
+        """ If the shape is a face, return the most outer wire, otherwise None.
+
+        Returns
+        -------
+        outer_wire: TopoDS_Wire
+            The outer wire of the face
+
+        """
+        if isinstance(self.shape, TopoDS_Face):
+            return BRepTools.OuterWire_(self.shape)
+        return None
+
     @classmethod
     def discretize(cls, wire, deflection, method='quasi-deflection'):
         """ Convert a wire to points.
@@ -1136,7 +1151,7 @@ class Topology(Atom):
         return props.Mass()  # Don't ask
 
     @property
-    def start_point(self):
+    def start_point(self) -> Point:
         """ Get the first / start point of a TopoDS_Wire or TopoDS_Edge
 
         """
@@ -1147,7 +1162,15 @@ class Topology(Atom):
         return self.get_value_at(curve, curve.FirstParameter())
 
     @property
-    def end_point(self):
+    def center_point(self) -> Point:
+        """ Return the center point of this shape as computed by the bounding
+        box.
+
+        """
+        return Topology.bbox(shapes=[self.shape]).center
+
+    @property
+    def end_point(self) -> Point:
         """ Get the end / last point of a TopoDS_Wire or TopoDS_Edge
 
         """
@@ -1188,3 +1211,40 @@ class Topology(Atom):
             results.append(Topology.cast_shape(it.Value()))
             it.Next()
         return results
+
+    def min_distance_between(
+        self,
+        other_shape: Union[Point, TopoDS_Shape]
+    ) -> float:
+        return self.distance_between(other_shape, 'min').Value()
+
+    def max_distance_between(
+        self,
+        other_shape: Union[Point, TopoDS_Shape]
+    ) -> float:
+        return self.distance_between(other_shape, 'max').Value()
+
+    def distance_between(
+        self,
+        other_shape: Union[Point, TopoDS_Shape],
+        min_max: str = 'min'
+    ) -> float:
+        """ Compute the min and max distance between this and the other shape.
+
+        Returns
+        -------
+        result: BRepExtrema_DistShapeShape
+            The object
+
+        """
+        if isinstance(other_shape, Point):
+            other_shape = BRepBuilderAPI_MakeVertex(other_shape.proxy).Vertex()
+        if min_max == 'min':
+            flag = Extrema_ExtFlag_MIN
+        else:
+            flag = Extrema_ExtFlag_MAX
+        r = BRepExtrema_DistShapeShape(self.shape, other_shape, flag)
+        r.SetMultiThread(True)
+        r.Perform()
+        return r
+

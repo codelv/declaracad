@@ -11,7 +11,7 @@ Created on Nov 9, 2021
 """
 import math
 import traceback
-from math import sin, cos
+from math import sin, cos, pi
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.interpolate import group_connected_faces
 from declaracad.cnc.optimize import optimize_points
@@ -24,6 +24,102 @@ from declaracad.occ.api import (
 )
 
 
+enamldef ArcEaseIn(Part):
+    attr enter_point
+    attr path_start
+    attr start_angle
+    attr arc_radius
+
+    Arc: arc_down:
+        # Work backwards from the start point
+        attr acos = cos(start_angle-pi/2)
+        attr asin = sin(start_angle-pi/2)
+        direction = (acos, asin, 0)
+        clockwise = True
+        name = 'Arc down'
+        color = 'orange'
+        attr arc_start = arc_center.points[0]
+        radius = arc_center.radius
+        position = (arc_start.x, arc_start.y, enter_point.z)
+        points = [
+            enter_point,
+            arc_start
+        ]
+    Arc: arc_center:
+        color = 'lime'
+        name = 'Arc approach'
+        clockwise = True
+        attr acos = cos(start_angle+3*pi/2)
+        attr asin = sin(start_angle+3*pi/2)
+        attr arc_enter_start = arc_enter.points[0]
+        radius = arc_enter.radius/2
+        position = arc_enter_start + (radius*acos, radius*asin)
+        points = [
+            arc_enter_start + (2*radius*acos, 2*radius*asin),
+            arc_enter_start
+        ]
+    Arc: arc_enter:
+        color = 'teal'
+        clockwise = True
+        name = 'Arc enter'
+
+        # Position is at reverse angle
+        attr acosr = cos(start_angle-pi)
+        attr asinr = sin(start_angle-pi)
+        attr acos = cos(start_angle+pi/2)
+        attr asin = sin(start_angle+pi/2)
+        radius = min(arc_radius/2, tool.diameter/2)
+        position = path_start + (radius*acosr, radius*asinr)
+        points = [
+            position + (radius*acos, radius*asin),
+            path_start
+        ]
+
+enamldef ArcEaseOut(Part):
+    attr start_angle
+    attr path_end
+    attr exit_point
+    attr arc_radius
+    Arc: arc_exit:
+        clockwise = True
+        radius = min(arc_radius/2, tool.diameter/2)
+        name = 'Arc exit'
+        # Position is at reverse angle
+        attr acosr = cos(start_angle-pi)
+        attr asinr = sin(start_angle-pi)
+        attr acos = cos(start_angle-pi/2)
+        attr asin = sin(start_angle-pi/2)
+        position = path_end + (radius*acosr, radius*asinr)
+        points = [
+            path_end,
+            position + (radius*acos, radius*asin),
+        ]
+
+    Arc: arc_center:
+        name = 'Arc approach'
+        clockwise = True
+        attr arc_exit_start = arc_exit.points[-1]
+        attr acos = cos(start_angle-3*pi/2)
+        attr asin = sin(start_angle-3*pi/2)
+        radius = arc_exit.radius/2
+        position = arc_exit_start + (radius*acos, radius*asin)
+        points = [
+            arc_exit_start,
+            arc_exit_start + (2*radius*acos, 2*radius*asin),
+        ]
+    Arc: arc_up:
+        name = 'Arc up'
+        attr acos = cos(start_angle-pi/2)
+        attr asin = sin(start_angle-pi/2)
+        direction = (acos, asin, 0)# if arc_start in
+        attr arc_start = arc_center.points[-1]
+        radius = arc_center.radius
+        position = (arc_start.x, arc_start.y, exit_point.z)
+        points = [
+            arc_start,
+            exit_point
+        ]
+
 
 enamldef ChamferOperation(Operation):
     #: List of edges to cut. Each item can be a Chamfer refernce,
@@ -35,9 +131,23 @@ enamldef ChamferOperation(Operation):
 
     attr clearance_height = start_point.z
 
-    # ----------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    # Speed and feed
+    # --------------------------------------------------------------------------
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    # --------------------------------------------------------------------------
     # Internal data
-    # ----------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #: Generated toolpath data
     attr toolpath = generate_toolpath()
 
@@ -94,7 +204,8 @@ enamldef ChamferOperation(Operation):
         wire = wires[0]
         return generate_offset(wire, 'path')
 
-    func generate_offset(wire, path_type, direction=1, drop=None, lift=None, radius=None, **kwargs):
+    func generate_offset(wire, path_type, direction=1, drop=None, lift=None,
+                         radius=None, center=None, **kwargs):
         if bit_offset:
             a = math.radians(tool.angle/2)
             offset = bit_offset*sin(a) * direction
@@ -111,8 +222,16 @@ enamldef ChamferOperation(Operation):
         end = curve_topo.end_point
         if path_type == 'hole':
             r = min(radius/2, tool.diameter/2)/2
-            drop = lift = Point(start.x, start.y-r, clearance_height)
-            enter = exit = Point(start.x, start.y-r, start.z+r)
+            v1 = start-center
+            v2 = Point(r, 0)
+            a = v2.angle2d(v1)
+            if v1.y < 0:
+                a = -a
+            #print(f"angle = {math.degrees(a)}")
+            kwargs['start_angle'] = a
+            x, y = start.x-r*cos(a), start.y-r*sin(a)
+            drop = lift = Point(x, y, clearance_height)
+            enter = exit = Point(x, y, start.z+r)
         else:
             exit = end
             enter = start
@@ -231,76 +350,26 @@ enamldef ChamferOperation(Operation):
             Conditional:
                 condition << loop.item['type'] == 'hole'
                 Wire:
-                    color = 'orange'
-                    Arc: arc_enter:
-                        # Work backwards from the start point
-                        direction = (1, 0, 0)
-                        clockwise = True
-                        color = 'lime'
-                        attr arc_start = arc_center.points[0]
-                        radius = arc_center.radius
-                        position = arc_start + (0, 0, radius)
-                        points = [
-                            arc_start + (0, radius, radius),
-                            arc_start
-                        ]
-                    Arc: arc_center:
-                        color = 'lime'
-                        clockwise = True
-                        attr arc_in_start = arc_in.points[0]
-                        radius = arc_in.radius/2
-                        position = arc_in_start + (radius, 0)
-                        points = [
-                            arc_in_start + (2*radius, 0),
-                            arc_in_start
-                        ]
-                    Arc: arc_in:
-                        color = 'lime'
-                        clockwise = True
-                        attr path_start = loop.item['start']
-                        radius = min(loop.item['radius']/2, tool.diameter/2)
-                        position = path_start + (0, -radius)
-                        points = [
-                            path_start - (radius, radius),
-                            path_start
-                        ]
+                    color = 'coral'
+                    ArcEaseIn:
+                        start_angle = loop.item['start_angle']
+                        path_start = loop.item['start']
+                        enter_point = loop.item['enter']
+                        arc_radius = loop.item['radius']
 
             Wire:
-                color = 'purple'
+                color = 'magenta'
                 edges = [loop.item['path']]
 
             Conditional:
                 condition << loop.item['type'] == 'hole'
                 Wire:
-                    color = 'teal'
-                    Arc: arc_out:
-                        clockwise = True
-                        attr path_end = loop.item['end']
-                        radius = min(loop.item['radius']/2, tool.diameter/2)
-                        position = path_end + (0, -radius)
-                        points = [
-                            path_end,
-                            path_end + (radius, -radius),
-                        ]
-
-                    Arc: arc_back_to_center:
-                        clockwise = True
-                        attr arc_in_start = arc_out.points[-1]
-                        radius = arc_out.radius/2
-                        position = arc_in_start + (-radius, 0)
-                        points = [
-                            arc_in_start,
-                            arc_in_start + (-2*radius, 0),
-                        ]
-                    Arc: arc_lift:
-                        direction = (1, 0, 0)
-                        attr arc_start = arc_back_to_center.points[-1]
-                        radius = arc_back_to_center.radius
-                        position = arc_start + (0, 0, radius)
-                        points = [
-                            arc_start,
-                            arc_start + (0, radius, radius),
-                        ]
+                    color = 'slateblue'
+                    ArcEaseOut:
+                        start_angle = loop.item['start_angle']
+                        path_end = loop.item['end']
+                        exit_point = loop.item['exit']
+                        arc_radius = loop.item['radius']
 
             Polyline:
                 name = 'Rapid move'

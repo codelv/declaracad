@@ -121,7 +121,6 @@ def generate_wire_gcode(wire: Wire, format_value) -> ListType[str]:
     return cmds
 
 
-
 class Operation(Part):
     """ A single machining operation.
 
@@ -142,6 +141,10 @@ class Operation(Part):
     #: Feedrate of the operation
     feedrate = d_(Float(strict=False))
 
+    #: Surface speed
+    #: Can be used to calculate default feedrate and spindle_speed
+    surface_speed = d_(Float(strict=False))
+
     #: Coolant control
     #: If mist or flood on, otherwise off
     coolant = d_(Enum('', 'mist', 'flood'))
@@ -151,6 +154,9 @@ class Operation(Part):
 
     #: Ending point of operation
     end_point = d_(Coerced(Point, coercer=coerce_point))
+
+    def _default_start_point(self):
+        return self.parent.start_point
 
     def _default_end_point(self):
         return self.start_point
@@ -171,8 +177,8 @@ class Operation(Part):
             cmds.append(f'S{s} {mcode}')
 
             if self.spindle_dwell:
-                pause = job.format_value(self.spindle_dwell)
-                cmds.append(f'P{pause}') # Wait for spindle to ramp up
+                # Wait for spindle to ramp up
+                cmds.append(f'P{self.spindle_dwell}')
 
         if self.coolant == 'mist':
             cmds.append('M7')

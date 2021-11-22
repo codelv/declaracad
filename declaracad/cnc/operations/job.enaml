@@ -9,6 +9,7 @@ Created on Nov 9, 2021
 
 @author: jrm
 """
+import os
 from datetime import datetime
 from declaracad.cnc.operation import Operation
 from declaracad.occ.api import Include, Part, Point, Timer, Topology
@@ -40,6 +41,9 @@ enamldef Job(Part):
     #: Generate gcode file when all shapes are constructed
     constructed :: self.generate_job()
 
+    #: Default starting point
+    attr start_point = Point(0, 0, 50)
+
     activated ::
         if self.disabled:
             # Propagate disabled to all operations
@@ -60,9 +64,23 @@ enamldef Job(Part):
                 return
             tools = {}
             active_tools = {}
-            with open(self.filename, 'w') as f:
+
+            enabled_operations = [
+                c for c in self.children
+                if isinstance(c, Operation) and not c.disabled
+            ]
+            n = len(enabled_operations)
+            if n == 1:
+                base, ext = os.path.splitext(self.filename)
+                op = enabled_operations[0].name
+                filename = f'{base}-{op}{ext}'
+            else:
+                filename = self.filename
+            print(f"Generating job with {n} operation(s)...")
+
+            with open(filename, 'w') as f:
                 f.write("(Generated with DeclaraCAD)\n")
-                f.write(f"(File: {self.filename})\n")
+                f.write(f"(File: {filename})\n")
                 f.write(f"(Date: {datetime.now().strftime('%c')})\n")
                 # Absolute mode, incremental arc mode, feed per minute, activate xy plane
                 f.write("G90 G91.1 G94 G17\n")
@@ -70,6 +88,7 @@ enamldef Job(Part):
                     f.write("G20\n")
                 else:
                     f.write("G21\n")
+
 
                 for c in self.children:
                     if isinstance(c, Operation):
@@ -93,7 +112,7 @@ enamldef Job(Part):
 
             self.tools = tools
             self.active_tools = active_tools
-            print(f"Wrote job to {self.filename}")
+            print(f"Wrote job to {filename}")
         except Exception as e:
             print(f"Error generating job: {e}")
 

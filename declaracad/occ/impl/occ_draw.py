@@ -163,16 +163,10 @@ class OccEdge(OccShape, ProxyEdge):
         ais_shape = super()._default_ais_shape()
         if d.line_style != 'solid':
             type_of_line = LINE_TYPES[d.line_style]
-            attrs = ais_shape.Attributes()
             if d.as_wire:
-                aspect = attrs.WireAspect()
-                aspect.SetTypeOfLine(type_of_line)
-                attrs.SetWireAspect(aspect)
+                ais_shape.Attributes().WireAspect().SetTypeOfLine(type_of_line)
             else:
-                aspect = attrs.LineAspect()
-                aspect.SetTypeOfLine(type_of_line)
-                attrs.SetLineAspect(aspect)
-            ais_shape.SetAttributes(aspect)
+                ais_shape.Attributes().LineAspect().SetTypeOfLine(type_of_line)
         if d.line_width > 0:
             ais_shape.SetWidth(d.line_width)
         return ais_shape
@@ -254,49 +248,53 @@ class OccArc(OccLine, ProxyArc):
     def create_shape(self):
         d = self.declaration
         n = len(d.points)
-        if d.radius:
-            points = [p.proxy for p in d.points]  # Do not trasnform these
-            #if d.radius2:
-            #    g = gp_Elips(coerce_axis(d.axis), d.radius, d.radius2)
-            #    factory = GC_MakeArcOfEllipse
-            #else:
-            v = d.direction.proxy
-            # TODO: This technially isn't correct because the z axis could
-            # already be flipped
-            if d.clockwise:
-                v = v.Reversed()
-            axis = gp_Ax2(d.position.proxy, v)
-            c = gp_Circ(axis, d.radius)
+        try:
+            if d.radius:
+                points = [p.proxy for p in d.points]  # Do not trasnform these
+                #if d.radius2:
+                #    g = gp_Elips(coerce_axis(d.axis), d.radius, d.radius2)
+                #    factory = GC_MakeArcOfEllipse
+                #else:
+                v = d.direction.proxy
+                # TODO: This technially isn't correct because the z axis could
+                # already be flipped
+                if d.clockwise:
+                    v = v.Reversed()
+                axis = gp_Ax2(d.position.proxy, v)
+                c = gp_Circ(axis, d.radius)
 
-            if n == 2:
-                start, end = points
-                if start.IsEqual(end, d.tolerance):
-                    # Full circle
-                    center = d.position.proxy
-                    start_direction = gp_Dir(gp_Vec(center, start))
-                    start_angle = axis.XDirection().Angle(start_direction)
-                    angle = start_angle + 2 * pi
-                    arc = GC_MakeArcOfCircle(c, start, angle, True).Value()
+                if n == 2:
+                    start, end = points
+                    if start.IsEqual(end, d.tolerance):
+                        # Full circle
+                        center = d.position.proxy
+                        start_direction = gp_Dir(gp_Vec(center, start))
+                        start_angle = axis.XDirection().Angle(start_direction)
+                        angle = start_angle + 2 * pi
+                        arc = GC_MakeArcOfCircle(c, start, angle, True).Value()
+                    else:
+                        arc = GC_MakeArcOfCircle(c, start, end, True).Value()
+                elif n == 1:
+                    arc = GC_MakeArcOfCircle(c, points[0], d.alpha1, True).Value()
                 else:
-                    arc = GC_MakeArcOfCircle(c, start, end, True).Value()
-            elif n == 1:
-                arc = GC_MakeArcOfCircle(c, points[0], d.alpha1, True).Value()
+                    arc = GC_MakeArcOfCircle(c, d.alpha1, d.alpha2, True).Value()
+            #elif n == 2:
+            #    # TODO: This doesn't work
+            #    points = self.get_transformed_points()
+            #    arc = GC_MakeArcOfEllipse(points[0], points[1]).Value()
+            elif n == 3:
+                points = self.get_transformed_points()
+                arc = GC_MakeArcOfCircle(points[0], points[1], points[2]).Value()
             else:
-                arc = GC_MakeArcOfCircle(c, d.alpha1, d.alpha2, True).Value()
-        #elif n == 2:
-        #    # TODO: This doesn't work
-        #    points = self.get_transformed_points()
-        #    arc = GC_MakeArcOfEllipse(points[0], points[1]).Value()
-        elif n == 3:
-            points = self.get_transformed_points()
-            arc = GC_MakeArcOfCircle(points[0], points[1], points[2]).Value()
-        else:
-            raise ValueError("Could not create an Arc with the given children "
-                             "and parameters. Must be given one of:\n\t"
-                             "- two or three points\n\t"
-                             "- radius and 2 points\n\t"
-                             "- radius, alpha1 and one point\n\t"
-                             "- radius, alpha1 and alpha2")
+                raise ValueError("Could not create an Arc with the given children "
+                                "and parameters. Must be given one of:\n\t"
+                                "- two or three points\n\t"
+                                "- radius and 2 points\n\t"
+                                "- radius, alpha1 and one point\n\t"
+                                "- radius, alpha1 and alpha2")
+        except RuntimeError as e:
+            raise RuntimeError(f"Could not create arc {d}: {e}")
+
         if d.reverse:
             arc.Reverse()
         self.curve = arc
@@ -598,11 +596,7 @@ class OccWire(OccDependentShape, ProxyWire):
         ais_shape = super()._default_ais_shape()
         if d.line_style != 'solid':
             type_of_line = LINE_TYPES[d.line_style]
-            attrs = ais_shape.Attributes()
-            aspect = attrs.WireAspect()
-            aspect.SetTypeOfLine(type_of_line)
-            attrs.SetWireAspect(aspect)
-            ais_shape.SetAttributes(attrs)
+            ais_shape.Attributes().WireAspect().SetTypeOfLine(type_of_line)
         if d.line_width > 0:
             ais_shape.SetWidth(d.line_width)
         return ais_shape

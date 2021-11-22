@@ -162,7 +162,7 @@ class OccIntersection(OccBooleanOperation, ProxyIntersection):
         section.Perform()
         if section.HasErrors():
             raise ValueError("Could not intersect shape %s" % d)
-        self.shape = section.Shape()
+        self.shape = Topology.cast_shape(section.Shape())
 
 
 class OccSplit(OccBooleanOperation, ProxySplit):
@@ -287,7 +287,10 @@ class OccChamfer(OccOperation, ProxyChamfer):
             else:
                 face = item
 
-            if edge is None:
+            if isinstance(face, TopoDS_Edge) and d1 == d2:
+                edge = face
+                chamfer.Add(d1, edge)
+            elif edge is None:
                 for edge in child.topology.edges_from_face(face):
                     chamfer.Add(d1, d2, edge, face)
             else:

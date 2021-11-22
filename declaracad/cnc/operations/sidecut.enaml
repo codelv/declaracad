@@ -1,0 +1,257 @@
+"""
+Copyright (c) 2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Nov 22, 2021
+
+@author: jrm
+"""
+import math
+import traceback
+from math import sin, cos, pi, ceil
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.operation import (
+    Operation, generate_polyline_gcode, generate_arc_gcode, generate_wire_gcode
+)
+
+from declaracad.occ.api import (
+    Arc, Common, Cut, DisplayArrow, Face, Intersection, HalfSpace, Offset,
+    Part, Point, Polyline, Topology, TopoShape, Transform, Wire
+)
+
+enamldef SideCutOperation(Operation): operation:
+    #: Shape to avoid
+    #: This is typically the part model
+    attr avoid
+
+    #: Face to mill down to
+    attr faces: list
+
+    #: Clearance added to the avoidiance region
+    #: A positive number will leave extra stock between any walls
+    #: A negative number will make take more stock away from the walls
+    attr radial_clearance = 0
+
+    #: Clearance added to the bottom of the hole
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom
+    attr bottom_clearance = 0
+
+    #: Step amount
+    attr step_over = tool.diameter * 0.10
+
+    # --------------------------------------------------------------------------
+    # Speed and feed
+    # --------------------------------------------------------------------------
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    # --------------------------------------------------------------------------
+    # Internal data
+    # --------------------------------------------------------------------------
+    #: This point is updated as the path is generated to track the last point
+    attr last_point = start_point
+
+    func get_offset_distance(shape, face):
+        topo = Topology(shape=face)
+        c = shape.topology.center_point
+        vertices = [Point(v) for v in topo.vertices]
+        vertices.sort(key=lambda v: v.distance(c))
+        furthest_point = vertices[-1]
+        d = shape.topology.min_distance_between(furthest_point)
+        return d
+
+    generate_gcode => ():
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+            # Change tool
+            cmds.append(f"(Side cut {' '+ name if name else ''})")
+
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed or not self.feedrate:
+                raise ValueError(
+                    "Surface speed must be set for a side cut."
+                    "Use surface_speed=v or manually set feed and speed"
+                )
+
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+
+            job = self.parent
+            fmt = job.format_value
+            for child in self.children:
+                if hasattr(child, 'generate_gcode'):
+                    cmds.extend(child.generate_gcode(fmt))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            p = end_point
+            cmds.append(
+                f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
+            )
+
+            cmds.append('') # Ensure Add newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+
+
+    Looper: looper:
+        iterable = [] if disabled else faces
+        Part: cut_path:
+            attr topo = Topology(shape=loop.item)
+            attr outer_wire = topo.outer_wire
+            attr lowest_point = topo.vertices[0]
+            attr last_path: bool = loop.index + 1 == len(faces)
+            attr offset_distance = get_offset_distance(avoidance_area, loop.item)
+
+            attr num_wires = int(offset_distance/step_over)
+
+            func generate_gcode(fmt):
+                cmds = []
+                for child in self.children:
+                    if isinstance(child, Polyline):
+                        rapid = child.name == 'Rapid move'
+                        cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
+                    elif isinstance(child, Arc):
+                        cmds.extend(generate_arc_gcode(child, fmt))
+                    elif isinstance(child, Wire):
+                        cmds.extend(generate_wire_gcode(child, fmt))
+                return cmds
+
+            Offset: avoidance_area:
+                display = False
+                offset = tool.diameter/2 - radial_clearance
+                Face:
+                    Wire:
+                        Intersection:
+                            Cut:
+                                TopoShape:
+                                    shape = avoid.render()
+                                HalfSpace: below_face:
+                                    position = lowest_point
+                                    side = position - (0, 0, 1)
+                            Transform:
+                                shape = below_face
+            Looper:
+                iterable = reversed(range(1, num_wires + 1))
+                Conditional:
+                    condition << loop.index == 0
+                    DisplayArrow:
+                        color = 'lime'
+                        attr drop_point = arc_in.points[0]
+                        color = 'red'
+                        cone_size = (0.6, 1.5)
+                        tube_size = (0.3, 3)
+                        description = 'Drop'
+                        direction = (0, 0, -1)
+                        position = (drop_point.x, drop_point.y, last_point.z)
+                Polyline:
+                    color = 'lime'
+                    name = 'Rapid move'
+                    line_style = 'dashed'
+                    func get_points():
+                        pts = [last_point, arc_in.points[0]]
+                        if loop.index == 0:
+                            next_point = pts[-1]
+                            drop_point = (next_point.x, next_point.y, last_point.z)
+                            pts.insert(1, drop_point)
+                        return pts
+                    points = get_points()
+                Arc: arc_in:
+                    radius = tool.diameter/2
+                    color = 'orange'
+                    as_wire = True
+                    attr a = cut_line.angle
+                    position = cut_line.start_point + (radius*cos(a), radius*sin(a))
+                    points = [
+                        cut_line.start_point + (2*radius*cos(a), 2*radius*sin(a)),
+                        cut_line.start_point
+                    ]
+
+                Wire: cut_line:
+                    color = 'blue'
+                    attr start_point = cut_line.topology.start_point
+                    attr end_point = cut_line.topology.end_point
+                    attr angle = get_angle()
+                    func get_angle():
+                        a = (end_point-start_point).angle_with_ref((1, 0), (0, 0, -1))
+                        return a + pi/2
+
+                    Transform:
+                        position = (0, 0, bottom_clearance)
+                        Common:
+                            Face:
+                                TopoShape:
+                                    shape = outer_wire
+                            Offset:
+                                shape = avoidance_area
+                                offset = loop.item * step_over
+                Arc: arc_out:
+                    attr a = cut_line.angle
+                    radius = arc_in.radius
+                    color = arc_in.color
+                    as_wire = True
+                    position = cut_line.end_point + (radius*cos(a), radius*sin(a))
+                    points = [
+                        cut_line.end_point,
+                        cut_line.end_point + (2*radius*cos(a), 2*radius*sin(a)),
+                    ]
+                    # Update last point
+                    activated :: operation.last_point = points[-1]
+                Conditional:
+                    condition = loop.item == 1
+                    #Arc: arc_lift:
+                    #    attr p = arc_out.points[-1]
+                    #
+                    #    points = [
+                    #        p,
+                    #
+                    #    ]
+
+                    Polyline: lift_path:
+                        attr p = arc_out.points[-1]
+                        color = 'lime'
+                        name = 'Rapid move'
+                        line_style = 'dashed'
+                        func get_points():
+                            pts = [p, (p.x, p.y, start_point.z)]
+                            if last_path:
+                                pts.append(operation.end_point)
+                            return pts
+
+                        points = get_points()
+                        # Update last point
+                        activated :: operation.last_point = points[-1]
+
+                    DisplayArrow: drop_arrow:
+                        color = 'green'
+                        cone_size = (0.6, 1.5)
+                        tube_size = (0.3, 3)
+                        description = 'Lift'
+                        direction = (0, 0, 1)
+                        position = lift_path.points[-2] if last_path else lift_path.points[-1]

@@ -10,7 +10,7 @@ Created on Nov 9, 2021
 @author: jrm
 """
 import traceback
-from math import ceil
+from math import ceil, pi
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import Operation
 from declaracad.cnc.optimize import optimize_points
@@ -32,7 +32,7 @@ enamldef DrillingCycle(Operation): operation:
     # Operation options
     # ------------------------------------------------------------------------
     #: Retract value R
-    attr retract = 1.0
+    attr retract = 10.0
 
     #: Depth of hole Z
     attr depth = 0.0
@@ -43,11 +43,25 @@ enamldef DrillingCycle(Operation): operation:
     #: Peck amount Q
     #: If non-zero it will use a G73 or G83.
     #: Otherwise it will use a G81 or G82 (based on dwell)
-    attr peck = 1.0 # TODO: Compute based on tool radius?
+    attr peck = tool.diameter
 
     #: Retract to R after each peck.
     #: If True this uses a G83, otherwise it uses a G73
-    attr full_retract: bool = False
+    attr full_retract: bool = depth > 3 * tool.diameter
+
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Slowdown even more for deep holes
+    attr depth_factor = 1/3 if depth >  3 * tool.diameter else 1
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor * depth_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
 
     # ------------------------------------------------------------------------
     # Display options
@@ -78,13 +92,11 @@ enamldef DrillingCycle(Operation): operation:
 
     func get_lift_point():
         last_point = self.optimized_positions[-1]
-        z = coerce_point(start_point).z
-        return Point(last_point.x, last_point.y, z)
+        return Point(last_point.x, last_point.y, start_point.z)
 
     func get_drop_point():
         first_point = coerce_point(self.optimized_positions[0])
-        z = coerce_point(start_point).z
-        return Point(first_point.x, first_point.y, z)
+        return Point(first_point.x, first_point.y, start_point.z)
 
     func generate_path():
         """ Generate the path to display including the drilling cycle options.
@@ -132,10 +144,10 @@ enamldef DrillingCycle(Operation): operation:
             if self.tool:
                 cmds.extend(self.tool.generate_gcode())
 
-            if not self.spindle_speed:
+            if not self.spindle_speed or not self.feedrate:
                 raise ValueError(
-                    "Spindle speed must be set for a drilling cycle."
-                    "Use spindle_speed=value."
+                    "Surface speed must be set for a drilling cycle."
+                    "Use surface_speed=v or manually set feed and speed"
                 )
 
             job = self.parent
@@ -143,7 +155,7 @@ enamldef DrillingCycle(Operation): operation:
             p = self.path[0]
             d = fmt(depth)
             r = fmt(retract)
-            cmds.append("(Drilling cycle)")
+            cmds.append(f"(Drilling cycle{' ' + self.name if self.name else ''})")
 
             # Move to top of first hole
             for p in self.path[0:2]:
@@ -176,8 +188,6 @@ enamldef DrillingCycle(Operation): operation:
                     cmd.append(f'Q{fmt(peck)}')
                 if dwell:
                     cmd.append(f'P{dwell}')
-                if feedrate:
-                    cmd.append(f'F{feedrate}')
                 cmds.append(' '.join(cmd))
 
             if self.coolant:

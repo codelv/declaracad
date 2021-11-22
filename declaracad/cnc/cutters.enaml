@@ -20,8 +20,8 @@ class Tool(Part):
     #: Tool number
     number = d_(Int(1))
 
-    #: Feed per tooth
-    feed_per_tooth = d_(Float(strict=False))
+    #: Feed per rev
+    feed_per_rev = d_(Float(strict=False))
 
     @d_func
     def generate_gcode(self) -> ListType[str]:
@@ -48,6 +48,10 @@ enamldef TwistDrill(Tool): drill:
 
     #: Used to calculate feed and speed
     attr flutes: int = 2
+
+    #: Should be 1-3% of drill diameter
+    #: Adjust this as needed based on the job and drill material
+    feed_per_rev = self.diameter/25.4 * 0.02
 
     description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
                   f"twist drill {self.diameter} dia by {self.length} len"
@@ -80,6 +84,13 @@ enamldef EndMill(Tool): drill:
     #: Used to calculate feed and speed
     attr flutes: int = 4
 
+    #: Feed per tooth
+    #: Adjust this as needed based on the job and cutter material
+    attr feed_per_tooth = 0.004
+
+    #: Feed per rev is feed per tooth * number of flutes
+    feed_per_rev = feed_per_tooth * flutes
+
     description = f"T{self.number} - {self.flutes} flute " \
                   f"end mill {self.diameter} dia x {self.cut} cut"
     Cylinder:
@@ -99,8 +110,15 @@ enamldef ChamferMill(Tool): drill:
     #: Tip angle
     attr angle = 90
 
-    #: Can be used to calculate feed and speed
-    attr flutes: int = 2
+    #: Used to calculate feed and speed
+    attr flutes: int = 4
+
+    #: Feed per tooth
+    #: Adjust this as needed based on the job and cutter material
+    attr feed_per_tooth = 0.004
+
+    #: Feed per rev is feed per tooth * number of flutes
+    feed_per_rev = feed_per_tooth * flutes
 
     description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
                   f"chamfer mill {self.diameter} dia by {self.length} len"
@@ -130,6 +148,13 @@ enamldef FaceMill(Tool): cutter:
 
     #: Number of inserts / cutting teeth
     attr inserts: int = 6
+
+    #: Feed per tooth
+    #: Adjust this as needed based on the job and cutter material
+    attr feed_per_tooth = 0.004
+
+    #: Feed per rev is feed per tooth * number of inserts
+    feed_per_rev = feed_per_tooth * inserts
 
     description = f"T{self.number} - {self.angle}° {self.inserts} cutter " \
                   f"face mill {self.diameter} dia"

@@ -187,6 +187,28 @@ class Point(Atom):
         p = self.__coerce__(other)
         return self.proxy.Distance(p.proxy)
 
+    def angle(self, other):
+        """ Returns the angle value between 0 and pi in radians
+        """
+        v = gp_Vec(self.__coerce__(other).proxy.XYZ())
+        return gp_Vec(self.proxy.XYZ()).Angle(v)
+
+    def angle_with_ref(self, other, ref):
+        """ Computes the angle, in radians, between this vector and vector ref.
+        The result is a value between -pi and pi.
+        """
+        ref = gp_Vec(self.__coerce__(ref).proxy.XYZ())
+        v = gp_Vec(self.__coerce__(other).proxy.XYZ())
+        return gp_Vec(self.proxy.XYZ()).AngleWithRef(v, ref)
+
+    def angle2d(self, other):
+        """ Angle between the x and y components
+        Returns the angle value between 0 and pi in radians
+        """
+        p = self.__coerce__(other)
+        v = gp_Vec(p.x, p.y, 0)
+        return gp_Vec(self.x, self.y, 0).Angle(v)
+
     def magnitude(self):
         return self.proxy.Distance(gp_Pnt())
 
@@ -254,10 +276,6 @@ class Direction(Point):
         v = gp_Dir()
         v.Rotate(gp.OX_(), math.atan2(y, x))
         return Direction(v.X(), v.Y(), v.Z())
-
-    def angle(self, other):
-        p = self.__coerce__(other)
-        return self.proxy.Angle(p.proxy)
 
     def is_parallel(self, other, tol=None):
         p = self.__coerce__(other)

@@ -10,6 +10,7 @@ Created on Nov 11, 2021
 @author: jrm
 """
 import traceback
+from math import pi
 from atom.api import Atom, Float, Instance
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import (
@@ -64,11 +65,33 @@ enamldef CircularPocket(Operation): operation:
     attr helix_pitch = tool.diameter * 0.06
 
     #: Spiral step over
-    attr step_over = tool.diameter * 0.06
+    #: TODO: For deep cuts use 0.02 for smaller cuts 0.06 is fine
+    attr step_over = tool.diameter * 0.02
 
     #: If multiple passes are needed
     #: WARNING: Currently unused
     attr step_down = 1
+
+    # ------------------------------------------------------------------------
+    # Speed and feed
+    # ------------------------------------------------------------------------
+
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    #: Plunge feedrate is slower
+    attr plunge_spindle_speed = spindle_speed * 0.75
+
+    #: Plunge feedrate is slower
+    attr plunge_feedrate = feedrate * 0.25
 
     # ------------------------------------------------------------------------
     # Internal variables
@@ -148,10 +171,10 @@ enamldef CircularPocket(Operation): operation:
             if self.tool:
                 cmds.extend(self.tool.generate_gcode())
 
-            if not self.spindle_speed:
+            if not self.spindle_speed or not self.feedrate:
                 raise ValueError(
-                    "Spindle speed must be set for a cylindrical pocket."
-                    "Use spindle_speed=value."
+                    "Surface speed must be set for a pocket."
+                    "Use surface_speed=v or manually set feed and speed"
                 )
 
             # Turn on spindle and coolant from base operation
@@ -278,7 +301,8 @@ enamldef CircularPocket(Operation): operation:
                     max_pitch = helix_pitch
                     height = depth
                     position = top_point
-                    feedrate = operation.feedrate
+                    spindle_speed = plunge_spindle_speed
+                    feedrate = plunge_feedrate
 
                 ArcSpiral: spiral:
                     name = 'Spiral'
@@ -287,6 +311,7 @@ enamldef CircularPocket(Operation): operation:
                     start_radius = helix_radius*3/4
                     end_radius = outside_radius
                     max_step_over = operation.step_over
+                    spindle_speed = operation.spindle_speed
                     feedrate = operation.feedrate
 
                 Arc: arc_out:

@@ -45,6 +45,9 @@ enamldef ArcSpiral(Part): part:
     # G Code Options
     # ------------------------------------------------------------------------
 
+    attr spindle_speed = 0
+    attr spindle_pause = 1
+
     #: Feedrate used for gcode
     attr feedrate = 0
 
@@ -54,10 +57,22 @@ enamldef ArcSpiral(Part): part:
 
     attr gcode: str = generate_gcode()
 
+    description = "".join((
+        f"\n  Start radius: {round(start_radius, 3)}\n"
+        f"  End radius: {round(end_radius, 3)}\n",
+        f"  Step over: {round(step_over, 3)}\n",
+        f"  Spindle Speed: {spindle_speed}\n" if spindle_speed else "",
+        f"  Feed: {feedrate}\n" if feedrate else "",
+    ))
+
     func generate_gcode():
         cmds = []
         code = 'G2' if self.clockwise else 'G3'
         pos = self.position
+        if self.spindle_speed:
+            cmds.append(f"S{self.spindle_speed}")
+        if self.spindle_pause:
+            cmds.append(f"P{self.spindle_pause}")
         if self.feedrate:
             cmds.append(f"F{self.feedrate}")
         for arc in spiral.children:
