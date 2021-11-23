@@ -77,6 +77,7 @@ enamldef Job(Part):
             else:
                 filename = self.filename
             print(f"Generating job with {n} operation(s)...")
+            print(f"Writing {os.path.abspath(filename)}")
 
             with open(filename, 'w') as f:
                 f.write("(Generated with DeclaraCAD)\n")
