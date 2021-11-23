@@ -42,6 +42,7 @@ from .mesh import Mesh
 from .impl.topology import Topology
 from .loaders import LoadedPart
 from .display import DisplayLine, DisplayArrow, DisplayText, DisplayPlane
+from .solver import Solver
 
 Loft = ThruSections
 Sweep = Pipe
