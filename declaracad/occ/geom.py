@@ -252,6 +252,9 @@ class Direction(Point):
     def __repr__(self):
         return "<Direction: x=%s y=%s z=%s>" % self[:]
 
+    def __neg__(self):
+        return self.reversed()
+
     def reversed(self):
         """ Return a reversed copy """
         v = self.proxy.Reversed()
