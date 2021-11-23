@@ -309,7 +309,8 @@ class ViewerProcess(ProcessLineReceiver):
         log.warning("renderer | stdout closed")
 
     def terminate(self):
-        self.protocol.transport.close()
+        if self.protocol:
+            self.protocol.transport.close()
         self.terminated = True
         super().terminate()
 
