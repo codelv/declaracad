@@ -1,0 +1,25 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Polyline: up:
+        points = [
+            (0, 0),
+            (1, 5),
+        ]
+    Arc:
+        color = 'orange'
+        points = [
+            *up.topology.end_tangent,
+           down.topology.start_point
+        ]
+    Polyline: down:
+        color = 'blue'
+        points = [
+            (3, 4),
+            (3, 0),
+            
+        ]

@@ -54,8 +54,8 @@ from OCCT.TColStd import (
     TColStd_Array1OfReal, TColStd_HArray1OfReal, TColStd_HArray1OfBoolean
 )
 
-from ..shape import coerce_point, coerce_direction
-from ..draw import (
+from declaracad.occ.shape import Direction, coerce_point, coerce_direction
+from declaracad.occ.draw import (
     ProxyPlane, ProxyVertex, ProxyLine, ProxyCircle, ProxyEllipse,
     ProxyHyperbola, ProxyParabola, ProxyEdge, ProxyWire, ProxySegment,
     ProxyArc, ProxyPolyline, ProxyBSpline, ProxyBezier, ProxyTrimmedCurve,
@@ -249,7 +249,9 @@ class OccArc(OccLine, ProxyArc):
         d = self.declaration
         n = len(d.points)
         try:
-            if d.radius:
+            if d.solve:
+               arc = self.create_arc_from_solver(**d.solve)
+            elif d.radius:
                 points = [p.proxy for p in d.points]  # Do not trasnform these
                 #if d.radius2:
                 #    g = gp_Elips(coerce_axis(d.axis), d.radius, d.radius2)
@@ -283,7 +285,11 @@ class OccArc(OccLine, ProxyArc):
             #    points = self.get_transformed_points()
             #    arc = GC_MakeArcOfEllipse(points[0], points[1]).Value()
             elif n == 3:
-                points = self.get_transformed_points()
+                if isinstance(d.points[1], Direction):
+                    points = self.get_transformed_points([d.points[0], d.points[2]])
+                    points.insert(1, gp_Vec(d.points[1].proxy))
+                else:
+                    points = self.get_transformed_points()
                 arc = GC_MakeArcOfCircle(points[0], points[1], points[2]).Value()
             else:
                 raise ValueError("Could not create an Arc with the given children "
@@ -299,6 +305,13 @@ class OccArc(OccLine, ProxyArc):
             arc.Reverse()
         self.curve = arc
         self.shape = self.make_edge(arc)
+
+    def create_arc_from_solver(self, **params):
+        """ Create an arc by solving the given parameters.
+
+        """
+        d = self.declaration
+        raise NotImplementedError("TODO")
 
     def set_radius(self, r):
         self.create_shape()

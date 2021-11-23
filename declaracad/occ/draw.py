@@ -12,7 +12,7 @@ Created on Sept 27, 2016
 from math import sin, cos, tan, pi
 from atom.api import (
     Bool, List, Float, Typed, ForwardTyped, Str, Enum, Property, Int,
-    Coerced, Instance, Range, set_default, observe
+    Dict, Coerced, Instance, Range, set_default, observe
 )
 from enaml.core.declarative import d_
 
@@ -55,6 +55,9 @@ class ProxyEdge(ProxyShape):
         raise NotImplementedError
 
     def get_value_at(self, t, derivative=0):
+        raise NotImplementedError
+
+    def set_solve(self, params):
         raise NotImplementedError
 
 
@@ -275,6 +278,10 @@ class Edge(Shape):
     #: If True, convert the edge into a wire
     as_wire = d_(Bool())
 
+    #: Solver parameters
+    #: When given these will be use to solve for inputs to the shape
+    solve = d_(Dict())
+
     def get_value_at(self, t, derivative=0):
         """ Get the value of the curve derivative at t. If the edge has no
         internal parametric curve representation this will throw an error.
@@ -384,6 +391,13 @@ class Arc(Line):
                 (1, 0, 0),
                 (2, 5, 0),
                 (3, 0, 0)
+            )
+
+    Wire:
+        Arc:
+            solve = (
+                curve.topology.start_tangent,
+                end_point,
             )
 
     """
