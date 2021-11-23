@@ -14,10 +14,14 @@ from typing import Any, Iterable, Optional, TypeVar, Union
 from typing import Dict as DictType
 from typing import List as ListType
 from typing import Set as SetType
+from typing import Tuple as TupleType
 from OCCT import GeomAbs
 from OCCT.BOPAlgo import BOPAlgo_Section
 from OCCT.Bnd import Bnd_Box
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeVertex
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeVertex,
+    BRepBuilderAPI_MakeFace
+)
 from OCCT.BRepAdaptor import (
     BRepAdaptor_Curve, BRepAdaptor_CompCurve, BRepAdaptor_Surface
 )
@@ -65,7 +69,7 @@ from OCCT.TopTools import (
 
 from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
 
-from ..shape import Point, BBox, coerce_point, coerce_direction
+from ..shape import Direction, Point, BBox, coerce_point, coerce_direction
 
 T = TypeVar('T')
 
@@ -473,7 +477,10 @@ class Topology(Atom):
         return self._map_shapes_and_ancestors(
             TopAbs_VERTEX, TopAbs_EDGE, vertex)
 
-    def find_common_vertices(self, shape: TopoDS_Shape) -> SetType[TopoDS_Vertex]:
+    def find_common_vertices(
+        self,
+        shape: TopoDS_Shape
+    ) -> SetType[TopoDS_Vertex]:
         """ Find edges common to this shape and the given shape
 
         Parameters
@@ -660,7 +667,7 @@ class Topology(Atom):
         return self.extract_curves(None)
 
     # -------------------------------------------------------------------------
-    # Utilities
+    # Shape introspection
     # -------------------------------------------------------------------------
     @classmethod
     def cast_shape(cls, topods_shape: TopoDS_Shape) -> TopoDS_Shape:
@@ -926,6 +933,23 @@ class Topology(Atom):
         return shape.Orientation() == TopAbs_REVERSED
 
     @classmethod
+    def is_clockwise(cls, shape: TopoDS_Shape) -> bool:
+        """ Check if the face or wire's orientation is clockwise relative
+        to the postive Z axis.
+
+        Returns
+        -------
+        result: bool
+            Whether the shape's orentation is reversed.
+
+        """
+        if isinstance(shape, TopoDS_Wire):
+            face = BRepBuilderAPI_MakeFace(shape).Face()
+        else:
+            face = shape
+        return Topology(shape=face).area > 0
+
+    @classmethod
     def is_shape_in_list(cls, shape, shapes):
         """ Check if an shape is in a list of shapes using the IsSame method.
 
@@ -973,6 +997,9 @@ class Topology(Atom):
                 return True
         return False
 
+    # -------------------------------------------------------------------------
+    # Parametrization
+    # -------------------------------------------------------------------------
     @classmethod
     def get_value_at(cls, curve, t, derivative=0):
         return cls.curve_value_at(curve, t, derivative)
@@ -1068,20 +1095,6 @@ class Topology(Atom):
         """
         return BRepTools.UVBounds_(self.shape, 0, 0, 0, 0)
 
-    @property
-    def outer_wire(self) -> Optional[TopoDS_Wire]:
-        """ If the shape is a face, return the most outer wire, otherwise None.
-
-        Returns
-        -------
-        outer_wire: TopoDS_Wire
-            The outer wire of the face
-
-        """
-        if isinstance(self.shape, TopoDS_Face):
-            return BRepTools.OuterWire_(self.shape)
-        return None
-
     @classmethod
     def discretize(cls, wire, deflection, method='quasi-deflection'):
         """ Convert a wire to points.
@@ -1107,9 +1120,11 @@ class Topology(Atom):
         fn = DISCRETIZE_METHODS[method.lower().replace('uniform', '')]
         a = fn(c, deflection, start, end)
         if method.endswith('abscissa'):
-            param = lambda i: c.Value(a.Parameter(i))
+            def param(i):
+                return c.Value(a.Parameter(i))
         else:
-            param = lambda i: a.Value(i)
+            def param(i):
+                return a.Value(i)
         return [coerce_point(param(i)) for i in range(1, a.NbPoints()+1)]
 
     @classmethod
@@ -1145,12 +1160,6 @@ class Topology(Atom):
     # Edge/Wire Properties
     # -------------------------------------------------------------------------
     @property
-    def length(self):
-        props = GProp_GProps()
-        BRepGProp.LinearProperties_(self.shape, props, True)
-        return props.Mass()  # Don't ask
-
-    @property
     def start_point(self) -> Point:
         """ Get the first / start point of a TopoDS_Wire or TopoDS_Edge
 
@@ -1160,14 +1169,6 @@ class Topology(Atom):
             wire = BRepBuilderAPI_MakeWire(wire).Wire()
         curve = BRepAdaptor_CompCurve(wire)
         return self.get_value_at(curve, curve.FirstParameter())
-
-    @property
-    def center_point(self) -> Point:
-        """ Return the center point of this shape as computed by the bounding
-        box.
-
-        """
-        return Topology.bbox(shapes=[self.shape]).center
 
     @property
     def end_point(self) -> Point:
@@ -1180,17 +1181,105 @@ class Topology(Atom):
         curve = BRepAdaptor_CompCurve(wire)
         return self.get_value_at(curve, curve.LastParameter())
 
+    @property
+    def start_tangent(self) -> TupleType[Point, Direction]:
+        """ Get the start tangent point and direction
+
+        """
+        wire = self.shape
+        if isinstance(wire, TopoDS_Edge):
+            wire = BRepBuilderAPI_MakeWire(wire).Wire()
+        curve = BRepAdaptor_CompCurve(wire)
+        return self.get_value_at(curve, curve.FirstParameter(), 1)
+
+    @property
+    def end_tangent(self) -> TupleType[Point, Direction]:
+        """ Get the end tangent point and direction
+
+        """
+        wire = self.shape
+        if isinstance(wire, TopoDS_Edge):
+            wire = BRepBuilderAPI_MakeWire(wire).Wire()
+        curve = BRepAdaptor_CompCurve(wire)
+        return self.get_value_at(curve, curve.LastParameter(), 1)
+
+    @property
+    def outer_wire(self) -> Optional[TopoDS_Wire]:
+        """ If the shape is a face, return the most outer wire, otherwise None.
+
+        Returns
+        -------
+        outer_wire: TopoDS_Wire
+            The outer wire of the face
+
+        """
+        if isinstance(self.shape, TopoDS_Face):
+            return BRepTools.OuterWire_(self.shape)
+        return None
+
     # -------------------------------------------------------------------------
     # Shape Properties
     # -------------------------------------------------------------------------
+
+    @property
+    def length(self):
+        props = GProp_GProps()
+        BRepGProp.LinearProperties_(self.shape, props, True)
+        return props.Mass()  # Don't ask
+
     mass = length
+
+    @property
+    def center_point(self) -> Point:
+        """ Return the center point of this shape as computed by the bounding
+        box.
+
+        """
+        return Topology.bbox(shapes=[self.shape]).center
+
+    @property
+    def area(self) -> float:
+        """ Compute the area of the surface. It may be negative indicating
+        the direction is reversed.
+
+        Returns
+        -------
+        area: float
+            The area of the surface.
+
+        """
+        props = GProp_GProps()
+        BRepGProp.SurfaceProperties_(self.shape, props, True)
+        return props.Mass()
+
+    @property
+    def volume(self) -> float:
+        """ Volume of a solid.
+
+        Properties
+        ----------
+
+        """
+        props = GProp_GProps()
+        BRepGProp.VolumeProperties_(self.shape, props, True)
+        return props.Mass()
 
     # -------------------------------------------------------------------------
     # Intersection
     # -------------------------------------------------------------------------
-    def intersection(self, shape):
+    def intersection(self, shape: TopoDS_Shape) -> Optional[ListType[TopoDS_Shape]]:
         """ Returns the resulting intersection of this and the given shape
-        or None.
+        or None if an error or there are no intersections.
+
+        Parameters
+        ----------
+        shape: TopoDS_Shape
+            The shape to intersect with
+
+        Returns
+        -------
+        results: Optional[List[TopoDS_Shape]]
+            The list of intersections.
 
         """
         op = BOPAlgo_Section()
@@ -1212,6 +1301,9 @@ class Topology(Atom):
             it.Next()
         return results
 
+    # -------------------------------------------------------------------------
+    # Distances
+    # -------------------------------------------------------------------------
     def min_distance_between(
         self,
         other_shape: Union[Point, TopoDS_Shape]
