@@ -113,5 +113,7 @@ ENV/
 *.kate-swp
 *.db
 
-parts/
+/parts/
+/*.tap
+/*.nc
 
