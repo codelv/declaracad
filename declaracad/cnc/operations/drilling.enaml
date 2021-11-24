@@ -43,7 +43,7 @@ enamldef DrillingCycle(Operation): operation:
     #: Peck amount Q
     #: If non-zero it will use a G73 or G83.
     #: Otherwise it will use a G81 or G82 (based on dwell)
-    attr peck = tool.diameter
+    attr peck = tool.diameter/2 if depth > 3 * tool.diameter else tool.diameter
 
     #: Retract to R after each peck.
     #: If True this uses a G83, otherwise it uses a G73
@@ -102,6 +102,12 @@ enamldef DrillingCycle(Operation): operation:
         """ Generate the path to display including the drilling cycle options.
 
         """
+
+        if depth > tool.length:
+            raise ValueError(
+                f"Tool {tool.description} is not long enough to cut a "
+                f"{depth} hole.")
+
         path = [coerce_point(start_point), drop_point]
         steps = int(ceil(abs((retract-depth) / peck))) if peck else 0
         for p in self.optimized_positions:
