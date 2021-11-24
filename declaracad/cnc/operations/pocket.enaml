@@ -16,6 +16,7 @@ from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import (
     Operation, generate_arc_gcode, generate_polyline_gcode
 )
+from declaracad.cnc.optimize import optimize_points
 from declaracad.occ.api import (
     Arc, DisplayArrow, Point, Polyline, Part, Topology, Vertex
 )
@@ -98,7 +99,22 @@ enamldef CircularPocket(Operation): operation:
     # ------------------------------------------------------------------------
 
     #: Internal pocket data
-    attr data = [validate_data(get_pocket_data(p)) for p in pockets]
+    attr data = optimize_order([validate_data(get_pocket_data(p)) for p in pockets])
+
+    attr last_point = start_point
+
+    func optimize_order(data):
+        """ Optimize the cutting order if multiple pockets are given.
+
+        """
+        if len(data) <= 1:
+            return data
+        drop_points = [Point(d.center.x, d.center.y, start_point.z) for d in data]
+        reordered_data = []
+        for pt in optimize_points(drop_points, start_point):
+            i = drop_points.index(pt)
+            reordered_data.append(data[i])
+        return reordered_data
 
     func validate_data(pocket_data: CircularPocketData):
         """ Make sure the tool can be used
@@ -213,9 +229,8 @@ enamldef CircularPocket(Operation): operation:
             iterable << operation.data
             Part:
                 attr outside_radius = loop.item.radius - tool.diameter/2
-                attr start_point = coerce_point(operation.start_point)
                 attr center = loop.item.center
-                attr drop_point = Point(center.x, center.y, start_point.z)
+                attr drop_point = Point(center.x, center.y, last_point.z)
                 attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
                 attr top_point = loop.item.top
                 attr bottom_point = loop.item.bottom
@@ -255,7 +270,7 @@ enamldef CircularPocket(Operation): operation:
                 Polyline: move_to_point:
                     line_style = 'dashed'
                     color = 'lime'
-                    points = [start_point, drop_point, arc_start]
+                    points = [last_point, drop_point, arc_start]
 
                 Arc: arc_in:
                     # Arc into center
@@ -342,7 +357,14 @@ enamldef CircularPocket(Operation): operation:
                     line_style = 'dashed'
                     color = 'lime'
                     attr p = arc_up.points[-1]
-                    points = [p, lift_point, end_point]
+                    func get_points():
+                        pts = [p, lift_point]
+                        operation.last_point = lift_point
+                        if loop.index + 1 == len(operation.data):
+                            pts.append(end_point)
+                        return pts
+
+                    points = get_points()
 
                 DisplayArrow: lift_arrow:
                     color = 'green'
