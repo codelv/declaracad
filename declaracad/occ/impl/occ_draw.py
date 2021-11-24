@@ -22,7 +22,6 @@ from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeVertex, BRepBuilderAPI_MakeWire
 )
 from OCCT.BRepLib import BRepLib
-from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeOffset
 from OCCT.Font import (
     Font_FontMgr, Font_BRepFont, Font_BRepTextBuilder, Font_FontAspect,
     Font_FA_Regular
@@ -210,8 +209,13 @@ class OccLine(OccEdge, ProxyLine):
 
     def create_shape(self):
         d = self.declaration
-        if len(d.points) == 2:
+        n = len(d.points)
+        if n == 2:
             curve = GC_MakeLine(*self.get_transformed_points()).Value()
+        elif n == 1:
+            lin = gp_Lin(d.position.proxy, gp_Vec(d.direction.proxy))
+            offset_point = self.get_transformed_points()
+            curve = GC_MakeLine(lin, offset_point).Value()
         else:
             axis = coerce_axis(d.axis)
             curve = GC_MakeLine(axis.Axis()).Value()
