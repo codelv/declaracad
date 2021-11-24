@@ -102,11 +102,12 @@ enamldef DrillingCycle(Operation): operation:
         """ Generate the path to display including the drilling cycle options.
 
         """
-
-        if depth > tool.length:
+        required_length = retract - depth
+        if required_length > tool.length:
             raise ValueError(
                 f"Tool {tool.description} is not long enough to cut a "
-                f"{depth} hole.")
+                f"{round(required_length, 3)} hole. Adjust the tool "
+                f"`length` or use a tool.")
 
         path = [coerce_point(start_point), drop_point]
         steps = int(ceil(abs((retract-depth) / peck))) if peck else 0
