@@ -62,6 +62,11 @@ def occ_cylinder_factory():
     return OccCylinder
 
 
+def occ_draft_angle_factory():
+    from .occ_algo import OccDraftAngle
+    return OccDraftAngle
+
+
 def occ_ellipse_factory():
     from .occ_draw import OccEllipse
     return OccEllipse
@@ -331,6 +336,7 @@ OCC_FACTORIES = {
     'Sew': occ_sew_factory,
     'Glue': occ_glue_factory,
 
+    'DraftAngle': occ_draft_angle_factory,
     'OffsetShape': occ_offset_shape_factory,
     'ThickSolid': occ_thick_solid_factory,
     'Pipe': occ_pipe_factory,

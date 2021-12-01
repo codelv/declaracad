@@ -1,0 +1,21 @@
+# Created in DeclaraCAD
+from math import radians
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    DraftAngle:
+        #disabled = True
+        angle = radians(-10)
+        faces = self.children[0].topology.faces[0:4]
+        ThickSolid:
+            offset = -1
+            faces = [box.topology.faces[5]]
+            Box: box:
+                position = (-dx/2, -dy/2)
+                dx = 10
+                dy = 20
+                dz = 5
+        

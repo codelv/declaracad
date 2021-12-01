@@ -18,7 +18,7 @@ from .algo import (
     ThickSolid,
     Pipe,
     LinearForm, RevolutionForm,
-    ThruSections,
+    ThruSections, DraftAngle,
     Transform, Translate, Rotate, Scale, Mirror
 )
 from .dimension import (

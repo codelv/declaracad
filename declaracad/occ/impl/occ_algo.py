@@ -30,7 +30,7 @@ from OCCT.BRepFilletAPI import (
 from OCCT.BRepOffsetAPI import (
     BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape,
     BRepOffsetAPI_MakeThickSolid, BRepOffsetAPI_MakePipe,
-    BRepOffsetAPI_ThruSections
+    BRepOffsetAPI_ThruSections, BRepOffsetAPI_DraftAngle
 )
 from OCCT.BRepOffset import (
     BRepOffset_Skin, BRepOffset_Pipe,
@@ -51,7 +51,7 @@ from OCCT.GeomFill import (
     GeomFill_IsDiscreteTrihedron
 )
 from OCCT.gp import (
-    gp_Trsf, gp_Vec, gp_Pnt, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt2d
+    gp_Trsf, gp_Vec, gp_Pnt, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt2d, gp_Pln
 )
 from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
 from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
@@ -66,10 +66,11 @@ from OCCT.TopoDS import (
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import (
-    ProxyOperation, ProxyBooleanOperation, ProxyCommon, ProxyCut, ProxyFuse,
-    ProxyFillet, ProxyChamfer, ProxyOffset, ProxyOffsetShape, ProxyThickSolid,
-    ProxyPipe, ProxyThruSections, ProxySplit, ProxyIntersection, ProxySew,
-    ProxyGlue, ProxyTransform, Translate, Rotate, Scale, Mirror, Shape
+    ProxyOperation, ProxyBooleanOperation, ProxyCommon, ProxyCut,
+    ProxyDraftAngle, ProxyFuse, ProxyFillet, ProxyChamfer, ProxyOffset,
+    ProxyOffsetShape, ProxyThickSolid, ProxyPipe, ProxyThruSections,
+    ProxySplit, ProxyIntersection, ProxySew, ProxyGlue, ProxyTransform,
+    Translate, Rotate, Scale, Mirror, Shape,
 )
 
 from .occ_shape import (
@@ -219,7 +220,12 @@ class OccFillet(OccOperation, ProxyFillet):
         operations = d.operations if d.operations else child.topology.edges
         for item in operations:
             if not isinstance(item, (list, tuple)):
-                fillet.Add(d.radius, item)
+                r = d.radius
+                if isinstance(item, TopoDS_Face):
+                    for edge in Topology(shape=item).edges_from_face(item):
+                        fillet.Add(r, edge)
+                else:
+                    fillet.Add(r, item)
                 continue
 
             # If an array of points is create a changing radius fillet
@@ -608,4 +614,45 @@ class OccSew(OccOperation, ProxySew):
 class OccGlue(OccOperation, ProxyGlue):
     def update_shape(self, change=None):
         d = self.declaration
-        raise NotImplementedError # TODO: This
+        raise NotImplementedError  # TODO: This
+
+
+class OccDraftAngle(OccOperation, ProxyDraftAngle):
+    def update_shape(self, change=None):
+        d = self.declaration
+        child = self.get_first_child()
+
+        # Ignore this operation
+        if d.disabled:
+            self.shape = child.shape
+            return
+
+        draft = BRepOffsetAPI_DraftAngle(child.shape)
+
+        if d.operations:
+            for op in d.operations:
+                pln_pos, pln_dir = op.neutral_plane
+                neutral_plane = gp_Pln(pln_pos.proxy, pln_dir.proxy)
+                draft.Add(op.face, op.direction.proxy, op.angle, neutral_plane)
+        else:
+            a = d.angle
+            neutral_plane = gp_Pln(d.position.proxy, d.direction.proxy)
+            for f in d.faces:
+                draft.Add(f, d.direction.proxy, a, neutral_plane)
+
+        draft.Build()
+        if not draft.IsDone():
+            raise RuntimeError(f"Could not build draft {d}")
+        self.shape = draft.Shape()
+
+    def set_disabled(self, disabled):
+        self.update_shape()
+
+    def set_angle(self, angle):
+        self.update_shape()
+
+    def set_faces(self, faces):
+        self.update_shape()
+
+    def set_operations(self, operations):
+        self.update_shape()

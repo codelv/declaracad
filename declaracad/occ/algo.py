@@ -11,10 +11,11 @@ Created on Sep 28, 2016
 """
 from atom.api import (
     Atom, Instance, ForwardInstance, Typed, ForwardTyped, List, Enum,
-    Float, Bool, Coerced, observe
+    Tuple, Float, Bool, Coerced, Value, observe
 )
 from enaml.core.declarative import d_
 
+from .geom import Point, Direction, coerce_direction
 from .shape import ProxyShape, Shape, TopoDS_Shape
 
 
@@ -160,6 +161,20 @@ class ProxyAbstractRibSlot(ProxyOperation):
         raise NotImplementedError
 
     def set_fuse(self, fuse):
+        raise NotImplementedError
+
+
+class ProxyDraftAngle(ProxyOperation):
+    def set_disabled(self, disabled):
+        raise NotImplementedError
+
+    def set_angle(self, angle):
+        raise NotImplementedError
+
+    def set_faces(self, faces):
+        raise NotImplementedError
+
+    def set_operations(self, operations):
         raise NotImplementedError
 
 
@@ -663,6 +678,44 @@ class RevolutionForm(AbstractRibSlot):
 
     #: Sliding
     sliding = d_(Bool(False)).tag(view=True)
+
+
+class DraftAngleParameters(Atom):
+    face = Instance((Shape, TopoDS_Shape))
+
+    #: Angle relative to direction
+    angle = Float(strict=False)
+
+    #: Direction of the draft angle
+    direction = Coerced(
+        Direction,
+        factory=lambda: Direction(0, 0, 1),
+        coercer=coerce_direction)
+
+    #: The point and direction of the neural plane
+    neutral_plane = Tuple(Point, Direction)
+
+
+class DraftAngle(Operation):
+    #: Reference to the implementation control
+    proxy = Typed(ProxyDraftAngle)
+
+    #: If True, don't apply the operation (for debugging)
+    disabled = d_(Bool())
+
+    #: Draft Angle
+    angle = d_(Float(strict=False))
+
+    #: List of faces to angle. Ignored if operations is given
+    faces = d_(List())
+
+    #: List of operations to perform. If this value is given all the
+    #: other parameters are ignored.
+    operations = d_(List())
+
+    @observe('shape', 'faces', 'angle', 'operations', 'disabled')
+    def _update_proxy(self, change):
+        super()._update_proxy(change)
 
 
 class ThruSections(Operation):
