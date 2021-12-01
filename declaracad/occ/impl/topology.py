@@ -36,7 +36,7 @@ from OCCT.GCPnts import (
 )
 from OCCT.Geom import (
     Geom_Ellipse, Geom_Circle, Geom_Parabola, Geom_Hyperbola, Geom_Line,
-    Geom_TrimmedCurve, Geom_Curve, Geom_Surface
+    Geom_TrimmedCurve, Geom_Curve, Geom_Surface, Geom_OffsetCurve
 )
 from OCCT.GeomAbs import (
     GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
@@ -1042,6 +1042,33 @@ class Topology(Atom):
             return (coerce_point(p), coerce_direction(v1),
                     coerce_direction(v2), coerce_direction(v3))
         raise ValueError("Invalid derivative")
+
+    @classmethod
+    def offset_curve_value_at(
+        cls,
+        curve: BRepAdaptor_Curve,
+        offset: float,
+        t: float,
+        direction: Direction
+    ) -> Point:
+        """ Compute the offset value
+
+        """
+        offset_curve = Topology.offset_curve(curve, offset, direction)
+        return Topology.curve_value_at(offset_curve, t)
+
+    @classmethod
+    def offset_curve(
+        cls,
+        curve: BRepAdaptor_Curve,
+        offset: float,
+        direction: Direction
+    ) -> Geom_OffsetCurve:
+        """ Create an offset curve for the given curve
+
+
+        """
+        return Geom_OffsetCurve(curve, offset, direction.proxy)
 
     @classmethod
     def surface_value_at(cls, surface, u, v, derivative=0):
