@@ -22,6 +22,7 @@ from declaracad.occ.api import (
     Part, Point, Polyline, Topology, TopoShape, Transform, Wire
 )
 
+
 enamldef SideCutOperation(Operation): operation:
     #: Shape to avoid
     #: This is typically the part model
@@ -30,7 +31,11 @@ enamldef SideCutOperation(Operation): operation:
     #: Face to mill down to
     attr faces: list
 
-    #: Clearance added to the avoidiance region
+    #: Amount
+    attr step_over = tool.diameter * 0.10
+
+
+    #: Clearance added to the offset.
     #: A positive number will leave extra stock between any walls
     #: A negative number will make take more stock away from the walls
     attr radial_clearance = 0
@@ -40,8 +45,8 @@ enamldef SideCutOperation(Operation): operation:
     #: A negative number will remove extra stock from the bottom
     attr bottom_clearance = 0
 
-    #: Step amount
-    attr step_over = tool.diameter * 0.10
+    #: Use climb milling
+    attr climb: bool = True
 
     # --------------------------------------------------------------------------
     # Speed and feed
@@ -70,7 +75,7 @@ enamldef SideCutOperation(Operation): operation:
         vertices.sort(key=lambda v: v.distance(c))
         furthest_point = vertices[-1]
         d = shape.topology.min_distance_between(furthest_point)
-        return d
+        return d + tool.diameter/2
 
     generate_gcode => ():
         cmds = []
@@ -124,12 +129,21 @@ enamldef SideCutOperation(Operation): operation:
         iterable = [] if disabled else faces
         Part: cut_path:
             attr topo = Topology(shape=loop.item)
-            attr outer_wire = topo.outer_wire
+            attr outer_wire = topo.outer_wire#get_outer_wire(loop.item)
             attr lowest_point = topo.vertices[0]
             attr last_path: bool = loop.index + 1 == len(faces)
+            attr last_angle = None
             attr offset_distance = get_offset_distance(avoidance_area, loop.item)
 
             attr num_wires = int(offset_distance/step_over)
+            attr initial_direction = None
+
+            # activated :: print("New path")
+
+            func get_outer_wire(face):
+                offset = Offset(shape=topo.outer_wire, offset=tool.diameter/2 + abs(radial_clearance))
+                offset.render()
+                return offset.topology.outer_wire
 
             func generate_gcode(fmt):
                 cmds = []
@@ -144,8 +158,9 @@ enamldef SideCutOperation(Operation): operation:
                 return cmds
 
             Offset: avoidance_area:
+                color = 'purple'
                 display = False
-                offset = tool.diameter/2 - radial_clearance
+                offset = tool.diameter/2 + radial_clearance
                 Face:
                     Wire:
                         Intersection:
@@ -158,7 +173,8 @@ enamldef SideCutOperation(Operation): operation:
                             Transform:
                                 shape = below_face
             Looper:
-                iterable = reversed(range(1, num_wires + 1))
+                iterable = reversed(range(0, num_wires + 1))
+
                 Conditional:
                     condition << loop.index == 0
                     DisplayArrow:
@@ -183,48 +199,88 @@ enamldef SideCutOperation(Operation): operation:
                         return pts
                     points = get_points()
                 Arc: arc_in:
-                    radius = tool.diameter/2
+                    radius = tool.diameter/4
+                    name = 'In arc'
                     color = 'orange'
                     as_wire = True
+                    #clockwise = True
                     attr a = cut_line.angle
+                    #solve = {
+                    #    'start_point':
+                    #    'end_tangent': cut_line.topology.start_tangent
+                    #]
                     position = cut_line.start_point + (radius*cos(a), radius*sin(a))
                     points = [
                         cut_line.start_point + (2*radius*cos(a), 2*radius*sin(a)),
+                        #cut_line.topology.start_tangent[-1],
                         cut_line.start_point
                     ]
 
                 Wire: cut_line:
-                    color = 'blue'
+                    color = 'blue'#'red' if offset_wire.cw else 'blue'
                     attr start_point = cut_line.topology.start_point
                     attr end_point = cut_line.topology.end_point
                     attr angle = get_angle()
-                    func get_angle():
-                        a = (end_point-start_point).angle_with_ref((1, 0), (0, 0, -1))
-                        return a + pi/2
+                    reverse = operation.climb
 
-                    Transform:
-                        position = (0, 0, bottom_clearance)
-                        Common:
-                            Face:
-                                TopoShape:
-                                    shape = outer_wire
-                            Offset:
-                                shape = avoidance_area
-                                offset = loop.item * step_over
+                    func get_angle():
+                        if start_point == end_point:
+                            return 0
+                        a = (end_point-start_point).angle_with_ref((1, 0), (0, 0, -1))
+                        a += pi/2
+                        return a
+
+
+                    Wire: offset_wire:
+                        # Always force the wire to be the same as the first
+                        #attr rev = Topology.is_reversed(offset_face.topology.wires[0])
+                        attr cw = Topology.is_clockwise(offset_face.topology.wires[0])
+                        func get_reverse():
+                            if cut_path.initial_direction is None:
+                                cut_path.initial_direction = cw
+                                return False
+                            return cw != cut_path.initial_direction
+
+                        reverse = get_reverse()
+                        Transform:
+                            position = (0, 0, bottom_clearance)
+                            Common: offset_face:
+                                Face:
+                                    Offset:
+                                        offset = tool.diameter/2
+                                        shape = outer_wire
+                                Offset:
+                                    shape = avoidance_area
+                                    offset = loop.item * step_over
+
                 Arc: arc_out:
                     attr a = cut_line.angle
                     radius = arc_in.radius
-                    color = arc_in.color
+                    #attr r = 2*step_over#tool.diameter/4#arc_in.radius
+                    name = 'Out arc'
+                    color = 'teal'
                     as_wire = True
+                    #clockwise = True
                     position = cut_line.end_point + (radius*cos(a), radius*sin(a))
+                    #func get_offset_point():
+                    #    offset = Offset(shape=cut_line, offset=r)
+                    #    offset.render()
+                    #    curve = offset.topology.curves[0]['curve']
+                    #    return Topology.curve_value_at(curve, 0)
+                    #    # Topology.offset_curve_value_at(Topology.cast_curve(cut_line.topology.wires[0]), r, 0, Direction(1, 0, 0))
+                    #
+                    #attr offset_point = get_offset_point()
                     points = [
                         cut_line.end_point,
+                        #*cut_line.topology.end_tangent,
+                        #offset_point
                         cut_line.end_point + (2*radius*cos(a), 2*radius*sin(a)),
                     ]
                     # Update last point
                     activated :: operation.last_point = points[-1]
+
                 Conditional:
-                    condition = loop.item == 1
+                    condition = loop.item == 0
                     #Arc: arc_lift:
                     #    attr p = arc_out.points[-1]
                     #
@@ -235,7 +291,7 @@ enamldef SideCutOperation(Operation): operation:
 
                     Polyline: lift_path:
                         attr p = arc_out.points[-1]
-                        color = 'lime'
+                        color = 'purple'
                         name = 'Rapid move'
                         line_style = 'dashed'
                         func get_points():
@@ -255,3 +311,4 @@ enamldef SideCutOperation(Operation): operation:
                         description = 'Lift'
                         direction = (0, 0, 1)
                         position = lift_path.points[-2] if last_path else lift_path.points[-1]
+
