@@ -22,10 +22,11 @@ from OCCT.BRepAlgoAPI import (
 )
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_Transform, BRepBuilderAPI_MakeWire, BRepBuilderAPI_Sewing,
-    BRepBuilderAPI_MakeSolid
+    BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeFace
 )
 from OCCT.BRepFilletAPI import (
-    BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeChamfer
+    BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeChamfer,
+    BRepFilletAPI_MakeFillet2d
 )
 from OCCT.BRepOffsetAPI import (
     BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape,
@@ -37,6 +38,7 @@ from OCCT.BRepOffset import (
     BRepOffset_RectoVerso
 )
 from OCCT.BRepLib import BRepLib_FuseEdges
+from OCCT.BRepTools import BRepTools
 from OCCT.ChFi3d import (
     ChFi3d_Rational, ChFi3d_QuasiAngular, ChFi3d_Polynomial
 )
@@ -216,6 +218,35 @@ class OccFillet(OccOperation, ProxyFillet):
             self.shape = child.shape
             return
 
+        s = child.shape
+        if isinstance(s, (TopoDS_Wire, TopoDS_Face)):
+            return self.fillet_2d(child)
+        return self.fillet_3d(child)
+
+    def fillet_2d(self, child):
+        d = self.declaration
+        shape = child.shape
+        was_wire = isinstance(shape, TopoDS_Wire)
+        if was_wire:
+            shape = BRepBuilderAPI_MakeFace(shape).Face()
+        fillet = BRepFilletAPI_MakeFillet2d(shape)
+        operations = d.operations if d.operations else child.topology.vertices
+        for item in operations:
+            if isinstance(item, (tuple, list)) and len(item) == 2:
+                r, v = item
+                fillet.AddFillet(v, r)
+            elif isinstance(item, TopoDS_Vertex):
+                fillet.AddFillet(item, d.radius)
+            else:
+                log.warning(f"Invalid fillet {item}")
+
+        shape = Topology.cast_shape(fillet.Shape())
+        if was_wire:
+            shape = BRepTools.OuterWire_(shape)
+        self.shape = shape
+
+    def fillet_3d(self, child):
+        d = self.declaration
         fillet = BRepFilletAPI_MakeFillet(child.shape)
         operations = d.operations if d.operations else child.topology.edges
         for item in operations:

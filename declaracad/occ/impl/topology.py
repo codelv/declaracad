@@ -245,19 +245,22 @@ class Topology(Atom):
 
         if not self.ignore_orientation:
             return seq
+        return Topology.unique_shapes(seq)
 
-        # else filter out those entities that share the same TShape
-        # but do *not* share the same orientation
-        filter_orientation_seq = []
-        for i in seq:
-            present = False
-            for j in filter_orientation_seq:
-                if i.IsSame(j):
-                    present = True
-                    break
-            if present is False:
-                filter_orientation_seq.append(i)
-        return filter_orientation_seq
+    @classmethod
+    def unique_shapes(cls, shapes: Iterable[TopoDS_Shape]) -> ListType[TopoDS_Shape]:
+        """ Filter out those entities that share the same TShape
+        but do *not* share the same orientation. For example if two
+        overlapping edges with different directions exist only one will be
+        in the result.
+
+        """
+        used_shapes = []
+        for shape in shapes:
+            if any(shape.IsSame(s) for s in used_shapes):
+                continue
+            used_shapes.append(shape)
+        return used_shapes
 
     # -------------------------------------------------------------------------
     # Shape Topology
@@ -267,10 +270,11 @@ class Topology(Atom):
     def _default_faces(self):
         return self._loop_topo(TopAbs_FACE)
 
+    # Note: This filters out duplicates
     vertices = List()
 
     def _default_vertices(self):
-        return self._loop_topo(TopAbs_VERTEX)
+        return Topology.unique_shapes(self._loop_topo(TopAbs_VERTEX))
 
     #: Get a list of points from vertices
     points = List()

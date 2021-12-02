@@ -1,0 +1,14 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Fillet:
+        
+        operations = [
+            (1, rect.topology.vertices[0]),
+            (4, rect.topology.vertices[2]),
+        ]
+        Face:
+            Rectangle: rect:
+                width = 10
+                height = 10
