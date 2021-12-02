@@ -112,6 +112,11 @@ def occ_line_factory():
     return OccLine
 
 
+def occ_middle_path_factory():
+    from .occ_draw import OccMiddlePath
+    return OccMiddlePath
+
+
 def occ_offset_factory():
     from .occ_algo import OccOffset
     return OccOffset
@@ -351,6 +356,7 @@ OCC_FACTORIES = {
     'Ellipse': occ_ellipse_factory,
     'Hyperbola': occ_hyperbola_factory,
     'Line': occ_line_factory,
+    'MiddlePath': occ_middle_path_factory,
     'Offset': occ_offset_factory,
     'Parabola': occ_parabola_factory,
     'Plane': occ_plane_factory,
@@ -362,6 +368,7 @@ OCC_FACTORIES = {
     'TrimmedCurve': occ_trimmed_curve_factory,
     'Vertex': occ_vertex_factory,
     'Wire': occ_wire_factory,
+
 
 
     #: Dimensions

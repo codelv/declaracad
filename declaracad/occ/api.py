@@ -30,7 +30,7 @@ from .draw import (
     Parabola, Polyline, Polygon,
     BSpline, Bezier,
     Text, TrimmedCurve, Svg,
-    Wire
+    Wire, MiddlePath
 )
 
 from .shape import (

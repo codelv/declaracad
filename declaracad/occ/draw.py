@@ -19,7 +19,7 @@ from enaml.core.declarative import d_
 from .shape import ProxyShape, Shape
 from .geom import Point as Pt, Direction, coerce_point, coerce_direction
 
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Wire, TopoDS_Face
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Wire, TopoDS_Face, TopoDS_Shape
 
 
 class ProxyPlane(ProxyShape):
@@ -219,6 +219,14 @@ class ProxySvg(ProxyWire):
         raise NotImplementedError
 
     def set_mirror(self, mirror):
+        raise NotImplementedError
+
+
+class ProxyMiddlePath(ProxyWire):
+    #: A reference to the shape declaration.
+    declaration = ForwardTyped(lambda: MiddlePath)
+
+    def set_shapes(self, shapes):
         raise NotImplementedError
 
 
@@ -945,3 +953,17 @@ class Svg(Wire):
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
+
+class MiddlePath(Wire):
+    """ Create a middle path
+
+    """
+    proxy = Typed(ProxyMiddlePath)
+
+    #: Must be either 2 or 3 elements.
+    #: The last two elements represent the start and ending faces or wires.
+    shapes = d_(List((Shape, TopoDS_Shape)))
+
+    @observe('shapes')
+    def _update_proxy(self, change):
+        super()._update_proxy(change)

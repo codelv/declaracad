@@ -1,0 +1,27 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Loft: s:
+        transparency = 0.8
+        color = 'blue'
+        solid = True
+        Circle:
+            radius = 2
+        Ellipse:
+            position = (0, -1, 4)
+            major_radius = 3
+            minor_radius = 2        
+        Circle:
+            position = (0, 2, 10)
+            radius = 3
+
+    MiddlePath:
+        shapes = [s, s.topology.faces[1], s.topology.faces[2]]
+
+
+
