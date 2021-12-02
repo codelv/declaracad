@@ -680,23 +680,22 @@ class RevolutionForm(AbstractRibSlot):
     sliding = d_(Bool(False)).tag(view=True)
 
 
-class DraftAngleParameters(Atom):
-    face = Instance((Shape, TopoDS_Shape))
-
-    #: Angle relative to direction
-    angle = Float(strict=False)
-
-    #: Direction of the draft angle
-    direction = Coerced(
-        Direction,
-        factory=lambda: Direction(0, 0, 1),
-        coercer=coerce_direction)
-
-    #: The point and direction of the neural plane
-    neutral_plane = Tuple(Point, Direction)
-
-
 class DraftAngle(Operation):
+    class Parameters(Atom):
+        face = Instance((Shape, TopoDS_Shape))
+
+        #: Angle relative to direction
+        angle = Float(strict=False)
+
+        #: Direction of the draft angle
+        direction = Coerced(
+            Direction,
+            factory=lambda: Direction(0, 0, 1),
+            coercer=coerce_direction)
+
+        #: The point and direction of the neural plane
+        neutral_plane = Tuple(Point, Direction)
+
     #: Reference to the implementation control
     proxy = Typed(ProxyDraftAngle)
 
@@ -711,7 +710,7 @@ class DraftAngle(Operation):
 
     #: List of operations to perform. If this value is given all the
     #: other parameters are ignored.
-    operations = d_(List())
+    operations = d_(List(Parameters))
 
     @observe('shape', 'faces', 'angle', 'operations', 'disabled')
     def _update_proxy(self, change):
@@ -863,7 +862,7 @@ class Transform(Operation):
 
     #: Shape to transform
     #: if none is given the first child will be used
-    shape = d_(Instance(object))
+    shape = d_(Instance((Shape, TopoDS_Shape)))
 
     #: Transform ops
     operations = d_(List(TransformOperation))
