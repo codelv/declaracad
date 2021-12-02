@@ -60,7 +60,7 @@ from OCCT.TColgp import TColgp_Array1OfPnt2d
 from OCCT.TopTools import TopTools_ListOfShape, TopTools_HSequenceOfShape
 from OCCT.TopoDS import (
     TopoDS, TopoDS_Edge, TopoDS_Face, TopoDS_Wire, TopoDS_Shape,
-    TopoDS_Compound
+    TopoDS_Compound, TopoDS_Vertex
 )
 
 
@@ -503,12 +503,13 @@ class OccThruSections(OccOperation, ProxyThruSections):
         #: TODO: Support Smoothing, Max degree, par type, etc...
 
         for child in self.children():
-            if isinstance(child, OccVertex):
-                loft.AddVertex(child.shape)
-            elif isinstance(child, OccWire):
-                loft.AddWire(child.shape)
-            #: TODO: Handle transform???
-
+            s = child.shape
+            if isinstance(s, TopoDS_Vertex):
+                loft.AddVertex(s)
+            elif isinstance(s, TopoDS_Edge):
+                loft.AddWire(BRepBuilderAPI_MakeWire(s).Wire())
+            elif isinstance(s, TopoDS_Wire):
+                loft.AddWire(s)
 
         #: Set the shape
         self.shape = loft.Shape()
