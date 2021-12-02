@@ -338,7 +338,11 @@ class OccDependentShape(OccShape):
         will be fully initialized and layed out when this is called.
 
         """
-        self.update_shape()
+        try:
+            self.update_shape()
+        except Exception as e:
+            log.exception(e)
+            raise e
         # log.debug('init_layout %s shape %s' % (self, self.shape))
         assert self.shape is not None, "Shape was not created %s" % self
 
