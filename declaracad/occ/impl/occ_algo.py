@@ -40,7 +40,7 @@ from OCCT.BRepOffset import (
 from OCCT.BRepLib import BRepLib_FuseEdges
 from OCCT.BRepTools import BRepTools
 from OCCT.ChFi3d import (
-    ChFi3d_Rational, ChFi3d_QuasiAngular, ChFi3d_Polynomial
+    ChFi3d_Rational, ChFi3d_QuasiAngular, ChFi3d_Polynomial, ChFi3d_FilBuilder
 )
 from OCCT.GeomAbs import (
     GeomAbs_Arc, GeomAbs_Tangent, GeomAbs_Intersection
@@ -220,8 +220,9 @@ class OccFillet(OccOperation, ProxyFillet):
 
         s = child.shape
         if isinstance(s, (TopoDS_Wire, TopoDS_Face)):
-            return self.fillet_2d(child)
-        return self.fillet_3d(child)
+            self.fillet_2d(child)
+        else:
+            self.fillet_3d(child)
 
     def fillet_2d(self, child):
         d = self.declaration
@@ -229,18 +230,18 @@ class OccFillet(OccOperation, ProxyFillet):
         was_wire = isinstance(shape, TopoDS_Wire)
         if was_wire:
             shape = BRepBuilderAPI_MakeFace(shape).Face()
-        fillet = BRepFilletAPI_MakeFillet2d(shape)
+        builder = BRepFilletAPI_MakeFillet2d(shape)
         operations = d.operations if d.operations else child.topology.vertices
         for item in operations:
             if isinstance(item, (tuple, list)) and len(item) == 2:
                 r, v = item
-                fillet.AddFillet(v, r)
+                builder.AddFillet(v, r)
             elif isinstance(item, TopoDS_Vertex):
-                fillet.AddFillet(item, d.radius)
+                builder.AddFillet(item, d.radius)
             else:
                 log.warning(f"Invalid fillet {item}")
 
-        shape = Topology.cast_shape(fillet.Shape())
+        shape = Topology.cast_shape(builder.Shape())
         if was_wire:
             shape = BRepTools.OuterWire_(shape)
         self.shape = shape
@@ -290,6 +291,7 @@ class OccFillet(OccOperation, ProxyFillet):
 class OccChamfer(OccOperation, ProxyChamfer):
     reference = set_default('https://dev.opencascade.org/doc/refman/html/'
                             'class_b_rep_fillet_a_p_i___make_chamfer.html')
+    context = Dict()
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -301,11 +303,62 @@ class OccChamfer(OccOperation, ProxyChamfer):
         if d.disabled:
             self.shape = child.shape
             return
+        if isinstance(child.shape, (TopoDS_Wire, TopoDS_Face)):
+            self.chamfer_2d(child)
+        elif self.has_profile_operations():
+            self.chamfer_profile(child)
+        else:
+            self.chamfer_3d(child)
 
-        chamfer = BRepFilletAPI_MakeChamfer(child.shape)
+    def has_profile_operations(self) -> bool:
+        T = (tuple, list)
+        for item in self.declaration.operations:
+            if isinstance(item, T) and isinstance(item[0], T):
+                return True
+        return False
 
+    def chamfer_2d(self, child):
+        d = self.declaration
+        shape = child.shape
+        was_wire = isinstance(shape, TopoDS_Wire)
+        if was_wire:
+            shape = BRepBuilderAPI_MakeFace(shape).Face()
+        builder = BRepFilletAPI_MakeFillet2d(shape)
+        operations = d.operations if d.operations else child.topology.vertices
+
+        for item in operations:
+            d1, d2 = d.distance, d.distance2 or d.distance
+            if isinstance(item, (tuple, list)):
+                n = len(item)
+                if n == 2:
+                    e1, e2 = item
+                    builder.AddChamfer(e1, e2, d1, d2)
+                elif n == 3:
+                    d1, e1, e2 = item
+                    builder.AddChamfer(e1, e2, d1, d1)
+                elif n == 4:
+                    d1, d2, e1, e2 = item
+                    builder.AddChamfer(e1, e2, d1, d2)
+                else:
+                    log.warning(f"Invalid chamfer {item}")
+            else:
+                log.warning(f"Invalid chamfer {item}")
+
+        shape = Topology.cast_shape(builder.Shape())
+        if was_wire:
+            shape = BRepTools.OuterWire_(shape)
+        self.shape = shape
+
+    def chamfer_3d(self, child):
+        d = self.declaration
+        shape = child.shape
         operations = d.operations if d.operations else child.topology.faces
 
+        if self.has_profile_operations():
+            self.shape = self.chamfer_profile(shape, d.operations)
+            return
+
+        chamfer = BRepFilletAPI_MakeChamfer(shape)
         for item in operations:
             edge = None
             d1, d2 = d.distance, d.distance2 or d.distance
@@ -323,7 +376,6 @@ class OccChamfer(OccOperation, ProxyChamfer):
                         d1, d2 = item[0:2]
             else:
                 face = item
-
             if isinstance(face, TopoDS_Edge) and d1 == d2:
                 edge = face
                 chamfer.Add(d1, edge)
@@ -333,6 +385,34 @@ class OccChamfer(OccOperation, ProxyChamfer):
             else:
                 chamfer.Add(d1, d2, edge, face)
         self.shape = chamfer.Shape()
+
+    def chamfer_profile(self, child):
+        """ Use fillet with custom shape. Only supports 45 deg chamfers.
+
+        """
+        d = self.declaration
+        if d.distance2:
+            raise ValueError("Cannot mix profile and two distances")
+        from OCCT.ChFi3d import ChFi3d_Linear
+        builder = BRepFilletAPI_MakeFillet(child.shape)
+        builder.SetFilletShape(ChFi3d_Linear)
+        T = (tuple, list)
+        for item in d.operations:
+            if isinstance(item, T):
+                if isinstance(item[0], T):
+                    profile, edge = item
+                    array = TColgp_Array1OfPnt2d(1, len(profile))
+                    for i, pt in enumerate(profile):
+                        array.SetValue(i+1, gp_Pnt2d(*pt))
+                    builder.Add(array, edge)
+                elif len(item) == 2:
+                    r, e = item
+                    builder.Add(r, e)
+                else:
+                    raise ValueError("Cannot mix profile and two distances")
+            else:
+                builder.Add(d.distance, e)
+        self.shape = builder.Shape()
 
     def set_distance(self, d):
         self.update_shape()

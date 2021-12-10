@@ -1,0 +1,132 @@
+from math import radians, sin, cos
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+
+
+enamldef SquareCorners(Part):
+    Chamfer:
+        color = 'teal'
+        attr profile = [
+            (0, 0),
+            (0.5, 2),
+            (1, 0),
+        ]
+        attr top_edges = box.topology.edges_from_face(box.topology.faces[5])
+        attr bottom_edges = box.topology.edges_from_face(box.topology.faces[4])
+        operations = [
+            (profile, e) for e in (top_edges + bottom_edges)
+        ]
+        #disabled = True
+        Box: box:
+            position = (-dx/2, -dy/2)
+            dx = 20
+            dy = 20
+            dz = 5
+
+
+enamldef RadiusCorners(Part):
+    Chamfer:
+    #Fillet:
+        color = 'purple'
+        attr profile = [
+            (0, 0.2),
+            (0.2, 1),
+            (0.5, 1.2),
+            (0.8, 1),
+            (1, 0.2),
+        ]
+        attr corner_profile = [
+            (0, 0.2), (1, 0.2)
+        ]
+
+        attr edges = fillet.topology.edges
+        operations = [
+            (profile, edges[i]) for i in (0, 7, 8, 11)
+        ]
+        #+ [
+        #    (corner_profile, edges[i])
+        #    for i in (5, 6, 9, 10)
+        #]
+        #disabled = True
+        Fillet: fillet:
+            operations = [
+                (1, box.topology.edges[i]) for i in (0, 2, 4, 6)
+            ]
+            #disabled = True
+            Box: box:
+                position = (-dx/2, -dy/2)
+                dx = 20
+                dy = 30
+                dz = 10
+
+enamldef CylinderEdge(Part):
+    attr h = 4
+    Chamfer:
+    #Fillet:
+        material = 'aluminium'
+        color = 'slategray'
+        attr profile = [
+            (0, 1),
+            (1, 1),
+        ]
+        attr edges = plate.topology.edges
+        attr special = (58, 130, 163)
+        attr top_edges = (46, 50, 54, 58, 71, 130, 137, 141, 145, 154, 158, 162, 163, 170, 174, 178, 182, 186)
+        attr profile = [
+            (0, 0.5),
+            (0.2, 1),
+            (0.5, 1.2),
+            (0.8, 1),
+            (1, 0.5),
+        ]
+        operations = [
+            (profile if i == 58 else 0.5, edges[i])
+            for i in top_edges
+        ]
+        #
+        #disabled = True
+        Cut: plate:
+            Fillet:
+                radius = 5
+                attr edges = self.children[0].topology.edges
+                operations = [
+                    edges[i] for i in ( 24, 26, 28, 33, 38, 42, 46, 50, 54)
+                ]
+                #disabled = True
+                Fuse:
+                    Cylinder:
+                        radius = 20
+                        height = h
+                    Extrude:
+                        vector = (0, 0, h)
+                        Face:
+                            Polygon:
+                                radius = 30
+                                count = 3
+            Cylinder:
+                radius = 10
+                height = h
+
+            Looper:
+                iterable = [0, 120, -120]
+                Cylinder:
+                    attr r = 20
+                    attr a = radians(loop.item)
+                    position = (r*cos(a), r*sin(a))
+                    radius = 2
+                    height = h
+
+enamldef Assembly(Part):
+    #Axis:
+    #    pass
+    #SquareCorners:
+    #    pass
+    Plane:
+        material = 'charcoal'
+        color = 'white'
+        bounds = [(-100, -100), (100, 100)]
+    CylinderEdge:
+        pass
+    #RadiusCorners:
+    #    pass
+
