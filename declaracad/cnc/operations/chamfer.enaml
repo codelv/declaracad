@@ -151,7 +151,6 @@ enamldef ChamferOperation(Operation):
     #: Generated toolpath data
     attr toolpath = generate_toolpath()
 
-
     func find_curve_on_point(topo, point):
         for v in topo.vertices:
             if Point(v) != point:
@@ -201,8 +200,8 @@ enamldef ChamferOperation(Operation):
         edges = Topology.find_unique_edges(all_faces)
         wires = Topology.join_edges(edges)
         wires.sort(key=lambda w: Topology.bbox(w).zmin)
-        wire = wires[0]
-        return generate_offset(wire, 'path')
+        lowest_wire = wires[0]
+        return generate_offset(lowest_wire, 'path')
 
     func generate_offset(wire, path_type, direction=1, drop=None, lift=None,
                          radius=None, center=None, **kwargs):

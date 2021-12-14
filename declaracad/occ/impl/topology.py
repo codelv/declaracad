@@ -977,9 +977,11 @@ class Topology(Atom):
     def are_faces_connected(
         cls,
         face: TopoDS_Face,
-        other_face: TopoDS_Face
+        other_face: TopoDS_Face,
+        edges: Optional[Iterable[TopoDS_Edge]] = None
     ) -> bool:
-        """ Check if two faces are connected by one of their edges.
+        """ Check if two faces are connected by one of their edges. This does
+        NOT work for intersections or shared vertices!
 
         Parameters
         ----------
@@ -987,6 +989,9 @@ class Topology(Atom):
             Face to check connection with
         other_face: TopoDS_Face
             Face to check connection to
+        edges: Optional[Iterable[TopoDS_Edge]]
+            An optional iterable of edges to check. If not provided all edges
+            from `face` will be used.
 
         Returns
         -------
@@ -996,10 +1001,37 @@ class Topology(Atom):
         """
         # TODO: Is there a OCCT function to do this?
         other_edges = cls(shape=other_face).edges
-        for e in cls(shape=face).edges:
+        for e in (edges or cls(shape=face).edges):
             if cls.is_shape_in_list(e, other_edges):
                 return True
         return False
+
+    @classmethod
+    def faces_sharing_edges(
+        cls,
+        face: TopoDS_Face,
+        faces: Iterable[TopoDS_Face]
+    ) -> SetType[TopoDS_Face]:
+        """ Return list of faces which have at least one shared
+        edge with face. The face itself is always excluded.
+
+        Parameters
+        ----------
+        face: TopoDS_Face
+            The face to look check against
+        faces: Iterable[TopoDS_Face]
+            The list of faces to look through.
+
+        Returns
+        -------
+        results: set[TopoDS_Face]
+            The set of faces which share an edge
+        """
+        edges = cls(shape=face).edges
+        return {
+            f for f in faces
+            if f is not face and cls.are_faces_connected(face, f, edges)
+        }
 
     # -------------------------------------------------------------------------
     # Parametrization

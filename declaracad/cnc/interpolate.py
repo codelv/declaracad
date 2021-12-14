@@ -267,14 +267,9 @@ def group_connected_faces(
         The face and it's connected faces.
 
     """
-    remaining = [f for f in faces]
     all_connections = {}
-    while remaining:
-        face = remaining.pop()
-        results = all_connections[face] = set()
-        for other_face in remaining:
-            if Topology.are_faces_connected(face, other_face):
-                results.add(other_face)
+    for f in faces:
+        all_connections[f] = Topology.faces_sharing_edges(f, faces)
 
     if not merge:
         return all_connections
@@ -286,16 +281,14 @@ def group_connected_faces(
         if face in used:
             continue
         used.add(face)
+        connections[face] = connected_faces
         if connected_faces:
             # Walk the graph
             stack = set(connected_faces)
             while stack:
                 other_face = stack.pop()
                 used.add(other_face)
-                for f in all_connections[other_face]:
-                    if f not in used:
-                        connected_faces.add(f)
-                        stack.add(f)
-        connections[face] = connected_faces
-
+                other_connections = all_connections[other_face]
+                connected_faces.update(other_connections)
+                stack.update(other_connections.difference(used))
     return connections
