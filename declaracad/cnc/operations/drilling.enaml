@@ -84,10 +84,18 @@ enamldef DrillingCycle(Operation): operation:
             return hole
         elif Topology.is_cylinder(hole):
             s = Topology.cast_surface(hole)
+            d = 2 * s.Radius()
         elif Topology.is_circle(hole):
             s = Topology.cast_curve(hole)
+            d = 2 * s.Radius()
         else:
             raise ValueError(f"Cannot get center of {hole}")
+        # Check tool diameter
+        if tool.diameter > d:
+            raise ValueError(
+                f"Tool {tool.description} is too large for "
+                f"hole of diameter {round(d, 3)}. Change the tool diameter "
+                f"or just use the hole position to ignore this error.")
         return Point(s.Location())
 
     func get_lift_point():
