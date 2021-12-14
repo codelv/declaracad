@@ -54,7 +54,7 @@ enamldef TwistDrill(Tool): drill:
     feed_per_rev = self.diameter/25.4 * 0.02
 
     description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
-                  f"twist drill {self.diameter} dia by {self.length} len"
+                  f"twist drill {round(self.diameter, 3)} dia by {self.length} len"
     Chamfer:
         material = 'steel'
         attr r = diameter/2*0.99
@@ -92,7 +92,7 @@ enamldef EndMill(Tool): drill:
     feed_per_rev = feed_per_tooth * flutes
 
     description = f"T{self.number} - {self.flutes} flute " \
-                  f"end mill {self.diameter} dia x {self.cut} cut"
+                  f"end mill {round(self.diameter, 3)} dia x {self.cut} cut"
     Cylinder:
         material = 'steel'
         radius = diameter/2
@@ -121,7 +121,7 @@ enamldef ChamferMill(Tool): drill:
     feed_per_rev = feed_per_tooth * flutes
 
     description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
-                  f"chamfer mill {self.diameter} dia by {self.length} len"
+                  f"chamfer mill {round(self.diameter, 3)} dia by {self.length} len"
     Chamfer:
         material = 'steel'
         attr r = diameter/2*0.99
@@ -157,7 +157,7 @@ enamldef FaceMill(Tool): cutter:
     feed_per_rev = feed_per_tooth * inserts
 
     description = f"T{self.number} - {self.angle}° {self.inserts} cutter " \
-                  f"face mill {self.diameter} dia"
+                  f"face mill {round(self.diameter, 3)} dia"
     Cylinder:
         material = 'steel'
         transparency = parent.transparency
