@@ -37,11 +37,6 @@ from OCCT.Aspect import (
 )
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeEdge2d,
-    BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeShape,
-    BRepBuilderAPI_MakeVertex
-)
 from OCCT.Geom import Geom_Curve, Geom_Surface
 from OCCT.gp import gp_Pnt, gp_Dir, gp_Ax3
 from OCCT.Graphic3d import (
@@ -79,7 +74,6 @@ from declaracad.occ.api import BBox, Topology
 from declaracad.viewer.widgets.occ_viewer import (
     ProxyOccViewer, ViewerSelection
 )
-
 
 
 if sys.platform == 'win32':
