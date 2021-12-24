@@ -11,6 +11,7 @@ Created on Sep 30, 2016
 """
 import os
 from math import pi
+from typing import Union, Tuple as TupleType
 from atom.api import (
     Atom, Bool, Instance, List, Typed, Str, Property, observe, set_default
 )
@@ -48,7 +49,7 @@ from declaracad.occ.shape import (
     ProxyShape, ProxyPart, ProxyFace, ProxyBox, ProxyCone, ProxyCylinder,
     ProxyHalfSpace, ProxyPrism, ProxySphere, ProxyWedge, ProxyRawPart,
     ProxyTorus, ProxyRevol, ProxyRawShape, ProxyLoadShape, BBox, Shape,
-    coerce_point, coerce_direction
+    Point, Direction, coerce_point, coerce_direction
 )
 
 from declaracad.occ.algo import Translate, Rotate, Scale, Mirror
@@ -73,14 +74,14 @@ AZ = gp_Ax1()
 AZ.SetDirection(gp.DZ_())
 
 
-def coerce_axis(value):
+def coerce_axis(value: TupleType[Point, Direction, float]) -> gp_Ax2:
     pos, dir, rotation = value
     axis = gp_Ax2(pos.proxy, dir.proxy)
     axis.Rotate(axis.Axis(), rotation)
     return axis
 
 
-def coerce_shape(shape):
+def coerce_shape(shape: Union[TopoDS_Shape, Shape]) -> TopoDS_Shape:
     """ Coerce a declaration into a TopoDS_Shape
 
     """

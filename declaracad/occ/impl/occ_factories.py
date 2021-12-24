@@ -33,7 +33,7 @@ def occ_bspline_factory():
 
 
 def occ_chamfer_factory():
-    from .occ_algo import OccChamfer
+    from .occ_chamfer import OccChamfer
     return OccChamfer
 
 
@@ -63,7 +63,7 @@ def occ_cylinder_factory():
 
 
 def occ_draft_angle_factory():
-    from .occ_algo import OccDraftAngle
+    from .occ_draft_angle import OccDraftAngle
     return OccDraftAngle
 
 
@@ -78,7 +78,7 @@ def occ_face_factory():
 
 
 def occ_fillet_factory():
-    from .occ_algo import OccFillet
+    from .occ_fillet import OccFillet
     return OccFillet
 
 
@@ -117,13 +117,18 @@ def occ_middle_path_factory():
     return OccMiddlePath
 
 
+def occ_normal_projection_factory():
+    from .occ_normal_projection import OccNormalProjection
+    return OccNormalProjection
+
+
 def occ_offset_factory():
-    from .occ_algo import OccOffset
+    from .occ_offset import OccOffset
     return OccOffset
 
 
 def occ_offset_shape_factory():
-    from .occ_algo import OccOffsetShape
+    from .occ_offset import OccOffsetShape
     return OccOffsetShape
 
 
@@ -143,7 +148,7 @@ def occ_part_factory():
 
 
 def occ_pipe_factory():
-    from .occ_algo import OccPipe
+    from .occ_pipe import OccPipe
     return OccPipe
 
 
@@ -223,12 +228,12 @@ def occ_text_factory():
 
 
 def occ_thick_solid_factory():
-    from .occ_algo import OccThickSolid
+    from .occ_thick_solid import OccThickSolid
     return OccThickSolid
 
 
 def occ_thru_sections_factory():
-    from .occ_algo import OccThruSections
+    from .occ_thru_sections import OccThruSections
     return OccThruSections
 
 
@@ -238,7 +243,7 @@ def occ_torus_factory():
 
 
 def occ_transform_factory():
-    from .occ_algo import OccTransform
+    from .occ_transform import OccTransform
     return OccTransform
 
 
@@ -340,6 +345,7 @@ OCC_FACTORIES = {
     'Fillet': occ_fillet_factory,
     'Sew': occ_sew_factory,
     'Glue': occ_glue_factory,
+    'NormalProjection': occ_normal_projection_factory,
 
     'DraftAngle': occ_draft_angle_factory,
     'OffsetShape': occ_offset_shape_factory,

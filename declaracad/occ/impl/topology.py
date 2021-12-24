@@ -953,6 +953,26 @@ class Topology(Atom):
             face = shape
         return Topology(shape=face).area > 0
 
+    #@classmethod
+    #def is_internal(
+        #cls,
+        #shape: TopoDS_Shape,
+    #) -> bool:
+        #""" Check if the edge or wire's orientation is internal or external
+
+        #Returns
+        #-------
+        #result: bool
+            #Whether the shape's orentation is internal.
+
+        #"""
+        #if isinstance(shape, TopoDS_Wire):
+            #face = BRepBuilderAPI_MakeFace(shape).Face()
+        #else:
+            #face = shape
+        #props = BRepGProp_Face(face)
+        #prop.Bounds()
+
     @classmethod
     def is_shape_in_list(cls, shape, shapes):
         """ Check if an shape is in a list of shapes using the IsSame method.
