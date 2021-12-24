@@ -6,12 +6,12 @@ tests:
     - apt-get install -y build-essential
 
     # Create env
-    - conda env create -f environment.yaml
+    - conda env create -f environment.yml
     - source activate declaracad
 
     # Install declaracad
     - pip install -e .
 
     # Install testing utils
-    - pip install pytest pytest-coverage pytest-qt codecov
+    - pip install pytest pytest-coverage pytest-qt
     - pytest tests -v --cov declaracad
