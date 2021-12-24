@@ -60,7 +60,7 @@ class OccPipe(OccOperation, ProxyPipe):
             profile = d.profile
             spline = self.get_first_child().shape
         else:
-            shapes = self.child_shapes()
+            shapes = list(self.child_shapes())
             spline, profile = shapes[0:2]
 
         args = [coerce_shape(spline), coerce_shape(profile)]

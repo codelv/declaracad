@@ -41,7 +41,7 @@ from .shape import (
 )
 from .mesh import Mesh
 from .impl.topology import Topology
-from .loaders import LoadedPart
+from .loaders import load_model
 from .display import DisplayLine, DisplayArrow, DisplayText, DisplayPlane
 from .solver import Solver
 

@@ -29,7 +29,7 @@ enamldef ArcEaseIn(Part):
     attr path_start
     attr start_angle
     attr arc_radius
-
+    attr climb: bool
     Arc: arc_down:
         # Work backwards from the start point
         attr acos = cos(start_angle-pi/2)
@@ -48,9 +48,10 @@ enamldef ArcEaseIn(Part):
     Arc: arc_center:
         color = 'lime'
         name = 'Arc approach'
-        clockwise = True
-        attr acos = cos(start_angle+3*pi/2)
-        attr asin = sin(start_angle+3*pi/2)
+        clockwise = not climb
+        attr a = start_angle + (-3*pi/2 if climb else 3*pi/2)
+        attr acos = cos(a)
+        attr asin = sin(a)
         attr arc_enter_start = arc_enter.points[0]
         radius = arc_enter.radius/2
         position = arc_enter_start + (radius*acos, radius*asin)
@@ -60,14 +61,17 @@ enamldef ArcEaseIn(Part):
         ]
     Arc: arc_enter:
         color = 'teal'
-        clockwise = True
+        clockwise = not climb
         name = 'Arc enter'
 
+        attr a1 = start_angle + (-pi/2 if climb else pi/2)
+        attr a2 = start_angle + (pi if climb else -pi)
+
         # Position is at reverse angle
-        attr acosr = cos(start_angle-pi)
-        attr asinr = sin(start_angle-pi)
-        attr acos = cos(start_angle+pi/2)
-        attr asin = sin(start_angle+pi/2)
+        attr acosr = cos(a2)
+        attr asinr = sin(a2)
+        attr acos = cos(a1)
+        attr asin = sin(a1)
         radius = min(arc_radius/2, tool.diameter/2)
         position = path_start + (radius*acosr, radius*asinr)
         points = [
@@ -80,6 +84,7 @@ enamldef ArcEaseOut(Part):
     attr path_end
     attr exit_point
     attr arc_radius
+    attr climb: bool
     Arc: arc_exit:
         clockwise = True
         radius = min(arc_radius/2, tool.diameter/2)
@@ -121,7 +126,7 @@ enamldef ArcEaseOut(Part):
         ]
 
 
-enamldef ChamferOperation(Operation):
+enamldef ChamferOperation(Operation): operation:
     #: List of edges to cut. Each item can be a Chamfer refernce,
     #: a chamfered surface, or a set of edges or wires
     attr edges: list
@@ -130,6 +135,9 @@ enamldef ChamferOperation(Operation):
     attr bit_offset = 1
 
     attr clearance_height = start_point.z
+
+    #: Use climb milling
+    attr climb: bool = True
 
     # --------------------------------------------------------------------------
     # Speed and feed
@@ -205,20 +213,46 @@ enamldef ChamferOperation(Operation):
 
     func generate_offset(wire, path_type, direction=1, drop=None, lift=None,
                          radius=None, center=None, **kwargs):
+
         if bit_offset:
+            zmin = Topology.bbox(wire).zmin
             a = math.radians(tool.angle/2)
             offset = bit_offset*sin(a) * direction
-            wire = Offset(
-                shape=wire,
-                offset=offset,
-                normal_distance=bit_offset*cos(a) * -direction
-            ).render()
+            normal_distance = bit_offset*cos(a) * -direction
+            try:
+                offset_wire = Offset(
+                    shape=wire,
+                    offset=offset,
+                    normal_distance=normal_distance
+                ).render()
+                offset_zmin = Topology.bbox(offset_wire).zmin
+            except RuntimeException as e:
+                offset_zmin = zmin + 1 # force reverse
+
+            # If direction is wrong reverse
+            # TODO: How do I determine this before??
+            if offset_zmin > zmin:
+                offset = -offset
+                normal_distance = -normal_distance
+                wire = Offset(
+                    shape=wire,
+                    offset=offset,
+                    normal_distance=normal_distance
+                ).render()
+            else:
+                wire = offset_wire
+
             if radius is not None:
                 radius -= offset/2
 
         curve_topo = Topology(shape=wire)
         start = curve_topo.start_point
         end = curve_topo.end_point
+
+        if climb:
+            # Reverse all...
+            end, start = start, end
+
         if path_type == 'hole':
             r = min(radius/2, tool.diameter/2)/2
             v1 = start-center
@@ -346,25 +380,30 @@ enamldef ChamferOperation(Operation):
                     loop.item['drop'],
                     loop.item['enter']
                 ]
+
             Conditional:
                 condition << loop.item['type'] == 'hole'
                 Wire:
                     color = 'coral'
                     ArcEaseIn:
                         start_angle = loop.item['start_angle']
+                        climb = operation.climb
                         path_start = loop.item['start']
                         enter_point = loop.item['enter']
                         arc_radius = loop.item['radius']
 
             Wire:
                 color = 'magenta'
+                reverse = climb
                 edges = [loop.item['path']]
 
             Conditional:
                 condition << loop.item['type'] == 'hole'
                 Wire:
                     color = 'slateblue'
+                    reverse = climb
                     ArcEaseOut:
+                        climb = operation.climb
                         start_angle = loop.item['start_angle']
                         path_end = loop.item['end']
                         exit_point = loop.item['exit']

@@ -1,9 +1,17 @@
+"""
+Copyright (c) 2017-2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
 import pytest
 from textwrap import dedent
 
 from OCCT.TopoDS import TopoDS_Shape
 
-from declaracad.occ.plugin import load_model
+from declaracad.occ.api import load_model
 
 
 def test_point():
@@ -175,7 +183,9 @@ TESTS = {
 
 @pytest.mark.parametrize('name', TESTS.keys())
 def test_shapes_render(qt_app, name):
-    assembly = load_model("test", TEMPLATE % TESTS[name])[0]
+    source = TEMPLATE % TESTS[name]
+    options = {'from_string': True}
+    assembly = load_model(source, options, '.enaml')[0]
     assert isinstance(assembly.render(), TopoDS_Shape)
 
 

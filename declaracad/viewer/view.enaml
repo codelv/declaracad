@@ -31,12 +31,12 @@ from declaracad.core.api import DockItem, EmbeddedWindow, FramelessWindow
 from declaracad.core.utils import log, load_icon, format_title
 from declaracad.occ.api import (
     Topology, Point, Part, Shape, AngleDimension, LengthDimension,
-    RadiusDimension, DiameterDimension
+    RadiusDimension, DiameterDimension, load_model
 )
 
 from .widgets.api import OccViewer, OccViewerClippedPlane
 from .plugin import (
-    ViewerPlugin, ViewerProcess, ViewerAction, load_model, EmptyFileError
+    ViewerPlugin, ViewerProcess, ViewerAction,  EmptyFileError
 )
 
 

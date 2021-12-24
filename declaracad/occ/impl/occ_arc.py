@@ -7,6 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import Typed, set_default
+from math import pi
 
 from OCCT.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Vec
 from OCCT.Geom import Geom_TrimmedCurve

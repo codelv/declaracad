@@ -20,7 +20,7 @@ import functools
 import jsonpickle
 from typing import List as ListType
 from typing import Optional, Iterator, TYPE_CHECKING
-from types import ModuleType
+
 from asyncio.base_events import Server
 from atom.api import (
     Atom, ContainerList, Str, Float, Dict, Bool, Int, Instance, Enum, Property,
@@ -33,8 +33,6 @@ from declaracad.core.utils import (
 )
 from declaracad.occ.shape import Part
 from enaml.application import timed_call, deferred_call
-from enaml.core.parser import parse
-from enaml.core.import_hooks import EnamlCompiler
 from enaml.colors import ColorMember
 from enaml.layout.api import InsertItem
 
@@ -85,52 +83,7 @@ class EmptyFileError(Exception):
     """
 
 
-def load_model(filename: str, source: Optional[str] = None):
-    """ Load a DeclaraCAD model from an enaml file, source, or a shape
-    supported by the LoadShape node.
 
-    Parameters
-    ----------
-    filename: String
-        Path to the enaml file to load
-    source: String
-        Source code to parse (optional)
-
-    Returns
-    -------
-    result: List[occ.shape.Shape]
-        A list of shapes that can be passed to the python-occ viewer.
-
-    """
-
-    # Parse the enaml file or load from source code
-    _, ext = os.path.splitext(filename.lower())
-    if source or ext in ('.enaml', '.py'):
-        # Parse and compile the code
-        if not source:
-            with open(filename, 'r') as f:
-                source = f.read()
-        ast = parse(source)
-        code = EnamlCompiler.compile(ast, filename)
-        module = ModuleType(filename.rsplit('.', 1)[0])
-        module.__file__ = filename
-        namespace = module.__dict__
-        with enaml.imports():
-            exec(code, namespace)
-        Assembly = namespace.get('Assembly')
-        if Assembly is not None:
-            assembly = Assembly()
-            if not assembly.name:
-                assembly.name = filename or "Source"
-            return [assembly]
-        return []
-    elif os.path.exists(filename):
-        # Try to load from filename
-        with enaml.imports():
-            from declaracad.occ.loader import LoadedPart
-        return [LoadedPart(filename=filename)]
-    else:
-        return []
 
 
 class ModelExporter(Atom):
@@ -491,7 +444,7 @@ class ViewerPlugin(Plugin):
         viewer = self.get_viewer()
         editor = self.workbench.get_plugin('declaracad.editor').get_editor()
         doc = editor.doc
-        viewer.renderer.set_source(editor.get_text())
+        #viewer.set_source(editor.get_text())
         doc.version += 1
 
     def _default_exporters(self) -> ListType['ModelExporter']:

@@ -11,31 +11,7 @@ Created on Aug, 2020
 """
 import os
 from enaml.core.api import Include
-from declaracad.occ.shape import Part
-
-
-def load_filename(filename, options):
-    """ Load shapes in the file by looking up the extension from the loader
-    registry.
-
-    Returns
-    -------
-    shapes: List[Shape]
-        List of shapes to include in the part
-
-    """
-    # Avoid circular import
-    from declaracad.occ.loaders import LOADER_REGISTRY
-
-    if not filename or not os.path.exists(filename):
-        raise ValueError(f"File '{filename}' does not exist!")
-
-    path, ext = os.path.splitext(filename.lower())
-    hook = LOADER_REGISTRY.get(ext)
-    if hook is None:
-        return []
-    loader = hook()
-    return loader(filename=filename, **options)
+from declaracad.occ.api import Part, load_model
 
 
 enamldef LoadedPart(Part):
@@ -47,4 +23,4 @@ enamldef LoadedPart(Part):
     attr options: dict = {}
     description << filename[0:100]
     Include:
-        objects << load_filename(filename, options)
+        objects << load_model(filename, options)

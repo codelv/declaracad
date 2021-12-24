@@ -9,7 +9,49 @@ Created on Aug 31, 2020
 
 @author: jrm
 """
+import os
 import enaml
+from typing import Optional
+
+
+def load_model(
+    filename: str,
+    options: Optional[dict] = None,
+    loader: Optional[str] = None
+):
+    """ Load shapes in the file by looking up the extension from the loader
+    registry.
+
+    Parameters
+    ----------
+    filename: str
+        The file to load. If a file format is given this may also
+        be the source code.
+    options: Optional[dict]
+        Options to past to the loader
+    loader: Optional[str]
+        Filetype to lookup in the loader registry
+
+    Returns
+    -------
+    shapes: List[Shape]
+        List of shapes to include in the part
+
+    """
+    options = options or {}
+    if loader:
+        if not loader.startswith('.'):
+            loader = f'.{loader}'
+        hook = LOADER_REGISTRY[loader.lower()]
+    else:
+        if not filename or not os.path.exists(filename):
+            raise ValueError(f"File '{filename}' does not exist!")
+        path, ext = os.path.splitext(filename.lower())
+        hook = LOADER_REGISTRY.get(ext)
+    if hook is None:
+        return []
+    handler = hook()
+    return handler(filename=filename, **options)
 
 
 def load_brep():
@@ -47,6 +89,11 @@ def load_dxf():
     return load_dxf
 
 
+def load_dcad():
+    from declaracad.occ.importers.dcad import load_model
+    return load_model
+
+
 # Mapping of filename to function that returns a loader.
 # A loader is just a function that takes a filename and returns a
 # list of DeclaraCAD shapes. This allows deferring of imports until needed
@@ -65,8 +112,6 @@ LOADER_REGISTRY = {
     '.stp': load_step,
     '.step': load_step,
     '.stl': load_stl,
+    '.enaml': load_dcad
 }
 
-
-with enaml.imports():
-    from .loader import LoadedPart

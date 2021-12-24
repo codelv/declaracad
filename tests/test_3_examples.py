@@ -1,7 +1,15 @@
+"""
+Copyright (c) 2017-2021, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
 import os
 import pytest
 from OCCT.TopoDS import TopoDS_Shape
-from declaracad.occ.plugin import load_model
+from declaracad.occ.api import load_model
 
 EXAMPLES = (
     'bearing',
@@ -19,7 +27,9 @@ EXAMPLES = (
     #'house',
     'intersection',
     'load',
+    'middlepath',
     'nemastepper',
+    'normalprojection',
     'offsets',
     'operations',
     'pipes',

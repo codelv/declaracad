@@ -81,12 +81,13 @@ enamldef HexBolt(Part): bolt:
 
     Fuse:  fuse:
         color = 'lightblue'
+        transparency = 0.8
         HexHead:
             height = H
             diameter = C
 
         Revol: revol:
-        #    #: Axis of rotation
+            #: Axis of rotation
             direction = (0, 0, 1)
             Face:
                 Wire:
@@ -112,31 +113,66 @@ enamldef HexBolt(Part): bolt:
                             (0, 0, H+length),
                             (0, 0, 0)
                         ]
-    ThruSections:
-            color := fuse.color
-            solid = True
-            Wire:
+        
+        
+        #Wire:
                 # Note: When a surface is given on a curve  the shape is converted to 2d
                 # the wire automatically converts it back to 3d
-                TrimmedCurve: c1:
-                    surface = make_cylinder_surface(d1/2)
-                    v = 2*pi
-                    Ellipse: e1:
-                        position = (2*pi, bolt.length*3/4, 0)
-                        direction = (pi/8, bolt.length/4, 0)
-                        major_radius = 16*pi
-                        minor_radius = bolt.length/30
-            Wire:
-                TrimmedCurve: c2:
-                    surface = make_cylinder_surface(d1/2+0.4)
-                    v = c1.v
-                    Ellipse: e2:
-                        position = e1.position
-                        direction = e1.direction
-                        major_radius = e1.major_radius-pi/4
-                        minor_radius = 0
+    
+    #Part:
+    ThruSections:
+    #    color := fuse.color
+        #solid = True
+        ruled = True
+        attr r = d1/2
+        
+        
+        attr d = bolt.length *1/4
+        attr dd = bolt.length *3/4 - d
+        attr dv = dd * 2 * pi * r 
+        attr dr = 0.4
+        attr dz = 0.2
+        Wire:
+            color = 'blue'
+            TrimmedCurve: c1:
+                surface = make_cylinder_surface(r)
+                v = dv
+                Line: e3:
+                    position = (0, d)
+                    direction = (dv, 2*pi)
+        Wire:
+            color = 'purple'
+            TrimmedCurve: c2:
+                surface = make_cylinder_surface(r+dr)
+                v = dv
+                Line: e4:
+                    position = e3.position + (0, dz/2)
+                    direction = e3.direction
+        Wire:
+            Transform:
+                position = (0, 0, dz)
+                shape = c1
+        Wire:
+            Transform:
+                shape = c1
+                        #major_radius = bolt.length/10
+                    #minor_radius = 0
+    #Wire:    
+    #        color = 'blue'
+    #        TrimmedCurve: c2:
+    #            color = 'blue'
+    #            surface = make_cylinder_surface(d1/2+0.4)
+    #            v = c1.v
+    #            Hyperbola: e2:
+    #                position = e1.position + (0, 1/4)
+    #                rotation = e1.rotation
+    #                major_radius = e1.major_radius#-pi/4
+    #                minor_radius = 0
 
 enamldef Assembly(Part):
+    #HexNut:
+    #    pass
+    
     HexBolt:  bolt:
         material = 'steel'
         length = 15.0

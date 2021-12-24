@@ -41,7 +41,9 @@ class ToolboxPlugin(Plugin):
 
     def _default_tools(self):
         from declaracad.occ import api
-        return [Tool(name=it) for it in dir(api) if not it.startswith("_")]
+        excluded = ('load_model',)
+        return [Tool(name=it) for it in dir(api)
+                if not it.startswith("_") and it not in excluded]
 
     def start(self):
         log = logging.getLogger('MARKDOWN')

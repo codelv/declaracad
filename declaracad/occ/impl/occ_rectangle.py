@@ -22,6 +22,7 @@ from OCCT.TopoDS import TopoDS
 
 from declaracad.occ.draw import ProxyRectangle
 from .occ_wire import OccWire
+from .occ_svg import make_ellipse
 
 
 class OccRectangle(OccWire, ProxyRectangle):

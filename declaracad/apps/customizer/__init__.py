@@ -17,7 +17,7 @@ enamlx.install()
 from declaracad import occ
 occ.install()
 from declaracad.core.app import Application
-from declaracad.occ.plugin import load_model
+from declaracad.occ.api import load_model
 
 
 with enaml.imports():

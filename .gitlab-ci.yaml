@@ -1,0 +1,17 @@
+image: continuumio/miniconda3:latest
+
+tests:
+  script:
+    - apt-get update -q -y
+    - apt-get install -y build-essential
+
+    # Create env
+    - conda env create -f environment.yaml
+    - source activate declaracad
+
+    # Install declaracad
+    - pip install -e .
+
+    # Install testing utils
+    - pip install pytest pytest-coverage pytest-qt codecov
+    - pytest tests -v --cov declaracad

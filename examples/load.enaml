@@ -1,8 +1,8 @@
 from declaracad.occ.api import *
+from declaracad.occ.loader import LoadedPart
 
 enamldef Assembly(Part):
     #: Load stl
     LoadedPart:
         material = 'steel'
         filename = "examples/models/fan.stl"
-      
