@@ -230,6 +230,30 @@ class ProxyMiddlePath(ProxyWire):
         raise NotImplementedError
 
 
+class ProxyBSplineSurface(ProxyShape):
+    #: A reference to the shape declaration.
+    declaration = ForwardTyped(lambda: BSplineSurface)
+
+    def set_points(self, points):
+        raise NotImplementedError
+
+    def set_deg_min(self, deg):
+        raise NotImplementedError
+
+    def set_deg_max(self, deg):
+        raise NotImplementedError
+
+    def set_continuity(self, continuity):
+        raise NotImplementedError
+
+    def set_interpolate(self, interpolate):
+        raise NotImplementedError
+
+    def set_periodic(self, periodic):
+        raise NotImplementedError
+
+
+
 class Plane(Shape):
     """ A Point at a specific position.
 
@@ -960,10 +984,39 @@ class MiddlePath(Wire):
     """
     proxy = Typed(ProxyMiddlePath)
 
-    #: Must be either 2 or 3 elements.
+    #: Must be either empty or 2 or 3 elements.
     #: The last two elements represent the start and ending faces or wires.
     shapes = d_(List((Shape, TopoDS_Shape)))
 
     @observe('shapes')
+    def _update_proxy(self, change):
+        super()._update_proxy(change)
+
+
+class BSplineSurface(ProxyShape):
+    """ Create a BSpline surface from a grid of points
+
+    """
+    #: A reference to the shape declaration.
+    proxy = Typed(ProxyBSplineSurface)
+
+    #: List of list of points
+    points = d_(List(List(Coerced(Pt, coercer=coerce_point))))
+
+    #: Use interpolation method. This will automatically be used if periodic
+    #: is True or tangents are given.
+    interpolate = d_(Bool())
+
+    #: Whether the spline will be periodic
+    periodic = d_(Bool())
+
+    # Min and max degree
+    deg_min = d_(Int(3))
+    deg_max = d_(Int(8))
+
+    #: Degree of continuity
+    continuity = d_(Enum(2, 0, 1, 3, None))
+
+    @observe('points', 'deg_min', 'deg_max', 'continuity', 'interpolate', 'periodic')
     def _update_proxy(self, change):
         super()._update_proxy(change)

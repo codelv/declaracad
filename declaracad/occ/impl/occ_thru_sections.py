@@ -23,8 +23,6 @@ class OccThruSections(OccOperation, ProxyThruSections):
                             'class_b_rep_offset_a_p_i___thru_sections.html')
 
     def update_shape(self, change=None):
-        # from .occ_draw import OccVertex, OccWire
-
         d = self.declaration
         loft = BRepOffsetAPI_ThruSections(d.solid, d.ruled, d.precision)
         #loft.CheckCompatibility(True)

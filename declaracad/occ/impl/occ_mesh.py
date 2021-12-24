@@ -37,7 +37,7 @@ from OCCT.TColStd import (
     TColStd_Array1OfInteger, TColStd_MapIteratorOfPackedMapOfInteger
 )
 from .occ_shape import OccShape, OccDependentShape
-from .occ_draw import MARKERS
+from .occ_vertex import MARKERS
 from .utils import color_to_quantity_color
 from declaracad.occ.shape import Point
 from declaracad.occ.mesh import (

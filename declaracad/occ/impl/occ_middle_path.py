@@ -15,7 +15,7 @@ from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.TopoDS import TopoDS_Edge
 
 from declaracad.occ.draw import ProxyMiddlePath
-from .occ_draw import OccWire
+from .occ_wire import OccWire
 from .occ_shape import Shape
 from .topology import Topology
 

@@ -13,12 +13,12 @@ from enaml.qt.qt_factories import QT_FACTORIES
 
 
 def occ_arc_factory():
-    from .occ_draw import OccArc
+    from .occ_arc import OccArc
     return OccArc
 
 
 def occ_bezier_factory():
-    from .occ_draw import OccBezier
+    from .occ_bezier import OccBezier
     return OccBezier
 
 
@@ -28,8 +28,13 @@ def occ_box_factory():
 
 
 def occ_bspline_factory():
-    from .occ_draw import OccBSpline
+    from .occ_bspline import OccBSpline
     return OccBSpline
+
+
+def occ_bspline_surface_factory():
+    from .occ_bspline_surface import OccBSplineSurface
+    return OccBSplineSurface
 
 
 def occ_chamfer_factory():
@@ -38,7 +43,7 @@ def occ_chamfer_factory():
 
 
 def occ_circle_factory():
-    from .occ_draw import OccCircle
+    from .occ_circle import OccCircle
     return OccCircle
 
 
@@ -68,7 +73,7 @@ def occ_draft_angle_factory():
 
 
 def occ_ellipse_factory():
-    from .occ_draw import OccEllipse
+    from .occ_ellipse import OccEllipse
     return OccEllipse
 
 
@@ -98,7 +103,7 @@ def occ_half_space_factory():
 
 
 def occ_hyperbola_factory():
-    from .occ_draw import OccHyperbola
+    from .occ_hyperbola import OccHyperbola
     return OccHyperbola
 
 
@@ -108,7 +113,7 @@ def occ_intersection_factory():
 
 
 def occ_line_factory():
-    from .occ_draw import OccLine
+    from .occ_line import OccLine
     return OccLine
 
 
@@ -138,7 +143,7 @@ def occ_one_axis_factory():
 
 
 def occ_parabola_factory():
-    from .occ_draw import OccParabola
+    from .occ_parabola import OccParabola
     return OccParabola
 
 
@@ -153,12 +158,12 @@ def occ_pipe_factory():
 
 
 def occ_plane_factory():
-    from .occ_draw import OccPlane
+    from .occ_plane import OccPlane
     return OccPlane
 
 
 def occ_polyline_factory():
-    from .occ_draw import OccPolyline
+    from .occ_polyline import OccPolyline
     return OccPolyline
 
 
@@ -178,7 +183,7 @@ def occ_raw_shape_factory():
 
 
 def occ_rectangle_factory():
-    from .occ_draw import OccRectangle
+    from .occ_rectangle import OccRectangle
     return OccRectangle
 
 
@@ -193,7 +198,7 @@ def occ_revolution_factory():
 
 
 def occ_segment_factory():
-    from .occ_draw import OccSegment
+    from .occ_segment import OccSegment
     return OccSegment
 
 
@@ -223,7 +228,7 @@ def occ_sweep_factory():
 
 
 def occ_text_factory():
-    from .occ_draw import OccText
+    from .occ_text import OccText
     return OccText
 
 
@@ -248,12 +253,12 @@ def occ_transform_factory():
 
 
 def occ_trimmed_curve_factory():
-    from .occ_draw import OccTrimmedCurve
+    from .occ_trimmed_curve import OccTrimmedCurve
     return OccTrimmedCurve
 
 
 def occ_vertex_factory():
-    from .occ_draw import OccVertex
+    from .occ_vertex import OccVertex
     return OccVertex
 
 
@@ -263,7 +268,7 @@ def occ_wedge_factory():
 
 
 def occ_wire_factory():
-    from .occ_draw import OccWire
+    from .occ_wire import OccWire
     return OccWire
 
 
@@ -358,6 +363,7 @@ OCC_FACTORIES = {
     'Arc': occ_arc_factory,
     'Bezier': occ_bezier_factory,
     'BSpline': occ_bspline_factory,
+    'BSplineSurface': occ_bspline_surface_factory,
     'Circle': occ_circle_factory,
     'Ellipse': occ_ellipse_factory,
     'Hyperbola': occ_hyperbola_factory,
