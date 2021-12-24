@@ -1,0 +1,26 @@
+# Created in DeclaraCAD
+from declaracad.parts.display import Axis
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Loft: surf:
+        color = 'gray'
+        BSpline:
+            points = [(-5, 0, 1), (-5, 5, 4), (-5, 10, 2)]
+        BSpline:
+            points = [(0, 0, 1), (0, 5, 5), (0, 10, 2)]
+        BSpline:
+            points = [(5, 0, 1), (5, 5, 4), (5, 10, 2)]
+    Circle: circle:
+        color = 'lime'
+        radius = 5
+        position = (0, 5, 10)
+    
+    NormalProjection:
+        color = 'purple'
+        shape = surf.topology.faces[0]
+        Transform:
+            shape = circle
+        
