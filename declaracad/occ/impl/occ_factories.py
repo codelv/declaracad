@@ -113,7 +113,7 @@ def occ_line_factory():
 
 
 def occ_middle_path_factory():
-    from .occ_draw import OccMiddlePath
+    from .occ_middle_path import OccMiddlePath
     return OccMiddlePath
 
 

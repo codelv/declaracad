@@ -21,7 +21,6 @@ from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakePolygon, BRepBuilderAPI_Transform,
     BRepBuilderAPI_MakeVertex, BRepBuilderAPI_MakeWire
 )
-from OCCT.BRepOffsetAPI import BRepOffsetAPI_MiddlePath
 from OCCT.BRepLib import BRepLib
 from OCCT.Font import (
     Font_FontMgr, Font_BRepFont, Font_BRepTextBuilder, Font_FontAspect,
@@ -61,7 +60,7 @@ from declaracad.occ.draw import (
     ProxyPlane, ProxyVertex, ProxyLine, ProxyCircle, ProxyEllipse,
     ProxyHyperbola, ProxyParabola, ProxyEdge, ProxyWire, ProxySegment,
     ProxyArc, ProxyPolyline, ProxyBSpline, ProxyBezier, ProxyTrimmedCurve,
-    ProxyText, ProxyRectangle, ProxyMiddlePath
+    ProxyText, ProxyRectangle
 )
 from .occ_shape import OccShape, OccDependentShape, Topology, coerce_axis
 from .occ_svg import make_ellipse
@@ -796,31 +795,3 @@ class OccRectangle(OccWire, ProxyRectangle):
         # This does not depened on children
         pass
 
-
-class OccMiddlePath(OccWire, ProxyMiddlePath):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_offset_a_p_i___middle_path.html')
-
-    def update_shape(self, change=None):
-        d = self.declaration
-        n = len(d.shapes)
-        if n == 3:
-            args = d.shapes
-        elif n == 2:
-            child = self.get_first_child()
-            args = [child.shape] + d.shapes
-        else:
-            args = [c.shape for c in self.children]
-
-        for i, s in enumerate(args[:]):
-            if isinstance(s, Shape):
-                s = args[i] = s.proxy.shape
-            if isinstance(s, TopoDS_Edge):
-                args[i] = BRepBuilderAPI_MakeWire(s).Wire()
-        builder = BRepOffsetAPI_MiddlePath(*args)
-        shape = Topology.cast_shape(builder.Shape())
-        curve = self.curve = BRepAdaptor_CompCurve(shape)
-        self.shape = shape
-
-    def set_shapes(self, shapes):
-        self.update_shape()
