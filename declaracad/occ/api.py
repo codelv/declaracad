@@ -19,7 +19,8 @@ from .algo import (
     Pipe,
     LinearForm, RevolutionForm,
     ThruSections, DraftAngle,
-    Transform, Translate, Rotate, Scale, Mirror
+    Transform, Translate, Rotate, Scale, Mirror,
+    NormalProjection
 )
 from .dimension import (
     AngleDimension, DiameterDimension, LengthDimension, RadiusDimension
