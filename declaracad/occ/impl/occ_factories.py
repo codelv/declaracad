@@ -103,7 +103,7 @@ def occ_hyperbola_factory():
 
 
 def occ_intersection_factory():
-    from .occ_algo import OccIntersection
+    from .occ_intersection import OccIntersection
     return OccIntersection
 
 
@@ -208,7 +208,7 @@ def occ_sphere_factory():
 
 
 def occ_split_factory():
-    from .occ_algo import OccSplit
+    from .occ_split import OccSplit
     return OccSplit
 
 

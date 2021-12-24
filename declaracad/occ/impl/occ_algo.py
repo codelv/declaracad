@@ -11,27 +11,15 @@ Created on Sep 27, 2016
 """
 from atom.api import Int, Dict, Instance, Subclass, set_default
 
-from OCCT.BOPAlgo import (
-    BOPAlgo_Splitter, BOPAlgo_Section, BOPAlgo_MakeConnected
-)
+
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepAlgoAPI import (
     BRepAlgoAPI_BooleanOperation, BRepAlgoAPI_Fuse, BRepAlgoAPI_Common,
     BRepAlgoAPI_Cut
 )
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_Transform, BRepBuilderAPI_MakeWire, BRepBuilderAPI_Sewing,
-    BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeFace
-)
-
-from OCCT.gp import (
-    gp_Trsf, gp_Vec, gp_Pnt, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt2d, gp_Pln
-)
-from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing
 from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
 from OCCT.ShapeFix import ShapeFix_Shape
-from OCCT.TColgp import TColgp_Array1OfPnt2d
-from OCCT.TopTools import TopTools_ListOfShape, TopTools_HSequenceOfShape
 from OCCT.TopoDS import (
     TopoDS, TopoDS_Edge, TopoDS_Face, TopoDS_Wire, TopoDS_Shape,
     TopoDS_Compound, TopoDS_Vertex
@@ -41,9 +29,7 @@ from OCCT.TopoDS import (
 from declaracad.core.utils import log
 from declaracad.occ.algo import (
     ProxyOperation, ProxyBooleanOperation, ProxyCommon, ProxyCut,
-    ProxyFuse,
-    ProxySplit, ProxyIntersection, ProxySew, ProxyGlue,
-
+    ProxyFuse, ProxySew, ProxyGlue,
 )
 
 from .occ_shape import (
@@ -113,56 +99,6 @@ class OccFuse(OccBooleanOperation, ProxyFuse):
         'https://dev.opencascade.org/doc/overview/html/'
         'occt_user_guides__boolean_operations.html#occt_algorithms_7')
     op = set_default(BRepAlgoAPI_Fuse)
-
-
-class OccIntersection(OccBooleanOperation, ProxyIntersection):
-    reference = set_default(
-        'https://dev.opencascade.org/doc/overview/html/'
-        'occt_user_guides__boolean_operations.html#occt_algorithms_10a')
-
-    def update_shape(self, change=None):
-        section = BOPAlgo_Section()
-        d = self.declaration
-        if d.shape1:
-            section.AddArgument(coerce_shape(d.shape1))
-        if d.shape2:
-            section.AddArgument(coerce_shape(d.shape2))
-        for c in self.children():
-            section.AddArgument(c.shape)
-        section.Perform()
-        if section.HasErrors():
-            raise ValueError("Could not intersect shape %s" % d)
-        self.shape = Topology.cast_shape(section.Shape())
-
-
-class OccSplit(OccBooleanOperation, ProxySplit):
-    """ Fuse all the child shapes together. """
-    reference = set_default(
-        'https://dev.opencascade.org/doc/overview/html/'
-        'occt_user_guides__boolean_operations.html#occt_algorithms_8')
-
-    def update_shape(self, change=None):
-        splitter = BOPAlgo_Splitter()
-        d = self.declaration
-        tools = TopTools_ListOfShape()
-        if d.shape1:
-            shape = d.shape1
-            splitter.AddArgument(shape)
-        else:
-            shape = None
-        if d.shape2:
-            tools.Append(d.shape2)
-        for c in self.children():
-            if shape:
-                tools.Append(c.shape)
-            else:
-                shape = c.shape
-                splitter.AddArgument(shape)
-        splitter.SetTools(tools)
-        splitter.Perform()
-        if splitter.HasErrors():
-            raise ValueError("Could not split shape %s" % d)
-        self.shape = splitter.Shape()
 
 
 class OccSew(OccOperation, ProxySew):
