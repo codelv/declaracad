@@ -241,6 +241,17 @@ class ProxyGlue(ProxyOperation):
     declaration = ForwardTyped(lambda: Glue)
 
 
+class ProxyNormalProjection(ProxyOperation):
+    #: A reference to the Shape declaration.
+    declaration = ForwardTyped(lambda: NormalProjection)
+
+    def set_shape(self, shape):
+        raise NotImplementedError
+
+    def set_max_distance(self, distance):
+        raise NotImplementedError
+
+
 class Operation(Shape):
     """ Base class for Operations that are applied to other shapes.
 
@@ -880,3 +891,18 @@ class Sew(Operation):
 class Glue(Operation):
     #: Reference to the implementation control
     proxy = Typed(ProxyGlue)
+
+
+class NormalProjection(Operation):
+    """ Project a wire onto a face. Requires at least one child shape. The
+    result is a wire.
+
+    """
+    #: Reference to the implementation control
+    proxy = Typed(ProxyNormalProjection)
+
+    #: The face project onto
+    shape = d_(Instance((Shape, TopoDS_Shape)))
+
+    #: Max distance
+    max_distance = d_(Float(strict=False))
