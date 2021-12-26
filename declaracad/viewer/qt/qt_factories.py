@@ -14,15 +14,19 @@ from enaml.qt.qt_factories import QT_FACTORIES
 
 def occ_viewer_factory():
     from .qt_occ_viewer import QtOccViewer
+
     return QtOccViewer
 
 
 def occ_viewer_clipped_plane_factory():
     from .qt_occ_clipped_plane import QtOccViewerClippedPlane
+
     return QtOccViewerClippedPlane
 
 
-QT_FACTORIES.update({
-    'OccViewer': occ_viewer_factory,
-    'OccViewerClippedPlane': occ_viewer_clipped_plane_factory,
-})
+QT_FACTORIES.update(
+    {
+        "OccViewer": occ_viewer_factory,
+        "OccViewerClippedPlane": occ_viewer_clipped_plane_factory,
+    }
+)

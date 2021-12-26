@@ -14,7 +14,11 @@ from atom.api import Atom, List, Str, Instance, Dict, Enum
 from declaracad.core.api import Plugin, DockItem, log
 
 from enaml.layout.api import (
-    AreaLayout, DockBarLayout, HSplitLayout, VSplitLayout, TabLayout
+    AreaLayout,
+    DockBarLayout,
+    HSplitLayout,
+    VSplitLayout,
+    TabLayout,
 )
 
 from . import extensions
@@ -23,7 +27,7 @@ with enaml.imports():
     from enaml.stdlib.dock_area_styles import available_styles
 
 
-ALL_STYLES = ['system'] + available_styles()
+ALL_STYLES = ["system"] + available_styles()
 
 
 class DeclaracadPlugin(Plugin):
@@ -45,62 +49,56 @@ class DeclaracadPlugin(Plugin):
     settings_model = Instance(Atom)
 
     def start(self):
-        """ Load all the plugins declaracad is dependent on """
+        """Load all the plugins declaracad is dependent on"""
         w = self.workbench
         super(DeclaracadPlugin, self).start()
         self._refresh_dock_items()
         self._refresh_settings_pages()
 
     def _bind_observers(self):
-        """ Setup the observers for the plugin.
-        """
+        """Setup the observers for the plugin."""
         super(DeclaracadPlugin, self)._bind_observers()
         workbench = self.workbench
         point = workbench.get_extension_point(extensions.DOCK_ITEM_POINT)
-        point.observe('extensions', self._refresh_dock_items)
+        point.observe("extensions", self._refresh_dock_items)
 
         point = workbench.get_extension_point(extensions.SETTINGS_PAGE_POINT)
-        point.observe('extensions', self._refresh_settings_pages)
+        point.observe("extensions", self._refresh_settings_pages)
 
     def _unbind_observers(self):
-        """ Remove the observers for the plugin.
-        """
+        """Remove the observers for the plugin."""
         super(DeclaracadPlugin, self)._unbind_observers()
         workbench = self.workbench
         point = workbench.get_extension_point(extensions.DOCK_ITEM_POINT)
-        point.unobserve('extensions', self._refresh_dock_items)
+        point.unobserve("extensions", self._refresh_dock_items)
 
         point = workbench.get_extension_point(extensions.SETTINGS_PAGE_POINT)
-        point.unobserve('extensions', self._refresh_settings_pages)
+        point.unobserve("extensions", self._refresh_settings_pages)
 
     # -------------------------------------------------------------------------
     # Dock API
     # -------------------------------------------------------------------------
     def create_new_area(self):
-        """ Create the dock area
-        """
+        """Create the dock area"""
         with enaml.imports():
             from .dock import DockView
-        area = DockView(
-            workbench=self.workbench,
-            plugin=self
-        )
+        area = DockView(workbench=self.workbench, plugin=self)
         return area
 
     def get_dock_area(self):
-        """ Get the dock area
+        """Get the dock area
 
         Returns
         -------
             area: DockArea
         """
-        ui = self.workbench.get_plugin('enaml.workbench.ui')
+        ui = self.workbench.get_plugin("enaml.workbench.ui")
         if not ui.workspace or not ui.workspace.content:
-            ui.select_workspace('declaracad.workspace')
-        return ui.workspace.content.find('dock_area')
+            ui.select_workspace("declaracad.workspace")
+        return ui.workspace.content.find("dock_area")
 
     def _refresh_dock_items(self, change=None):
-        """ Reload all DockItems registered by any Plugins
+        """Reload all DockItems registered by any Plugins
 
         Any plugin can add to this list by providing a DockItem
         extension in their PluginManifest.
@@ -132,19 +130,15 @@ class DeclaracadPlugin(Plugin):
         self._refresh_layout(layout)
 
     def _refresh_layout(self, layout):
-        """ Create the layout for all the plugins
-
-
-        """
+        """Create the layout for all the plugins"""
         if not self.dock_items:
             return AreaLayout()
-        items = layout.pop('main')
+        items = layout.pop("main")
         if not items:
-            raise EnvironmentError("At least one main layout item must be "
-                                   "defined!")
+            raise EnvironmentError("At least one main layout item must be " "defined!")
 
-        left_items = layout.pop('main-left', [])
-        bottom_items = layout.pop('main-bottom', [])
+        left_items = layout.pop("main-left", [])
+        bottom_items = layout.pop("main-bottom", [])
 
         main = TabLayout(*items)
 
@@ -153,8 +147,11 @@ class DeclaracadPlugin(Plugin):
         if left_items:
             main = HSplitLayout(*left_items, main)
 
-        dockbars = [DockBarLayout(*items, position=side)
-                    for side, items in layout.items() if items]
+        dockbars = [
+            DockBarLayout(*items, position=side)
+            for side, items in layout.items()
+            if items
+        ]
 
         #: Update layout
         self.dock_layout = AreaLayout(main, dock_bars=dockbars)
@@ -169,7 +166,7 @@ class DeclaracadPlugin(Plugin):
         log.debug("Settings page: {}".format(change))
 
     def _refresh_settings_pages(self, change=None):
-        """ Reload all SettingsPages registered by any Plugins
+        """Reload all SettingsPages registered by any Plugins
 
         Any plugin can add to this list by providing a SettingsPage
         extension in their PluginManifest.

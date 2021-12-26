@@ -13,17 +13,16 @@ from atom.api import set_default, Instance
 
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCCT.gp import gp_Trsf, gp_Ax1, gp_Ax2, gp_Ax3, gp_Vec, gp_Pnt, gp_Dir
-from declaracad.occ.algo import (
-    ProxyTransform, Translate, Rotate, Scale, Mirror
-)
+from declaracad.occ.algo import ProxyTransform, Translate, Rotate, Scale, Mirror
 from .occ_shape import OccShape
 from .occ_algo import OccOperation, coerce_shape
 from .topology import Topology
 
 
 class OccTransform(OccOperation, ProxyTransform):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'classgp___trsf.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "classgp___trsf.html"
+    )
 
     _old_shape = Instance(OccShape)
 
@@ -36,12 +35,12 @@ class OccTransform(OccOperation, ProxyTransform):
                 if isinstance(op, Translate):
                     t.SetTranslation(gp_Vec(op.x, op.y, op.z))
                 elif isinstance(op, Rotate):
-                    t.SetRotation(gp_Ax1(gp_Pnt(*op.point),
-                                        gp_Dir(*op.direction)), op.angle)
+                    t.SetRotation(
+                        gp_Ax1(gp_Pnt(*op.point), gp_Dir(*op.direction)), op.angle
+                    )
                 elif isinstance(op, Mirror):
                     Ax = gp_Ax2 if op.plane else gp_Ax1
-                    t.SetMirror(Ax(gp_Pnt(*op.point),
-                                   gp_Dir(op.x, op.y, op.z)))
+                    t.SetMirror(Ax(gp_Pnt(*op.point), gp_Dir(op.x, op.y, op.z)))
                 elif isinstance(op, Scale):
                     t.SetScale(gp_Pnt(*op.point), op.s)
                 result.Multiply(t)
@@ -52,8 +51,7 @@ class OccTransform(OccOperation, ProxyTransform):
             result.SetTranslationPart(gp_Vec(*d.position))
             if d.rotation:
                 t = gp_Trsf()
-                t.SetRotation(gp_Ax1(d.position.proxy, d.direction.proxy),
-                              d.rotation)
+                t.SetRotation(gp_Ax1(d.position.proxy, d.direction.proxy), d.rotation)
                 result.Multiply(t)
 
         return result
@@ -68,8 +66,7 @@ class OccTransform(OccOperation, ProxyTransform):
             # Use the first child
             child = self.get_first_child()
             if child is None:
-                raise ValueError(
-                    "Transform has no shape to transform %s" % d)
+                raise ValueError("Transform has no shape to transform %s" % d)
             original = child.shape
 
         t = self.get_transform()
@@ -80,9 +77,9 @@ class OccTransform(OccOperation, ProxyTransform):
 
     def set_shape(self, shape):
         if self._old_shape:
-            self._old_shape.unobserve('shape', self.update_shape)
+            self._old_shape.unobserve("shape", self.update_shape)
         self._old_shape = shape.proxy
-        self._old_shape.observe('shape', self.update_shape)
+        self._old_shape.observe("shape", self.update_shape)
 
     def set_translate(self, translation):
         self.update_shape()

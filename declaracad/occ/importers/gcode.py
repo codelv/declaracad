@@ -11,21 +11,19 @@ Created on Aug 31, 2020
 """
 import cmath
 from declaracad.cnc import gcode
-from declaracad.occ.api import (
-    Vertex, Point, Polyline, Bezier, Arc, Wire, Circle
-)
+from declaracad.occ.api import Vertex, Point, Polyline, Bezier, Arc, Wire, Circle
 from declaracad.core.utils import log
 
 COLORMAP = {
-    'rapid': 'green',
-    'normal': 'red',
-    'arc': 'orange',
-    'plunge': 'blue',
+    "rapid": "green",
+    "normal": "red",
+    "arc": "orange",
+    "plunge": "blue",
 }
 
 
 def load_gcode(filename, **options):
-    """ Load a GCode file into a list of shapes to render
+    """Load a GCode file into a list of shapes to render
 
     Parameters
     ----------
@@ -50,26 +48,26 @@ def load_gcode(filename, **options):
     items = []
 
     #
-    merge_points = options.get('merge_points', True)
+    merge_points = options.get("merge_points", True)
 
     # Add color options
     colors = COLORMAP.copy()
-    if 'colors' in options:
-        colors.update(options['colors'])
-    rapid_color = colors['rapid']
-    normal_color = colors['normal']
-    arc_color = colors['arc']
-    plunge_color = colors['plunge']
+    if "colors" in options:
+        colors.update(options["colors"])
+    rapid_color = colors["rapid"]
+    normal_color = colors["normal"]
+    arc_color = colors["arc"]
+    plunge_color = colors["plunge"]
 
     zero = Point()
     last_color = None
     last_cmd = gcode.Command()
-    mode = 'absolute'
+    mode = "absolute"
     log.debug(doc)
     for cmd in doc.commands:
         data = cmd.data
-        if cmd.id in ('G0', 'G1'):
-            if mode == 'absolute':
+        if cmd.id in ("G0", "G1"):
+            if mode == "absolute":
                 pos = cmd.position(last)
             else:
                 pos = last + cmd.position(zero)
@@ -77,134 +75,141 @@ def load_gcode(filename, **options):
             if last == pos:
                 log.debug(f"Duplicate: {cmd}")
                 continue
-            if cmd.id == 'G0':
+            if cmd.id == "G0":
                 color = rapid_color
-            elif last_cmd and last_cmd.id == 'G0':
+            elif last_cmd and last_cmd.id == "G0":
                 color = plunge_color
             else:
                 color = normal_color
 
-            if 'R' in data:
+            if "R" in data:
                 # Radius'd corner
                 # TODO: THIS
                 log.warning(f"Radius ignored: {cmd}")
 
-            if merge_points and last_cmd.id == cmd.id \
-                    and color == last_color:
+            if merge_points and last_cmd.id == cmd.id and color == last_color:
                 items[-1].points.append(pos)
             else:
                 # Start a new one
-                items.append(Polyline(
-                    points=[last, pos],
-                    description=cmd.source,
-                    color=color))
+                items.append(
+                    Polyline(points=[last, pos], description=cmd.source, color=color)
+                )
             last = pos
             last_cmd = cmd
             last_color = color
-        elif cmd.id in ('G2', 'G3'):
+        elif cmd.id in ("G2", "G3"):
             # TODO: Helical arcs using Z is not implemented
             pos = cmd.position(last)
-            clockwise = cmd.id == 'G2'
-            r = data.get('R')
+            clockwise = cmd.id == "G2"
+            r = data.get("R")
             if r is not None:
                 # Solve for center
                 delta = pos - last
                 if delta.z != 0:
-                    raise NotImplementedError(
-                        f"Helix is not implemented {cmd}")
+                    raise NotImplementedError(f"Helix is not implemented {cmd}")
                 midpoint = pos.midpoint(last)
                 q = pos.distance(last)
                 if q == 0:
                     raise ValueError(f"Invalid command {cmd} (d=0)")
 
-                u = cmath.sqrt(r**2 - (q/2)**2)
+                u = cmath.sqrt(r ** 2 - (q / 2) ** 2)
                 if clockwise:
                     u = -u
-                x = (midpoint.x - u*delta.y/q).real
-                y = (midpoint.y + u*delta.x/q).real
+                x = (midpoint.x - u * delta.y / q).real
+                y = (midpoint.y + u * delta.x / q).real
 
                 center = Point(x, y, pos.z)
 
                 items.append(
-                    Arc(position=center,
+                    Arc(
+                        position=center,
                         radius=r,
                         clockwise=clockwise,
                         points=[last, pos],
                         color=arc_color,
-                        description=cmd.source))
-            #elif 'U' in data:
+                        description=cmd.source,
+                    )
+                )
+            # elif 'U' in data:
             else:
                 # Center format
-                i, j = data.get('I'), data.get('J')
+                i, j = data.get("I"), data.get("J")
 
                 if i is None and j is None:
-                    raise ValueError(
-                        f"Invalid arc {cmd} (both I and J missing)")
+                    raise ValueError(f"Invalid arc {cmd} (both I and J missing)")
 
-                if 'P' in data:
-                    raise NotImplementedError(
-                        f"Helix is not implemented {cmd}")
+                if "P" in data:
+                    raise NotImplementedError(f"Helix is not implemented {cmd}")
 
                 center = last + (i or 0, j or 0)
                 r = center.distance(last)
                 items.append(
-                    Arc(position=center,
+                    Arc(
+                        position=center,
                         radius=r,
                         clockwise=clockwise,
                         points=[last, pos],
                         color=arc_color,
-                        description=cmd.source))
+                        description=cmd.source,
+                    )
+                )
             last = pos
             last_cmd = cmd
-        elif cmd.id == 'G4':
-            t = cmd.data.get('P')
+        elif cmd.id == "G4":
+            t = cmd.data.get("P")
             if not t or t < 0:
                 raise ValueError(f"Invalid dwell time {cmd}")
-            items.append(Vertex(
-                position=last,
-                description=f"Dwell {t}s",
-            ))
+            items.append(
+                Vertex(
+                    position=last,
+                    description=f"Dwell {t}s",
+                )
+            )
             last_cmd = cmd
-        elif cmd.id == 'G5':
+        elif cmd.id == "G5":
             # Cubic B-Spline
-            points = [last, last + Point(data['X'], data['Y'])]
+            points = [last, last + Point(data["X"], data["Y"])]
 
             # For first
-            if last_cmd.id != 'G5':
-                points.append(points[-1] + Point(data['I'], data['J']))
-            elif 'I' in data and 'J' in data:
-                points.append(points[-1] + Point(data['I'], data['J']))
-            elif 'I' in data or 'J' in data:
+            if last_cmd.id != "G5":
+                points.append(points[-1] + Point(data["I"], data["J"]))
+            elif "I" in data and "J" in data:
+                points.append(points[-1] + Point(data["I"], data["J"]))
+            elif "I" in data or "J" in data:
                 # Must both be specified or nether
                 raise ValueError(f"Incomplete G5 command {cmd}")
 
             # Last point
-            points.append(points[-1] + Point(cmd['P'], cmd['Q']))
+            points.append(points[-1] + Point(cmd["P"], cmd["Q"]))
 
-            items.append(Bezier(
-                points=points,
-                color=normal_color,
-                description=cmd.source,
-            ))
+            items.append(
+                Bezier(
+                    points=points,
+                    color=normal_color,
+                    description=cmd.source,
+                )
+            )
             last = points[-1]
             last_cmd = cmd
-        elif cmd.id == 'G5.1':
-            c1 = last + Point(data['X'], data['Y'])
-            i, j = data.get('I'), data.get('J')
+        elif cmd.id == "G5.1":
+            c1 = last + Point(data["X"], data["Y"])
+            i, j = data.get("I"), data.get("J")
             if i is None and j is None:
                 raise ValueError(f"Incomplete G5.1 command {cmd}")
             c2 = c1 + Point(i or 0, j or 0)
-            items.append(Bezier(
-                points=[last, c1, c2],
-                color=normal_color,
-                description=cmd.source,
-            ))
+            items.append(
+                Bezier(
+                    points=[last, c1, c2],
+                    color=normal_color,
+                    description=cmd.source,
+                )
+            )
             last_cmd = cmd
             last = c2
-        elif cmd.id == 'G90':
-            mode = 'absolute'
-        elif cmd.id == 'G91':
-            mode = 'incremental'
+        elif cmd.id == "G90":
+            mode = "absolute"
+        elif cmd.id == "G91":
+            mode = "incremental"
         else:
             log.debug(f"Ignoring: {cmd}")
 

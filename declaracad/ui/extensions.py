@@ -12,8 +12,8 @@ Created on Dec 11, 2017
 from atom.api import Str, Callable, Enum
 from enaml.core.declarative import Declarative, d_
 
-DOCK_ITEM_POINT = 'declaracad.ui.dock.items'
-SETTINGS_PAGE_POINT = 'declaracad.ui.settings.page'
+DOCK_ITEM_POINT = "declaracad.ui.dock.items"
+SETTINGS_PAGE_POINT = "declaracad.ui.settings.page"
 
 
 class DockItem(Declarative):
@@ -25,8 +25,9 @@ class DockItem(Declarative):
     factory = d_(Callable())
 
     #: Where to layout this item in the dock area
-    layout = d_(Enum('main', 'top', 'left', 'right', 'bottom',
-                     'main-bottom', 'main-left'))
+    layout = d_(
+        Enum("main", "top", "left", "right", "bottom", "main-bottom", "main-left")
+    )
 
 
 class SettingsPage(Declarative):

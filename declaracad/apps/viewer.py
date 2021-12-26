@@ -16,6 +16,7 @@ import enaml
 import asyncio
 import traceback
 import faulthandler
+
 faulthandler.enable()
 
 # FIXME: The frozen app won't start without this before importing atom
@@ -32,13 +33,14 @@ with enaml.imports():
 
 
 class ViewerProtocol(JsonRpcProtocol):
-    """ Use stdio as a json-rpc interface to communicate with external
+    """Use stdio as a json-rpc interface to communicate with external
     processes.
 
     If --frameless is used, the interface must receive a ping at least every
     60 sec or it will assume it's owner has left and will exit.
 
     """
+
     app = Instance(Application)
     view = Typed(ViewerWindow)
     ref = Str()
@@ -49,17 +51,16 @@ class ViewerProtocol(JsonRpcProtocol):
         self.connected = True
         log.debug("Connected to workbench")
         window_id = int(self.view.proxy.widget.winId())
-        self.invoke_method('welcome', self.ref, window_id)
+        self.invoke_method("welcome", self.ref, window_id)
 
         # Send stdout/stderr to remote connection
         logger = self.logger = RemoteLogger(
-            protocol=self,
-            stdout=sys.stdout,
-            stderr=sys.stderr)
+            protocol=self, stdout=sys.stdout, stderr=sys.stderr
+        )
         logger.attach()
 
         # Reattach logger
-        #for handler in log.handlers:
+        # for handler in log.handlers:
         #    if getattr(handler, 'stream', None) == logger.stdout:
         #        handler.setStream(logger)
 
@@ -81,9 +82,10 @@ class ViewerProtocol(JsonRpcProtocol):
         raise AttributeError(attr)
 
 
-async def run_remote(app: Application, view: ViewerWindow,
-                     filename: str, port: int, ref: str):
-    """ Open a connection to the workbench application.
+async def run_remote(
+    app: Application, view: ViewerWindow, filename: str, port: int, ref: str
+):
+    """Open a connection to the workbench application.
 
     Parameters
     ----------
@@ -101,11 +103,11 @@ async def run_remote(app: Application, view: ViewerWindow,
     """
     try:
         transport, protocol = await app.loop.create_connection(
-            lambda: ViewerProtocol(app=app, view=view, ref=ref),
-            '127.0.0.1', port)
+            lambda: ViewerProtocol(app=app, view=view, ref=ref), "127.0.0.1", port
+        )
         log.debug("Remote viewer connected!")
     except Exception as e:
-        log.error(f'Could not connect to workbench: {e}')
+        log.error(f"Could not connect to workbench: {e}")
         app.stop()
         return
     view.protocol = protocol
@@ -113,11 +115,8 @@ async def run_remote(app: Application, view: ViewerWindow,
     protocol.start_logger()
 
 
-async def run_local(app: Application, view: ViewerWindow, filename: str,
-                    watch: bool):
-    """ Set the filename for the viewer to load and watch for changes
-
-    """
+async def run_local(app: Application, view: ViewerWindow, filename: str, watch: bool):
+    """Set the filename for the viewer to load and watch for changes"""
     view.filename = filename
     if not watch:
         return
@@ -132,9 +131,10 @@ async def run_local(app: Application, view: ViewerWindow, filename: str,
             last_mtime = mtime
 
 
-def main(filename: str = '-', port: int = 0, watch: bool = False,
-         ref: str = "", **kwargs):
-    """ Launch a single viewer application.
+def main(
+    filename: str = "-", port: int = 0, watch: bool = False, ref: str = "", **kwargs
+):
+    """Launch a single viewer application.
 
     Parameters
     ----------
@@ -154,15 +154,15 @@ def main(filename: str = '-', port: int = 0, watch: bool = False,
     if not port and not os.path.exists(filename):
         raise ValueError("File %s does not exist!" % filename)
 
-    view = ViewerWindow(filename='-', frameless=bool(port))
+    view = ViewerWindow(filename="-", frameless=bool(port))
     view.show()
     if port:
         app.deferred_call(run_remote, app, view, filename, port, ref)
     else:
         app.deferred_call(run_local, app, view, filename, watch)
     app.start()
-    log.debug('Viewer exited')
+    log.debug("Viewer exited")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

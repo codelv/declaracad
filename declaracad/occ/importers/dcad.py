@@ -11,7 +11,7 @@ with enaml.imports():
 
 
 def load_model(filename: str, from_string: bool = False):
-    """ Load a DeclaraCAD model from an enaml file, source, or a shape
+    """Load a DeclaraCAD model from an enaml file, source, or a shape
     supported by the LoadShape node.
 
     Parameters
@@ -33,16 +33,16 @@ def load_model(filename: str, from_string: bool = False):
     if from_string:
         source = filename
     else:
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             source = f.read()
     ast = parse(source)
     code = EnamlCompiler.compile(ast, filename)
-    module = ModuleType(filename.rsplit('.', 1)[0])
+    module = ModuleType(filename.rsplit(".", 1)[0])
     module.__file__ = filename
     namespace = module.__dict__
     with enaml.imports():
         exec(code, namespace)
-    Assembly = namespace.get('Assembly')
+    Assembly = namespace.get("Assembly")
     if Assembly is not None:
         assembly = Assembly()
         if not assembly.name:

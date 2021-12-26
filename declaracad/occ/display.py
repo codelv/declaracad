@@ -12,7 +12,15 @@ Created on Dec 27, 2020
 
 import math
 from atom.api import (
-    Bool, Coerced, Float, List, Tuple,  Str, Typed, ForwardTyped, observe
+    Bool,
+    Coerced,
+    Float,
+    List,
+    Tuple,
+    Str,
+    Typed,
+    ForwardTyped,
+    observe,
 )
 from enaml.colors import ColorMember, Color
 from enaml.core.declarative import d_
@@ -75,10 +83,11 @@ class ProxyDisplayText(ProxyDisplayItem):
 
 
 class DisplayItem(ToolkitObject):
-    """ Basic display item. This represents an item in the display
+    """Basic display item. This represents an item in the display
     that has no effect on the model.
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyDisplayItem)
 
@@ -89,7 +98,7 @@ class DisplayItem(ToolkitObject):
     description = d_(Str())
 
     #: A string representing the color of the shape.
-    color = d_(ColorMember()).tag(view=True, group='Display')
+    color = d_(ColorMember()).tag(view=True, group="Display")
 
     #: The transparency of the item
     transparency = d_(Float(strict=False))
@@ -111,12 +120,12 @@ class DisplayItem(ToolkitObject):
     def _default_direction(self):
         return Point(0, 0, 1)
 
-    @observe('position', 'color', 'direction')
+    @observe("position", "color", "direction")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
     def show(self):
-        """ Generates the display item
+        """Generates the display item
 
         Returns
         -------
@@ -142,9 +151,8 @@ class DisplayPlane(DisplayItem):
 
 
 class DisplayArrow(DisplayItem):
-    """ Add an arrow to the 3d display.
+    """Add an arrow to the 3d display."""
 
-    """
     #: Reference to the implementation control
     proxy = Typed(ProxyDisplayArrow)
 
@@ -160,15 +168,14 @@ class DisplayArrow(DisplayItem):
     def _default_tube_size(self):
         return (0.5, 8)
 
-    @observe('cone_size', 'tube_size')
+    @observe("cone_size", "tube_size")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class DisplayText(DisplayItem):
-    """ Add text to the 3d display.
+    """Add text to the 3d display."""
 
-    """
     #: Reference to the implementation control
     proxy = Typed(ProxyDisplayText)
 
@@ -181,8 +188,6 @@ class DisplayText(DisplayItem):
     #: Font family
     font = d_(Str())
 
-    @observe('text', 'size', 'font')
+    @observe("text", "size", "font")
     def _update_proxy(self, change):
         super()._update_proxy(change)
-
-

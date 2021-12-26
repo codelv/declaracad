@@ -15,7 +15,7 @@ from declaracad.occ.api import TopoShape
 
 
 def load_iges(filename):
-    """ Load an iges model """
+    """Load an iges model"""
     reader = IGESControl_Reader()
     status = reader.ReadFile(filename)
     if status != IFSelect_RetDone:

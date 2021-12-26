@@ -13,15 +13,14 @@ import signal
 import pytest
 import subprocess
 
-#@pytest.mark.skipIf(sys.platform == 'win32', "Doesn't work")
+# @pytest.mark.skipIf(sys.platform == 'win32', "Doesn't work")
 @pytest.mark.skip()
 def test_app():
-    p = subprocess.Popen(
-        'declaracad', stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen("declaracad", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for i in range(20):
         time.sleep(1)
         if i == 10:
-            if sys.platform == 'win32':
+            if sys.platform == "win32":
                 sig = signal.CTRL_C_EVENT
             else:
                 sig = signal.SIGINT
@@ -30,6 +29,6 @@ def test_app():
         if p.returncode is not None:
             break
     stdout, stderr = p.communicate()
-    #for line in stdout.split(b"\n"):
+    # for line in stdout.split(b"\n"):
     #    print(stdout)
-    assert b'Workbench stopped' in stdout
+    assert b"Workbench stopped" in stdout

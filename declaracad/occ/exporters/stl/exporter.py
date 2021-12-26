@@ -23,7 +23,7 @@ from OCCT.TopoDS import TopoDS_Compound
 
 
 class StlExporter(ModelExporter):
-    extension = 'stl'
+    extension = "stl"
     linear_deflection = Float(0.05, strict=False)
     angular_deflection = Float(0.5, strict=False)
     relative = Bool()
@@ -33,10 +33,11 @@ class StlExporter(ModelExporter):
     def get_options_view(cls):
         with enaml.imports():
             from .options import OptionsForm
+
             return OptionsForm
 
     def export(self):
-        """ Export a DeclaraCAD model from an enaml file to an STL based on the
+        """Export a DeclaraCAD model from an enaml file to an STL based on the
         given options.
 
         Parameters
@@ -58,7 +59,7 @@ class StlExporter(ModelExporter):
             shape = part.render()
 
             # Must mesh the shape firsts
-            if hasattr(shape, 'Shape'):
+            if hasattr(shape, "Shape"):
                 builder.Add(compound, shape.Shape())
             else:
                 builder.Add(compound, shape)
@@ -68,10 +69,7 @@ class StlExporter(ModelExporter):
         # TODO: pyOCCT needs to support updating the reference
         # exporter.SetASCIIMode(not self.binary)
         mesh = BRepMesh_IncrementalMesh(
-            compound,
-            self.linear_deflection,
-            self.relative,
-            self.angular_deflection
+            compound, self.linear_deflection, self.relative, self.angular_deflection
         )
         mesh.Perform()
         if not mesh.IsDone():

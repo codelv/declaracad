@@ -11,14 +11,24 @@ Created on Aug 3, 2021
 """
 from typing import Optional
 from atom.api import (
-    Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property,
-    List, Str, Int, Coerced, observe
+    Atom,
+    Value,
+    Typed,
+    ForwardTyped,
+    Enum,
+    Dict,
+    Bool,
+    Float,
+    Property,
+    List,
+    Str,
+    Int,
+    Coerced,
+    observe,
 )
 from enaml.core.declarative import d_, d_func
 from enaml.colors import Color, ColorMember
-from .shape import (
-    ProxyShape, Shape, Point, Direction, coerce_direction, coerce_point
-)
+from .shape import ProxyShape, Shape, Point, Direction, coerce_direction, coerce_point
 
 
 class ProxyNode(Atom):
@@ -63,19 +73,19 @@ class ProxyMesh(ProxyShape):
     #: A reference to the Shape declaration
     declaration = ForwardTyped(lambda: Mesh)
 
-    def find_node(self, id) -> 'Node':
+    def find_node(self, id) -> "Node":
         raise NotImplementedError
 
-    def find_element(self, id) -> 'Element':
+    def find_element(self, id) -> "Element":
         raise NotImplementedError
 
-    def find_element(self, id) -> 'Element':
+    def find_element(self, id) -> "Element":
         raise NotImplementedError
 
-    def find_face(self, id) -> 'Element':
+    def find_face(self, id) -> "Element":
         raise NotImplementedError
 
-    def find_volume(self, id) -> 'Element':
+    def find_volume(self, id) -> "Element":
         raise NotImplementedError
 
     def set_source(self, source):
@@ -86,9 +96,8 @@ class ProxyMesh(ProxyShape):
 
 
 class ProxyIterator(Atom):
-    """ Mesh item iterator
+    """Mesh item iterator"""
 
-    """
     def __iter__(self):
         raise NotImplementedError
 
@@ -141,11 +150,12 @@ class ProxyMeshTopology(Atom):
 
 
 class Node(Atom):
-    """ A mesh node.
+    """A mesh node.
 
     This is meant to be used as a pass through object.
 
     """
+
     #: Proxy to the internal object
     proxy = Typed(ProxyNode)
 
@@ -192,10 +202,10 @@ class Node(Atom):
     #: Member to store any relevent data
     data = Dict()
 
-    @observe('color', 'mass', 'position', 'force', 'torque', 'fixed')
+    @observe("color", "mass", "position", "force", "torque", "fixed")
     def _update_proxy(self, change):
-        setter = getattr(self.proxy, 'set_%s' % change['name'])
-        setter(change['value'])
+        setter = getattr(self.proxy, "set_%s" % change["name"])
+        setter(change["value"])
 
     def __repr__(self):
         return "<Node: x=%s y=%s z=%s>" % self.position[:]
@@ -241,10 +251,10 @@ class Element(Atom):
     #: Member to store any relevent data
     data = Dict()
 
-    @observe('front_color', 'back_color')
+    @observe("front_color", "back_color")
     def _update_proxy(self, change):
-        setter = getattr(self.proxy, 'set_%s' % change['name'])
-        setter(change['value'])
+        setter = getattr(self.proxy, "set_%s" % change["name"])
+        setter(change["value"])
 
 
 class Material(Atom):
@@ -271,7 +281,7 @@ class Material(Atom):
 
 
 class Mesh(Shape):
-    """ A Mesh
+    """A Mesh
 
     Attributes
     ----------
@@ -293,6 +303,7 @@ class Mesh(Shape):
 
 
     """
+
     proxy = Typed(ProxyMesh)
 
     #: May be either a shape to mesh or a numpy array
@@ -305,7 +316,7 @@ class Mesh(Shape):
     disabled = d_(Bool())
 
     #: Export type
-    export_type = d_(Enum('med', 'dat', 'unv', 'stl', 'cgns', 'gmf', 'sauv'))
+    export_type = d_(Enum("med", "dat", "unv", "stl", "cgns", "gmf", "sauv"))
 
     #: If given, write the mesh to a file
     export_filename = d_(Str())
@@ -315,16 +326,29 @@ class Mesh(Shape):
     # ---------------------------------------------------------------------
     node_color = d_(ColorMember())
     node_size = d_(Float(1.0, strict=False))
-    node_type = d_(Enum(
-        'circle', 'ball', 'dot', 'plus', 'point', 'star', 'cross',
-        'point-in-circle', 'star-in-circle',
-        'plus-in-circle', 'cross-in-circle',
-        'large-ring', 'medium-ring', 'small-ring'))
+    node_type = d_(
+        Enum(
+            "circle",
+            "ball",
+            "dot",
+            "plus",
+            "point",
+            "star",
+            "cross",
+            "point-in-circle",
+            "star-in-circle",
+            "plus-in-circle",
+            "cross-in-circle",
+            "large-ring",
+            "medium-ring",
+            "small-ring",
+        )
+    )
 
     edge_color = d_(ColorMember("grey"))
     edge_size = d_(Float(1.0, strict=False))
 
-    beam_color = d_(ColorMember('black'))
+    beam_color = d_(ColorMember("black"))
     beam_size = d_(Float(1.0, strict=False))
 
     # ---------------------------------------------------------------------
@@ -332,7 +356,7 @@ class Mesh(Shape):
     # ---------------------------------------------------------------------
     @d_func
     def prepare_mesh(self, gen, mesh, shape):
-        """ This is invoked before the mesh is computed. It should be
+        """This is invoked before the mesh is computed. It should be
         defined to prepare the meshing parameters.
 
         Parameters
@@ -349,7 +373,7 @@ class Mesh(Shape):
 
     @d_func
     def process_mesh(self):
-        """ Process the generated mesh. This is invoked before colorizing.
+        """Process the generated mesh. This is invoked before colorizing.
 
         If you want to use your own FEA, this is a good place to hook in.
 
@@ -358,7 +382,7 @@ class Mesh(Shape):
 
     @d_func
     def colorize_mesh(self):
-        """ This is invoked after the mesh is computed. The topology can
+        """This is invoked after the mesh is computed. The topology can
         be used to apply colors to nodes and elements.
 
         """
@@ -368,25 +392,17 @@ class Mesh(Shape):
     # Mesh lookup API
     # ---------------------------------------------------------------------
     def find_node(self, id) -> Node:
-        """ Find the node with the given ID.
-
-        """
+        """Find the node with the given ID."""
         return self.proxy.find_node(id)
 
     def find_element(self, id) -> Element:
-        """ Find the node with the given ID.
-
-        """
+        """Find the node with the given ID."""
         return self.proxy.find_element(id)
 
     def find_face(self, id) -> Element:
-        """ Find the face element with the given ID.
-
-        """
+        """Find the face element with the given ID."""
         return self.proxy.find_face(id)
 
     def find_volume(self, id) -> Element:
-        """ Find the volume element with the given ID.
-
-        """
+        """Find the volume element with the given ID."""
         return self.proxy.find_volume(id)

@@ -11,8 +11,21 @@ Created on Sept 27, 2016
 """
 from math import sin, cos, tan, pi
 from atom.api import (
-    Bool, List, Float, Typed, ForwardTyped, Str, Enum, Property, Int,
-    Dict, Coerced, Instance, Range, set_default, observe
+    Bool,
+    List,
+    Float,
+    Typed,
+    ForwardTyped,
+    Str,
+    Enum,
+    Property,
+    Int,
+    Dict,
+    Coerced,
+    Instance,
+    Range,
+    set_default,
+    observe,
 )
 from enaml.core.declarative import d_
 
@@ -253,9 +266,8 @@ class ProxyBSplineSurface(ProxyShape):
         raise NotImplementedError
 
 
-
 class Plane(Shape):
-    """ A Point at a specific position.
+    """A Point at a specific position.
 
     Examples
     --------
@@ -265,6 +277,7 @@ class Plane(Shape):
         direction = (0, 0, 1)
 
     """
+
     proxy = Typed(ProxyPlane)
 
     #: Bounds of plane (optional) a tuple of [(umin, umin), (vmax, vmax)]
@@ -272,7 +285,7 @@ class Plane(Shape):
 
 
 class Vertex(Shape):
-    """ A Vertex at a specific position.
+    """A Vertex at a specific position.
 
     Examples
     --------
@@ -281,28 +294,41 @@ class Vertex(Shape):
         position = (10, 100, 0)
 
     """
+
     proxy = Typed(ProxyVertex)
 
     #: Style marker
     #: TODO: Custom
-    marker = d_(Enum('plus', 'point', 'dot', 'star', 'cross', 'circle',
-                     'point-in-circle', 'star-in-circle',
-                     'plus-in-circle', 'cross-in-circle',
-                     'large-ring', 'medium-ring', 'small-ring',
-                     'ball'))
+    marker = d_(
+        Enum(
+            "plus",
+            "point",
+            "dot",
+            "star",
+            "cross",
+            "circle",
+            "point-in-circle",
+            "star-in-circle",
+            "plus-in-circle",
+            "cross-in-circle",
+            "large-ring",
+            "medium-ring",
+            "small-ring",
+            "ball",
+        )
+    )
 
 
 class Edge(Shape):
-    """ An Edge is a base class for Lines and Wires.
+    """An Edge is a base class for Lines and Wires."""
 
-    """
     proxy = Typed(ProxyEdge)
 
     #: The parametric surface to wrap this edge on
     surface = d_(Instance(TopoDS_Face))
 
     #: Style for line
-    line_style = d_(Enum('solid', 'dashed', 'dotted', 'dot_dash'))
+    line_style = d_(Enum("solid", "dashed", "dotted", "dot_dash"))
 
     #: Line width style
     line_width = d_(Float(strict=False))
@@ -315,7 +341,7 @@ class Edge(Shape):
     solve = d_(Dict())
 
     def get_value_at(self, t, derivative=0):
-        """ Get the value of the curve derivative at t. If the edge has no
+        """Get the value of the curve derivative at t. If the edge has no
         internal parametric curve representation this will throw an error.
 
         Parameter
@@ -334,7 +360,7 @@ class Edge(Shape):
 
 
 class Line(Edge):
-    """ Creates a Line passing through the position and parallel to vector
+    """Creates a Line passing through the position and parallel to vector
     given by the direction.
 
     Attributes
@@ -352,6 +378,7 @@ class Line(Edge):
         direction = (0, 0, 1)
 
     """
+
     proxy = Typed(ProxyLine)
 
     #: List of points
@@ -365,13 +392,13 @@ class Line(Edge):
     def end(self):
         return coerce_point(self.proxy.curve.EndPoint())
 
-    @observe('points')
+    @observe("points")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class Segment(Line):
-    """ Creates a line Segment from two or child points. If a position
+    """Creates a line Segment from two or child points. If a position
     and direction are given the points are transformed to align with the
     plane defined by the given position and direction.
 
@@ -381,11 +408,12 @@ class Segment(Line):
     Segment:
         points = ((0, 0, 0), (10, 0, 0)]
     """
+
     proxy = Typed(ProxySegment)
 
 
 class Arc(Line):
-    """ Creates an Arc that can be used to build a Wire.
+    """Creates an Arc that can be used to build a Wire.
 
     Attributes
     ----------
@@ -433,6 +461,7 @@ class Arc(Line):
             )
 
     """
+
     proxy = Typed(ProxyArc)
 
     #: Radius of the circle (optional)
@@ -452,7 +481,7 @@ class Arc(Line):
 
 
 class Circle(Edge):
-    """ Creates a Circle.
+    """Creates a Circle.
 
     Attributes
     ----------
@@ -469,18 +498,19 @@ class Circle(Edge):
         direction = (1, 0, 0)
 
     """
+
     proxy = Typed(ProxyCircle)
 
     #: Radius of the circle
     radius = d_(Float(1, strict=False)).tag(view=True)
 
-    @observe('radius')
+    @observe("radius")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class Ellipse(Edge):
-    """ Creates an Ellipse.
+    """Creates an Ellipse.
 
     Attributes
     ----------
@@ -498,6 +528,7 @@ class Ellipse(Edge):
         minor_radius = 7
 
     """
+
     proxy = Typed(ProxyEllipse)
 
     #: Radius of the ellipse
@@ -506,13 +537,13 @@ class Ellipse(Edge):
     #: Minor radius of the ellipse
     minor_radius = d_(Float(1, strict=False)).tag(view=True)
 
-    @observe('major_radius', 'minor_radius')
+    @observe("major_radius", "minor_radius")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class Hyperbola(Edge):
-    """ Creates a Hyperbola.
+    """Creates a Hyperbola.
 
     Attributes
     ----------
@@ -551,6 +582,7 @@ class Hyperbola(Edge):
             minor_radius = 3
 
     """
+
     proxy = Typed(ProxyHyperbola)
 
     #: Major radius of the hyperbola
@@ -567,13 +599,13 @@ class Hyperbola(Edge):
     def end(self):
         return coerce_point(self.proxy.curve.EndPoint())
 
-    @observe('major_radius', 'minor_radius')
+    @observe("major_radius", "minor_radius")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class Parabola(Edge):
-    """ Creates a Parabola with its local coordinate system given by the
+    """Creates a Parabola with its local coordinate system given by the
     `position` and `direction` and it's focal length `focal_length`.
 
     Attributes
@@ -598,6 +630,7 @@ class Parabola(Edge):
 
 
     """
+
     proxy = Typed(ProxyParabola)
 
     #: Focal length of the parabola
@@ -611,13 +644,13 @@ class Parabola(Edge):
     def end(self):
         return coerce_point(self.proxy.curve.EndPoint())
 
-    @observe('focal_length')
+    @observe("focal_length")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class BSpline(Line):
-    """ A BSpline built by approximation from the given points.
+    """A BSpline built by approximation from the given points.
 
     Examples
     ---------
@@ -627,6 +660,7 @@ class BSpline(Line):
             points = [(0, 0, 0), (10, 0, 0), (10, 10, 0), (0, 10, 0)]
 
     """
+
     proxy = Typed(ProxyBSpline)
 
     #: Use interpolation method. This will automatically be used if periodic
@@ -651,7 +685,7 @@ class BSpline(Line):
 
 
 class Bezier(Line):
-    """ A Bezier curve built by approximation from the given points.
+    """A Bezier curve built by approximation from the given points.
 
 
     Examples
@@ -662,11 +696,12 @@ class Bezier(Line):
             points = [(0, 0, 0), (10, 0, 0), (10, 10, 0), (0, 10, 0)]
 
     """
+
     proxy = Typed(ProxyBezier)
 
 
 class TrimmedCurve(Edge):
-    """ A TrimmedCurve built from a curve limited by two parameters.
+    """A TrimmedCurve built from a curve limited by two parameters.
 
     Examples
     ---------
@@ -681,6 +716,7 @@ class TrimmedCurve(Edge):
 
 
     """
+
     proxy = Typed(ProxyTrimmedCurve)
 
     #: First Parameter
@@ -691,7 +727,7 @@ class TrimmedCurve(Edge):
 
 
 class Wire(Edge):
-    """ A Wire is a Path or series of Segment, Arcs, etc... All child items
+    """A Wire is a Path or series of Segment, Arcs, etc... All child items
     must be connected or an error will be thrown.
 
     Attributes
@@ -709,6 +745,7 @@ class Wire(Edge):
             points = [(0, 0, 0), (10, 0, 0), (10, 10, 0), (0, 10, 0)]
 
     """
+
     proxy = Typed(ProxyWire)
 
     #: Fixed
@@ -720,12 +757,12 @@ class Wire(Edge):
     #: Reverse the order of the wire
     reverse = d_(Bool())
 
-    @observe('edges', 'reverse')
+    @observe("edges", "reverse")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
     def points_of_discontinuity(self, tolerance=0.5):
-        """ Find points of discontinuity
+        """Find points of discontinuity
 
         Parameters
         ----------
@@ -745,7 +782,7 @@ class Wire(Edge):
         if not self.proxy_is_active:
             self.render()
         for d in self.topology.curves:
-            curve = d['curve']
+            curve = d["curve"]
             for t in (curve.FirstParameter(), curve.LastParameter()):
                 p, v = self.topology.get_value_at(curve, t=t, derivative=1)
                 r = data.get(p)
@@ -770,7 +807,7 @@ class Wire(Edge):
 
 
 class Polyline(Wire):
-    """ A Polyline that can be built from any number of points or vertices,
+    """A Polyline that can be built from any number of points or vertices,
     and consists of a sequence of connected rectilinear edges. If a position
     and direction are given the points are transformed to align with the
     plane defined by the given position and direction.
@@ -791,6 +828,7 @@ class Polyline(Wire):
             points = [(0, 0, 0), (10, 0, 0), (10, 10, 0), (0, 10, 0)]
 
     """
+
     proxy = Typed(ProxyPolyline)
 
     #: Polyline is closed
@@ -807,13 +845,13 @@ class Polyline(Wire):
     def end(self):
         return coerce_point(self.proxy.curve.EndPoint())
 
-    @observe('closed', 'points')
+    @observe("closed", "points")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class Polygon(Polyline):
-    """ A polyline that follows points on a circle of a given inscribed or
+    """A polyline that follows points on a circle of a given inscribed or
     circumscribed radius.
 
     Attributes
@@ -838,6 +876,7 @@ class Polygon(Polyline):
             count = 6
 
     """
+
     #: This is fixed
     closed = True
 
@@ -850,7 +889,7 @@ class Polygon(Polyline):
     #: Number of points
     count = d_(Range(low=3)).tag(view=True)
 
-    @observe('radius', 'inscribed', 'count')
+    @observe("radius", "inscribed", "count")
     def _update_points(self, change):
         self.points = self._default_points()
 
@@ -860,11 +899,11 @@ class Polygon(Polyline):
         a = 2 * pi / n
         if self.inscribed:
             r /= cos(pi / n)
-        return [Pt(x=cos(i*a)*r, y=sin(i*a)*r) for i in range(n)]
+        return [Pt(x=cos(i * a) * r, y=sin(i * a) * r) for i in range(n)]
 
 
 class Rectangle(Wire):
-    """ A Wire in the shape of a Rectangle with optional radius'd corners.
+    """A Wire in the shape of a Rectangle with optional radius'd corners.
 
     Examples
     ---------
@@ -875,6 +914,7 @@ class Rectangle(Wire):
             height = 5
 
     """
+
     proxy = Typed(ProxyRectangle)
 
     #: Width of the rectangle
@@ -887,13 +927,13 @@ class Rectangle(Wire):
     rx = d_(Float(0, strict=False)).tag(view=True)
     ry = d_(Float(0, strict=False)).tag(view=True)
 
-    @observe('width', 'height', 'rx', 'ry')
+    @observe("width", "height", "rx", "ry")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class Text(Shape):
-    """ Create a shape from a text of a given font.
+    """Create a shape from a text of a given font.
 
     Attributes
     ----------
@@ -919,6 +959,7 @@ class Text(Shape):
         position = (10, 100, 0)
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyText)
 
@@ -932,23 +973,30 @@ class Text(Shape):
     size = d_(Float(12.0, strict=False))
 
     #: Font style
-    style = d_(Enum('regular', 'bold', 'italic', 'bold-italic'))
+    style = d_(Enum("regular", "bold", "italic", "bold-italic"))
 
     #: Font alignment
-    horizontal_alignment = d_(Enum('left', 'center', 'right'))
-    vertical_alignment = d_(Enum('bottom', 'center', 'top', 'topfirstline'))
+    horizontal_alignment = d_(Enum("left", "center", "right"))
+    vertical_alignment = d_(Enum("bottom", "center", "top", "topfirstline"))
 
     #: Composite curve
     composite = d_(Bool(True))
 
-    @observe('text', 'font', 'size', 'style', 'composite',
-             'horizontal_alignment', 'vertical_alignment')
+    @observe(
+        "text",
+        "font",
+        "size",
+        "style",
+        "composite",
+        "horizontal_alignment",
+        "vertical_alignment",
+    )
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class Svg(Wire):
-    """ Creates a wire from an SVG document.
+    """Creates a wire from an SVG document.
 
     Attributes
     ----------
@@ -964,6 +1012,7 @@ class Svg(Wire):
         position = (10, 100, 0)
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxySvg)
 
@@ -973,30 +1022,28 @@ class Svg(Wire):
     #: Mirror y
     mirror = d_(Bool(True))
 
-    @observe('source')
+    @observe("source")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class MiddlePath(Wire):
-    """ Create a middle path
+    """Create a middle path"""
 
-    """
     proxy = Typed(ProxyMiddlePath)
 
     #: Must be either empty or 2 or 3 elements.
     #: The last two elements represent the start and ending faces or wires.
     shapes = d_(List((Shape, TopoDS_Shape)))
 
-    @observe('shapes')
+    @observe("shapes")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class BSplineSurface(ProxyShape):
-    """ Create a BSpline surface from a grid of points
+    """Create a BSpline surface from a grid of points"""
 
-    """
     #: A reference to the shape declaration.
     proxy = Typed(ProxyBSplineSurface)
 
@@ -1017,6 +1064,6 @@ class BSplineSurface(ProxyShape):
     #: Degree of continuity
     continuity = d_(Enum(2, 0, 1, 3, None))
 
-    @observe('points', 'deg_min', 'deg_max', 'continuity', 'interpolate', 'periodic')
+    @observe("points", "deg_min", "deg_max", "continuity", "interpolate", "periodic")
     def _update_proxy(self, change):
         super()._update_proxy(change)

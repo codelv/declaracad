@@ -9,11 +9,12 @@ The full license is in the file LICENSE, distributed with this software.
 from atom.api import Typed, set_default
 
 from OCCT.Aspect import (
-    Aspect_TOL_SOLID, Aspect_TOL_DASH, Aspect_TOL_DOT, Aspect_TOL_DOTDASH
+    Aspect_TOL_SOLID,
+    Aspect_TOL_DASH,
+    Aspect_TOL_DOT,
+    Aspect_TOL_DOTDASH,
 )
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
-)
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
 from OCCT.BRep import BRep_Tool
 from OCCT.Geom import Geom_TrimmedCurve
 from OCCT.GeomAPI import GeomAPI
@@ -25,24 +26,26 @@ from .topology import Topology
 
 
 LINE_TYPES = {
-    'solid': Aspect_TOL_SOLID,
-    'dashed': Aspect_TOL_DASH,
-    'dotted': Aspect_TOL_DOT,
-    'dot_dash': Aspect_TOL_DOTDASH,
+    "solid": Aspect_TOL_SOLID,
+    "dashed": Aspect_TOL_DASH,
+    "dotted": Aspect_TOL_DOT,
+    "dot_dash": Aspect_TOL_DOTDASH,
 }
 
 
 class OccEdge(OccShape, ProxyEdge):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_builder_a_p_i___make_edge.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_builder_a_p_i___make_edge.html"
+    )
 
     curve = Typed(Geom_TrimmedCurve)
 
     def _default_ais_shape(self):
         d = self.declaration
         ais_shape = super()._default_ais_shape()
-        if d.line_style != 'solid':
+        if d.line_style != "solid":
             type_of_line = LINE_TYPES[d.line_style]
             if d.as_wire:
                 ais_shape.Attributes().WireAspect().SetTypeOfLine(type_of_line)
@@ -59,7 +62,7 @@ class OccEdge(OccShape, ProxyEdge):
             args = list(args)
             pln = gp_Pln(d.position.proxy, d.direction.proxy)
             args[0] = GeomAPI.To2d_(args[0], pln)
-            args.insert(1,  BRep_Tool.Surface_(d.surface))
+            args.insert(1, BRep_Tool.Surface_(d.surface))
         edge = BRepBuilderAPI_MakeEdge(*args).Edge()
         if d.as_wire:
             return BRepBuilderAPI_MakeWire(edge).Wire()

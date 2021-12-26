@@ -15,8 +15,18 @@ import serial
 import asyncio
 from typing import Union
 from atom.api import (
-    Atom, Instance, Subclass, Str, Int, Bool, ContainerList, Bytes, Enum,
-    List, Float, observe
+    Atom,
+    Instance,
+    Subclass,
+    Str,
+    Int,
+    Bool,
+    ContainerList,
+    Bytes,
+    Enum,
+    List,
+    Float,
+    observe,
 )
 from enaml.application import Application, deferred_call
 from serial.tools.list_ports import comports
@@ -33,27 +43,19 @@ class TimeoutError(Exception):
 
 class Connection(Model):
     def get_connections(self):
-        """ Do a scan to see which devices are available.
-
-        """
+        """Do a scan to see which devices are available."""
         raise NotImplementedError
 
     async def connect(self, protocol: asyncio.Protocol):
-        """ Make the connection
-
-        """
+        """Make the connection"""
         raise NotImplementedError
 
     async def write(self, data: Union[str, bytes]):
-        """ Write data to the connection
-
-        """
+        """Write data to the connection"""
         raise NotImplementedError
 
     async def disconnect(self):
-        """ Close the connection
-
-        """
+        """Close the connection"""
         raise NotImplementedError
 
 
@@ -66,11 +68,13 @@ class SerialConfig(Model):
     #: Serial port config
     port = Str().tag(config=True)
     baudrate = Int(115200).tag(config=True)
-    bytesize = Enum(serial.EIGHTBITS, serial.SEVENBITS, serial.SIXBITS,
-                    serial.FIVEBITS).tag(config=True)
+    bytesize = Enum(
+        serial.EIGHTBITS, serial.SEVENBITS, serial.SIXBITS, serial.FIVEBITS
+    ).tag(config=True)
     parity = Enum(*serial.PARITY_NAMES.values()).tag(config=True)
-    stopbits = Enum(serial.STOPBITS_ONE, serial.STOPBITS_ONE_POINT_FIVE,
-                    serial.STOPBITS_TWO).tag(config=True)
+    stopbits = Enum(
+        serial.STOPBITS_ONE, serial.STOPBITS_ONE_POINT_FIVE, serial.STOPBITS_TWO
+    ).tag(config=True)
     xonxoff = Bool().tag(config=True)
     rtscts = Bool(True).tag(config=True)
     dsrdtr = Bool().tag(config=True)
@@ -79,7 +83,7 @@ class SerialConfig(Model):
         return comports()
 
     def _default_parity(self):
-        return 'None'
+        return "None"
 
     def _default_port(self):
         if self.ports:
@@ -91,9 +95,8 @@ class SerialConfig(Model):
 
 
 class SerialConnection(Connection):
-    """ A connection implementation for Serial ports.
+    """A connection implementation for Serial ports."""
 
-    """
     handle = Instance(object)
     config = Instance(SerialConfig, ()).tag(config=True)
     transport = Instance(SerialTransport)
@@ -122,7 +125,8 @@ class SerialConnection(Connection):
             parity=SerialConfig.PARITIES[config.parity],
             stopbits=config.stopbits,
             xonxoff=config.xonxoff,
-            rtscts=config.rtscts)
+            rtscts=config.rtscts,
+        )
 
     async def write(self, data: Union[str, bytes]):
         self.transport.write(data)
@@ -152,17 +156,17 @@ class DeviceConfig(Model):
 
     #: Preceision when outputting gcode
     PRECISIONS = {
-        'maximum': None,
-        'integer': 0,
-        '1': 1,
-        '2': 2,
-        '3': 3,
-        '4': 4,
-        '5': 5,
-        '6': 6,
-        '7': 7,
-        '8': 8,
-        '9': 9,
+        "maximum": None,
+        "integer": 0,
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+        "6": 6,
+        "7": 7,
+        "8": 8,
+        "9": 9,
     }
 
     precision = Enum(*PRECISIONS.keys()).tag(config=True)
@@ -216,9 +220,7 @@ class Device(Model, asyncio.Protocol):
         return self.uuid == other.uuid
 
     def _observe_paused(self, change):
-        log.debug("{} {}".format(
-            self.name,
-            "paused" if self.paused else "resumed"))
+        log.debug("{} {}".format(self.name, "paused" if self.paused else "resumed"))
 
     # -------------------------------------------------------------------------
     # Protocol API
@@ -229,7 +231,7 @@ class Device(Model, asyncio.Protocol):
 
     def connection_lost(self, exc):
         self.connected = False
-        self.errors = f'{exc}'
+        self.errors = f"{exc}"
 
     def data_received(self, data: bytes):
         if self.config.manual_flow_control:
@@ -242,15 +244,15 @@ class Device(Model, asyncio.Protocol):
         self.last_read = data
 
     def pause_writing(self):
-        #print(self.connection.transport.get_write_buffer_size())
+        # print(self.connection.transport.get_write_buffer_size())
         pass
 
     def resume_writing(self):
-        #print(self.connection.transport.get_write_buffer_size())
+        # print(self.connection.transport.get_write_buffer_size())
         pass
 
     async def wait_until(self, fn, timeout=30, message="Timeout hit", rate=0.1):
-        """ Wait for the fn to return true or until the timeout hits
+        """Wait for the fn to return true or until the timeout hits
 
         Parameters
         ----------
@@ -275,19 +277,16 @@ class Device(Model, asyncio.Protocol):
     # Device API
     # -------------------------------------------------------------------------
     async def connect(self):
-        """ Make the connection and wait until connection_made is called.
-
-        """
+        """Make the connection and wait until connection_made is called."""
         if self.connected:
             return
         await self.connection.connect(self)
 
         # Wait for it to connect
-        await self.wait_until(lambda: self.connected, 30,
-                              message="Connection timeout")
+        await self.wait_until(lambda: self.connected, 30, message="Connection timeout")
 
     async def write(self, data: Union[str, bytes]):
-        """ Write the data and wait until the write buffer is empty.
+        """Write the data and wait until the write buffer is empty.
 
         Parameters
         ----------
@@ -313,13 +312,13 @@ class Device(Model, asyncio.Protocol):
         self.connection.transport.write(data)
         get_buffer_size = self.connection.transport.get_write_buffer_size
         await self.wait_until(
-            lambda: not self.connected or get_buffer_size() == 0,
-            timeout=None)
+            lambda: not self.connected or get_buffer_size() == 0, timeout=None
+        )
         if not self.connected:
             raise IOError("Connection dropped")
 
     async def disconnect(self):
-        """ Drop the connection. This will call connection_lost when it is
+        """Drop the connection. This will call connection_lost when it is
         actually closed.
 
         """
@@ -328,7 +327,7 @@ class Device(Model, asyncio.Protocol):
         await self.connection.disconnect()
 
     def convert(self, point: Point):
-        """ Convert a point based on this device's configuration
+        """Convert a point based on this device's configuration
 
         Parameters
         ----------
@@ -355,11 +354,9 @@ class Device(Model, asyncio.Protocol):
         return (x, y, z)
 
     async def rapid_move_to(self, point: Point):
-        """ Send a G0 to the point
-
-        """
+        """Send a G0 to the point"""
         x, y, z = self.convert(point)
-        await self.write(f'G0 X{x} Y{y} Z{z}\n')
+        await self.write(f"G0 X{x} Y{y} Z{z}\n")
 
 
 class CncPlugin(Plugin):
@@ -383,8 +380,7 @@ class CncPlugin(Plugin):
 
     def _default_device(self):
         if not self.devices:
-            dev = Device(name="New device", connection=SerialConnection(),
-                         default=True)
+            dev = Device(name="New device", connection=SerialConnection(), default=True)
             self.devices = [dev]
         # Try to get the first default device (ideally only one should exist)
         for d in self.devices:
@@ -394,9 +390,7 @@ class CncPlugin(Plugin):
         return self.devices[0]
 
     def add_device(self):
-        """ Create a new device
-
-        """
+        """Create a new device"""
         conn = Device(name="New device", connection=SerialConnection())
         devices = self.devices[:]
         devices.append(conn)
@@ -426,7 +420,7 @@ class CncPlugin(Plugin):
             await self.device.disconnect()
 
     async def rapid_move_to(self, point: Point):
-        """ Send a rapid move to command to the given point if the device
+        """Send a rapid move to command to the given point if the device
         is connected and not in use.
 
         Parameters
@@ -442,7 +436,7 @@ class CncPlugin(Plugin):
             await device.rapid_move_to(point)
 
     async def send_file(self, filename: str):
-        """ Send a file to the device line by line
+        """Send a file to the device line by line
 
         Parameters
         ----------
@@ -456,7 +450,7 @@ class CncPlugin(Plugin):
         rate = device.config.send_rate
         app = Application.instance()
         try:
-            with open(filename, 'rb') as f:
+            with open(filename, "rb") as f:
                 await device.connect()
                 for line in f:
                     if not device.connected:

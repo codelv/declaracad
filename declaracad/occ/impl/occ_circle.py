@@ -17,8 +17,9 @@ from .occ_shape import coerce_axis
 
 class OccCircle(OccEdge, ProxyCircle):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'classgp___circ.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "classgp___circ.html"
+    )
 
     curve = Typed(Geom_Circle)
 

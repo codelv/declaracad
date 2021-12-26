@@ -13,7 +13,17 @@ import os
 import re
 from collections import OrderedDict
 from atom.api import (
-    Atom, Property, List, Instance, Str, Int, Enum, Float, Bool, Dict, observe
+    Atom,
+    Property,
+    List,
+    Instance,
+    Str,
+    Int,
+    Enum,
+    Float,
+    Bool,
+    Dict,
+    observe,
 )
 from OCCT.BRep import BRep_Builder
 from OCCT.TopoDS import TopoDS_Compound
@@ -21,14 +31,11 @@ from declaracad.occ.api import Point
 
 
 def normalize(k, v):
-    """ Normalize an ID command
-
-    """
+    """Normalize an ID command"""
     vi = int(v)
     if v == vi:
         v = vi  # Clip off .0
-    return '{}{}'.format(k, v)
-
+    return "{}{}".format(k, v)
 
 
 class Command(Atom):
@@ -43,7 +50,7 @@ class Command(Atom):
             for k, v in self.data.items():
                 if k in GCode.ID_CODES:
                     return normalize(k, v)
-        return ''
+        return ""
 
     def _get_waypoint(self):
         d = self.data
@@ -59,7 +66,7 @@ class Command(Atom):
     waypoint = Property(_get_waypoint, cached=True)
 
     def position(self, last):
-        """ Get the 3D-position of this cmd's XYZ coordinates.
+        """Get the 3D-position of this cmd's XYZ coordinates.
 
         Parameters
         ----------
@@ -73,18 +80,19 @@ class Command(Atom):
 
         """
         data = self.data
-        x = data.get('X')
-        y = data.get('Y')
-        z = data.get('Z')
+        x = data.get("X")
+        y = data.get("Y")
+        z = data.get("Z")
         return Point(
-                last.x if x is None else x,
-                last.y if y is None else y,
-                last.z if z is None else z)
+            last.x if x is None else x,
+            last.y if y is None else y,
+            last.z if z is None else z,
+        )
 
     def _get_feedrate(self):
         if not self.data:
             return
-        return self.data.get('F')
+        return self.data.get("F")
 
     feedrate = Property(_get_feedrate, cached=True)
 
@@ -95,39 +103,47 @@ class Command(Atom):
 
     def __repr__(self):
         return "Command<{} from '{}' at line {}>".format(
-            self.id, self.source, self.line)
+            self.id, self.source, self.line
+        )
 
 
 class GCode(Atom):
     path = Str()
     commands = List(Command)
 
-    AXIS_CODES = 'XYZABCUVW'
-    ID_CODES = 'GMTS'
-    MOVE_CODES = ('G0', 'G1', 'G2', 'G3', 'G5', 'G5.1')
+    AXIS_CODES = "XYZABCUVW"
+    ID_CODES = "GMTS"
+    MOVE_CODES = ("G0", "G1", "G2", "G3", "G5", "G5.1")
 
     COLORMAP = {
-        'G0': 'green',
-        'G1': 'blue',
-        'G2': 'green',
-        'G3': 'green',
+        "G0": "green",
+        "G1": "blue",
+        "G2": "green",
+        "G3": "green",
     }
 
     def __repr__(self):
         return "GCode<file='{} cmds=[\n    {}\n]>".format(
-            self.path, ",\n    ".join(map(str, self.commands[0:100])))
+            self.path, ",\n    ".join(map(str, self.commands[0:100]))
+        )
 
     def max(self):
-        """ Return max value of each axis """
-        return Point(*(max(c.data[axis] for c in self.commands
-                          if c.data and axis in c.data)
-                     for axis in ('X', 'Y', 'Z')))
+        """Return max value of each axis"""
+        return Point(
+            *(
+                max(c.data[axis] for c in self.commands if c.data and axis in c.data)
+                for axis in ("X", "Y", "Z")
+            )
+        )
 
     def min(self):
-        """ Return min value of each axis """
-        return Point(*(min(c.data[axis] for c in self.commands
-                          if c.data and axis in c.data)
-                     for axis in ('X', 'Y', 'Z')))
+        """Return min value of each axis"""
+        return Point(
+            *(
+                min(c.data[axis] for c in self.commands if c.data and axis in c.data)
+                for axis in ("X", "Y", "Z")
+            )
+        )
 
 
 class Movement(Atom):
@@ -135,13 +151,11 @@ class Movement(Atom):
     points = List()
 
     def clone(self):
-        return Movement(
-            rapid=self.rapid,
-            points=[Point(*p) for p in self.points])
+        return Movement(rapid=self.rapid, points=[Point(*p) for p in self.points])
 
 
 def convert(v, scale=1, precision=None):
-    """ Convert a value for writing to gcode
+    """Convert a value for writing to gcode
 
     Parameters
     ----------
@@ -160,14 +174,14 @@ def convert(v, scale=1, precision=None):
 
     """
     if precision == 0:
-        return int(v*scale)
+        return int(v * scale)
     elif precision is None:
-        return v*scale
-    return round(v*scale, precision)
+        return v * scale
+    return round(v * scale, precision)
 
 
 def save_to_file(filename, movements, device):
-    """ Write to a file
+    """Write to a file
 
     Parameters
     ----------
@@ -178,7 +192,7 @@ def save_to_file(filename, movements, device):
     device: Device
         Device to save it for
     """
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         f.write("(Generated by DeclaraCAD)\n")
         f.write(f"(Path: {filename})\n")
         if device.config.init_commands:
@@ -193,7 +207,7 @@ def save_to_file(filename, movements, device):
 
 
 def parse(path):
-    """ Parse the file at the given path into a list of Commands
+    """Parse the file at the given path into a list of Commands
 
     Parameters
     ----------
@@ -232,13 +246,13 @@ def parse(path):
                 continue
 
             # Strip comments
-            parts = re.split(r';|\(|%', line, maxsplit=1)
+            parts = re.split(r";|\(|%", line, maxsplit=1)
             data = parts[0].strip()
             comment = "" if len(parts) == 1 else parts[1]
             if not data and not comment:
                 continue
 
-            cmd = Command(comment=comment, source=line, line=i+1)
+            cmd = Command(comment=comment, source=line, line=i + 1)
             if not data:
                 cmds.append(cmd)  # Comment
                 continue
@@ -246,7 +260,7 @@ def parse(path):
             try:
                 # Parse args
                 args = []
-                for c in re.findall(r'[A-z] *-?[\d.]+ *', data):
+                for c in re.findall(r"[A-z] *-?[\d.]+ *", data):
                     args.append((c[0].upper(), float(c[1:])))
 
                 keys = set((it[0] for it in args))
@@ -261,9 +275,7 @@ def parse(path):
                         #     N40 G90 G00 X0 Y0
                         # is split into a G90 and G0
                         finish(cmd)
-                        cmd = Command(comment=comment,
-                                      source=line,
-                                      line=i+1)
+                        cmd = Command(comment=comment, source=line, line=i + 1)
                         cmd.data = d = OrderedDict()
                     elif k in GCode.AXIS_CODES:
                         # HACK: If we get move arguments for a non-move split
@@ -274,16 +286,13 @@ def parse(path):
                         cmd_id = set_id(cmd)
                         if cmd_id not in GCode.MOVE_CODES:
                             finish(cmd)
-                            cmd = Command(comment=comment,
-                                          source=line,
-                                          line=i+1)
+                            cmd = Command(comment=comment, source=line, line=i + 1)
                             cmd.data = d = OrderedDict()
                     d[k] = v
                 finish(cmd)
             except ValueError as e:
                 filepath, filename = os.path.split(path)
-                msg = "Failed to parse '%s' at line %s: %s" % (
-                    filename, i, e)
+                msg = "Failed to parse '%s' at line %s: %s" % (filename, i, e)
                 raise ValueError(msg)
 
     return GCode(path=path, commands=cmds)
@@ -299,5 +308,3 @@ class Waypoint(Atom):
     U = Float()
     V = Float()
     W = Float()
-
-

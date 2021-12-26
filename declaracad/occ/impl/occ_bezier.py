@@ -17,8 +17,9 @@ from .occ_line import OccLine
 
 class OccBezier(OccLine, ProxyBezier):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_geom___bezier_curve.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "class_geom___bezier_curve.html"
+    )
 
     curve = Typed(Geom_BezierCurve)
 
@@ -34,7 +35,7 @@ class OccBezier(OccLine, ProxyBezier):
 
         # TODO: Support weights
         for i, p in enumerate(points):
-            set_value(i+1, p)
+            set_value(i + 1, p)
 
         curve = self.curve = Geom_BezierCurve(pts)
         self.shape = self.make_edge(curve)

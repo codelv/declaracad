@@ -20,8 +20,9 @@ from .occ_line import OccLine
 
 class OccSegment(OccLine, ProxySegment):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_g_c___make_segment.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "class_g_c___make_segment.html"
+    )
 
     curve = Typed(Geom_TrimmedCurve)
 

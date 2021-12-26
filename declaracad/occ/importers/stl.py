@@ -16,7 +16,7 @@ from declaracad.occ.api import TopoShape
 
 
 def load_stl(filename):
-    """ Load a stl model """
+    """Load a stl model"""
     builder = BRep_Builder()
     shape = TopoDS_Face()
     builder.MakeFace(shape)

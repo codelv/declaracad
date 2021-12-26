@@ -14,9 +14,8 @@ from enaml.qt.qt_factories import QT_FACTORIES
 
 def fea_analysis_factory():
     from .fea_analysis import FeaAnalysis
+
     return FeaAnalysis
 
 
-QT_FACTORIES.update({
-    'Analysis': fea_analysis_factory
-})
+QT_FACTORIES.update({"Analysis": fea_analysis_factory})

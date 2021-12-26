@@ -23,8 +23,10 @@ from .topology import Topology
 
 
 class OccBSplineSurface(OccShape, ProxyBSplineSurface):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_geom_a_p_i___points_to_b_spline_surface.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_geom_a_p_i___points_to_b_spline_surface.html"
+    )
 
     surface = Typed(Geom_BSplineSurface)
 
@@ -47,11 +49,11 @@ class OccBSplineSurface(OccShape, ProxyBSplineSurface):
         else:
             cty = CONTINUITY[d.continuity]
             f = GeomAPI_PointsToBSplineSurface(
-                points, d.deg_min, d.deg_max, cty, d.tolerance)
+                points, d.deg_min, d.deg_max, cty, d.tolerance
+            )
         surface = self.surface = f.Surface()
         builder = BRepBuilderAPI_MakeFace(surface, d.tolerance)
         self.shape = builder.Face()
 
     def set_shapes(self, shapes):
         self.update_shape()
-

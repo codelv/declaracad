@@ -21,8 +21,10 @@ from .topology import Topology
 
 
 class OccThickSolid(OccOffset, ProxyThickSolid):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_offset_a_p_i___make_thick_solid.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_offset_a_p_i___make_thick_solid.html"
+    )
 
     def get_faces(self, occ_shape):
         d = self.declaration

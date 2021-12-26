@@ -14,11 +14,16 @@ from atom.api import Instance, set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakePipe
 from OCCT.GeomFill import (
-    GeomFill_IsCorrectedFrenet, GeomFill_IsFixed,
-    GeomFill_IsFrenet, GeomFill_IsConstantNormal, GeomFill_IsDarboux,
-    GeomFill_IsGuideAC, GeomFill_IsGuidePlan,
-    GeomFill_IsGuideACWithContact, GeomFill_IsGuidePlanWithContact,
-    GeomFill_IsDiscreteTrihedron
+    GeomFill_IsCorrectedFrenet,
+    GeomFill_IsFixed,
+    GeomFill_IsFrenet,
+    GeomFill_IsConstantNormal,
+    GeomFill_IsDarboux,
+    GeomFill_IsGuideAC,
+    GeomFill_IsGuidePlan,
+    GeomFill_IsGuideACWithContact,
+    GeomFill_IsGuidePlanWithContact,
+    GeomFill_IsDiscreteTrihedron,
 )
 from OCCT.TopoDS import TopoDS_Edge
 
@@ -28,24 +33,26 @@ from .occ_algo import OccOperation, OccShape, coerce_shape
 
 
 class OccPipe(OccOperation, ProxyPipe):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_offset_a_p_i___make_pipe.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_offset_a_p_i___make_pipe.html"
+    )
 
     #: References to observed shapes
     _old_spline = Instance(OccShape)
     _old_profile = Instance(OccShape)
 
     fill_modes = {
-        'corrected_frenet': GeomFill_IsCorrectedFrenet,
-        'fixed': GeomFill_IsFixed,
-        'frenet': GeomFill_IsFrenet,
-        'constant_normal': GeomFill_IsConstantNormal,
-        'darboux': GeomFill_IsDarboux,
-        'guide_ac': GeomFill_IsGuideAC,
-        'guide_plan': GeomFill_IsGuidePlan,
-        'guide_ac_contact': GeomFill_IsGuideACWithContact,
-        'guide_plan_contact': GeomFill_IsGuidePlanWithContact,
-        'discrete_trihedron': GeomFill_IsDiscreteTrihedron
+        "corrected_frenet": GeomFill_IsCorrectedFrenet,
+        "fixed": GeomFill_IsFixed,
+        "frenet": GeomFill_IsFrenet,
+        "constant_normal": GeomFill_IsConstantNormal,
+        "darboux": GeomFill_IsDarboux,
+        "guide_ac": GeomFill_IsGuideAC,
+        "guide_plan": GeomFill_IsGuidePlan,
+        "guide_ac_contact": GeomFill_IsGuideACWithContact,
+        "guide_plan_contact": GeomFill_IsGuidePlanWithContact,
+        "discrete_trihedron": GeomFill_IsDiscreteTrihedron,
     }
 
     def update_shape(self, change=None):

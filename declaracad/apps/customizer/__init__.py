@@ -12,9 +12,11 @@ Created on July 28, 2018
 import os
 import enaml
 import enamlx
+
 enamlx.install()
 
 from declaracad import occ
+
 occ.install()
 from declaracad.core.app import Application
 from declaracad.occ.api import load_model
@@ -26,10 +28,10 @@ with enaml.imports():
 
 def main(**kwargs):
     app = Application()
-    view = Main(model=load_model(kwargs['file']))
+    view = Main(model=load_model(kwargs["file"]))
     view.show()
     app.start()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

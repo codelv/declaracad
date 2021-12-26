@@ -19,7 +19,7 @@ from . import interpolate
 
 
 def optimize_graph(wires, optimizer_timeout=30):
-    """ Try to reduce the number of head lifts by retracing common paths.
+    """Try to reduce the number of head lifts by retracing common paths.
 
     Parameters
     ----------
@@ -36,14 +36,14 @@ def optimize_graph(wires, optimizer_timeout=30):
 
     graph = interpolate.build_edge_graph(wires)
     standalone = []
-    #for vertex, edges in graph.items():
+    # for vertex, edges in graph.items():
     #    if len(edges)
 
     return standalone
 
 
 def optimize_moves(wires, start_point, reverse=False, optimizer_timeout=30):
-    """  Use Dijkstra's algorithm to find the shortest path between
+    """Use Dijkstra's algorithm to find the shortest path between
     a set of wires. Ported from Inkcut
 
     Parameters
@@ -89,15 +89,14 @@ def optimize_moves(wires, start_point, reverse=False, optimizer_timeout=30):
         # time.time() is slow so limit the calls
         if time.time() > time_limit:
             result.extend(subpaths)  # At least part of it is optimized
-            log.warning(
-                "Shortest path search aborted (time limit reached)")
+            log.warning("Shortest path search aborted (time limit reached)")
             break
 
     return [sp.Wire() for sp in result]
 
 
 def optimize_points(points, start_point, optimizer_timeout=30):
-    """  Use Dijkstra's algorithm to find the shortest path between
+    """Use Dijkstra's algorithm to find the shortest path between
     a set of points. Ported from Inkcut
 
     Parameters
@@ -137,8 +136,7 @@ def optimize_points(points, start_point, optimizer_timeout=30):
         # time.time() is slow so limit the calls
         if time.time() > time_limit:
             result.extend(remaining)  # At least part of it is optimized
-            log.warning(
-                "Shortest path search aborted (time limit reached)")
+            log.warning("Shortest path search aborted (time limit reached)")
             break
 
     return result

@@ -16,14 +16,13 @@ from OCCT.GccEnt import GccEnt_QualifiedLin, GccEnt_QualifiedCirc
 
 
 class Solver(Atom):
-
     @classmethod
     def arc_from_tangent_and_points(
         cls,
         start_tangent: TupleType[Point, Direction],
         end_point: Point,
     ) -> TupleType[float, Point]:
-        """ Compute the radius and center point for an arc with the given
+        """Compute the radius and center point for an arc with the given
         start point and tangent direction to the end point.
 
         Returns

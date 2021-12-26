@@ -19,10 +19,12 @@ from .occ_algo import OccBooleanOperation
 
 
 class OccSplit(OccBooleanOperation, ProxySplit):
-    """ Fuse all the child shapes together. """
+    """Fuse all the child shapes together."""
+
     reference = set_default(
-        'https://dev.opencascade.org/doc/overview/html/'
-        'occt_user_guides__boolean_operations.html#occt_algorithms_8')
+        "https://dev.opencascade.org/doc/overview/html/"
+        "occt_user_guides__boolean_operations.html#occt_algorithms_8"
+    )
 
     def update_shape(self, change=None):
         splitter = BOPAlgo_Splitter()

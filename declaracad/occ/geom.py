@@ -27,11 +27,9 @@ except ImportError as e:
         pass
 
 
-
 class Settings(Atom):
-    """ Used to manage tolerance settings
+    """Used to manage tolerance settings"""
 
-    """
     tolerance = Float(1e-6)
 
 
@@ -55,36 +53,39 @@ class BBox(Atom):
     zmax = Float()
 
     def _get_dx(self):
-        return self.xmax-self.xmin
+        return self.xmax - self.xmin
 
     dx = Property(_get_dx, cached=True)
 
     def _get_dy(self):
-        return self.ymax-self.ymin
+        return self.ymax - self.ymin
 
     dy = Property(_get_dy, cached=True)
 
     def _get_dz(self):
-        return self.zmax-self.zmin
+        return self.zmax - self.zmin
 
     dz = Property(_get_dz, cached=True)
 
     def __init__(self, xmin=0, ymin=0, zmin=0, xmax=0, ymax=0, zmax=0):
-        super(BBox, self).__init__(xmin=xmin, ymin=ymin, zmin=zmin,
-                                   xmax=xmax, ymax=ymax, zmax=zmax)
+        super(BBox, self).__init__(
+            xmin=xmin, ymin=ymin, zmin=zmin, xmax=xmax, ymax=ymax, zmax=zmax
+        )
 
     def __getitem__(self, key):
-        return (self.xmin, self.ymin, self.zmin,
-                self.xmax, self.ymax, self.zmax)[key]
+        return (self.xmin, self.ymin, self.zmin, self.xmax, self.ymax, self.zmax)[key]
 
     def _get_center(self):
-        return Point((self.xmin + self.xmax)/2,
-                     (self.ymin + self.ymax)/2,
-                     (self.zmin + self.zmax)/2)
+        return Point(
+            (self.xmin + self.xmax) / 2,
+            (self.ymin + self.ymax) / 2,
+            (self.zmin + self.zmax) / 2,
+        )
+
     center = Property(_get_center, cached=True)
 
     def _get_diagonal(self):
-        return math.sqrt(self.dx**2+self.dy**2+self.dz**2)
+        return math.sqrt(self.dx ** 2 + self.dy ** 2 + self.dz ** 2)
 
     diagonal = Property(_get_diagonal, cached=True)
 
@@ -99,7 +100,13 @@ class BBox(Atom):
 
     def __repr__(self):
         return "<BBox: x=%s y=%s z=%s w=%s h=%s d=%s>" % (
-            self.xmin, self.ymin, self.zmin, self.dx, self.dy, self.dz)
+            self.xmin,
+            self.ymin,
+            self.zmin,
+            self.dx,
+            self.dy,
+            self.dz,
+        )
 
 
 class Point(Atom):
@@ -124,15 +131,15 @@ class Point(Atom):
     # Binds changes to the proxy
     # ========================================================================
     def _observe_x(self, change):
-        if change['type'] == 'update':
+        if change["type"] == "update":
             self.proxy.SetX(self.x)
 
     def _observe_y(self, change):
-        if change['type'] == 'update':
+        if change["type"] == "update":
             self.proxy.SetY(self.y)
 
     def _observe_z(self, change):
-        if change['type'] == 'update':
+        if change["type"] == "update":
             self.proxy.SetZ(self.z)
 
     # ========================================================================
@@ -181,20 +188,20 @@ class Point(Atom):
     def midpoint(self, other):
         p = self.__coerce__(other)
         return self.__class__(
-            (self.x + p.x) / 2, (self.y + p.y) / 2, (self.z + p.z) / 2)
+            (self.x + p.x) / 2, (self.y + p.y) / 2, (self.z + p.z) / 2
+        )
 
     def distance(self, other):
         p = self.__coerce__(other)
         return self.proxy.Distance(p.proxy)
 
     def angle(self, other):
-        """ Returns the angle value between 0 and pi in radians
-        """
+        """Returns the angle value between 0 and pi in radians"""
         v = gp_Vec(self.__coerce__(other).proxy.XYZ())
         return gp_Vec(self.proxy.XYZ()).Angle(v)
 
     def angle_with_ref(self, other, ref):
-        """ Computes the angle, in radians, between this vector and vector ref.
+        """Computes the angle, in radians, between this vector and vector ref.
         The result is a value between -pi and pi.
         """
         ref = gp_Vec(self.__coerce__(ref).proxy.XYZ())
@@ -202,7 +209,7 @@ class Point(Atom):
         return gp_Vec(self.proxy.XYZ()).AngleWithRef(v, ref)
 
     def angle2d(self, other):
-        """ Angle between the x and y components
+        """Angle between the x and y components
         Returns the angle value between 0 and pi in radians
         """
         p = self.__coerce__(other)
@@ -214,12 +221,10 @@ class Point(Atom):
 
     def distance2d(self, other):
         p = self.__coerce__(other)
-        return math.sqrt((self.x-p.x)**2 + (self.y-p.y)**2)
+        return math.sqrt((self.x - p.x) ** 2 + (self.y - p.y) ** 2)
 
     def replace(self, **kwargs):
-        """ Create a copy with the value replaced with the given parameters.
-
-        """
+        """Create a copy with the value replaced with the given parameters."""
         p = Point(*self[:])
         for k, v in kwargs:
             setattr(k, v)
@@ -256,7 +261,7 @@ class Direction(Point):
         return self.reversed()
 
     def reversed(self):
-        """ Return a reversed copy """
+        """Return a reversed copy"""
         v = self.proxy.Reversed()
         return Direction(v.X(), v.Y(), v.Z())
 
@@ -289,7 +294,7 @@ class Direction(Point):
         return self.proxy.IsOpposite(p.proxy, tol or settings.tolerance)
 
     def is_normal(self, other, tol=None):
-        """ Check if perpendicular """
+        """Check if perpendicular"""
         p = self.__coerce__(other)
         return self.proxy.IsNormal(p.proxy, tol or settings.tolerance)
 
@@ -297,7 +302,7 @@ class Direction(Point):
 def coerce_point(arg):
     if isinstance(arg, TopoDS_Shape):
         arg = BRep_Tool.Pnt_(arg)
-    if hasattr(arg, 'XYZ'):  # copy from gp_Pnt, gp_Vec, gp_Dir, etc..
+    if hasattr(arg, "XYZ"):  # copy from gp_Pnt, gp_Vec, gp_Dir, etc..
         return Point(arg.X(), arg.Y(), arg.Z())
     if isinstance(arg, Point):
         return arg
@@ -309,7 +314,7 @@ def coerce_point(arg):
 def coerce_direction(arg):
     if isinstance(arg, TopoDS_Shape):
         arg = BRep_Tool.Pnt_(arg)
-    if hasattr(arg, 'XYZ'):  # copy from gp_Pnt2d, gp_Vec2d, gp_Dir2d, etc..
+    if hasattr(arg, "XYZ"):  # copy from gp_Pnt2d, gp_Vec2d, gp_Dir2d, etc..
         return Direction(arg.X(), arg.Y(), arg.Z())
     if isinstance(arg, Direction):
         return arg
@@ -322,4 +327,3 @@ def coerce_rotation(arg):
     if isinstance(arg, (int, float)):
         return float(arg)
     return float(math.atan2(*arg))
-

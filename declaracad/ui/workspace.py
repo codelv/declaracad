@@ -19,14 +19,14 @@ from declaracad import get_log_dir
 from declaracad.core.utils import log
 
 import enaml
+
 with enaml.imports():
     from .manifest import UIManifest
 
 
 class DeclaracadWorkspace(Workspace):
-    """ A custom Workspace class for the crash course example.
+    """A custom Workspace class for the crash course example."""
 
-    """
     #: Storage for the plugin manifest's id.
     _manifest_id = Str()
 
@@ -34,10 +34,10 @@ class DeclaracadWorkspace(Workspace):
     _workspace_file = Str()
 
     def _default__workspace_file(self):
-        return os.path.join(get_log_dir(), 'declaracad.workspace.db')
+        return os.path.join(get_log_dir(), "declaracad.workspace.db")
 
     def start(self):
-        """ Start the workspace instance.
+        """Start the workspace instance.
 
         This method will create the container content and register the
         provided plugin with the workbench.
@@ -51,11 +51,11 @@ class DeclaracadWorkspace(Workspace):
         except ValueError:
             #: Already registered
             pass
-        self.workbench.get_plugin('declaracad.ui')
+        self.workbench.get_plugin("declaracad.ui")
         self.load_area()
 
     def stop(self):
-        """ Stop the workspace instance.
+        """Stop the workspace instance.
 
         This method will unregister the workspace's plugin that was
         registered on start.
@@ -65,25 +65,21 @@ class DeclaracadWorkspace(Workspace):
         self.workbench.unregister(self._manifest_id)
 
     def save_area(self):
-        """ Save the dock area for the workspace.
-
-        """
-        area = self.content.find('dock_area')
+        """Save the dock area for the workspace."""
+        area = self.content.find("dock_area")
         try:
-            with open(self._workspace_file, 'w') as f:
+            with open(self._workspace_file, "w") as f:
                 f.write(pickle.dumps(area))
         except Exception as e:
             log.debug("Error saving dock area: {}".format(e))
             return e
 
     def load_area(self):
-        """ Load the dock area into the workspace content.
-
-        """
+        """Load the dock area into the workspace content."""
         area = None
         plugin = self.workbench.get_plugin("declaracad.ui")
         try:
-            with open(self._workspace_file, 'r') as f:
+            with open(self._workspace_file, "r") as f:
                 area = pickle.loads(f.read())
         except Exception as e:
             log.debug(e)

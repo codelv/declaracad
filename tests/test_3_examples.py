@@ -12,43 +12,44 @@ from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import load_model
 
 EXAMPLES = (
-    'bearing',
-    'bolt',
-    'bottle',
-    'chamfers',
-    'dahlgren300z',
-    'dimensions',
-    'draw',
-    'exhaust_flange',
-    'faces',
-    'fillets',
-    'gcode',
-    'half_space',
+    "bearing",
+    "bolt",
+    "bottle",
+    "chamfers",
+    "dahlgren300z",
+    "dimensions",
+    "draw",
+    "exhaust_flange",
+    "faces",
+    "fillets",
+    "gcode",
+    "half_space",
     #'house',
-    'intersection',
-    'load',
-    'middlepath',
-    'nemastepper',
-    'normalprojection',
-    'offsets',
-    'operations',
-    'pipes',
-    'raw_shape',
+    "intersection",
+    "load",
+    "middlepath",
+    "nemastepper",
+    "normalprojection",
+    "offsets",
+    "operations",
+    "pipes",
+    "raw_shape",
     #'rib',
-    'shapes',
-    'split',
-    'spring',
-    'svg',
-    'sweeps',
-    'threads',
-    'thru_sections',
-    'turners_cube',
-    'vacuum_nozzle',
+    "shapes",
+    "split",
+    "spring",
+    "svg",
+    "sweeps",
+    "threads",
+    "thru_sections",
+    "turners_cube",
+    "vacuum_nozzle",
 )
 
-@pytest.mark.parametrize('name', EXAMPLES)
+
+@pytest.mark.parametrize("name", EXAMPLES)
 def test_example(qt_app, name):
-    path = 'examples/%s.enaml' % name
+    path = "examples/%s.enaml" % name
     assembly = load_model(path)
     for shape in assembly:
         assert isinstance(shape.render(), TopoDS_Shape)

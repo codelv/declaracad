@@ -10,8 +10,9 @@ Created on June, 24 2021
 @author: jrm
 """
 import re
-#import ply.yacc as yacc
-#parser = yacc.yacc()
+
+# import ply.yacc as yacc
+# parser = yacc.yacc()
 from atom.api import Validate
 from enaml.scintilla.api import Scintilla
 from enaml.scintilla.themes import THEMES
@@ -23,21 +24,21 @@ from PyQt5.Qsci import QsciLexerCustom
 class GCodeLexer(QsciLexerCustom):
 
     TOKENS = {
-        'default': 'Default',
-        'comment': "Comment",
-        'line_number': "Line",
-        'number': "Number",
-        'code': "Code",
-        'operator': "Operator",
+        "default": "Default",
+        "comment": "Comment",
+        "line_number": "Line",
+        "number": "Number",
+        "code": "Code",
+        "operator": "Operator",
     }
 
     THEMES = {
-        'all': {
-            'comment': {
-                'color': '#123456',
+        "all": {
+            "comment": {
+                "color": "#123456",
             },
-            'code': {
-                'color': '#FF00FF',
+            "code": {
+                "color": "#FF00FF",
             },
         }
     }
@@ -50,20 +51,20 @@ class GCodeLexer(QsciLexerCustom):
 
     def comment(self, i):
         if i == 1:
-            return ['(', ')']
+            return ["(", ")"]
 
     def code(self, i):
         if i == 4:
-            return ['G', 'M', 'N']
+            return ["G", "M", "N"]
 
     def description(self, style):
         if style == 0:
-            return 'default'
+            return "default"
         elif style == 1:
-            return 'comment'
+            return "comment"
         elif style == 4:
-            return 'code'
-        return ''
+            return "code"
+        return ""
 
     def styleText(self, start, end):
         # 1. Initialize the styling procedure
@@ -79,10 +80,11 @@ class GCodeLexer(QsciLexerCustom):
         p = re.compile(r"[*]\/|\/[*]|\s+|\w+|\W|\d+")
 
         # 'token_list' is a list of tuples: (token_name, token_len)Using
-        token_list = [(token, len(bytearray(token, "utf-8")))
-                      for token in p.findall(text)]
-        print(f'Range: {start} to {end}')
-        print(f'Tokens: {token_list}')
+        token_list = [
+            (token, len(bytearray(token, "utf-8"))) for token in p.findall(text)
+        ]
+        print(f"Range: {start} to {end}")
+        print(f"Tokens: {token_list}")
 
         # 4. Style the text
         # ------------------
@@ -118,26 +120,26 @@ class GCodeLexer(QsciLexerCustom):
 class EnamlLexer(scintilla_lexers.EnamlLexer):
     def keywords(self, kwset):
         from declaracad.occ import api
+
         kwds = super().keywords(kwset)
         if kwset == 1:
-            kwds += ' '.join([a for a in dir(api) if not a.startswith("_")])
+            kwds += " ".join([a for a in dir(api) if not a.startswith("_")])
         return kwds
 
 
 CUSTOM_LEXERS = {
-    'gcode': GCodeLexer,
+    "gcode": GCodeLexer,
 }
 
 
 def install_lexers():
-    """ Update enaml's editor
-
-    """
+    """Update enaml's editor"""
     from pprint import pformat
+
     items = list(Scintilla.syntax.items)
 
-    scintilla_lexers.LEXERS['enaml'] = EnamlLexer
-    scintilla_lexers.LEXERS_INV[EnamlLexer] = 'enaml'
+    scintilla_lexers.LEXERS["enaml"] = EnamlLexer
+    scintilla_lexers.LEXERS_INV[EnamlLexer] = "enaml"
 
     for name, LexerClass in CUSTOM_LEXERS.items():
         scintilla_lexers.LEXERS[name] = LexerClass
@@ -146,7 +148,7 @@ def install_lexers():
         items.append(name)
 
         # Update themes
-        default_theme = LexerClass.THEMES['all']
+        default_theme = LexerClass.THEMES["all"]
         for theme_name, theme in THEMES.items():
             if name not in theme:
                 custom_theme = LexerClass.THEMES.get(theme_name)
@@ -154,7 +156,6 @@ def install_lexers():
                 if custom_theme is not None:
                     t.update(custom_theme)
                 theme[name] = t
-
 
     # Update syntax items
     Scintilla.syntax.set_validate_mode(Validate.Enum, items)

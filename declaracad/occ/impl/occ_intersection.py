@@ -20,8 +20,9 @@ from .topology import Topology
 
 class OccIntersection(OccBooleanOperation, ProxyIntersection):
     reference = set_default(
-        'https://dev.opencascade.org/doc/overview/html/'
-        'occt_user_guides__boolean_operations.html#occt_algorithms_10a')
+        "https://dev.opencascade.org/doc/overview/html/"
+        "occt_user_guides__boolean_operations.html#occt_algorithms_10a"
+    )
 
     def update_shape(self, change=None):
         section = BOPAlgo_Section()

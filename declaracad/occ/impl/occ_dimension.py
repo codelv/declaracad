@@ -11,8 +11,11 @@ Created on March 25, 2020
 """
 from atom.api import Typed
 from OCCT.PrsDim import (
-    PrsDim_AngleDimension, PrsDim_DiameterDimension, PrsDim_LengthDimension,
-    PrsDim_RadiusDimension, PrsDim_Dimension
+    PrsDim_AngleDimension,
+    PrsDim_DiameterDimension,
+    PrsDim_LengthDimension,
+    PrsDim_RadiusDimension,
+    PrsDim_Dimension,
 )
 from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
@@ -23,8 +26,11 @@ from OCCT.TopoDS import TopoDS, TopoDS_Edge, TopoDS_Vertex, TopoDS_Shape
 from OCCT.TopAbs import TopAbs_ShapeEnum
 
 from ..dimension import (
-    ProxyDimension, ProxyAngleDimension, ProxyDiameterDimension,
-    ProxyRadiusDimension, ProxyLengthDimension
+    ProxyDimension,
+    ProxyAngleDimension,
+    ProxyDiameterDimension,
+    ProxyRadiusDimension,
+    ProxyLengthDimension,
 )
 from ..shape import Point
 
@@ -68,9 +74,7 @@ class OccDimension(ProxyDimension):
         dim.SetDimensionAspect(aspect)
 
     def update_dimension(self):
-        """ Recreates the dimension catching any errors
-
-        """
+        """Recreates the dimension catching any errors"""
         try:
             self.create_dimension()
             self.init_dimension()
@@ -79,15 +83,11 @@ class OccDimension(ProxyDimension):
             log.exception(e)
 
     def activate_top_down(self):
-        """ Activate the proxy for the top-down pass.
-
-        """
+        """Activate the proxy for the top-down pass."""
         self.update_dimension()
 
     def activate_bottom_up(self):
-        """ Activate the proxy tree for the bottom-up pass.
-
-        """
+        """Activate the proxy tree for the bottom-up pass."""
         pass
 
     # -------------------------------------------------------------------------
@@ -124,7 +124,7 @@ class OccDimension(ProxyDimension):
     # Utils
     # -------------------------------------------------------------------------
     def get_shapes(self):
-        """ Get the shapes casted to the actual type """
+        """Get the shapes casted to the actual type"""
         shapes = []
         for s in self.declaration.shapes:
             if isinstance(s, Point):

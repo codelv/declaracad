@@ -11,8 +11,23 @@ Created on Sep 26, 2016
 """
 import math
 from atom.api import (
-   Atom, Event, List, Tuple, Bool, Int, Enum, Typed, ForwardTyped, observe,
-   Coerced, Dict, Str, Float, Instance, FloatRange, set_default
+    Atom,
+    Event,
+    List,
+    Tuple,
+    Bool,
+    Int,
+    Enum,
+    Typed,
+    ForwardTyped,
+    observe,
+    Coerced,
+    Dict,
+    Str,
+    Float,
+    Instance,
+    FloatRange,
+    set_default,
 )
 from enaml.core.declarative import d_
 from enaml.colors import Color, ColorMember, parse_color
@@ -22,9 +37,7 @@ from declaracad.occ.shape import BBox, Point, Direction
 
 
 def color_pair_coercer(arg):
-    """ Coerce to a tuple of colors
-
-    """
+    """Coerce to a tuple of colors"""
     if not isinstance(arg, (tuple, list)):
         c1, c2 = [arg, arg]
     else:
@@ -48,9 +61,8 @@ class ViewerSelection(Atom):
 
 
 class ViewerLight(Atom):
-    """ A Light in the view
+    """A Light in the view"""
 
-    """
     #: Whether the light is on
     enabled = Bool(True)
 
@@ -70,20 +82,49 @@ class ViewerLight(Atom):
     # Directional light parameters
     # ------------------------------------------------------------------------
     orientation = Enum(
-        'XnegYnegZneg',
-        'Xpos', 'Ypos', 'Zpos',
-        'Xneg', 'Yneg', 'Zneg',
-        'XposYpos', 'XposZpos', 'YposZpos',
-        'XnegYneg', 'XnegYpos', 'XnegZneg',
-        'XnegZpos', 'YnegZneg', 'YnegZpos',
-        'XposYneg', 'XposZneg', 'YposZneg',
-        'XposYposZpos', 'XposYnegZpos', 'XposYposZneg',
-        'XnegYposZpos', 'XposYnegZneg', 'XnegYposZneg',
-        'XnegYnegZpos',
-        'Zup_AxoLeft', 'Zup_AxoRight',
-        'Zup_Front', 'Zup_Back', 'Zup_Top', 'Zup_Bottom', 'Zup_Left',
-        'Zup_Right', 'Yup_AxoLeft', 'Yup_AxoRight', 'Yup_Front', 'Yup_Back',
-        'Yup_Top', 'Yup_Bottom', 'Yup_Left', 'Yup_Right')
+        "XnegYnegZneg",
+        "Xpos",
+        "Ypos",
+        "Zpos",
+        "Xneg",
+        "Yneg",
+        "Zneg",
+        "XposYpos",
+        "XposZpos",
+        "YposZpos",
+        "XnegYneg",
+        "XnegYpos",
+        "XnegZneg",
+        "XnegZpos",
+        "YnegZneg",
+        "YnegZpos",
+        "XposYneg",
+        "XposZneg",
+        "YposZneg",
+        "XposYposZpos",
+        "XposYnegZpos",
+        "XposYposZneg",
+        "XnegYposZpos",
+        "XposYnegZneg",
+        "XnegYposZneg",
+        "XnegYnegZpos",
+        "Zup_AxoLeft",
+        "Zup_AxoRight",
+        "Zup_Front",
+        "Zup_Back",
+        "Zup_Top",
+        "Zup_Bottom",
+        "Zup_Left",
+        "Zup_Right",
+        "Yup_AxoLeft",
+        "Yup_AxoRight",
+        "Yup_Front",
+        "Yup_Back",
+        "Yup_Top",
+        "Yup_Bottom",
+        "Yup_Left",
+        "Yup_Right",
+    )
 
     #: Headlight flag means that light position/direction are defined not in a
     #: World coordinate system, but relative to the camera orientation
@@ -105,12 +146,12 @@ class ViewerLight(Atom):
     range = Float(0.0, strict=False)
 
     # Angle in radians of the cone created by the spot
-    angle = FloatRange(0.0, math.pi, math.pi/2)
+    angle = FloatRange(0.0, math.pi, math.pi / 2)
 
 
 class ProxyOccViewer(ProxyControl):
-    """ The abstract definition of a proxy Viewer object.
-    """
+    """The abstract definition of a proxy Viewer object."""
+
     #: A reference to the Viewer declaration.
     declaration = ForwardTyped(lambda: OccViewer)
 
@@ -227,8 +268,8 @@ class ProxyOccViewer(ProxyControl):
 
 
 class OccViewer(Control):
-    """ A widget to view OpenCascade shapes.
-    """
+    """A widget to view OpenCascade shapes."""
+
     #: A reference to the ProxySpinBox object.
     proxy = Typed(ProxyOccViewer)
 
@@ -240,44 +281,48 @@ class OccViewer(Control):
     errors = d_(Dict(), writable=False)
 
     #: Display mode
-    display_mode = d_(Enum('shaded', 'wireframe'))
+    display_mode = d_(Enum("shaded", "wireframe"))
 
     #: Selection mode
-    selection_mode = d_(Enum(
-        'any', 'shape', 'shell', 'face', 'edge', 'wire', 'vertex'))
+    selection_mode = d_(Enum("any", "shape", "shell", "face", "edge", "wire", "vertex"))
 
     #: Selected items
     selection = d_(Typed(ViewerSelection), writable=False)
 
     #: View direction
-    view_mode = d_(Enum('iso', 'top', 'bottom', 'left', 'right', 'front',
-                        'back'))
+    view_mode = d_(Enum("iso", "top", "bottom", "left", "right", "front", "back"))
 
     #: View projection
-    view_projection = d_(Enum('orthographic', 'perspective', 'stereo'))
+    view_projection = d_(Enum("orthographic", "perspective", "stereo"))
 
     # -------------------------------------------------------------------------
     # Grid
     # -------------------------------------------------------------------------
-    grid_mode = d_(Enum('', 'rectangular-lines', 'rectangular-points',
-                        'circular-lines', 'circular-points'))
+    grid_mode = d_(
+        Enum(
+            "",
+            "rectangular-lines",
+            "rectangular-points",
+            "circular-lines",
+            "circular-points",
+        )
+    )
     grid_colors = d_(Coerced(tuple, coercer=color_pair_coercer))
 
     def _default_grid_colors(self):
-        return (parse_color('#888'), parse_color('#444'))
+        return (parse_color("#888"), parse_color("#444"))
 
     #: Show tahedron
-    trihedron_mode = d_(Enum('right-lower', 'right-upper', 'left-lower',
-                             'left-upper'))
+    trihedron_mode = d_(Enum("right-lower", "right-upper", "left-lower", "left-upper"))
 
     #: Background gradient this is corecred from a of strings
     background_gradient = d_(Coerced(tuple, coercer=color_pair_coercer))
 
     def _default_background_gradient(self):
-        return (parse_color('white'), parse_color('silver'))
+        return (parse_color("white"), parse_color("silver"))
 
     #: Default shape rendering color if none is defined
-    shape_color = d_(ColorMember('steelblue'))
+    shape_color = d_(ColorMember("steelblue"))
 
     #: Display shadows
     shadows = d_(Bool(False))
@@ -304,10 +349,10 @@ class OccViewer(Control):
     draw_boundaries = d_(Bool(False))
 
     #: View expands freely in width by default.
-    hug_width = set_default('ignore')
+    hug_width = set_default("ignore")
 
     #: View expands freely in height by default.
-    hug_height = set_default('ignore')
+    hug_height = set_default("ignore")
 
     #: Lock rotation so the mouse cannot not rotate
     lock_rotation = d_(Bool())
@@ -319,8 +364,7 @@ class OccViewer(Control):
     lights = d_(List(ViewerLight))
 
     def _default_lights(self):
-        headlight = ViewerLight(
-            type="directional", color="white", headlight=True)
+        headlight = ViewerLight(type="directional", color="white", headlight=True)
         ambient = ViewerLight(type="ambient", color="white", intensity=0.95)
         return [headlight, ambient]
 
@@ -342,15 +386,31 @@ class OccViewer(Control):
     # -------------------------------------------------------------------------
     # Observers
     # -------------------------------------------------------------------------
-    @observe('position', 'display_mode', 'view_mode', 'trihedron_mode',
-             'selection_mode', 'background_gradient', 'double_buffer',
-             'shadows', 'reflections', 'antialiasing', 'lock_rotation',
-             'lock_zoom', 'draw_boundaries', 'hidden_line_removal',
-             'shape_color', 'raytracing_depth', 'lights', 'view_projection',
-             'grid_mode', 'grid_colors', 'animations')
+    @observe(
+        "position",
+        "display_mode",
+        "view_mode",
+        "trihedron_mode",
+        "selection_mode",
+        "background_gradient",
+        "double_buffer",
+        "shadows",
+        "reflections",
+        "antialiasing",
+        "lock_rotation",
+        "lock_zoom",
+        "draw_boundaries",
+        "hidden_line_removal",
+        "shape_color",
+        "raytracing_depth",
+        "lights",
+        "view_projection",
+        "grid_mode",
+        "grid_colors",
+        "animations",
+    )
     def _update_proxy(self, change):
-        """ An observer which sends state change to the proxy.
-        """
+        """An observer which sends state change to the proxy."""
         # The superclass handler implementation is sufficient.
         super(OccViewer, self)._update_proxy(change)
 
@@ -358,43 +418,43 @@ class OccViewer(Control):
     # Viewer API
     # -------------------------------------------------------------------------
     def fit_all(self):
-        """ Zoom in and center on all item(s) """
+        """Zoom in and center on all item(s)"""
         self.proxy.fit_all()
 
     def fit_selection(self):
-        """ Zoom in and center on the selected item(s) """
+        """Zoom in and center on the selected item(s)"""
         self.proxy.fit_selection()
 
     def clear_selection(self):
-        """ Clear selection """
+        """Clear selection"""
         self.proxy.clear_selection()
 
     def take_screenshot(self, filename):
-        """ Take a screenshot and save it with the given filename """
+        """Take a screenshot and save it with the given filename"""
         self.proxy.take_screenshot(filename)
 
     def zoom_factor(self, factor):
-        """ Zoom in by a given factor """
+        """Zoom in by a given factor"""
         self.proxy.zoom_factor(factor)
 
     def rotate_view(self, *args, **kwargs):
-        """ Rotate by the given number of degrees about the current axis"""
+        """Rotate by the given number of degrees about the current axis"""
         self.proxy.rotate_view(*args, **kwargs)
 
     def turn_view(self, *args, **kwargs):
-        """ Rotate by the given number of degrees about the current axis"""
+        """Rotate by the given number of degrees about the current axis"""
         self.proxy.turn_view(*args, **kwargs)
 
     def reset_view(self):
-        """ Reset zoom to defaults """
+        """Reset zoom to defaults"""
         self.proxy.reset_view()
 
     def clear_display(self):
-        """ Clear the display, all children should be removed before calling
+        """Clear the display, all children should be removed before calling
         this or they'll be rerendered.
         """
         self.proxy.clear_display()
 
     def update_display(self):
-        """ Trigger an update of the display """
+        """Trigger an update of the display"""
         self.proxy.update_display()

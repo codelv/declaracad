@@ -20,26 +20,27 @@ from OCCT.VrmlAPI import VrmlAPI_Writer, VrmlAPI_RepresentationOfShape
 
 
 class VrmlExporter(ModelExporter):
-    extension = 'vrml'
-    deflection = Float(-1, strict=False).tag(help=dedent("""
+    extension = "vrml"
+    deflection = Float(-1, strict=False).tag(
+        help=dedent(
+            """
         The default value is -1. When the deflection value is less than 0,
         the deflection is calculated from the relative size of the shape.
-        """.strip()))
-    version = Enum(2, 1)
-    representation = Enum(
-        'both',
-        'shaded',
-        'wire-frame'
+        """.strip()
+        )
     )
+    version = Enum(2, 1)
+    representation = Enum("both", "shaded", "wire-frame")
 
     @classmethod
     def get_options_view(cls):
         with enaml.imports():
             from .options import OptionsForm
+
             return OptionsForm
 
     def export(self):
-        """ Export a DeclaraCAD model from an enaml file to VRML based on the
+        """Export a DeclaraCAD model from an enaml file to VRML based on the
         given options.
 
         Parameters
@@ -51,10 +52,10 @@ class VrmlExporter(ModelExporter):
         exporter = VrmlAPI_Writer()
         exporter.SetDeflection(self.deflection)
 
-        rep_name = self.representation.title().replace('-', '')
+        rep_name = self.representation.title().replace("-", "")
         exporter.SetRepresentation(
-            getattr(VrmlAPI_RepresentationOfShape,
-                    f'VrmlAPI_{rep_name}Representation'))
+            getattr(VrmlAPI_RepresentationOfShape, f"VrmlAPI_{rep_name}Representation")
+        )
         v = self.version
         output_path = self.path
 
@@ -73,4 +74,3 @@ class VrmlExporter(ModelExporter):
             if not exporter.Write(s, output_path, v):
                 raise RuntimeError("Failed to write shape")
         print(f"Written to {output_path}")
-

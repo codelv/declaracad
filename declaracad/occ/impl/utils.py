@@ -8,8 +8,12 @@ The full license is in the file LICENSE, distributed with this software.
 """
 from OCCT import Graphic3d
 from OCCT.Graphic3d import (
-    Graphic3d_BSDF, Graphic3d_MaterialAspect, Graphic3d_PBRMaterial,
-    Graphic3d_Fresnel, Graphic3d_Vec3, Graphic3d_Vec4
+    Graphic3d_BSDF,
+    Graphic3d_MaterialAspect,
+    Graphic3d_PBRMaterial,
+    Graphic3d_Fresnel,
+    Graphic3d_Vec3,
+    Graphic3d_Vec4,
 )
 from OCCT.Quantity import Quantity_Color, Quantity_TOC_RGB
 
@@ -19,7 +23,7 @@ OCC_MATERIAL_CACHE = {}
 
 
 def color_to_quantity_color(color):
-    """ Convert an enaml color to an Quantity_Color. The result is cached.
+    """Convert an enaml color to an Quantity_Color. The result is cached.
 
     Parameters
     ----------
@@ -33,17 +37,17 @@ def color_to_quantity_color(color):
     """
     result = OCC_COLOR_CACHE.get(color.argb)
     if result is None:
-        transparency = None if color.alpha == 255 else 1-color.alpha/255.0
+        transparency = None if color.alpha == 255 else 1 - color.alpha / 255.0
         occ_color = Quantity_Color(
-            color.red/255., color.green/255., color.blue/255.,
-            Quantity_TOC_RGB)
+            color.red / 255.0, color.green / 255.0, color.blue / 255.0, Quantity_TOC_RGB
+        )
         result = (occ_color, transparency)
         OCC_COLOR_CACHE[color.argb] = result
     return result
 
 
 def fresnel_to_g3d_fresnel(fresnel):
-    """ Create a Graphic3d_Fresnel from the declaracad Fresnel definition
+    """Create a Graphic3d_Fresnel from the declaracad Fresnel definition
 
     Parameters
     ----------
@@ -57,18 +61,20 @@ def fresnel_to_g3d_fresnel(fresnel):
 
     """
     model = fresnel.model.title()
-    CreateFresnel = getattr(Graphic3d_Fresnel, f'Create{model}_')
+    CreateFresnel = getattr(Graphic3d_Fresnel, f"Create{model}_")
     # Convert tuple arguments to G3d Vec
     params = fresnel.params
     if not isinstance(fresnel.params, (tuple, list)):
         params = [params]
-    args = (Graphic3d_Vec3(*param) if isinstance(param, tuple) else param
-            for param in params)
+    args = (
+        Graphic3d_Vec3(*param) if isinstance(param, tuple) else param
+        for param in params
+    )
     return CreateFresnel(*args)
 
 
 def create_pbr_material(material):
-    """ Create a Graphic3d_PBRMaterial from the declaracad Material definition
+    """Create a Graphic3d_PBRMaterial from the declaracad Material definition
 
     Parameters
     ----------
@@ -127,7 +133,7 @@ def create_pbr_material(material):
 
 
 def material_to_material_aspect(material):
-    """ Convert a material name to a Graphic3d material
+    """Convert a material name to a Graphic3d material
 
     Parameters
     ----------
@@ -141,14 +147,15 @@ def material_to_material_aspect(material):
 
     """
     if material is None or not material.name:
-        name = 'CHARCOAL'
+        name = "CHARCOAL"
     else:
         name = material.name.upper()
-    if name == 'CUSTOM':
+    if name == "CUSTOM":
         if material._data is not None:
             return material._data  # Cached value
         a = material._data = Graphic3d_MaterialAspect(
-            Graphic3d.Graphic3d_NameOfMaterial_UserDefined)
+            Graphic3d.Graphic3d_NameOfMaterial_UserDefined
+        )
         a.SetMaterialType(Graphic3d.Graphic3d_MATERIAL_PHYSIC)
         if material.transparency:
             a.SetTransparency(material.transparency)
@@ -178,7 +185,7 @@ def material_to_material_aspect(material):
         return a
     ma = OCC_MATERIAL_CACHE.get(name)
     if ma is None:
-        material_type = 'Graphic3d_NOM_%s' % name
+        material_type = "Graphic3d_NOM_%s" % name
         ma = Graphic3d_MaterialAspect(getattr(Graphic3d, material_type))
         OCC_MATERIAL_CACHE[name] = ma
     return ma

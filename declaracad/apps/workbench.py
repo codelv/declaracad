@@ -13,9 +13,11 @@ import sys
 import signal
 import enaml
 import faulthandler
+
 faulthandler.enable()
 
 import enamlx
+
 enamlx.install()
 
 from declaracad.core.workbench import DeclaracadWorkbench
@@ -47,7 +49,8 @@ def main(**kwargs):
 
     # Make sure ^C keeps working and does a proper shutdown
     def quit(*args):
-        workbench.invoke_command('enaml.workbench.ui.close_window')
+        workbench.invoke_command("enaml.workbench.ui.close_window")
+
     signal.signal(signal.SIGINT, quit)
 
     # Register plugins
@@ -65,5 +68,5 @@ def main(**kwargs):
     log.info("Workbench stopped")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

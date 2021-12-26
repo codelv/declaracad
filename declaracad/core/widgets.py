@@ -11,9 +11,7 @@ Created on Dec 7, 2017
 """
 from atom.api import Typed, ForwardTyped, Instance, Int, Bool, set_default
 from enaml.core.declarative import d_
-from enaml.widgets.api import (
-    DockArea, DockItem, Window, Container, Label, RawWidget
-)
+from enaml.widgets.api import DockArea, DockItem, Window, Container, Label, RawWidget
 from enaml.workbench.api import Plugin
 from enaml.qt.QtCore import Qt
 from enaml.qt.QtGui import QWindow
@@ -25,15 +23,13 @@ from enaml.qt.qt_factories import QT_FACTORIES
 # Custom widgets
 # -----------------------------------------------------------------------------
 class PickableDockItem(DockItem):
-    """ A custom pickable dock item class.
-
-    """
+    """A custom pickable dock item class."""
 
     #: Plugin this item uses
     plugin = d_(Instance(Plugin))
 
     def __getstate__(self):
-        """ Get the pickle state for the dock item.
+        """Get the pickle state for the dock item.
 
         This method saves the necessary state for the dock items used
         in this example. Different applications will have different
@@ -43,21 +39,18 @@ class PickableDockItem(DockItem):
         provides sufficient unpickling behavior.
 
         """
-        return {'name': self.name, 'title': self.title}
+        return {"name": self.name, "title": self.title}
 
 
 class PickableDockArea(DockArea):
-    """ A custom pickable dock area class.
+    """A custom pickable dock area class."""
 
-    """
     def get_save_items(self):
-        """ Get the list of dock items to save with this dock area.
-
-        """
+        """Get the list of dock items to save with this dock area."""
         return [c for c in self.children if isinstance(c, PickableDockItem)]
 
     def __getstate__(self):
-        """ Get the pickle state for the dock area.
+        """Get the pickle state for the dock area.
 
         This method saves the necessary state for the dock area used
         in this example. Different applications will have different
@@ -65,30 +58,29 @@ class PickableDockArea(DockArea):
 
         """
         state = {
-            'name': self.name,
-            'layout': self.save_layout(),
-            'items': self.get_save_items(),
+            "name": self.name,
+            "layout": self.save_layout(),
+            "items": self.get_save_items(),
         }
         return state
 
     def __setstate__(self, state):
-        """ Restore the state of the dock area.
-
-        """
-        self.name = state['name']
-        self.layout = state['layout']
-        self.insert_children(None, state['items'])
+        """Restore the state of the dock area."""
+        self.name = state["name"]
+        self.layout = state["layout"]
+        self.insert_children(None, state["items"])
 
 
 class EmbeddedWindow(RawWidget):
-    """ Create a widget that embeds the window from another application.
+    """Create a widget that embeds the window from another application.
     This allows you to run expensive operations (ex 3D rendering) without
     blocking the main UI.
 
     """
+
     #: Expand by default
-    hug_width = set_default('ignore')
-    hug_height = set_default('ignore')
+    hug_width = set_default("ignore")
+    hug_height = set_default("ignore")
 
     #: Window ID of embedded application
     window_id = d_(Int())
@@ -99,10 +91,11 @@ class EmbeddedWindow(RawWidget):
 
 
 class PlainTextEdit(RawWidget):
-    """ QTextEdit used by the MultiLineField is horribly slow at appending
+    """QTextEdit used by the MultiLineField is horribly slow at appending
     text. This widget is significantly faster.
 
     """
+
     def create_widget(self, parent):
         widget = QPlainTextEdit(parent)
         widget.setReadOnly(True)
@@ -127,6 +120,8 @@ class FramelessWindow(Window):
     frameless = d_(Bool())
 
 
-QT_FACTORIES.update({
-    'FramelessWindow': lambda: QtFramelessWindow,
-})
+QT_FACTORIES.update(
+    {
+        "FramelessWindow": lambda: QtFramelessWindow,
+    }
+)

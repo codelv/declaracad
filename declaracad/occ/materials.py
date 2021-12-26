@@ -10,14 +10,23 @@ Created on Aug 24, 2021
 @author: jrm
 """
 from atom.api import (
-    Atom, Float, Bool, Str, Coerced, Value, Enum, Tuple, Typed, FloatRange
+    Atom,
+    Float,
+    Bool,
+    Str,
+    Coerced,
+    Value,
+    Enum,
+    Tuple,
+    Typed,
+    FloatRange,
 )
 from enaml.colors import Color, ColorMember
 
 
 class TextureParameters(Atom):
-    """ Texture parametric parameter ranges
-    """
+    """Texture parametric parameter ranges"""
+
     enabled = Bool(True)
     u = Float(0.0, strict=False)
     v = Float(0.0, strict=False)
@@ -31,9 +40,8 @@ def coerce_texture(arg):
 
 
 def color_from_rgbf(r: float, g: float, b: float) -> Color:
-    """ Create an enaml Color from rgb floats
-    """
-    return Color(int(r*255), int(g*255), int(b*255))
+    """Create an enaml Color from rgb floats"""
+    return Color(int(r * 255), int(g * 255), int(b * 255))
 
 
 class Texture(Atom):
@@ -42,24 +50,30 @@ class Texture(Atom):
     path = Str()
 
     #: If given, repeat in the u and v dimension
-    repeat = Coerced(TextureParameters,
-                     kwargs={'enabled': True, 'u': 1, 'v': 1},
-                     coercer=coerce_texture)
+    repeat = Coerced(
+        TextureParameters,
+        kwargs={"enabled": True, "u": 1, "v": 1},
+        coercer=coerce_texture,
+    )
 
     #: If given, adjust th eorigin to the u and v dimension
-    origin = Coerced(TextureParameters,
-                     kwargs={'enabled': True, 'u': 0, 'v': 0},
-                     coercer=coerce_texture)
+    origin = Coerced(
+        TextureParameters,
+        kwargs={"enabled": True, "u": 0, "v": 0},
+        coercer=coerce_texture,
+    )
 
     #: If given, scale in the u and v dimension
-    scale = Coerced(TextureParameters,
-                    kwargs={'enabled': True, 'u': 1, 'v': 1},
-                    coercer=coerce_texture)
+    scale = Coerced(
+        TextureParameters,
+        kwargs={"enabled": True, "u": 1, "v": 1},
+        coercer=coerce_texture,
+    )
 
 
 class Fresnel(Atom):
     #: Fresnel style
-    model = Enum('constant', 'schlick',  'dielectric', 'conductor')
+    model = Enum("constant", "schlick", "dielectric", "conductor")
     params = Value()
 
 
@@ -118,7 +132,7 @@ class Material(Atom):
     _data = Value()
 
     def __init__(self, name="", **kwargs):
-        """ Constructor which accepts a material name. Use 'custom'
+        """Constructor which accepts a material name. Use 'custom'
         to define your own.
 
         """
@@ -141,11 +155,15 @@ class Material(Atom):
 
 def get_builtin_materials():
     from OCCT import Graphic3d
+
     prefix = "Graphic3d_NOM_"
     n = len(prefix)
     return [
-        d[n:].lower() for d in dir(Graphic3d) if d.startswith(prefix)
-        if 'USER' not in d.upper()]
+        d[n:].lower()
+        for d in dir(Graphic3d)
+        if d.startswith(prefix)
+        if "USER" not in d.upper()
+    ]
 
 
 #: Materials builtin to opencascade
@@ -153,7 +171,7 @@ MATERIALS = get_builtin_materials()
 
 
 Brass = Material(
-    name='CUSTOM',
+    name="CUSTOM",
     shininess=0.65,
     refraction_index=1.0,
     ambient_color=color_from_rgbf(0.088428, 0.041081, 0.002090),
@@ -162,13 +180,13 @@ Brass = Material(
     emissive_color=Color(0, 0, 0),
     pbr=PBRMaterial(
         ks=(0.985, 0.985, 0.985, 0.045),
-        coat=Fresnel(model='constant', params=0),
-        base=Fresnel(model='schlick', params=((0.58, 0.42, 0.2),)),
-    )
+        coat=Fresnel(model="constant", params=0),
+        base=Fresnel(model="schlick", params=((0.58, 0.42, 0.2),)),
+    ),
 )
 
 Glass = Material(
-    name='CUSTOM',
+    name="CUSTOM",
     shininess=0.5,
     transparency=0.8,
     refraction_index=1.62,
@@ -179,7 +197,7 @@ Glass = Material(
     pbr=PBRMaterial(
         kd=(0.723404, 0.166229, 0.166229),
         absorption=(0.0, 0.0, 0.0, 0.0),
-        coat=Fresnel(model='constant', params=0),
-        base=Fresnel(model='constant', params=1),
-    )
+        coat=Fresnel(model="constant", params=0),
+        base=Fresnel(model="constant", params=1),
+    ),
 )

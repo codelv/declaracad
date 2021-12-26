@@ -24,9 +24,11 @@ class Tool(Model):
 
     def _observe_name(self, change):
         from enaml.qt.qt_application import QtApplication
+
         app = QtApplication.instance()
 
         from declaracad.occ import api
+
         self.declaration = getattr(api, self.name)
         factory = app.resolver.factories.get(self.name)
         if factory:
@@ -41,10 +43,14 @@ class ToolboxPlugin(Plugin):
 
     def _default_tools(self):
         from declaracad.occ import api
-        excluded = ('load_model',)
-        return [Tool(name=it) for it in dir(api)
-                if not it.startswith("_") and it not in excluded]
+
+        excluded = ("load_model",)
+        return [
+            Tool(name=it)
+            for it in dir(api)
+            if not it.startswith("_") and it not in excluded
+        ]
 
     def start(self):
-        log = logging.getLogger('MARKDOWN')
+        log = logging.getLogger("MARKDOWN")
         log.setLevel(logging.WARNING)

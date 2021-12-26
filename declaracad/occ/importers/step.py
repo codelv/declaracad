@@ -15,7 +15,7 @@ from declaracad.occ.api import TopoShape
 
 
 def load_stp(filename):
-    """ Load a stp model """
+    """Load a stp model"""
     reader = STEPControl_Reader()
     status = reader.ReadFile(filename)
     if status != IFSelect_RetDone:

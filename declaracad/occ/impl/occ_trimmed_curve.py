@@ -19,8 +19,9 @@ from .occ_shape import OccShape, coerce_axis
 
 class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_geom___trimmed_curve.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "class_geom___trimmed_curve.html"
+    )
 
     curve = Typed(Geom_TrimmedCurve)
 
@@ -32,12 +33,12 @@ class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
         for child in self.children():
             if not isinstance(child, OccShape):
                 continue
-            child.observe('shape', self.update_shape)
+            child.observe("shape", self.update_shape)
 
     def update_shape(self, change=None):
         d = self.declaration
         child = self.get_first_child()
-        if hasattr(child, 'curve'):
+        if hasattr(child, "curve"):
             curve = child.curve
         else:
             curve = BRep_Tool.Curve_(child.shape, 0, 1)[0]
@@ -49,4 +50,3 @@ class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
 
     def set_v(self, v):
         self.update_shape()
-

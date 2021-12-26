@@ -10,8 +10,19 @@ Created on Sep 28, 2016
 @author: jrm
 """
 from atom.api import (
-    Atom, Instance, ForwardInstance, Typed, ForwardTyped, List, Enum,
-    Tuple, Float, Bool, Coerced, Value, observe
+    Atom,
+    Instance,
+    ForwardInstance,
+    Typed,
+    ForwardTyped,
+    List,
+    Enum,
+    Tuple,
+    Float,
+    Bool,
+    Coerced,
+    Value,
+    observe,
 )
 from enaml.core.declarative import d_
 
@@ -253,28 +264,27 @@ class ProxyNormalProjection(ProxyOperation):
 
 
 class Operation(Shape):
-    """ Base class for Operations that are applied to other shapes.
+    """Base class for Operations that are applied to other shapes."""
 
-    """
     #: Reference to the implementation control
     proxy = Typed(ProxyOperation)
 
     def _update_proxy(self, change):
-        if change['name'] == 'axis':
+        if change["name"] == "axis":
             dx, dy, dz = self.x, self.y, self.z
-            if change.get('oldvalue'):
-                old = change['oldvalue'].Location()
+            if change.get("oldvalue"):
+                old = change["oldvalue"].Location()
                 dx -= old.X()
                 dy -= old.Y()
                 dz -= old.Z()
             for c in self.children:
                 if isinstance(c, Shape):
-                    c.position = (c.x+dx, c.y+dy, c.z+dz)
+                    c.position = (c.x + dx, c.y + dy, c.z + dz)
         super(Operation, self)._update_proxy(change)
 
 
 class BooleanOperation(Operation):
-    """ A base class for a boolean operation on two or more shapes.
+    """A base class for a boolean operation on two or more shapes.
 
     Attributes
     ----------
@@ -296,13 +306,13 @@ class BooleanOperation(Operation):
     #: Attempt to fix issues in the resulting shape
     fix = d_(Bool(False))
 
-    @observe('shape1', 'shape2', 'unify', 'fix')
+    @observe("shape1", "shape2", "unify", "fix")
     def _update_proxy(self, change):
         super(BooleanOperation, self)._update_proxy(change)
 
 
 class Common(BooleanOperation):
-    """ An operation that results in the common volume of the two shapes.
+    """An operation that results in the common volume of the two shapes.
     This operation is repeated to give the intersection all child shapes.
 
     Examples
@@ -318,12 +328,13 @@ class Common(BooleanOperation):
 
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyCommon)
 
 
 class Cut(BooleanOperation):
-    """ An operation that results in the subtraction of the second and
+    """An operation that results in the subtraction of the second and
     following shapes the first shape.  This operation is repeated for all
     additional child shapes if more than two are given.
 
@@ -341,12 +352,13 @@ class Cut(BooleanOperation):
         # etc...
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyCut)
 
 
 class Fuse(BooleanOperation):
-    """ An operation that results in the addition all of the child shapes.
+    """An operation that results in the addition all of the child shapes.
 
     Examples
     ----------
@@ -358,12 +370,13 @@ class Fuse(BooleanOperation):
             position = (1,0,0)
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyFuse)
 
 
 class Split(BooleanOperation):
-    """ An operation that splits the first shape by all of the other shapes.
+    """An operation that splits the first shape by all of the other shapes.
 
     Examples
     ----------
@@ -376,12 +389,13 @@ class Split(BooleanOperation):
             position = (1,0,0)
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxySplit)
 
 
 class Intersection(BooleanOperation):
-    """ An operation that gives the intersection by the first shape and all of
+    """An operation that gives the intersection by the first shape and all of
     the other shapes. The result is always an Edge, Wire, or Vertex. To get a
     filled shape, use the `Common` operation instead.
 
@@ -397,12 +411,13 @@ class Intersection(BooleanOperation):
             position = (1/2,0,0)
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyIntersection)
 
 
 class Fillet(Operation):
-    """ Applies fillet operation to the first child shape.
+    """Applies fillet operation to the first child shape.
 
     Attributes
     ----------
@@ -426,6 +441,7 @@ class Fillet(Operation):
             pass
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyFillet)
 
@@ -433,23 +449,24 @@ class Fillet(Operation):
     disabled = d_(Bool())
 
     #: Fillet shape type
-    shape_type = d_(Enum('rational', 'angular', 'polynomial')).tag(
-        view=True, group='Fillet')
+    shape_type = d_(Enum("rational", "angular", "polynomial")).tag(
+        view=True, group="Fillet"
+    )
 
     #: Radius of fillet
-    radius = d_(Float(1, strict=False)).tag(view=True, group='Fillet')
+    radius = d_(Float(1, strict=False)).tag(view=True, group="Fillet")
 
     #: Edges to apply fillet to and parameters
     #: Leave blank to use all edges of the shape
-    operations = d_(List()).tag(view=True, group='Fillet')
+    operations = d_(List()).tag(view=True, group="Fillet")
 
-    @observe('shape_type', 'radius', 'operations', 'disabled')
+    @observe("shape_type", "radius", "operations", "disabled")
     def _update_proxy(self, change):
         super(Fillet, self)._update_proxy(change)
 
 
 class Chamfer(Operation):
-    """ Applies Chamfer operation to the first child shape.
+    """Applies Chamfer operation to the first child shape.
 
     Attributes
     ----------
@@ -473,6 +490,7 @@ class Chamfer(Operation):
            pass
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyChamfer)
 
@@ -480,21 +498,21 @@ class Chamfer(Operation):
     disabled = d_(Bool())
 
     #: Distance of chamfer
-    distance = d_(Float(1, strict=False)).tag(view=True, group='Chamfer')
+    distance = d_(Float(1, strict=False)).tag(view=True, group="Chamfer")
 
     #: Second of chamfer (leave 0 if not used)
-    distance2 = d_(Float(0, strict=False)).tag(view=True, group='Chamfer')
+    distance2 = d_(Float(0, strict=False)).tag(view=True, group="Chamfer")
 
     #: Edges or faces to apply chamfer to
-    operations = d_(List()).tag(view=True, group='Chamfer')
+    operations = d_(List()).tag(view=True, group="Chamfer")
 
-    @observe('distance', 'distance2', 'operations', 'disabled')
+    @observe("distance", "distance2", "operations", "disabled")
     def _update_proxy(self, change):
         super(Chamfer, self)._update_proxy(change)
 
 
 class Offset(Operation):
-    """ An operation that create an Offset wire of the first child shape.
+    """An operation that create an Offset wire of the first child shape.
 
     Attributes
     ----------
@@ -526,33 +544,40 @@ class Offset(Operation):
     closed = d_(Bool(True))
 
     #: Offset
-    offset = d_(Float(1, strict=False)).tag(view=True, group='Offset')
+    offset = d_(Float(1, strict=False)).tag(view=True, group="Offset")
 
     #: Make the offset at a distance parallel to the normal plane.
     normal_distance = d_(Float(0, strict=False))
 
     #: Offset mode
-    offset_mode = d_(Enum('skin', 'pipe', 'recto_verso')).tag(
-        view=True, group='Offset')
+    offset_mode = d_(Enum("skin", "pipe", "recto_verso")).tag(view=True, group="Offset")
 
     #: Intersection
-    intersection = d_(Bool(False)).tag(view=True, group='Offset')
+    intersection = d_(Bool(False)).tag(view=True, group="Offset")
 
     #: Join type
-    join_type = d_(Enum('arc', 'tangent', 'intersection')).tag(
-        view=True, group='Offset')
+    join_type = d_(Enum("arc", "tangent", "intersection")).tag(
+        view=True, group="Offset"
+    )
 
     #: The shape to offset if given
     shape = d_(Instance((Shape, TopoDS_Shape)))
 
-    @observe('offset', 'offset_mode', 'intersection', 'join_type', 'closed',
-             'normal_distance', 'shape')
+    @observe(
+        "offset",
+        "offset_mode",
+        "intersection",
+        "join_type",
+        "closed",
+        "normal_distance",
+        "shape",
+    )
     def _update_proxy(self, change):
         super(Offset, self)._update_proxy(change)
 
 
 class OffsetShape(Offset):
-    """ An operation that create an OffsetShape from the first child shape.
+    """An operation that create an OffsetShape from the first child shape.
 
     Attributes
     ----------
@@ -576,12 +601,13 @@ class OffsetShape(Offset):
     See examples/operations.enaml
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyOffsetShape)
 
 
 class ThickSolid(Offset):
-    """ An operation that creates a hollowed out solid from shape.
+    """An operation that creates a hollowed out solid from shape.
 
     Attributes
     ----------
@@ -601,19 +627,20 @@ class ThickSolid(Offset):
         faces << [sorted(box.topology.faces,key=top_face)[0]]
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyThickSolid)
 
     #: Closing faces
-    faces = d_(List()).tag(view=True, group='ThickSolid')
+    faces = d_(List()).tag(view=True, group="ThickSolid")
 
-    @observe('faces')
+    @observe("faces")
     def _update_proxy(self, change):
         super(ThickSolid, self)._update_proxy(change)
 
 
 class Pipe(Operation):
-    """ An operation that extrudes a profile along a spline, wire, or path.
+    """An operation that extrudes a profile along a spline, wire, or path.
 
     Attributes
     ----------
@@ -632,6 +659,7 @@ class Pipe(Operation):
     See examples/pipes.enaml
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyPipe)
 
@@ -642,12 +670,23 @@ class Pipe(Operation):
     profile = d_(Instance(object))
 
     #: Fill mode
-    fill_mode = d_(Enum(None, 'corrected_frenet', 'fixed', 'frenet',
-                        'constant_normal', 'darboux', 'guide_ac', 'guide_plan',
-                        'guide_ac_contact', 'guide_plan_contact',
-                        'discrete_trihedron')).tag(view=True, group='Pipe')
+    fill_mode = d_(
+        Enum(
+            None,
+            "corrected_frenet",
+            "fixed",
+            "frenet",
+            "constant_normal",
+            "darboux",
+            "guide_ac",
+            "guide_plan",
+            "guide_ac_contact",
+            "guide_plan_contact",
+            "discrete_trihedron",
+        )
+    ).tag(view=True, group="Pipe")
 
-    @observe('spline', 'profile', 'fill_mode')
+    @observe("spline", "profile", "fill_mode")
     def _update_proxy(self, change):
         super(Pipe, self)._update_proxy(change)
 
@@ -700,9 +739,8 @@ class DraftAngle(Operation):
 
         #: Direction of the draft angle
         direction = Coerced(
-            Direction,
-            factory=lambda: Direction(0, 0, 1),
-            coercer=coerce_direction)
+            Direction, factory=lambda: Direction(0, 0, 1), coercer=coerce_direction
+        )
 
         #: The point and direction of the neural plane
         neutral_plane = Tuple(Point, Direction)
@@ -723,13 +761,13 @@ class DraftAngle(Operation):
     #: other parameters are ignored.
     operations = d_(List(Parameters))
 
-    @observe('shape', 'faces', 'angle', 'operations', 'disabled')
+    @observe("shape", "faces", "angle", "operations", "disabled")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
 
 class ThruSections(Operation):
-    """ An operation that extrudes a shape by means of going through a series
+    """An operation that extrudes a shape by means of going through a series
      of profile sections along a spline or path.
 
     Attributes
@@ -748,27 +786,28 @@ class ThruSections(Operation):
     See examples/thru_sections.enaml
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyThruSections)
 
     #: isSolid is set to true if the construction algorithm is required
     #: to build a solid or to false if it is required to build a shell
     #: (the default value),
-    solid = d_(Bool(False)).tag(view=True, group='Through Sections')
+    solid = d_(Bool(False)).tag(view=True, group="Through Sections")
 
     #: ruled is set to true if the faces generated between the edges
     #: of two consecutive wires are ruled surfaces or to false
     #: (the default value)
     #: if they are smoothed out by approximation
-    ruled = d_(Bool(False)).tag(view=True, group='Through Sections')
+    ruled = d_(Bool(False)).tag(view=True, group="Through Sections")
 
     #: pres3d defines the precision criterion used by the approximation
     #:  algorithm;
     #: the default value is 1.0e-6. Use AddWire and AddVertex to define
     #: the successive sections of the shell or solid to be built.
-    precision = d_(Float(1e-6)).tag(view=True, group='Through Sections')
+    precision = d_(Float(1e-6)).tag(view=True, group="Through Sections")
 
-    @observe('solid', 'ruled', 'precision')
+    @observe("solid", "ruled", "precision")
     def _update_proxy(self, change):
         super(ThruSections, self)._update_proxy(change)
 
@@ -823,7 +862,7 @@ class Mirror(TransformOperation):
 
 
 class Transform(Operation):
-    """ An operation that Transform's an existing shape (or a copy). If no
+    """An operation that Transform's an existing shape (or a copy). If no
     operations are given it will align along the axis defined by the position
     direction and rotation.
 
@@ -868,6 +907,7 @@ class Transform(Operation):
         ]
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyTransform)
 
@@ -878,7 +918,7 @@ class Transform(Operation):
     #: Transform ops
     operations = d_(List(TransformOperation))
 
-    @observe('operations')
+    @observe("operations")
     def _update_proxy(self, change):
         super(Transform, self)._update_proxy(change)
 
@@ -894,10 +934,11 @@ class Glue(Operation):
 
 
 class NormalProjection(Operation):
-    """ Project a wire onto a face. Requires at least one child shape. The
+    """Project a wire onto a face. Requires at least one child shape. The
     result is a wire.
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyNormalProjection)
 

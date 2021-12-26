@@ -2,7 +2,7 @@ from .api import Wire
 
 
 def discontinous_points(wire, tol=0.5):
-    """ Find points of discontinuity of a wire
+    """Find points of discontinuity of a wire
 
     Parameters
     ----------
@@ -25,10 +25,10 @@ def discontinous_points(wire, tol=0.5):
     data = {}
 
     for p in w.topology.points:
-        #points.append({'color': 'white', 'position': p})
+        # points.append({'color': 'white', 'position': p})
         data[p] = []
     for d in w.topology.curves:
-        curve = d['curve']
+        curve = d["curve"]
         for t in (curve.FirstParameter(), curve.LastParameter()):
             p, v = Topology.get_value_at(curve, t=t, derivative=1)
             r = data.get(p)
@@ -40,18 +40,18 @@ def discontinous_points(wire, tol=0.5):
                         break
                 if r is None:
                     data[p] = []
-                #points.append({'color': 'blue', 'position': p})
-                #continue # Ignore intermediate point
+                # points.append({'color': 'blue', 'position': p})
+                # continue # Ignore intermediate point
             r.append((curve, v))
 
     for p, curves in data.items():
         if len(curves) < 2:
-            points.append({'color': 'purple', 'position': p})
+            points.append({"color": "purple", "position": p})
             continue
 
         v1, v2 = curves[0][1], curves[1][1]
         if v1.is_parallel(v2, tol):
-            continue # Continuous
-        points.append({'color': 'red', 'position': p})
+            continue  # Continuous
+        points.append({"color": "red", "position": p})
 
     return points

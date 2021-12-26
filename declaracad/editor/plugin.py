@@ -17,8 +17,16 @@ import enaml
 import traceback
 from textwrap import dedent
 from atom.api import (
-    Enum, ContainerList, Str, Tuple, Bool, List, Int, Instance, Dict,
-    observe
+    Enum,
+    ContainerList,
+    Str,
+    Tuple,
+    Bool,
+    List,
+    Int,
+    Instance,
+    Dict,
+    observe,
 )
 
 from declaracad.core.api import Plugin, Model, log
@@ -71,15 +79,13 @@ class Document(Model):
         return "Document<name='{}'>".format(self.name)
 
     def append_output(self, output):
-        """ Limit output to 1000 entries
-
-        """
+        """Limit output to 1000 entries"""
         if len(self.output) > 1000:
             self.output.pop(0)
         self.output.append(output)
 
     def _default_source(self):
-        """ Load the document from the path given by `name`.
+        """Load the document from the path given by `name`.
         If it fails to load, nothing will be returned and an error
         will be set.
         """
@@ -92,18 +98,16 @@ class Document(Model):
         return ""
 
     def _observe_unsaved(self, change):
-        """ Increment the version number when unsaved is changed to false
-
-        """
-        if change['type'] == 'update' and not change['value']:
+        """Increment the version number when unsaved is changed to false"""
+        if change["type"] == "update" and not change["value"]:
             self.version += 1
 
     def _observe_source(self, change):
         ext = os.path.splitext(self.name.lower())[-1]
-        if ext in ['.py', '.enaml']:
+        if ext in [".py", ".enaml"]:
             self.errors = []
             self._update_suggestions(change)
-        if change['type'] == 'update':
+        if change["type"] == "update":
             try:
                 with open(self.name) as f:
                     self.unsaved = f.read() != self.source
@@ -111,12 +115,13 @@ class Document(Model):
                 pass
 
     def _update_suggestions(self, change):
-        """ Determine code completion suggestions for the current cursor
+        """Determine code completion suggestions for the current cursor
         position in the document.
         """
         from declaracad.core.workbench import DeclaracadWorkbench
+
         workbench = DeclaracadWorkbench.instance()
-        plugin = workbench.get_plugin('declaracad.editor')
+        plugin = workbench.get_plugin("declaracad.editor")
         self.suggestions = plugin.autocomplete(self.source, self.cursor)
 
 
@@ -124,96 +129,101 @@ class EditorPlugin(Plugin):
     #: Opened files
     documents = ContainerList(Document).tag(config=True)
     active_document = Instance(Document, ()).tag(config=True)
-    last_path = Str(os.path.expanduser('~/')).tag(config=True)
-    project_path = Str(os.path.expanduser('~/')).tag(config=True)
+    last_path = Str(os.path.expanduser("~/")).tag(config=True)
+    project_path = Str(os.path.expanduser("~/")).tag(config=True)
 
     #: Editor settings
-    theme = Enum('friendly', *THEMES.keys()).tag(config=True)
+    theme = Enum("friendly", *THEMES.keys()).tag(config=True)
     zoom = Int(0).tag(config=True)  #: Relative to default
     show_line_numbers = Bool(True).tag(config=True)
     code_folding = Bool(True).tag(config=True)
-    code_fold_style = Enum('plain', 'circled', 'boxed',
-                           'circled-tree', 'boxed-tree').tag(config=True)
+    code_fold_style = Enum(
+        "plain", "circled", "boxed", "circled-tree", "boxed-tree"
+    ).tag(config=True)
     font_size = Int(12).tag(config=True)  #: Default is 12 pt
     font_family = Str(MONO_FONT.split()[-1]).tag(config=True)
     show_scrollbars = Bool(True).tag(config=True)
-    file_associations = Dict(default={
-        'py': 'python',
-        'pyx': 'python',
-        'pyd': 'python',
-        'pyi': 'python',
-        'ino': 'cpp',
-        'sh': 'bash',
-        'yml': 'yaml',
-        'js': 'javascript',
-        'ts': 'javascript',
-        'jsx': 'javascript',
-        'md': 'markdown',
-        'gcode': 'gcode',
-        'nc': 'gcode',
-        'ncc': 'gcode',
-        'tap': 'gcode',
-    }).tag(config=True)
+    file_associations = Dict(
+        default={
+            "py": "python",
+            "pyx": "python",
+            "pyd": "python",
+            "pyi": "python",
+            "ino": "cpp",
+            "sh": "bash",
+            "yml": "yaml",
+            "js": "javascript",
+            "ts": "javascript",
+            "jsx": "javascript",
+            "md": "markdown",
+            "gcode": "gcode",
+            "nc": "gcode",
+            "ncc": "gcode",
+            "tap": "gcode",
+        }
+    ).tag(config=True)
 
     #: Key mappings
-    key_mapping = Dict(default={
-        'find': '\x06',  # Ctrl+F
-        'replace': '\x12',  # Ctrl+R
-        'goto': '\x0c',  # Ctrl + L
-    }).tag(config=True)
+    key_mapping = Dict(
+        default={
+            "find": "\x06",  # Ctrl+F
+            "replace": "\x12",  # Ctrl+R
+            "goto": "\x0c",  # Ctrl + L
+        }
+    ).tag(config=True)
 
     #: Editor sys path
     sys_path = List().tag(config=True)
     _area_saves_pending = Int()
 
-
     def start(self):
-        """ Make sure the documents all open on startup """
+        """Make sure the documents all open on startup"""
         super().start()
         install_lexers()
         self.workbench.application.deferred_call(
-            self._update_area_layout, {'type': 'load'})
+            self._update_area_layout, {"type": "load"}
+        )
 
     # -------------------------------------------------------------------------
     # Editor API
     # -------------------------------------------------------------------------
-    @observe('documents')
+    @observe("documents")
     def _update_area_layout(self, change):
-        """ When a document is opened or closed, add or remove it
+        """When a document is opened or closed, add or remove it
         from the currently active TabLayout.
 
         The layout update is deferred so it fires after the items are
         updated by the Looper.
 
         """
-        if change['type'] == 'create':
+        if change["type"] == "create":
             return
 
         #: Get the dock area
         area = self.get_dock_area()
 
         #: Refresh the dock items
-        #area.looper.iterable = self.documents[:]
+        # area.looper.iterable = self.documents[:]
 
         #: Determine what change to apply
         removed = set()
         added = set()
-        if change['type'] == 'container':
-            op = change['operation']
-            if op in ['append', 'insert']:
-                added = set([change['item']])
-            elif op == 'extend':
-                added = set(change['items'])
-            elif op in ['pop', 'remove']:
-                removed = set([change['item']])
-        elif change['type'] == 'update':
-            old = set(change['oldvalue'])
-            new = set(change['value'])
+        if change["type"] == "container":
+            op = change["operation"]
+            if op in ["append", "insert"]:
+                added = set([change["item"]])
+            elif op == "extend":
+                added = set(change["items"])
+            elif op in ["pop", "remove"]:
+                removed = set([change["item"]])
+        elif change["type"] == "update":
+            old = set(change["oldvalue"])
+            new = set(change["value"])
 
             #: Determine which changed
             removed = old.difference(new)
             added = new.difference(old)
-        elif change['type'] == 'load':
+        elif change["type"] == "load":
             removed = {item.doc for item in self.get_editor_items()}
             added = set(self.documents)
 
@@ -233,9 +243,16 @@ class EditorPlugin(Plugin):
             area.update_layout(ops)
 
         # Add each one at a time
-        targets = set([item.name for item in area.dock_items()
-                   if (item.name.startswith("editor-item") and
-                   item.name not in removed_targets)])
+        targets = set(
+            [
+                item.name
+                for item in area.dock_items()
+                if (
+                    item.name.startswith("editor-item")
+                    and item.name not in removed_targets
+                )
+            ]
+        )
 
         # log.debug(
         #    "Editor added=%s removed=%s targets=%s", added, removed, targets)
@@ -262,7 +279,7 @@ class EditorPlugin(Plugin):
         self.save_dock_area(change)
 
     def save_dock_area(self, change):
-        """ Save the dock area """
+        """Save the dock area"""
         self._area_saves_pending += 1
 
         def do_save():
@@ -270,21 +287,18 @@ class EditorPlugin(Plugin):
             if self._area_saves_pending != 0:
                 return
             #: Now save it
-            ui = self.workbench.get_plugin('enaml.workbench.ui')
+            ui = self.workbench.get_plugin("enaml.workbench.ui")
             ui.workspace.save_area()
+
         timed_call(350, do_save)
 
     def get_dock_area(self):
-        """ Alias to the `declaracad.ui` plugins `get_dock_area()`
-
-        """
-        ui = self.workbench.get_plugin('declaracad.ui')
+        """Alias to the `declaracad.ui` plugins `get_dock_area()`"""
+        ui = self.workbench.get_plugin("declaracad.ui")
         return ui.get_dock_area()
 
     def get_editor(self, document=None):
-        """ Get the editor item for the currently active document
-
-        """
+        """Get the editor item for the currently active document"""
         doc = document or self.active_document
         for item in self.get_editor_items():
             if item.doc == doc:
@@ -309,35 +323,36 @@ class EditorPlugin(Plugin):
         return self.documents[0]
 
     def new_file(self, event):
-        """ Create a new file with the given path
-
-        """
-        path = event.parameters.get('path')
+        """Create a new file with the given path"""
+        path = event.parameters.get("path")
         if not path:
             return
         if not os.path.dirname(path):
             path = os.path.join(self.project_path, path)
         doc = Document(
             name=path,
-            source=dedent("""
+            source=dedent(
+                """
                 # Created in DeclaraCAD
                 from declaracad.occ.api import *
 
                 enamldef Assembly(Part):
                     Box:
                         pass
-                """).lstrip())
+                """
+            ).lstrip(),
+        )
         self.documents.append(doc)
         self.active_document = doc
 
     def close_file(self, event):
-        """ Close the file with the given path and remove it from
+        """Close the file with the given path and remove it from
         the document list. If multiple documents with the same file
         are open this only closes the first one it finds.
 
         """
         if isinstance(event, ExecutionEvent):
-            path = event.parameters.get('path')
+            path = event.parameters.get("path")
         else:
             path = event
 
@@ -353,7 +368,7 @@ class EditorPlugin(Plugin):
         self.documents.remove(doc)
 
         # If any viewer was bound to this document, unbind it
-        viewer_plugin = self.workbench.get_plugin('declaracad.viewer')
+        viewer_plugin = self.workbench.get_plugin("declaracad.viewer")
         for viewer in viewer_plugin.get_viewers():
             if viewer.document == doc:
                 viewer.document = None
@@ -368,10 +383,8 @@ class EditorPlugin(Plugin):
             self.active_document = self.documents[0]
 
     def open_file(self, event):
-        """ Open a file from the local filesystem
-
-        """
-        path = event.parameters['path']
+        """Open a file from the local filesystem"""
+        path = event.parameters["path"]
 
         #: Check if the document is already open
         for doc in self.documents:
@@ -391,9 +404,7 @@ class EditorPlugin(Plugin):
             editor.set_text(doc.source)
 
     def save_file(self, event):
-        """ Save the currently active document to disk
-
-        """
+        """Save the currently active document to disk"""
         # Make sure it's in sync with the editor first
         editor = self.get_editor()
         doc = self.active_document
@@ -402,17 +413,17 @@ class EditorPlugin(Plugin):
         file_dir = os.path.dirname(doc.name)
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
-        with open(doc.name, 'w') as f:
+        with open(doc.name, "w") as f:
             f.write(doc.source)
         doc.unsaved = False
 
     def save_file_as(self, event):
-        """ Save the currently active document as the given name
+        """Save the currently active document as the given name
         overwriting and creating the directory path if necessary.
 
         """
         doc = self.active_document
-        path = event.parameters['path']
+        path = event.parameters["path"]
 
         if not doc.name:
             doc.name = path
@@ -422,11 +433,11 @@ class EditorPlugin(Plugin):
         if not os.path.exists(doc_dir):
             os.makedirs(doc_dir)
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(doc.source)
 
     def reload_document(self, document):
-        """ Reload the source from disk
+        """Reload the source from disk
 
         Parameters
         ----------
@@ -445,16 +456,16 @@ class EditorPlugin(Plugin):
     # Code inspection API
     # -------------------------------------------------------------------------
     def _default_sys_path(self):
-        """ Determine the sys path"""
+        """Determine the sys path"""
         return [self.project_path]
 
-    @observe('project_path')
+    @observe("project_path")
     def _refresh_sys_path(self, change):
-        if change['type'] == 'update':
+        if change["type"] == "update":
             self.sys_path = self._default_sys_path()
 
     def autocomplete(self, source, cursor):
-        """ Return a list of autocomplete suggestions for the given text.
+        """Return a list of autocomplete suggestions for the given text.
         Results are based on the modules loaded.
 
         Parameters
@@ -468,12 +479,11 @@ class EditorPlugin(Plugin):
             result: list
                 List of autocompletion strings
         """
-        #return []
+        # return []
         try:
             #: TODO: Move to separate process
             line, column = cursor
-            script = jedi.Script(source, line+1, column,
-                                 sys_path=self.sys_path)
+            script = jedi.Script(source, line + 1, column, sys_path=self.sys_path)
 
             #: Get suggestions
             results = []
@@ -483,7 +493,7 @@ class EditorPlugin(Plugin):
                 #: Try to get a signature if the docstring matches
                 #: something Scintilla will use (ex "func(..." or "Class(...")
                 #: Scintilla ignores docstrings without a comma in the args
-                if c.type in ['function', 'class', 'instance']:
+                if c.type in ["function", "class", "instance"]:
                     docstring = c.docstring()
 
                     #: Remove self arg

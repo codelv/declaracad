@@ -14,8 +14,9 @@ from atom.api import Dict, set_default
 from OCCT.BRepTools import BRepTools
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.BRepFilletAPI import (
-    BRepFilletAPI_MakeChamfer, BRepFilletAPI_MakeFillet2d,
-    BRepFilletAPI_MakeFillet
+    BRepFilletAPI_MakeChamfer,
+    BRepFilletAPI_MakeFillet2d,
+    BRepFilletAPI_MakeFillet,
 )
 from OCCT.gp import gp_Pnt2d
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
@@ -28,8 +29,10 @@ from .topology import Topology
 
 
 class OccChamfer(OccOperation, ProxyChamfer):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_fillet_a_p_i___make_chamfer.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_fillet_a_p_i___make_chamfer.html"
+    )
     context = Dict()
 
     def update_shape(self, change=None):
@@ -126,13 +129,12 @@ class OccChamfer(OccOperation, ProxyChamfer):
         self.shape = chamfer.Shape()
 
     def chamfer_profile(self, child):
-        """ Use fillet with custom shape. Only supports 45 deg chamfers.
-
-        """
+        """Use fillet with custom shape. Only supports 45 deg chamfers."""
         d = self.declaration
         if d.distance2:
             raise ValueError("Cannot mix profile and two distances")
         from OCCT.ChFi3d import ChFi3d_Linear
+
         builder = BRepFilletAPI_MakeFillet(child.shape)
         builder.SetFilletShape(ChFi3d_Linear)
         T = (tuple, list)
@@ -142,7 +144,7 @@ class OccChamfer(OccOperation, ProxyChamfer):
                     profile, edge = item
                     array = TColgp_Array1OfPnt2d(1, len(profile))
                     for i, pt in enumerate(profile):
-                        array.SetValue(i+1, gp_Pnt2d(*pt))
+                        array.SetValue(i + 1, gp_Pnt2d(*pt))
                     builder.Add(array, edge)
                 elif len(item) == 2:
                     r, e = item
@@ -161,4 +163,3 @@ class OccChamfer(OccOperation, ProxyChamfer):
 
     def set_operations(self, operations):
         self.update_shape()
-

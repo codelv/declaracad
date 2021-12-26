@@ -24,44 +24,45 @@ from .utils import log, clip
 # Core models
 # -----------------------------------------------------------------------------
 class Model(Atom):
-    """ An atom object that can exclude members from it's state
+    """An atom object that can exclude members from it's state
     by tagging the member with .tag(persist=False)
 
     """
 
     def __getstate__(self):
-        """ Exclude any members from the state that are not tagged with
+        """Exclude any members from the state that are not tagged with
         `config=True`.
 
         """
         state = super(Model, self).__getstate__()
         for name, member in self.members().items():
             metadata = member.metadata
-            if (name in state and (not metadata or
-                    not metadata.get('config', False))):
+            if name in state and (not metadata or not metadata.get("config", False)):
                 del state[name]
         return state
 
     def __setstate__(self, state):
-        """  Set the state ignoring any fields that fail to set which
+        """Set the state ignoring any fields that fail to set which
         may occur due to version changes.
 
         """
         for key, value in state.items():
-            #log.debug("Restoring state '{}.{} = {}'".format(
+            # log.debug("Restoring state '{}.{} = {}'".format(
             #    self, key, clip(value)
-            #))
+            # ))
             try:
                 setattr(self, key, value)
             except Exception as e:
                 #: Shorten any long values
-                log.warning("Failed to restore state '{}.{} = {}'".format(
-                    self, key, clip(value)
-                ))
+                log.warning(
+                    "Failed to restore state '{}.{} = {}'".format(
+                        self, key, clip(value)
+                    )
+                )
 
 
 class Plugin(EnamlPlugin):
-    """ A plugin that behaves like a model and saves it's state
+    """A plugin that behaves like a model and saves it's state
     when any atom member tagged with config=True triggers a save.
 
     Also optionally registers itself in the settings
@@ -81,58 +82,62 @@ class Plugin(EnamlPlugin):
     # Plugin API
     # -------------------------------------------------------------------------
     def start(self):
-        """ Load the state when the plugin starts """
+        """Load the state when the plugin starts"""
         log.debug("Starting plugin '{}'".format(self.manifest.id))
         self._bind_observers()
 
     def stop(self):
-        """ Unload any state observers when the plugin stops"""
+        """Unload any state observers when the plugin stops"""
         self._unbind_observers()
 
     # -------------------------------------------------------------------------
     # State API
     # -------------------------------------------------------------------------
     def save(self):
-        """ Manually trigger a save """
-        self._save_state({'type': 'request'})
+        """Manually trigger a save"""
+        self._save_state({"type": "request"})
 
     def restore(self):
-        """ Force restore from config """
+        """Force restore from config"""
         self._unbind_observers()
         self._bind_observers()
 
     def _default__state_file(self):
         return os.path.expanduser(
-            "~/.config/declaracad/{}.json".format(self.manifest.id))
+            "~/.config/declaracad/{}.json".format(self.manifest.id)
+        )
 
     def _default__state_members(self):
         members = []  #: Init state members
         for name, member in self.members().items():
-            if member.metadata and member.metadata.get('config', False):
+            if member.metadata and member.metadata.get("config", False):
                 members.append(member)
         return members
 
     def _bind_observers(self):
-        """ Try to load the plugin state """
+        """Try to load the plugin state"""
         try:
             if os.path.exists(self._state_file):
                 with enaml.imports():
-                    with open(self._state_file, 'r') as f:
+                    with open(self._state_file, "r") as f:
                         state = pickle.loads(f.read())
                 self.__setstate__(state)
-                #log.debug("Plugin {} state restored from: {}".format(
+                # log.debug("Plugin {} state restored from: {}".format(
                 #    self.manifest.id, self._state_file))
         except Exception as e:
-            log.warning("Plugin {} failed to load state: {}".format(
-                self.manifest.id, traceback.format_exc()))
+            log.warning(
+                "Plugin {} failed to load state: {}".format(
+                    self.manifest.id, traceback.format_exc()
+                )
+            )
 
         #: Hook up observers
         for member in self._state_members:
             self.observe(member.name, self._save_state)
 
     def _save_state(self, change):
-        """ Try to save the plugin state """
-        if change['type'] not in ('update', 'container', 'request'):
+        """Try to save the plugin state"""
+        if change["type"] not in ("update", "container", "request"):
             return
 
         try:
@@ -141,9 +146,10 @@ class Plugin(EnamlPlugin):
             #: Dump first so any failure to encode doesn't wipe out the
             #: previous state
             state = self.__getstate__()
-            excluded = ['manifest', 'workbench'] + [
-                m.name for m in self.members().values()
-                if not m.metadata or not m.metadata.get('config', False)
+            excluded = ["manifest", "workbench"] + [
+                m.name
+                for m in self.members().values()
+                if not m.metadata or not m.metadata.get("config", False)
             ]
             for k in excluded + self._state_excluded:
                 if k in state:
@@ -157,16 +163,14 @@ class Plugin(EnamlPlugin):
             if not os.path.exists(dst):
                 os.makedirs(dst)
 
-            with open(self._state_file, 'w') as f:
+            with open(self._state_file, "w") as f:
                 f.write(state)
 
         except Exception as e:
-            log.warning("Failed to save state: {}".format(
-                traceback.format_exc()
-            ))
+            log.warning("Failed to save state: {}".format(traceback.format_exc()))
 
     def _unbind_observers(self):
-        """ Setup state observers """
+        """Setup state observers"""
         for member in self._state_members:
             self.unobserve(member.name, self._save_state)
 
@@ -174,10 +178,8 @@ class Plugin(EnamlPlugin):
     # Settings API
     # -------------------------------------------------------------------------
     def _default_settings_pages(self):
-        """ Available settings pages """
+        """Available settings pages"""
         return {}
 
     def _default_settings_items(self):
         return []
-
-

@@ -23,13 +23,29 @@ from typing import Optional, Iterator, TYPE_CHECKING
 
 from asyncio.base_events import Server
 from atom.api import (
-    Atom, ContainerList, Str, Float, Dict, Bool, Int, Instance, Enum, Property,
-    ForwardTyped, ForwardInstance, Constant, Callable,
-    observe, Typed, set_default
+    Atom,
+    ContainerList,
+    Str,
+    Float,
+    Dict,
+    Bool,
+    Int,
+    Instance,
+    Enum,
+    Property,
+    ForwardTyped,
+    ForwardInstance,
+    Constant,
+    Callable,
+    observe,
+    Typed,
+    set_default,
 )
 from declaracad.core.api import Plugin, Model, log
 from declaracad.core.utils import (
-    JsonRpcProtocol, ProcessLineReceiver, get_bootstrap_cmd,
+    JsonRpcProtocol,
+    ProcessLineReceiver,
+    get_bootstrap_cmd,
 )
 from declaracad.occ.shape import Part
 from enaml.application import timed_call, deferred_call
@@ -39,19 +55,18 @@ from enaml.layout.api import InsertItem
 
 if TYPE_CHECKING:
     from declaracad.editor.plugin import Document
+
     with enaml.imports():
         from .view import ViewerDockItem
 
 
 @functools.lru_cache
 def is_remote_attr(name: str):
-    """ Check if the given attr name is valid on the remote viewer.
-
-    """
+    """Check if the given attr name is valid on the remote viewer."""
     with enaml.imports():
         from .view import ViewerWindow, ModelViewer
     attrs = [name]
-    if name.startswith('set_'):
+    if name.startswith("set_"):
         attrs.append(name[4:])
     for cls in (ViewerWindow, ModelViewer):
         for attr in attrs:
@@ -74,21 +89,20 @@ def remote_viewer():
 
 def document_type():
     from declaracad.editor.plugin import Document
+
     return Document
 
 
 class EmptyFileError(Exception):
-    """ This is raised when no source code is given such as when a new file
+    """This is raised when no source code is given such as when a new file
     is created but unsaved.
     """
 
 
-
-
-
 class ModelExporter(Atom):
-    """ Interface for model exporters """
-    extension = ''
+    """Interface for model exporters"""
+
+    extension = ""
     path = Str()
     filename = Str()
 
@@ -98,7 +112,7 @@ class ModelExporter(Atom):
         return "{}.{}".format(filename, ext)
 
     def export(self):
-        """ Export a DeclaraCAD model from an enaml file to a 3D model format
+        """Export a DeclaraCAD model from an enaml file to a 3D model format
         with the given options.
 
         """
@@ -106,7 +120,7 @@ class ModelExporter(Atom):
 
     @classmethod
     def get_options_view(cls):
-        """ Return the options view used to define the paramters that can be
+        """Return the options view used to define the paramters that can be
         used by this exporter.
 
         """
@@ -133,7 +147,7 @@ class ScreenshotOptions(Atom):
         return os.path.join(default_dir, "{}.png".format(filename))
 
     def format(self):
-        """ Return formatted option values for the exporter app to parse """
+        """Return formatted option values for the exporter app to parse"""
         return json.dumps(self.__getstate__())
 
 
@@ -179,32 +193,30 @@ class ViewerProcess(ProcessLineReceiver):
             # Trigger a reload
             self.document.version += 1
         elif self.protocol:
-            self.protocol.set('version', self._id)
+            self.protocol.set("version", self._id)
 
-    @observe('document')
+    @observe("document")
     def _update_document(self, change):
         protocol = self.protocol
         if protocol is None:
             return
-        name = self.document.name if self.document else '-'
-        protocol.set('filename', name)
+        name = self.document.name if self.document else "-"
+        protocol.set("filename", name)
 
-    @observe('document.version')
+    @observe("document.version")
     def _update_version(self, change):
         protocol = self.protocol
         if protocol is None:
             return
         doc = self.document
         if doc is not None:
-            protocol.set('version', doc.version)
+            protocol.set("version", doc.version)
 
     async def start(self):
         cmd = get_bootstrap_cmd()
-        cmd.extend([
-            'view', '-',
-            '--port', str(self.plugin.port),
-            '--ref', self.viewer.name
-        ])
+        cmd.extend(
+            ["view", "-", "--port", str(self.plugin.port), "--ref", self.viewer.name]
+        )
         log.debug(f"Spawning '{' '.join(cmd)}'")
         loop = asyncio.get_event_loop()
         self.process = await loop.subprocess_exec(lambda: self, *cmd)
@@ -223,10 +235,12 @@ class ViewerProcess(ProcessLineReceiver):
             plugin = self.plugin
             plugin.workbench.message_critical(
                 "Viewer failed to start",
-                "Could not get the viewer to start after several attempts.")
+                "Could not get the viewer to start after several attempts.",
+            )
 
             raise RuntimeError(
-                "renderer | Failed to successfully start renderer aborting!")
+                "renderer | Failed to successfully start renderer aborting!"
+            )
 
         log.debug(f"Attempting to restart remote viewer {self.viewer.name}")
         deferred_call(self.start)
@@ -236,14 +250,12 @@ class ViewerProcess(ProcessLineReceiver):
         self.terminated = False
 
     def err_received(self, data):
-        """ Catch and log error output attempting to decode it
-
-        """
+        """Catch and log error output attempting to decode it"""
         doc = self.document
-        for line in data.split(b'\n'):
+        for line in data.split(b"\n"):
             if not line:
                 continue
-            if line.startswith(b'QWidget::') or line.startswith(b'QPainter::'):
+            if line.startswith(b"QWidget::") or line.startswith(b"QPainter::"):
                 continue
             try:
                 line = line.decode()
@@ -269,9 +281,8 @@ class ViewerProcess(ProcessLineReceiver):
 
 
 class RemoteViewerServerProtocol(JsonRpcProtocol):
-    """ Protocol to talk with the remote viewer
+    """Protocol to talk with the remote viewer"""
 
-    """
     #: Window id obtained after starting the process
     window_id = Int()
 
@@ -298,10 +309,10 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
         log.debug(f"Remote viewer connection lost {err}")
 
     def set(self, attr, value):
-        return self.invoke_method('set', attr, value)
+        return self.invoke_method("set", attr, value)
 
     def call(self, method, *args, **kwargs):
-        return self.invoke_method('call', method, *args, **kwargs)
+        return self.invoke_method("call", method, *args, **kwargs)
 
     def on_welcome(self, viewer_name, window_id):
         dock_item = self.plugin.get_viewer(viewer_name)
@@ -311,22 +322,22 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
             process = dock_item.process
             process.protocol = self
             self.window_id = window_id
-            log.debug(f'viewer {dock_item.name} connected!')
+            log.debug(f"viewer {dock_item.name} connected!")
 
             # Set initial document
             doc = self.document
             if doc:
-                self.set('filename', doc.name)
+                self.set("filename", doc.name)
 
     def on_invoke_command(self, response):
-        command_id = response.get('command_id')
-        parameters = response.get('parameters', {})
+        command_id = response.get("command_id")
+        parameters = response.get("parameters", {})
         log.debug(f"viewer | out | {command_id}({parameters})")
         self.plugin.workbench.invoke_command(command_id, parameters)
 
     def on_render_error(self, response):
         if self.document:
-            msg = response['error']['message'].split("\n")
+            msg = response["error"]["message"].split("\n")
             self.document.errors.extend(msg)
 
     def on_render_success(self, response):
@@ -341,12 +352,12 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
     def on_shape_selection(self, response):
         #: TODO: Do something with this?
         if self.document:
-            self.document.append_output(str(response['result']))
+            self.document.append_output(str(response["result"]))
 
     def error_received(self, request_id, error):
         super().error_received(request_id, error)
         if self.document:
-            msg = str(error.get('message', '') or error)
+            msg = str(error.get("message", "") or error)
             self.document.append_output(msg)
 
     def unhandled_response(self, response):
@@ -357,22 +368,28 @@ class ViewerPlugin(Plugin):
     # -------------------------------------------------------------------------
     # Default viewer settings
     # -------------------------------------------------------------------------
-    background_mode = Enum('gradient', 'solid').tag(config=True, viewer='background')
-    background_top = ColorMember('lightgrey').tag(config=True, viewer='background')
-    background_bottom = ColorMember('grey').tag(config=True, viewer='background')
+    background_mode = Enum("gradient", "solid").tag(config=True, viewer="background")
+    background_top = ColorMember("lightgrey").tag(config=True, viewer="background")
+    background_bottom = ColorMember("grey").tag(config=True, viewer="background")
     background_fill_method = Enum(
-        'corner3', 'corner1', 'corner2', 'corner4',
-        'ver', 'hor', 'diag1', 'diag2',
-        ).tag(config=True, viewer='background')
-    trihedron_mode = Str('right-lower').tag(config=True, viewer=True)
+        "corner3",
+        "corner1",
+        "corner2",
+        "corner4",
+        "ver",
+        "hor",
+        "diag1",
+        "diag2",
+    ).tag(config=True, viewer="background")
+    trihedron_mode = Str("right-lower").tag(config=True, viewer=True)
 
     #: Defaults
-    shape_color = ColorMember('steelblue').tag(config=True, viewer=True)
+    shape_color = ColorMember("steelblue").tag(config=True, viewer=True)
 
     #: Grid options
     grid_mode = Str().tag(config=True, viewer=True)
-    grid_major_color = ColorMember('#444').tag(config=True, viewer='grid_colors')
-    grid_minor_color = ColorMember('#888').tag(config=True, viewer='grid_colors')
+    grid_major_color = ColorMember("#444").tag(config=True, viewer="grid_colors")
+    grid_minor_color = ColorMember("#888").tag(config=True, viewer="grid_colors")
 
     #: Rendering options
     antialiasing = Bool(True).tag(config=True, viewer=True)
@@ -391,12 +408,11 @@ class ViewerPlugin(Plugin):
         deferred_call(self.start_server)
 
     async def start_server(self):
-        """ Start a server to handle viewer connections
-
-        """
+        """Start a server to handle viewer connections"""
         loop = asyncio.get_event_loop()
         server = self.server = await loop.create_server(
-            lambda: RemoteViewerServerProtocol(plugin=self), '127.0.0.1', 0)
+            lambda: RemoteViewerServerProtocol(plugin=self), "127.0.0.1", 0
+        )
         socket = server.sockets[0]
         ip, self.port = socket.getsockname()
         log.info(f"Server listening dcad://{ip}:{self.port}")
@@ -415,20 +431,18 @@ class ViewerPlugin(Plugin):
             meta = m.metadata
             if not meta:
                 continue
-            if meta.get('viewer'):
+            if meta.get("viewer"):
                 yield m
 
-    def get_viewers(self) -> Iterator['ViewerDockItem']:
+    def get_viewers(self) -> Iterator["ViewerDockItem"]:
         ViewerDockItem = viewer_factory()
-        dock = self.workbench.get_plugin('declaracad.ui').get_dock_area()
+        dock = self.workbench.get_plugin("declaracad.ui").get_dock_area()
         for item in dock.dock_items():
             if isinstance(item, ViewerDockItem):
                 yield item
 
-    def get_viewer(self, name: Optional[str] = None) -> Optional['ViewerDockItem']:
-        """ Get the viewer with the given name
-
-        """
+    def get_viewer(self, name: Optional[str] = None) -> Optional["ViewerDockItem"]:
+        """Get the viewer with the given name"""
         for viewer in self.get_viewers():
             if name is None:
                 return viewer
@@ -442,31 +456,32 @@ class ViewerPlugin(Plugin):
 
     def run(self, event=None):
         viewer = self.get_viewer()
-        editor = self.workbench.get_plugin('declaracad.editor').get_editor()
+        editor = self.workbench.get_plugin("declaracad.editor").get_editor()
         doc = editor.doc
-        #viewer.set_source(editor.get_text())
+        # viewer.set_source(editor.get_text())
         doc.version += 1
 
-    def _default_exporters(self) -> ListType['ModelExporter']:
-        """ TODO: push to an ExtensionPoint """
+    def _default_exporters(self) -> ListType["ModelExporter"]:
+        """TODO: push to an ExtensionPoint"""
         from declaracad.occ.exporters.stl.exporter import StlExporter
         from declaracad.occ.exporters.step.exporter import StepExporter
         from declaracad.occ.exporters.vrml.exporter import VrmlExporter
+
         return [StlExporter, StepExporter, VrmlExporter]
 
     # -------------------------------------------------------------------------
     # Plugin commands
     # -------------------------------------------------------------------------
     def export(self, options):
-        """ Export the current model to stl """
+        """Export the current model to stl"""
         if not options:
             raise ValueError("An export `options` parameter is required")
 
         # Pickle the configured exporter and send it over
         cmd = get_bootstrap_cmd()
         data = jsonpickle.dumps(options)
-        assert data != 'null', f"Exporter failed to serialize: {options}"
-        cmd.extend(['export', data])
+        assert data != "null", f"Exporter failed to serialize: {options}"
+        cmd.extend(["export", data])
         log.debug(" ".join(cmd))
         protocol = ProcessLineReceiver()
         loop = asyncio.get_event_loop()
@@ -474,13 +489,13 @@ class ViewerPlugin(Plugin):
         return protocol
 
     def screenshot(self, options: Optional[ScreenshotOptions] = None):
-        """ Export the views as a screenshot """
+        """Export the views as a screenshot"""
         if options is None:
-            editor = self.workbench.get_plugin('declaracad.editor')
+            editor = self.workbench.get_plugin("declaracad.editor")
             filename = editor.active_document.name
             options = ScreenshotOptions(
-                filename=filename,
-                default_dir=self.screenshot_dir)
+                filename=filename, default_dir=self.screenshot_dir
+            )
         else:
             # Update the default screenshot dir
             self.screenshot_dir, _ = os.path.split(options.path)
@@ -493,16 +508,18 @@ class ViewerPlugin(Plugin):
             for i, viewer in enumerate(self.get_viewers()):
                 # Insert view number
                 path, ext = os.path.splitext(options.path)
-                filename = "{}-{}{}".format(path, i+1, ext)
+                filename = "{}-{}{}".format(path, i + 1, ext)
                 results.append(viewer.take_screenshot(filename))
         return results
 
-    def add_viewer(self, position: str = 'right', target: str = '',
-                   document: Optional['Document'] = None):
-        """ Create a new viewer window and insert it into the dock area.
-
-        """
-        editor_plugin = self.workbench.get_plugin('declaracad.editor')
+    def add_viewer(
+        self,
+        position: str = "right",
+        target: str = "",
+        document: Optional["Document"] = None,
+    ):
+        """Create a new viewer window and insert it into the dock area."""
+        editor_plugin = self.workbench.get_plugin("declaracad.editor")
         dock = editor_plugin.get_dock_area()
         doc = document or editor_plugin.active_document
 
@@ -510,4 +527,3 @@ class ViewerPlugin(Plugin):
         item = ViewerDockItem(dock, plugin=self, document=doc)
         op = InsertItem(item=item.name, position=position, target=target)
         dock.update_layout(op)
-

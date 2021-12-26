@@ -17,9 +17,7 @@ import logging
 import functools
 import traceback
 import jsonpickle
-from atom.api import (
-    Atom, Instance, Bool, Bytes, ContainerList, Dict, Int, Value
-)
+from atom.api import Atom, Instance, Bool, Bytes, ContainerList, Dict, Int, Value
 from contextlib import contextmanager
 from enaml.image import Image
 from enaml.icon import Icon, IconImage
@@ -33,11 +31,12 @@ log = logging.getLogger("declaracad")
 
 
 def clip(s, n=1000):
-    """ Shorten the name of a large value when logging"""
+    """Shorten the name of a large value when logging"""
     v = str(s)
     if len(v) > n:
         v[:n] + "..."
     return v
+
 
 # -----------------------------------------------------------------------------
 # Icon and Image helpers
@@ -47,22 +46,20 @@ _IMAGE_CACHE = {}
 
 
 def icon_path(name):
-    """ Load an icon from the res/icons folder using the name
+    """Load an icon from the res/icons folder using the name
     without the .png
 
     """
     path = os.path.dirname(os.path.dirname(__file__))
-    return os.path.join(path, 'res', 'icons', '%s.png' % name)
+    return os.path.join(path, "res", "icons", "%s.png" % name)
 
 
 def load_image(name):
-    """ Get and cache an enaml Image for the given icon name.
-
-    """
+    """Get and cache an enaml Image for the given icon name."""
     path = icon_path(name)
     global _IMAGE_CACHE
     if path not in _IMAGE_CACHE:
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             data = f.read()
         _IMAGE_CACHE[path] = Image(data=data)
     return _IMAGE_CACHE[path]
@@ -75,14 +72,14 @@ def load_icon(name):
 
 
 def menu_icon(name):
-    """ Icons don't look good on Linux/osx menu's """
-    if sys.platform == 'win32':
+    """Icons don't look good on Linux/osx menu's"""
+    if sys.platform == "win32":
         return load_icon(name)
     return None
 
 
 def format_title(docs, doc, path, unsaved):
-    """ Attempt to format the title using the shortest unique name that
+    """Attempt to format the title using the shortest unique name that
     does not conflict with any other opened documents.
 
     Based on Intellij's naming styles
@@ -95,8 +92,9 @@ def format_title(docs, doc, path, unsaved):
     path, name = os.path.split(path)
 
     #: Find any others with the same name
-    duplicates = [d.name for d in docs
-                    if d != doc and os.path.split(d.name)[-1] == name]
+    duplicates = [
+        d.name for d in docs if d != doc and os.path.split(d.name)[-1] == name
+    ]
 
     #: Add folders until it becomes unique we run out of folders
     if duplicates:
@@ -121,14 +119,12 @@ def format_title(docs, doc, path, unsaved):
 
 
 def process_events():
-    """ Let the event loop process events
-
-    """
+    """Let the event loop process events"""
     Application.instance()._qapp.processEvents()
 
 
 def get_bootstrap_cmd():
-    """ Get the command to the main executable depending on how it's run
+    """Get the command to the main executable depending on how it's run
 
     Returns
     -------
@@ -137,8 +133,8 @@ def get_bootstrap_cmd():
     """
     is_frozen = getattr(sys, "frozen", False)
     cmd = [sys.executable]
-    if not sys.executable.endswith('declaracad') and not is_frozen:
-        cmd.extend(['-m', 'declaracad'])
+    if not sys.executable.endswith("declaracad") and not is_frozen:
+        cmd.extend(["-m", "declaracad"])
     return cmd
 
 
@@ -147,7 +143,7 @@ def log_time(start_message: str, done_message: str = "Done! ({} s)"):
     log.debug(start_message)
     t = time.time()
     yield
-    log.debug(done_message.format(round((time.time()-t), 2)))
+    log.debug(done_message.format(round((time.time() - t), 2)))
 
 
 class JsonRpcProtocol(Atom, asyncio.Protocol):
@@ -164,7 +160,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
     connected = Bool(False)
 
     def invoke_method(self, method, *args, **kwargs) -> asyncio.Future:
-        """ Invoke the method with the attribute "on_{method}" on the remote
+        """Invoke the method with the attribute "on_{method}" on the remote
         connection.
 
         """
@@ -173,29 +169,25 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         f = asyncio.Future()
         self._id += 1
         self._responses[self._id] = f
-        self.send_message({
-            'method': method,
-            'params': args or kwargs,
-            'id': self._id
-        })
+        self.send_message({"method": method, "params": args or kwargs, "id": self._id})
         return f
 
     def send_message(self, message: dict, attempts: int = 10):
         if not self.connected:
             if attempts <= 0:
                 log.error(
-                    f"Could not send message: {message} "
-                    f"after several attempts")
+                    f"Could not send message: {message} " f"after several attempts"
+                )
                 return
             log.debug(f"Note: Message delayed {self}: {message}")
             timed_call(1000, self.send_message, message, attempts - 1)
             return
         log.debug(message)
         encoded_msg = jsonpickle.dumps(message).encode()
-        self.transport.write(encoded_msg + b'\r\n')
+        self.transport.write(encoded_msg + b"\r\n")
 
     def data_received(self, data: bytes):
-        """ Process stdin as json-rpc request
+        """Process stdin as json-rpc request
 
         Parameters
         ----------
@@ -204,11 +196,11 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
 
         """
         # TODO: Handle partial reads
-        for line in data.split(b'\n'):
+        for line in data.split(b"\n"):
             self.line_received(line.decode())
 
     def line_received(self, line: str):
-        """ Called when a newline is received
+        """Called when a newline is received
 
         Parameters
         ----------
@@ -222,61 +214,65 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         try:
             request = jsonpickle.loads(line)
         except Exception as e:
-            return self.send_message({'id': None, 'error': {
-                'code': -32700, 'message': f'Parse error: "{line}"'}})
+            return self.send_message(
+                {
+                    "id": None,
+                    "error": {"code": -32700, "message": f'Parse error: "{line}"'},
+                }
+            )
 
-        request_id = request.get('id')
-        method = request.get('method')
+        request_id = request.get("id")
+        method = request.get("method")
         if method is None:
-            if 'error' in request:
-                self.error_received(request_id, request['error'])
-            elif 'result' in request:
-                self.result_received(request_id, request['result'])
+            if "error" in request:
+                self.error_received(request_id, request["error"])
+            elif "result" in request:
+                self.result_received(request_id, request["result"])
             return
 
-        handler = getattr(self, 'on_{}'.format(method), None)
+        handler = getattr(self, "on_{}".format(method), None)
         if handler is None:
             msg = f"Method '{method}' not found"
-            return self.send_message({"id": request_id, 'error': {
-                'code': -32601, 'message': msg}})
+            return self.send_message(
+                {"id": request_id, "error": {"code": -32601, "message": msg}}
+            )
 
         try:
-            params = request.get('params', [])
+            params = request.get("params", [])
             if isinstance(params, dict):
                 result = handler(**params)
             else:
                 result = handler(*params)
-            return self.send_message({'id': request_id, 'result': result})
+            return self.send_message({"id": request_id, "result": result})
         except Exception as e:
             log.exception(e)
-            return self.send_message({"id": request_id, 'error': {
-                'code': -32500, 'message': traceback.format_exc()}})
+            return self.send_message(
+                {
+                    "id": request_id,
+                    "error": {"code": -32500, "message": traceback.format_exc()},
+                }
+            )
 
     def error_received(self, request_id, error):
-        """ Standard error handler.
-
-        """
+        """Standard error handler."""
         f = self._responses.pop(request_id, None)
-        msg = str(error.get('message', ''))
+        msg = str(error.get("message", ""))
         log.error("RemoteError: ")
-        for line in msg.split('\n'):
+        for line in msg.split("\n"):
             log.error(line)
         if f is not None:
             f.set_exception(RuntimeError(error))
 
     def result_received(self, request_id, result):
-        """ Standard response handler.
-
-        """
+        """Standard response handler."""
         f = self._responses.pop(request_id, None)
         if f is not None:
             f.set_result(result)
 
 
 class RemoteLogger(Atom):
-    """ Redirects stdout to the given protocol
+    """Redirects stdout to the given protocol"""
 
-    """
     protocol = Instance(JsonRpcProtocol)
 
     #: Original stderr and stdout
@@ -291,14 +287,14 @@ class RemoteLogger(Atom):
         sys.stderr = self.stderr
 
     def write(self, message):
-        self.protocol.invoke_method('print', message)
+        self.protocol.invoke_method("print", message)
 
     def flush(self):
         pass
 
 
 class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
-    """ A process protocol that pushes output into a list of each line.
+    """A process protocol that pushes output into a list of each line.
     Observe the `output` member in a view to have it update with live output.
     """
 
@@ -316,10 +312,10 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
     err_to_out = Bool(True)
 
     #: Split on each line
-    delimiter = Bytes(b'\n')
+    delimiter = Bytes(b"\n")
 
     def connection_made(self, transport):
-        """ Save a reference to the transports
+        """Save a reference to the transports
 
         Parameters
         ----------
@@ -331,7 +327,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
         self.transport = transport.get_pipe_transport(0)
 
     def pipe_data_received(self, fd: int, data: bytes):
-        """ Forward calls to data_received or err_received based one the fd
+        """Forward calls to data_received or err_received based one the fd
 
         Parameters
         ----------
@@ -350,7 +346,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
                 self.err_received(data)
 
     def data_received(self, data: bytes):
-        """ Called for stdout data and stderr data if err_to_out is True
+        """Called for stdout data and stderr data if err_to_out is True
 
         Parameters
         ----------
@@ -361,7 +357,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
         self.output.append(data)
 
     def err_received(self, data: bytes):
-        """ Called for stderr data if err_to_out is set to False
+        """Called for stderr data if err_to_out is set to False
 
         Parameters
         ----------

@@ -25,7 +25,10 @@ from OCCT.TCollection import TCollection_ExtendedString
 from OCCT.TDocStd import TDocStd_Document
 from OCCT.TDataStd import TDataStd_Name
 from OCCT.XCAFDoc import (
-    XCAFDoc_DocumentTool, XCAFDoc_Material, XCAFDoc_Color, XCAFDoc_ColorGen
+    XCAFDoc_DocumentTool,
+    XCAFDoc_Material,
+    XCAFDoc_Color,
+    XCAFDoc_ColorGen,
 )
 from OCCT.XmlXCAFDrivers import XmlXCAFDrivers
 from OCCT.Quantity import Quantity_Color
@@ -35,10 +38,10 @@ SetCVal = Interface_Static.SetCVal_
 SetIVal = Interface_Static.SetIVal_
 SetRVal = Interface_Static.SetRVal_
 
-VERTEX_MODES = {'one compound': 0, 'single vertex': 1}
-PRECISION_MODES = {'least': -1, 'average': 0, 'greatest': 1, 'session': 2}
-ASSEMBLY_MODES = {'off': 0, 'on': 1, 'auto': 2}
-SURFACECURVE_MODES = {'off': 0, 'on': 1}
+VERTEX_MODES = {"one compound": 0, "single vertex": 1}
+PRECISION_MODES = {"least": -1, "average": 0, "greatest": 1, "session": 2}
+ASSEMBLY_MODES = {"off": 0, "on": 1, "auto": 2}
+SURFACECURVE_MODES = {"off": 0, "on": 1}
 
 
 class StepExporter(ModelExporter):
@@ -50,29 +53,33 @@ class StepExporter(ModelExporter):
     2. https://github.com/trelau/AFEM
 
     """
-    extension = 'step'
-    schema = Enum('AP214 CD', 'AP214 DIS', 'AP203', 'AP214 IS', 'AP242 DIS')
-    units = Enum('mm', 'in')
-    precision_mode = Enum('average', 'least', 'greatest', 'session')
+
+    extension = "step"
+    schema = Enum("AP214 CD", "AP214 DIS", "AP203", "AP214 IS", "AP242 DIS")
+    units = Enum("mm", "in")
+    precision_mode = Enum("average", "least", "greatest", "session")
     precision_val = Float(0.0001).tag(
         help="This parameter gives the uncertainty for STEP entities "
-             "constructed from OCCT shapes when the write.precision.mode "
-             "parameter value is 'greatest'.")
+        "constructed from OCCT shapes when the write.precision.mode "
+        "parameter value is 'greatest'."
+    )
     product_name = Str().tag(
         help="Defines the text string that will be used for field `name' of "
-             "PRODUCT entities written to the STEP file.")
-    assembly_mode = Enum('off', 'on', 'auto')
-    surfacecurve_mode = Enum('on', 'off')
-    vertex_mode = Enum('one compound', 'single vertex')
+        "PRODUCT entities written to the STEP file."
+    )
+    assembly_mode = Enum("off", "on", "auto")
+    surfacecurve_mode = Enum("on", "off")
+    vertex_mode = Enum("one compound", "single vertex")
 
     @classmethod
     def get_options_view(cls):
         with enaml.imports():
             from .options import OptionsForm
+
             return OptionsForm
 
     def export(self):
-        """ Export a DeclaraCAD model from an enaml file to an STL based on the
+        """Export a DeclaraCAD model from an enaml file to an STL based on the
         given options.
 
         Parameters
@@ -109,26 +116,25 @@ class StepExporter(ModelExporter):
                 if d.color:
                     color, alpha = color_to_quantity_color(d.color)
                     color_tool.SetColor(shape, color, XCAFDoc_ColorGen)
-                #if d.material:
+                # if d.material:
                 #    XCAFDoc_Material.Set_(label, ais_shape.Material())
                 name = TCollection_ExtendedString(
-                    d.name or d.description or d.__class__.__name__)
+                    d.name or d.description or d.__class__.__name__
+                )
                 TDataStd_Name.Set_(label, name)
-
 
         # Send it
         exporter = STEPCAFControl_Writer()
         exporter.SetNameMode(True)
         exporter.SetColorMode(True)
         SetIVal("write.precision.mode", PRECISION_MODES[self.precision_mode])
-        if self.precision_mode == 'greatest':
+        if self.precision_mode == "greatest":
             SetRVal("write.precision.val", self.precision_val)
         SetIVal("write.step.assembly", ASSEMBLY_MODES[self.assembly_mode])
         SetCVal("write.step.schema", self.schema)
         if self.product_name:
             SetCVal("write.step.product.name", self.product_name)
-        SetIVal("write.surfacecurve.mode",
-                SURFACECURVE_MODES[self.surfacecurve_mode])
+        SetIVal("write.surfacecurve.mode", SURFACECURVE_MODES[self.surfacecurve_mode])
         SetCVal("write.step.unit", self.units.upper())
         SetIVal("write.step.vertex.mode", VERTEX_MODES[self.vertex_mode])
         exporter.Transfer(doc)

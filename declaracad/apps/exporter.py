@@ -17,9 +17,8 @@ import faulthandler
 from declaracad.core.app import Application
 
 
-
 def main(**kwargs):
-    """ Runs ModelExporter.export() using the passed options.
+    """Runs ModelExporter.export() using the passed options.
 
     Parameters
     ----------
@@ -28,7 +27,7 @@ def main(**kwargs):
 
     """
     faulthandler.enable()
-    options = kwargs.pop('options')
+    options = kwargs.pop("options")
     exporter = jsonpickle.loads(options)
     assert exporter, "Failed to load exporter from: {}".format(options)
     # An Application is required
@@ -37,4 +36,4 @@ def main(**kwargs):
     print("Exporting {e.filename} to {e.path}...".format(e=exporter))
     sys.stdout.flush()
     exporter.export()
-    print("Success! Took {} seconds.".format(round(time.time()-t0, 2)))
+    print("Success! Took {} seconds.".format(round(time.time() - t0, 2)))

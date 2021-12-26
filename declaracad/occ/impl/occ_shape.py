@@ -13,43 +13,79 @@ import os
 from math import pi
 from typing import Union, Tuple as TupleType
 from atom.api import (
-    Atom, Bool, Instance, List, Typed, Str, Property, observe, set_default
+    Atom,
+    Bool,
+    Instance,
+    List,
+    Typed,
+    Str,
+    Property,
+    observe,
+    set_default,
 )
 
-from OCCT.AIS import (
-    AIS_Shape, AIS_TexturedShape, AIS_MultipleConnectedInteractive
-)
+from OCCT.AIS import AIS_Shape, AIS_TexturedShape, AIS_MultipleConnectedInteractive
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBndLib import BRepBndLib
 from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeShape, BRepBuilderAPI_MakeFace,
-    BRepBuilderAPI_Transform, BRepBuilderAPI_MakeWire
+    BRepBuilderAPI_MakeShape,
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_Transform,
+    BRepBuilderAPI_MakeWire,
 )
 from OCCT.BRepPrimAPI import (
-    BRepPrimAPI_MakeBox, BRepPrimAPI_MakeCone,
-    BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakeHalfSpace, BRepPrimAPI_MakePrism,
-    BRepPrimAPI_MakeSphere, BRepPrimAPI_MakeWedge, BRepPrimAPI_MakeTorus,
+    BRepPrimAPI_MakeBox,
+    BRepPrimAPI_MakeCone,
+    BRepPrimAPI_MakeCylinder,
+    BRepPrimAPI_MakeHalfSpace,
+    BRepPrimAPI_MakePrism,
+    BRepPrimAPI_MakeSphere,
+    BRepPrimAPI_MakeWedge,
+    BRepPrimAPI_MakeTorus,
     BRepPrimAPI_MakeRevol,
 )
 
-from OCCT.gp import (
-    gp, gp_Pnt, gp_Dir, gp_Vec, gp_Ax1, gp_Ax2, gp_Ax3, gp_Trsf, gp_Pln
-)
+from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec, gp_Ax1, gp_Ax2, gp_Ax3, gp_Trsf, gp_Pln
 from OCCT.TopoDS import (
-    TopoDS, TopoDS_Wire, TopoDS_Vertex, TopoDS_Edge,
-    TopoDS_Face, TopoDS_Shell, TopoDS_Solid,
-    TopoDS_Compound, TopoDS_CompSolid, TopoDS_Shape, TopoDS_Iterator
+    TopoDS,
+    TopoDS_Wire,
+    TopoDS_Vertex,
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Shell,
+    TopoDS_Solid,
+    TopoDS_Compound,
+    TopoDS_CompSolid,
+    TopoDS_Shape,
+    TopoDS_Iterator,
 )
 from OCCT.TopLoc import TopLoc_Location
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TDF import TDF_Label
 
 from declaracad.occ.shape import (
-    ProxyShape, ProxyPart, ProxyFace, ProxyBox, ProxyCone, ProxyCylinder,
-    ProxyHalfSpace, ProxyPrism, ProxySphere, ProxyWedge, ProxyRawPart,
-    ProxyTorus, ProxyRevol, ProxyRawShape, ProxyLoadShape, BBox, Shape,
-    Point, Direction, coerce_point, coerce_direction
+    ProxyShape,
+    ProxyPart,
+    ProxyFace,
+    ProxyBox,
+    ProxyCone,
+    ProxyCylinder,
+    ProxyHalfSpace,
+    ProxyPrism,
+    ProxySphere,
+    ProxyWedge,
+    ProxyRawPart,
+    ProxyTorus,
+    ProxyRevol,
+    ProxyRawShape,
+    ProxyLoadShape,
+    BBox,
+    Shape,
+    Point,
+    Direction,
+    coerce_point,
+    coerce_direction,
 )
 
 from declaracad.occ.algo import Translate, Rotate, Scale, Mirror
@@ -82,9 +118,7 @@ def coerce_axis(value: TupleType[Point, Direction, float]) -> gp_Ax2:
 
 
 def coerce_shape(shape: Union[TopoDS_Shape, Shape]) -> TopoDS_Shape:
-    """ Coerce a declaration into a TopoDS_Shape
-
-    """
+    """Coerce a declaration into a TopoDS_Shape"""
     if isinstance(shape, Shape):
         return shape.proxy.shape
     return shape
@@ -124,7 +158,7 @@ class OccShape(ProxyShape):
     # Initialization API
     # -------------------------------------------------------------------------
     def create_shape(self):
-        """ Create the toolkit shape for the proxy object.
+        """Create the toolkit shape for the proxy object.
 
         This method is called during the top-down pass, just before the
         'init_shape()' method is called. This method should create the
@@ -134,7 +168,7 @@ class OccShape(ProxyShape):
         raise NotImplementedError
 
     def init_shape(self):
-        """ Initialize the state of the toolkit widget.
+        """Initialize the state of the toolkit widget.
 
         This method is called during the top-down pass, just after the
         'create_widget()' method is called. This method should init the
@@ -144,22 +178,16 @@ class OccShape(ProxyShape):
         pass
 
     def init_layout(self):
-        """ Initialize the layout of the toolkit shape.
-
-        """
+        """Initialize the layout of the toolkit shape."""
         pass
 
     def activate_top_down(self):
-        """ Activate the proxy for the top-down pass.
-
-        """
+        """Activate the proxy for the top-down pass."""
         self.create_shape()
         self.init_shape()
 
     def activate_bottom_up(self):
-        """ Activate the proxy tree for the bottom-up pass.
-
-        """
+        """Activate the proxy tree for the bottom-up pass."""
         self.init_layout()
 
     # -------------------------------------------------------------------------
@@ -176,7 +204,7 @@ class OccShape(ProxyShape):
             if isinstance(parent, OccShape):
                 parent.displayed = True
 
-    @observe('shape')
+    @observe("shape")
     def on_shape_changed(self, change):
         if self.shape is not None:
             self.topology = self._default_topology()
@@ -184,23 +212,23 @@ class OccShape(ProxyShape):
             self.ais_shape = self._default_ais_shape()
 
     def get_first_child(self):
-        """ Return shape to apply the operation to. """
+        """Return shape to apply the operation to."""
         for child in self.children():
             if isinstance(child, OccShape):
                 return child
 
     def child_shapes(self):
-        """ Iterator of all child shapes """
+        """Iterator of all child shapes"""
         for child in self.children():
             if isinstance(child, OccShape):
-                if hasattr(child, 'shapes'):
+                if hasattr(child, "shapes"):
                     for s in child.shapes:
                         yield s
                 else:
                     yield child.shape
 
     def walk_shapes(self):
-        """ Iterator of all child shapes """
+        """Iterator of all child shapes"""
         if not self.declaration.display:
             return
         if isinstance(self, OccPart):
@@ -211,7 +239,7 @@ class OccShape(ProxyShape):
             yield self
 
     def _default_ais_shape(self):
-        """ Generate the AIS shape for the viewer to display.
+        """Generate the AIS shape for the viewer to display.
         This is only invoked when the viewer wants to display the shape.
 
         """
@@ -249,9 +277,7 @@ class OccShape(ProxyShape):
         return ais_shape
 
     def _default_location(self):
-        """ Get the final location based on the assembly tree.
-
-        """
+        """Get the final location based on the assembly tree."""
         location = TopLoc_Location()
         parent = self.parent()
         while isinstance(parent, OccPart):
@@ -263,7 +289,7 @@ class OccShape(ProxyShape):
     # Proxy API
     # -------------------------------------------------------------------------
     def get_transform(self):
-        """ Create a transform which rotates the default axis to align
+        """Create a transform which rotates the default axis to align
         with the normal given by the position
 
         Returns
@@ -315,15 +341,14 @@ class OccShape(ProxyShape):
         bbox = Bnd_Box()
         BRepBndLib.Add_(shape, bbox)
         pmin, pmax = bbox.CornerMin(), bbox.CornerMax()
-        return BBox(*(pmin.X(), pmin.Y(), pmin.Z(),
-                      pmax.X(), pmax.Y(), pmax.Z()))
+        return BBox(*(pmin.X(), pmin.Y(), pmin.Z(), pmax.X(), pmax.Y(), pmax.Z()))
 
 
 class OccDependentShape(OccShape):
-    """ Shape that is dependent on another shape """
+    """Shape that is dependent on another shape"""
 
     def create_shape(self):
-        """ Create the toolkit shape for the proxy object.
+        """Create the toolkit shape for the proxy object.
 
         Operations depend on child or properties so they cannot be created
         in the top down pass but rather must be done in the init_layout method.
@@ -332,7 +357,7 @@ class OccDependentShape(OccShape):
         pass
 
     def init_layout(self):
-        """ Initialize the layout of the toolkit shape.
+        """Initialize the layout of the toolkit shape.
 
         This method is called during the bottom-up pass. This method
         should initialize the layout of the widget. The child widgets
@@ -349,25 +374,25 @@ class OccDependentShape(OccShape):
 
         # When they change re-compute
         for child in self.children():
-            child.observe('shape', self.update_shape)
+            child.observe("shape", self.update_shape)
 
     def update_shape(self, change=None):
-        """ Must be implmented in subclasses to create the shape
-            when the dependent shapes change.
+        """Must be implmented in subclasses to create the shape
+        when the dependent shapes change.
         """
         raise NotImplementedError
 
     def child_added(self, child):
         super().child_added(child)
         if isinstance(child, OccShape):
-            child.observe('shape', self.update_shape)
+            child.observe("shape", self.update_shape)
             if self.displayed and self.viewer:
                 self.viewer.add_shape_to_display(child)
 
     def child_removed(self, child):
         super().child_removed(child)
         if isinstance(child, OccShape):
-            child.unobserve('shape', self.update_shape)
+            child.unobserve("shape", self.update_shape)
             if child.displayed and self.viewer:
                 self.viewer.remove_shape_from_display(child)
 
@@ -389,7 +414,7 @@ class OccPart(OccDependentShape, ProxyPart):
     ais_shape = Typed(AIS_MultipleConnectedInteractive)
 
     def get_transform(self) -> gp_Trsf:
-        """ Compute the transform for locating the part.
+        """Compute the transform for locating the part.
 
         This factors in the transforms applied to the part as well as the
         position, direction and rotation attributes.
@@ -402,21 +427,19 @@ class OccPart(OccDependentShape, ProxyPart):
             if isinstance(op, Translate):
                 t.SetTranslation(gp_Vec(op.x, op.y, op.z))
             elif isinstance(op, Rotate):
-                t.SetRotation(gp_Ax1(gp_Pnt(*op.point),
-                                    gp_Dir(*op.direction)), op.angle)
+                t.SetRotation(
+                    gp_Ax1(gp_Pnt(*op.point), gp_Dir(*op.direction)), op.angle
+                )
             elif isinstance(op, Mirror):
                 Ax = gp_Ax2 if op.plane else gp_Ax1
-                t.SetMirror(Ax(gp_Pnt(*op.point),
-                                gp_Dir(op.x, op.y, op.z)))
+                t.SetMirror(Ax(gp_Pnt(*op.point), gp_Dir(op.x, op.y, op.z)))
             elif isinstance(op, Scale):
                 t.SetScale(gp_Pnt(*op.point), op.s)
             result.Multiply(t)
         return result
 
     def _default_location(self) -> TopLoc_Location:
-        """ Set the location of this part based on the transformation.
-
-        """
+        """Set the location of this part based on the transformation."""
         return TopLoc_Location(self.get_transform())
 
     def _default_ais_shape(self) -> AIS_MultipleConnectedInteractive:
@@ -437,9 +460,7 @@ class OccPart(OccDependentShape, ProxyPart):
         return ais_obj
 
     def update_shape(self, change=None):
-        """ Create the toolkit shape for the proxy object.
-
-        """
+        """Create the toolkit shape for the proxy object."""
         d = self.declaration
         builder = self.builder
         shape = TopoDS_Compound()
@@ -456,7 +477,7 @@ class OccPart(OccDependentShape, ProxyPart):
         self.shape = shape
 
     def update_location(self, change=None):
-        """ Recompute the location of this and all nested parts.
+        """Recompute the location of this and all nested parts.
 
         This only updates the viewer.
 
@@ -485,7 +506,6 @@ class OccPart(OccDependentShape, ProxyPart):
 
 
 class OccFace(OccDependentShape, ProxyFace):
-
     def set_wires(self, wires):
         self.update_shape()
 
@@ -506,8 +526,7 @@ class OccFace(OccDependentShape, ProxyFace):
         else:
             shapes = [c for c in self.children() if isinstance(c, OccShape)]
         if not shapes:
-            raise ValueError(
-                "No wires or children available to create a face!")
+            raise ValueError("No wires or children available to create a face!")
 
         convert = self.shape_to_face
         for i, s in enumerate(shapes):
@@ -519,8 +538,10 @@ class OccFace(OccDependentShape, ProxyFace):
 
 
 class OccBox(OccShape, ProxyBox):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_box.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_box.html"
+    )
 
     def create_shape(self):
         d = self.declaration
@@ -538,8 +559,10 @@ class OccBox(OccShape, ProxyBox):
 
 
 class OccCone(OccShape, ProxyCone):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_cone.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_cone.html"
+    )
 
     def create_shape(self):
         d = self.declaration
@@ -563,8 +586,10 @@ class OccCone(OccShape, ProxyCone):
 
 
 class OccCylinder(OccShape, ProxyCylinder):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_cylinder.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_cylinder.html"
+    )
 
     def create_shape(self):
         d = self.declaration
@@ -585,8 +610,10 @@ class OccCylinder(OccShape, ProxyCylinder):
 
 
 class OccHalfSpace(OccDependentShape, ProxyHalfSpace):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_half_space.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_half_space.html"
+    )
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -612,8 +639,10 @@ class OccHalfSpace(OccDependentShape, ProxyHalfSpace):
 
 
 class OccPrism(OccDependentShape, ProxyPrism):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_prism.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_prism.html"
+    )
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -660,8 +689,10 @@ class OccPrism(OccDependentShape, ProxyPrism):
 class OccRevol(OccDependentShape, ProxyRevol):
 
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_wedge.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_wedge.html"
+    )
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -682,7 +713,7 @@ class OccRevol(OccDependentShape, ProxyRevol):
         self.shape = revol.Shape()
 
     def get_shape(self):
-        """ Get the first child shape """
+        """Get the first child shape"""
         for child in self.children():
             if isinstance(child, OccShape):
                 return child
@@ -701,16 +732,17 @@ class OccRevol(OccDependentShape, ProxyRevol):
 
 
 class OccSphere(OccShape, ProxySphere):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_sphere.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_sphere.html"
+    )
 
     def create_shape(self):
         d = self.declaration
-        u = min(2*pi, max(0, d.angle))
-        vmin = max(-pi/2, min(d.angle2, d.angle3))
-        vmax = min(pi/2, max(d.angle2, d.angle3))
-        sphere = BRepPrimAPI_MakeSphere(
-            coerce_axis(d.axis), d.radius, vmin, vmax, u)
+        u = min(2 * pi, max(0, d.angle))
+        vmin = max(-pi / 2, min(d.angle2, d.angle3))
+        vmax = min(pi / 2, max(d.angle2, d.angle3))
+        sphere = BRepPrimAPI_MakeSphere(coerce_axis(d.axis), d.radius, vmin, vmax, u)
         self.shape = sphere.Shape()
 
     def set_radius(self, r):
@@ -728,8 +760,10 @@ class OccSphere(OccShape, ProxySphere):
 
 class OccTorus(OccShape, ProxyTorus):
 
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_torus.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_torus.html"
+    )
 
     def create_shape(self):
         d = self.declaration
@@ -762,13 +796,14 @@ class OccTorus(OccShape, ProxyTorus):
 
 class OccWedge(OccShape, ProxyWedge):
 
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_prim_a_p_i___make_wedge.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_prim_a_p_i___make_wedge.html"
+    )
 
     def create_shape(self):
         d = self.declaration
-        wedge = BRepPrimAPI_MakeWedge(
-            coerce_axis(d.axis), d.dx, d.dy, d.dz, d.itx)
+        wedge = BRepPrimAPI_MakeWedge(coerce_axis(d.axis), d.dx, d.dy, d.dz, d.itx)
         self.shape = wedge.Shape()
 
     def set_dx(self, dx):
@@ -786,37 +821,37 @@ class OccWedge(OccShape, ProxyWedge):
 
 class OccRawShape(OccShape, ProxyRawShape):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_topo_d_s___shape.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "class_topo_d_s___shape.html"
+    )
 
     def create_shape(self):
-        """ Delegate shape creation to the declaration implementation. """
+        """Delegate shape creation to the declaration implementation."""
         self.shape = self.declaration.create_shape(self.parent_shape())
 
     # -------------------------------------------------------------------------
     # ProxyRawShape API
     # -------------------------------------------------------------------------
     def get_shape(self):
-        """ Retrieve the underlying toolkit shape.
-        """
+        """Retrieve the underlying toolkit shape."""
         return self.shape
 
 
 class OccRawPart(OccPart, ProxyRawPart):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_topo_d_s___shape.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "class_topo_d_s___shape.html"
+    )
 
     shapes = List(TopoDS_Shape)
 
     def create_shapes(self):
-        """ Delegate shape creation to the declaration implementation. """
+        """Delegate shape creation to the declaration implementation."""
         self.shapes = self.declaration.create_shapes(self.parent_shape())
 
     # -------------------------------------------------------------------------
     # ProxyRawShape API
     # -------------------------------------------------------------------------
     def get_shapes(self):
-        """ Retrieve the underlying toolkit shape.
-        """
+        """Retrieve the underlying toolkit shape."""
         return self.shapes

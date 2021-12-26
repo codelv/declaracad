@@ -19,13 +19,15 @@ from .occ_algo import OccOperation
 
 
 class OccThruSections(OccOperation, ProxyThruSections):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_offset_a_p_i___thru_sections.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_offset_a_p_i___thru_sections.html"
+    )
 
     def update_shape(self, change=None):
         d = self.declaration
         loft = BRepOffsetAPI_ThruSections(d.solid, d.ruled, d.precision)
-        #loft.CheckCompatibility(True)
+        # loft.CheckCompatibility(True)
         #: TODO: Support Smoothing, Max degree, par type, etc...
 
         for child in self.children():

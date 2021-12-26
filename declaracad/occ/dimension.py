@@ -9,9 +9,7 @@ Created on March 25, 2020
 
 @author: jrm
 """
-from atom.api import (
-    Bool, Coerced, Float, List, Typed, ForwardTyped, Str, observe
-)
+from atom.api import Bool, Coerced, Float, List, Typed, ForwardTyped, Str, observe
 from enaml.colors import ColorMember, Color
 from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
@@ -73,9 +71,8 @@ class ProxyRadiusDimension(ProxyControl):
 
 
 class Dimension(ToolkitObject):
-    """ Basic dimension
+    """Basic dimension"""
 
-    """
     #: Reference to the implementation control
     proxy = Typed(ProxyDimension)
 
@@ -83,7 +80,7 @@ class Dimension(ToolkitObject):
     display = d_(Bool(True))
 
     #: A string representing the color of the shape.
-    color = d_(ColorMember()).tag(view=True, group='Display')
+    color = d_(ColorMember()).tag(view=True, group="Display")
 
     #: Show unbits
     show_units = d_(Bool(False))
@@ -113,13 +110,22 @@ class Dimension(ToolkitObject):
     #: List of shapes to create the dimension
     shapes = d_(List())
 
-    @observe('display', 'shapes', 'color', 'direction', 'flyout',
-             'extension_size', 'arrow_tail_size', 'show_units', 'units')
+    @observe(
+        "display",
+        "shapes",
+        "color",
+        "direction",
+        "flyout",
+        "extension_size",
+        "arrow_tail_size",
+        "show_units",
+        "units",
+    )
     def _update_proxy(self, change):
         super(Dimension, self)._update_proxy(change)
 
     def show(self):
-        """ Generates the dimension
+        """Generates the dimension
 
         Returns
         -------
@@ -140,7 +146,7 @@ class AngleDimension(Dimension):
 
 
 class LengthDimension(Dimension):
-    """ A LengthDimension can be created from the following shapes
+    """A LengthDimension can be created from the following shapes
 
     - An edge
     - Two verticies
@@ -148,6 +154,7 @@ class LengthDimension(Dimension):
     - Parallel faces
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyLengthDimension)
 

@@ -27,15 +27,16 @@ def load_dxf(filename):
     for element in doc.modelspace():
         dxf_type = element.dxftype()
         d = element.dxf
-        if dxf_type == 'LINE':
+        if dxf_type == "LINE":
             node = Segment(points=[d.start, d.end]).render()
-        elif dxf_type == 'ARC':
+        elif dxf_type == "ARC":
             node = Arc(
                 position=d.center,
                 radius=d.radius,
                 alpha1=radians(d.start_angle),
-                alpha2=radians(d.end_angle)).render()
-        elif dxf_type == 'CIRCLE':
+                alpha2=radians(d.end_angle),
+            ).render()
+        elif dxf_type == "CIRCLE":
             node = Circle(radius=d.radius, position=d.center).render()
         else:
             log.warning(f"Unhandled element: {element}")

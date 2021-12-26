@@ -14,49 +14,58 @@ from atom.api import Int, Dict, Instance, Subclass, set_default
 
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepAlgoAPI import (
-    BRepAlgoAPI_BooleanOperation, BRepAlgoAPI_Fuse, BRepAlgoAPI_Common,
-    BRepAlgoAPI_Cut
+    BRepAlgoAPI_BooleanOperation,
+    BRepAlgoAPI_Fuse,
+    BRepAlgoAPI_Common,
+    BRepAlgoAPI_Cut,
 )
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing
 from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
 from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TopoDS import (
-    TopoDS, TopoDS_Edge, TopoDS_Face, TopoDS_Wire, TopoDS_Shape,
-    TopoDS_Compound, TopoDS_Vertex
+    TopoDS,
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Wire,
+    TopoDS_Shape,
+    TopoDS_Compound,
+    TopoDS_Vertex,
 )
 
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import (
-    ProxyOperation, ProxyBooleanOperation, ProxyCommon, ProxyCut,
-    ProxyFuse, ProxySew, ProxyGlue,
+    ProxyOperation,
+    ProxyBooleanOperation,
+    ProxyCommon,
+    ProxyCut,
+    ProxyFuse,
+    ProxySew,
+    ProxyGlue,
 )
 
-from .occ_shape import (
-    OccShape, OccDependentShape, Topology, coerce_axis, coerce_shape
-)
+from .occ_shape import OccShape, OccDependentShape, Topology, coerce_axis, coerce_shape
 
 
 class OccOperation(OccDependentShape, ProxyOperation):
-    """ Operation is a dependent shape that uses queuing to only
+    """Operation is a dependent shape that uses queuing to only
     perform the operation once all changes have settled because
     in general these operations are expensive.
     """
+
     pass
 
 
 class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
-    """ Base class for a boolean shape operation.
+    """Base class for a boolean shape operation."""
 
-    """
     op = Subclass(BRepAlgoAPI_BooleanOperation)
 
     def update_shape(self, change=None):
         op = self.op()
         d = self.declaration
         if d.shape1 and d.shape2:
-            shape = self.op(coerce_shape(d.shape1),
-                            coerce_shape(d.shape2)).Shape()
+            shape = self.op(coerce_shape(d.shape1), coerce_shape(d.shape2)).Shape()
         else:
             shape = None
 
@@ -80,24 +89,32 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
 
 
 class OccCommon(OccBooleanOperation, ProxyCommon):
-    """ Common of all the child shapes together. """
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_algo_a_p_i___common.html')
+    """Common of all the child shapes together."""
+
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_algo_a_p_i___common.html"
+    )
     op = set_default(BRepAlgoAPI_Common)
 
 
 class OccCut(OccBooleanOperation, ProxyCut):
-    """ Cut all the child shapes from the first shape. """
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_algo_a_p_i___cut.html')
+    """Cut all the child shapes from the first shape."""
+
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_algo_a_p_i___cut.html"
+    )
     op = set_default(BRepAlgoAPI_Cut)
 
 
 class OccFuse(OccBooleanOperation, ProxyFuse):
-    """ Fuse all the child shapes together. """
+    """Fuse all the child shapes together."""
+
     reference = set_default(
-        'https://dev.opencascade.org/doc/overview/html/'
-        'occt_user_guides__boolean_operations.html#occt_algorithms_7')
+        "https://dev.opencascade.org/doc/overview/html/"
+        "occt_user_guides__boolean_operations.html#occt_algorithms_7"
+    )
     op = set_default(BRepAlgoAPI_Fuse)
 
 
@@ -115,5 +132,3 @@ class OccGlue(OccOperation, ProxyGlue):
     def update_shape(self, change=None):
         d = self.declaration
         raise NotImplementedError  # TODO: This
-
-

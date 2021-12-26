@@ -13,16 +13,12 @@ from atom.api import set_default
 
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import (
-    BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape,
+    BRepOffsetAPI_MakeOffset,
+    BRepOffsetAPI_MakeOffsetShape,
 )
 
-from OCCT.BRepOffset import (
-    BRepOffset_Skin, BRepOffset_Pipe,
-    BRepOffset_RectoVerso
-)
-from OCCT.GeomAbs import (
-    GeomAbs_Arc, GeomAbs_Tangent, GeomAbs_Intersection
-)
+from OCCT.BRepOffset import BRepOffset_Skin, BRepOffset_Pipe, BRepOffset_RectoVerso
+from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Tangent, GeomAbs_Intersection
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 from declaracad.occ.algo import ProxyOffset, ProxyOffsetShape
@@ -31,19 +27,21 @@ from .topology import Topology
 
 
 class OccOffset(OccOperation, ProxyOffset):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_offset_a_p_i___make_offset.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_offset_a_p_i___make_offset.html"
+    )
 
     offset_modes = {
-        'skin': BRepOffset_Skin,
-        'pipe': BRepOffset_Pipe,
-        'recto_verso': BRepOffset_RectoVerso
+        "skin": BRepOffset_Skin,
+        "pipe": BRepOffset_Pipe,
+        "recto_verso": BRepOffset_RectoVerso,
     }
 
     join_types = {
-        'arc': GeomAbs_Arc,
-        'tangent': GeomAbs_Tangent,
-        'intersection': GeomAbs_Intersection,
+        "arc": GeomAbs_Arc,
+        "tangent": GeomAbs_Tangent,
+        "intersection": GeomAbs_Intersection,
     }
 
     def get_shape_to_offset(self):
@@ -59,8 +57,7 @@ class OccOffset(OccOperation, ProxyOffset):
             shape = BRepBuilderAPI_MakeWire(shape).Wire()
         elif not isinstance(shape, (TopoDS_Wire, TopoDS_Face)):
             t = type(shape)
-            raise TypeError(
-                "Unsupported child shape %s when using planar mode" % t)
+            raise TypeError("Unsupported child shape %s when using planar mode" % t)
         join_type = self.join_types[d.join_type]
         offset_shape = BRepOffsetAPI_MakeOffset(shape, join_type, not d.closed)
         offset_shape.Perform(d.offset, d.normal_distance)
@@ -86,8 +83,10 @@ class OccOffset(OccOperation, ProxyOffset):
 
 
 class OccOffsetShape(OccOffset, ProxyOffsetShape):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_offset_a_p_i___make_offset_shape.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_offset_a_p_i___make_offset_shape.html"
+    )
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -100,6 +99,6 @@ class OccOffsetShape(OccOffset, ProxyOffsetShape):
             self.offset_modes[d.offset_mode],
             d.intersection,
             False,
-            self.join_types[d.join_type]
+            self.join_types[d.join_type],
         )
         self.shape = offset_shape.Shape()

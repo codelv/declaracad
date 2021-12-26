@@ -61,11 +61,15 @@ class OccViewerClippedPlane(Control):
     # -------------------------------------------------------------------------
     # Observers
     # -------------------------------------------------------------------------
-    @observe('position', 'direction', 'enabled', 'capping', 'capping_hatched',
-             'capping_color')
+    @observe(
+        "position",
+        "direction",
+        "enabled",
+        "capping",
+        "capping_hatched",
+        "capping_color",
+    )
     def _update_proxy(self, change):
-        """ An observer which sends state change to the proxy.
-        """
+        """An observer which sends state change to the proxy."""
         # The superclass handler implementation is sufficient.
         super(OccViewerClippedPlane, self)._update_proxy(change)
-

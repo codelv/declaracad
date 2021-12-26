@@ -30,7 +30,7 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
         self.clip_plane = Graphic3d_ClipPlane()
 
     def init_widget(self):
-        #super(QtOccViewerClippedPlane, self).init_widget()
+        # super(QtOccViewerClippedPlane, self).init_widget()
         d = self.declaration
         clip_plane = self.clip_plane
         self.set_enabled(d.enabled)
@@ -45,7 +45,7 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
         viewer = self.parent()
         clip_plane = self.clip_plane
         viewer.v3d_view.AddClipPlane(clip_plane)
-        #for ais_shp in viewer._ais_shapes:
+        # for ais_shp in viewer._ais_shapes:
         #    ais_shp.AddClipPlane(clip_plane)
         self.update_viewer()
 
@@ -55,7 +55,7 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
         clip_plane.SetOn(False)
         if viewer is not None:
             viewer.v3d_view.RemoveClipPlane(clip_plane)
-            #for ais_shp in viewer._ais_shapes:
+            # for ais_shp in viewer._ais_shapes:
             #    try:
             #        ais_shp.RemoveClipPlane(clip_plane)
             #    except:

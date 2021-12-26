@@ -13,9 +13,24 @@ Created on Sep 30, 2016
 import math
 from math import pi
 from atom.api import (
-    Atom, Tuple, Instance, Bool, Str, Float, FloatRange, Property, Coerced,
-    Typed, ForwardTyped, List, Enum, Event, Value, Subclass,
-    observe, set_default
+    Atom,
+    Tuple,
+    Instance,
+    Bool,
+    Str,
+    Float,
+    FloatRange,
+    Property,
+    Coerced,
+    Typed,
+    ForwardTyped,
+    List,
+    Enum,
+    Event,
+    Value,
+    Subclass,
+    observe,
+    set_default,
 )
 from enaml.core.declarative import d_, d_func
 from enaml.core.api import Include
@@ -30,8 +45,13 @@ from declaracad.core.utils import log, process_events
 from OCCT.TopoDS import TopoDS_Face, TopoDS_Shell, TopoDS_Shape
 
 from .geom import (
-    BBox, Point, Direction, coerce_point, coerce_direction,
-    coerce_rotation, settings
+    BBox,
+    Point,
+    Direction,
+    coerce_point,
+    coerce_direction,
+    coerce_rotation,
+    settings,
 )
 
 from .materials import Texture, Material
@@ -245,7 +265,7 @@ class ProxyLoadShape(ProxyShape):
 
 
 class Shape(ToolkitObject):
-    """ Abstract shape component that can be displayed on the screen
+    """Abstract shape component that can be displayed on the screen
     and represented by the framework.
 
     Notes
@@ -256,6 +276,7 @@ class Shape(ToolkitObject):
     of the shape can be accessed using the `self.proxy.topology` attribute.
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyShape)
 
@@ -360,15 +381,22 @@ class Shape(ToolkitObject):
     #: Bounding box of this shape
     bbox = Property(_get_bounding_box, cached=True)
 
-    @observe('color', 'transparency', 'display',
-             'texture', 'position', 'direction', 'rotation')
+    @observe(
+        "color",
+        "transparency",
+        "display",
+        "texture",
+        "position",
+        "direction",
+        "rotation",
+    )
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
-    @observe('proxy.shape')
+    @observe("proxy.shape")
     def _update_properties(self, change):
-        """ Clear the cached references when the shape changes. """
-        for k in ('bbox', 'topology'):
+        """Clear the cached references when the shape changes."""
+        for k in ("bbox", "topology"):
             self.get_member(k).reset(self)
         self.constructed()
 
@@ -376,7 +404,7 @@ class Shape(ToolkitObject):
     constructed = d_(Event(), writable=False)
 
     def activate_proxy(self):
-        """ Activate the proxy object tree.
+        """Activate the proxy object tree.
 
         This method should be called by a node to activate the proxy
         tree by making two initialization passes over the tree, from
@@ -402,7 +430,7 @@ class Shape(ToolkitObject):
         self.activated()
 
     def render(self):
-        """ Generates and returns the actual shape from the declaration.
+        """Generates and returns the actual shape from the declaration.
         Enaml does this automatically when it's included in the viewer so this
         is only neede when working with shapes manually.
 
@@ -420,13 +448,13 @@ class Shape(ToolkitObject):
 
     def __repr__(self):
         qualname = self.__class__.__qualname__
-        addr = f'0x{hex(id(self))}'
+        addr = f"0x{hex(id(self))}"
         name = self.name
         return f"<{qualname} name={name} at {addr}>"
 
 
 class Part(Shape):
-    """ A Part is a compound shape. It may contain
+    """A Part is a compound shape. It may contain
     any number of nested parts and is typically subclassed.
 
     Attributes
@@ -447,6 +475,7 @@ class Part(Shape):
             # etc..
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyPart)
 
@@ -468,7 +497,7 @@ class Part(Shape):
 
 
 class Face(Shape):
-    """ A Face turns it's first child Wire into a surface.
+    """A Face turns it's first child Wire into a surface.
 
     Examples
     --------
@@ -488,7 +517,7 @@ class Face(Shape):
 
 
 class Box(Shape):
-    """ A primitive Box shape.
+    """A primitive Box shape.
 
     Attributes
     ----------
@@ -509,6 +538,7 @@ class Box(Shape):
         # dx, dy, and dz are all 1 by default if omitted
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyBox)
 
@@ -523,13 +553,13 @@ class Box(Shape):
 
     # TODO: Handle other constructors
 
-    @observe('dx', 'dy', 'dz')
+    @observe("dx", "dy", "dz")
     def _update_proxy(self, change):
         super(Box, self)._update_proxy(change)
 
 
 class Cone(Shape):
-    """ A primitive Cone shape.
+    """A primitive Cone shape.
 
     Attributes
     ----------
@@ -552,6 +582,7 @@ class Cone(Shape):
         angle = math.pi/2
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyCone)
 
@@ -567,13 +598,13 @@ class Cone(Shape):
     #: Angle
     angle = d_(Float(0, strict=False)).tag(view=True)
 
-    @observe('radius', 'radius2', 'height', 'angle')
+    @observe("radius", "radius2", "height", "angle")
     def _update_proxy(self, change):
         super(Cone, self)._update_proxy(change)
 
 
 class Cylinder(Shape):
-    """ A primitive Cylinder shape.
+    """A primitive Cylinder shape.
 
     Attributes
     ----------
@@ -593,6 +624,7 @@ class Cylinder(Shape):
         radius = 5
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyCylinder)
 
@@ -605,13 +637,13 @@ class Cylinder(Shape):
     #: Angle
     angle = d_(Float(0, strict=False)).tag(view=True)
 
-    @observe('radius', 'height', 'angle')
+    @observe("radius", "height", "angle")
     def _update_proxy(self, change):
         super(Cylinder, self)._update_proxy(change)
 
 
 class HalfSpace(Shape):
-    """ An infinite solid limited by a surface.
+    """An infinite solid limited by a surface.
 
     Attributes
     ----------
@@ -641,6 +673,7 @@ class HalfSpace(Shape):
 
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyHalfSpace)
 
@@ -650,13 +683,13 @@ class HalfSpace(Shape):
     #: Side of surface where the space is located
     side = d_(Coerced(Point, coercer=coerce_point))
 
-    @observe('surface', 'side')
+    @observe("surface", "side")
     def _update_proxy(self, change):
         super(HalfSpace, self)._update_proxy(change)
 
 
 class Prism(Shape):
-    """ A Prism extrudes a Face into a solid or a Wire into a surface along
+    """A Prism extrudes a Face into a solid or a Wire into a surface along
     the given vector.
 
     Attributes
@@ -702,13 +735,13 @@ class Prism(Shape):
     #: Attempt to canonize
     canonize = d_(Bool(True)).tag(view=True)
 
-    @observe('shape', 'vector', 'infinite', 'canonize')
+    @observe("shape", "vector", "infinite", "canonize")
     def _update_proxy(self, change):
         super(Prism, self)._update_proxy(change)
 
 
 class Sphere(Shape):
-    """ A primitive Sphere shape.
+    """A primitive Sphere shape.
 
     Attributes
     ----------
@@ -748,6 +781,7 @@ class Sphere(Shape):
         angle = math.pi/2
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxySphere)
 
@@ -755,21 +789,21 @@ class Sphere(Shape):
     radius = d_(Float(1, strict=False)).tag(view=True)
 
     #: Angle of U (fraction of circle)
-    angle = d_(FloatRange(low=0.0, high=2*pi, value=2*pi)).tag(view=True)
+    angle = d_(FloatRange(low=0.0, high=2 * pi, value=2 * pi)).tag(view=True)
 
     #: Min Angle of V (fraction of circle in normal direction)
-    angle2 = d_(FloatRange(low=-pi/2, high=pi/2, value=-pi/2)).tag(view=True)
+    angle2 = d_(FloatRange(low=-pi / 2, high=pi / 2, value=-pi / 2)).tag(view=True)
 
     #: Max Angle of V (fraction of circle in normal direction)
-    angle3 = d_(FloatRange(low=-pi/2, high=pi/2, value=pi/2)).tag(view=True)
+    angle3 = d_(FloatRange(low=-pi / 2, high=pi / 2, value=pi / 2)).tag(view=True)
 
-    @observe('radius', 'angle', 'angle2', 'angle3')
+    @observe("radius", "angle", "angle2", "angle3")
     def _update_proxy(self, change):
         super(Sphere, self)._update_proxy(change)
 
 
 class Torus(Shape):
-    """ A primitive Torus shape (a ring like shape).
+    """A primitive Torus shape (a ring like shape).
 
     Attributes
     ----------
@@ -790,6 +824,7 @@ class Torus(Shape):
         radius = 5
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyTorus)
 
@@ -800,7 +835,7 @@ class Torus(Shape):
     radius2 = d_(Float(0, strict=False)).tag(view=True)
 
     #: Angle of U (fraction of circle)
-    angle = d_(FloatRange(low=0.0, high=2*pi, value=2*pi)).tag(view=True)
+    angle = d_(FloatRange(low=0.0, high=2 * pi, value=2 * pi)).tag(view=True)
 
     #: Start Angle of V (fraction of circle in normal direction)
     angle2 = d_(Float(0, strict=False)).tag(view=True)
@@ -808,13 +843,13 @@ class Torus(Shape):
     #: Stop Angle of V (fraction of circle in normal direction)
     angle3 = d_(Float(0, strict=False)).tag(view=True)
 
-    @observe('radius', 'radius2', 'angle', 'angle2', 'angle3')
+    @observe("radius", "radius2", "angle", "angle2", "angle3")
     def _update_proxy(self, change):
         super(Torus, self)._update_proxy(change)
 
 
 class Wedge(Shape):
-    """ A primitive Wedge shape.
+    """A primitive Wedge shape.
 
     Attributes
     ----------
@@ -836,6 +871,7 @@ class Wedge(Shape):
         dy = 5
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyWedge)
 
@@ -853,13 +889,13 @@ class Wedge(Shape):
 
     # TODO: Handle other constructors
 
-    @observe('dx', 'dy', 'dz', 'itx')
+    @observe("dx", "dy", "dz", "itx")
     def _update_proxy(self, change):
         super(Wedge, self)._update_proxy(change)
 
 
 class Revol(Shape):
-    """ A Revol creates a shape by revolving a profile about an axis.
+    """A Revol creates a shape by revolving a profile about an axis.
 
     Attributes
     ----------
@@ -880,6 +916,7 @@ class Revol(Shape):
                 points = [(0,0,0), (0,2,5),  (0,5,0), (0,0,0)]
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyRevol)
 
@@ -889,13 +926,13 @@ class Revol(Shape):
     #: Angle to revolve
     angle = d_(Float(0, strict=False)).tag(view=True)
 
-    @observe('shape', 'angle')
+    @observe("shape", "angle")
     def _update_proxy(self, change):
         super(Revol, self)._update_proxy(change)
 
 
 class RawShape(Shape):
-    """ A RawShape is a shape that delegates shape creation to the declaration.
+    """A RawShape is a shape that delegates shape creation to the declaration.
     This allows custom shapes to be added to the 3D model hierarchy. Users
     should subclass this and implement the `create_shape` method.
 
@@ -915,11 +952,12 @@ class RawShape(Shape):
 
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyRawShape)
 
     def create_shape(self, parent):
-        """ Create the shape for the control.
+        """Create the shape for the control.
         This method should create and initialize the shape.
 
         Parameters
@@ -937,7 +975,7 @@ class RawShape(Shape):
         raise NotImplementedError
 
     def get_shape(self):
-        """ Retrieve the shape for display.
+        """Retrieve the shape for display.
 
         Returns
         -------
@@ -951,7 +989,7 @@ class RawShape(Shape):
 
 
 class RawPart(Shape):
-    """ A RawPart is a part that delegates creation to the declaration.
+    """A RawPart is a part that delegates creation to the declaration.
     This allows custom shapes to be added to the 3D model hierarchy. Users
     should subclass this and implement the `create_shapes` method.
 
@@ -971,11 +1009,12 @@ class RawPart(Shape):
 
 
     """
+
     #: Reference to the implementation control
     proxy = Typed(ProxyRawPart)
 
     def create_shapes(self, parent):
-        """ Create the shape for the control.
+        """Create the shape for the control.
         This method should create and initialize the shape.
 
         Parameters
@@ -993,7 +1032,7 @@ class RawPart(Shape):
         raise NotImplementedError
 
     def get_shapes(self):
-        """ Retrieve the shapes for display.
+        """Retrieve the shapes for display.
 
         Returns
         -------
@@ -1007,10 +1046,11 @@ class RawPart(Shape):
 
 
 class TopoShape(RawShape):
-    """ A declaration for inserting an existing TopoDS_Shape somewhere into a
+    """A declaration for inserting an existing TopoDS_Shape somewhere into a
     DeclaraCAD tree.
 
     """
+
     shape = d_(Instance(TopoDS_Shape))
 
     def create_shape(self, parent):
@@ -1021,9 +1061,8 @@ class TopoShape(RawShape):
 
 
 class CachedPart(Include):
-    """ A node which generates a cached instance of a given part.
+    """A node which generates a cached instance of a given part."""
 
-    """
     destroy_old = set_default(False)
 
     #: Part model to generate, this is used as the cache key
@@ -1042,10 +1081,8 @@ class CachedPart(Include):
         return self.part()
 
     def _default_objects(self):
-        """ Generae
-
-        """
-        key = f'{self.part.__class__.__qualname__}.{self.cache_key}'
+        """Generae"""
+        key = f"{self.part.__class__.__qualname__}.{self.cache_key}"
         model = Part.cache.get(key)
         if self.reload and model is not None:
             model.destroy()

@@ -13,12 +13,12 @@ from atom.api import Dict, set_default
 
 from OCCT.BRepTools import BRepTools
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
-from OCCT.BRepFilletAPI import (
-    BRepFilletAPI_MakeFillet2d,
-    BRepFilletAPI_MakeFillet
-)
+from OCCT.BRepFilletAPI import BRepFilletAPI_MakeFillet2d, BRepFilletAPI_MakeFillet
 from OCCT.ChFi3d import (
-    ChFi3d_Rational, ChFi3d_QuasiAngular, ChFi3d_Polynomial, ChFi3d_FilBuilder
+    ChFi3d_Rational,
+    ChFi3d_QuasiAngular,
+    ChFi3d_Polynomial,
+    ChFi3d_FilBuilder,
 )
 from OCCT.gp import gp_Pnt2d
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire, TopoDS_Vertex
@@ -30,14 +30,15 @@ from .occ_algo import OccOperation
 from .topology import Topology
 
 
-
 class OccFillet(OccOperation, ProxyFillet):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_fillet_a_p_i___make_fillet.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_fillet_a_p_i___make_fillet.html"
+    )
     shape_types = {
-        'rational': ChFi3d_Rational,
-        'angular': ChFi3d_QuasiAngular,
-        'polynomial': ChFi3d_Polynomial
+        "rational": ChFi3d_Rational,
+        "angular": ChFi3d_QuasiAngular,
+        "polynomial": ChFi3d_Polynomial,
     }
 
     def update_shape(self, change=None):
@@ -98,7 +99,7 @@ class OccFillet(OccOperation, ProxyFillet):
                 pts, edge = item
                 array = TColgp_Array1OfPnt2d(1, len(pts))
                 for i, pt in enumerate(pts):
-                    array.SetValue(i+1, gp_Pnt2d(*pt))
+                    array.SetValue(i + 1, gp_Pnt2d(*pt))
                 fillet.Add(array, edge)
                 continue
             if n == 2 and isinstance(item[1], TopoDS_Face):

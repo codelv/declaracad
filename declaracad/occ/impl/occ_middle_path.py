@@ -21,8 +21,10 @@ from .topology import Topology
 
 
 class OccMiddlePath(OccWire, ProxyMiddlePath):
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_offset_a_p_i___middle_path.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_offset_a_p_i___middle_path.html"
+    )
 
     def update_shape(self, change=None):
         d = self.declaration

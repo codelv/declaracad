@@ -3,10 +3,9 @@ import sys
 import asyncio
 
 
-async def create_stdio_connection(
-        loop, protocol, limit=asyncio.streams._DEFAULT_LIMIT):
+async def create_stdio_connection(loop, protocol, limit=asyncio.streams._DEFAULT_LIMIT):
     loop = loop or asyncio.get_event_loop()
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         transport = _win32_stdio(protocol, loop)
     else:
         transport = await _unix_stdio(protocol, limit, loop)
@@ -16,16 +15,15 @@ async def create_stdio_connection(
 async def _unix_stdio(protocol, limit, loop):
     write_transport, write_protocol = await loop.connect_write_pipe(
         lambda: asyncio.streams.FlowControlMixin(loop=loop),
-        os.fdopen(sys.stdout.fileno(), 'wb'))
-    writer = asyncio.streams.StreamWriter(
-        write_transport, write_protocol, None, loop)
+        os.fdopen(sys.stdout.fileno(), "wb"),
+    )
+    writer = asyncio.streams.StreamWriter(write_transport, write_protocol, None, loop)
     protocol.transport = writer
     reader = await loop.connect_read_pipe(lambda: protocol, sys.stdin)
     return reader, writer
 
 
 def _win32_stdio(protocol, loop):
-
     class Win32StdinReader:
         def __init__(self):
             self.stdin = sys.stdin.buffer
@@ -45,7 +43,6 @@ def _win32_stdio(protocol, loop):
         async def drain(self):
             data, self.buffer = self.buffer, []
             # a single call to sys.stdout.writelines() is thread-safe
-            return await loop.run_in_executor(
-                None, sys.stdout.writelines, data)
+            return await loop.run_in_executor(None, sys.stdout.writelines, data)
 
     return Win32StdinReader(), Win32StdoutWriter()

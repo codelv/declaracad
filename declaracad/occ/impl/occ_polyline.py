@@ -20,8 +20,10 @@ from .occ_wire import OccWire
 
 class OccPolyline(OccWire, ProxyPolyline):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_builder_a_p_i___make_polygon.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_builder_a_p_i___make_polygon.html"
+    )
 
     curve = Typed(BRepAdaptor_CompCurve)
 

@@ -17,8 +17,9 @@ from .occ_shape import coerce_axis
 
 class OccEllipse(OccEdge, ProxyEllipse):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'classgp___elips.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/" "classgp___elips.html"
+    )
 
     curve = Typed(Geom_Ellipse)
 

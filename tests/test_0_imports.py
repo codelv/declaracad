@@ -10,8 +10,7 @@ import pytest
 from declaracad.occ.impl.occ_factories import OCC_FACTORIES
 
 
-@pytest.mark.parametrize('name', OCC_FACTORIES.keys())
+@pytest.mark.parametrize("name", OCC_FACTORIES.keys())
 def test_declaracad_factory(name):
     factory = OCC_FACTORIES[name]
     factory()
-

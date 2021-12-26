@@ -13,8 +13,10 @@ from atom.api import Typed, Instance
 from OCCT.AIS import AIS_Line, AIS_TextLabel, AIS_Plane, AIS_InteractiveObject
 from OCCT.gp import gp_Ax2
 from OCCT.Graphic3d import (
-    Graphic3d_Text, Graphic3d_Group, Graphic3d_MaterialAspect,
-    Graphic3d_NOM_BRASS
+    Graphic3d_Text,
+    Graphic3d_Group,
+    Graphic3d_MaterialAspect,
+    Graphic3d_NOM_BRASS,
 )
 from OCCT.Geom import Geom_Line, Geom_Plane, Geom_Axis2Placement
 from OCCT.Prs3d import Prs3d_Arrow
@@ -24,7 +26,10 @@ from declaracad.core.utils import log
 
 
 from ..display import (
-    ProxyDisplayItem, ProxyDisplayArrow, ProxyDisplayText, ProxyDisplayLine,
+    ProxyDisplayItem,
+    ProxyDisplayArrow,
+    ProxyDisplayText,
+    ProxyDisplayLine,
     ProxyDisplayPlane,
 )
 from ..shape import Point
@@ -33,11 +38,24 @@ from .utils import color_to_quantity_color
 
 
 class AIS_Arrow(AIS_InteractiveObject):
-    def __init__(self, axis, tube_radius, axis_length,
-                 cone_radius, cone_length, number_of_facetts=360):
+    def __init__(
+        self,
+        axis,
+        tube_radius,
+        axis_length,
+        cone_radius,
+        cone_length,
+        number_of_facetts=360,
+    ):
         super().__init__()
-        self.params = (axis, tube_radius, axis_length,
-                 cone_radius, cone_length, int(number_of_facetts))
+        self.params = (
+            axis,
+            tube_radius,
+            axis_length,
+            cone_radius,
+            cone_length,
+            int(number_of_facetts),
+        )
         self.SetInfiniteState(True)
 
     def Compute(self, prs_mgr, pres, mode):
@@ -70,9 +88,7 @@ class OccDisplayItem(ProxyDisplayItem):
         pass
 
     def update_item(self):
-        """ Recreates the dimension catching any errors
-
-        """
+        """Recreates the dimension catching any errors"""
         if not self.context:
             return
         try:
@@ -81,15 +97,11 @@ class OccDisplayItem(ProxyDisplayItem):
             log.exception(e)
 
     def activate_top_down(self):
-        """ Activate the proxy for the top-down pass.
-
-        """
+        """Activate the proxy for the top-down pass."""
         self.create_item()
 
     def activate_bottom_up(self):
-        """ Activate the proxy tree for the bottom-up pass.
-
-        """
+        """Activate the proxy tree for the bottom-up pass."""
         pass
 
     def update_color(self, ais_item):

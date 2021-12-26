@@ -18,11 +18,12 @@ from declaracad.occ.geom import Direction
 from .occ_line import OccLine
 
 
-
 class OccArc(OccLine, ProxyArc):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_g_c___make_arc_of_circle.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_g_c___make_arc_of_circle.html"
+    )
 
     curve = Typed(Geom_TrimmedCurve)
 
@@ -31,13 +32,13 @@ class OccArc(OccLine, ProxyArc):
         n = len(d.points)
         try:
             if d.solve:
-               arc = self.create_arc_from_solver(**d.solve)
+                arc = self.create_arc_from_solver(**d.solve)
             elif d.radius:
                 points = [p.proxy for p in d.points]  # Do not trasnform these
-                #if d.radius2:
+                # if d.radius2:
                 #    g = gp_Elips(coerce_axis(d.axis), d.radius, d.radius2)
                 #    factory = GC_MakeArcOfEllipse
-                #else:
+                # else:
                 v = d.direction.proxy
                 # TODO: This technially isn't correct because the z axis could
                 # already be flipped
@@ -61,7 +62,7 @@ class OccArc(OccLine, ProxyArc):
                     arc = GC_MakeArcOfCircle(c, points[0], d.alpha1, True).Value()
                 else:
                     arc = GC_MakeArcOfCircle(c, d.alpha1, d.alpha2, True).Value()
-            #elif n == 2:
+            # elif n == 2:
             #    # TODO: This doesn't work
             #    points = self.get_transformed_points()
             #    arc = GC_MakeArcOfEllipse(points[0], points[1]).Value()
@@ -73,12 +74,14 @@ class OccArc(OccLine, ProxyArc):
                     points = self.get_transformed_points()
                 arc = GC_MakeArcOfCircle(points[0], points[1], points[2]).Value()
             else:
-                raise ValueError("Could not create an Arc with the given children "
-                                "and parameters. Must be given one of:\n\t"
-                                "- two or three points\n\t"
-                                "- radius and 2 points\n\t"
-                                "- radius, alpha1 and one point\n\t"
-                                "- radius, alpha1 and alpha2")
+                raise ValueError(
+                    "Could not create an Arc with the given children "
+                    "and parameters. Must be given one of:\n\t"
+                    "- two or three points\n\t"
+                    "- radius and 2 points\n\t"
+                    "- radius, alpha1 and one point\n\t"
+                    "- radius, alpha1 and alpha2"
+                )
         except RuntimeError as e:
             raise RuntimeError(f"Could not create arc {d}: {e}")
 
@@ -88,9 +91,7 @@ class OccArc(OccLine, ProxyArc):
         self.shape = self.make_edge(arc)
 
     def create_arc_from_solver(self, **params):
-        """ Create an arc by solving the given parameters.
-
-        """
+        """Create an arc by solving the given parameters."""
         d = self.declaration
         raise NotImplementedError("TODO")
 

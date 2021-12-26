@@ -11,8 +11,19 @@ Created on Sept 1, 2021
 """
 import warnings
 from atom.api import (
-    Atom, Value, Typed, ForwardTyped, Enum, Dict, Bool, Float, Property,
-    Str, Int, Coerced, observe
+    Atom,
+    Value,
+    Typed,
+    ForwardTyped,
+    Enum,
+    Dict,
+    Bool,
+    Float,
+    Property,
+    Str,
+    Int,
+    Coerced,
+    observe,
 )
 from enaml.core.declarative import d_, d_func
 from enaml.colors import ColorMember
@@ -32,28 +43,40 @@ class ProxyAnalysis(ProxyShape):
 
 
 class Analysis(Shape):
-    """ A finite element analysis block.
+    """A finite element analysis block."""
 
-
-    """
     #: Disable analysis
     disabled = d_(Bool())
 
     #: System type (non-smooth contact or smooth contact)
-    system_type = d_(Enum('NSC', 'SMC'))
+    system_type = d_(Enum("NSC", "SMC"))
 
     #: Solver type
-    solver_type = d_(Enum(
-        'ADMM', 'APGD', 'BB', 'BiCGSTAB', 'GMRES', 'LS',
-        'MINRES', 'PJacobi', 'PSOR', 'SparseLU', 'SparseQR', 'VI'
-    ))
+    solver_type = d_(
+        Enum(
+            "ADMM",
+            "APGD",
+            "BB",
+            "BiCGSTAB",
+            "GMRES",
+            "LS",
+            "MINRES",
+            "PJacobi",
+            "PSOR",
+            "SparseLU",
+            "SparseQR",
+            "VI",
+        )
+    )
 
     #: Solution method
-    solution_type = d_(Enum(
-        'static-linear',
-        'static-nonlinear',
-        'static-nonlinear-rheonomic',
-    ))
+    solution_type = d_(
+        Enum(
+            "static-linear",
+            "static-nonlinear",
+            "static-nonlinear-rheonomic",
+        )
+    )
 
     #: Mesh to perform analysis on
     source = d_(Value())
@@ -66,14 +89,12 @@ class Analysis(Shape):
 
     @d_func
     def create_material(self):
-        """
-
-        """
+        """ """
         pass
 
     @d_func
     def prepare_system(self, system, solver, source, mesh):
-        """ Prepare the mesh for analysis. You can add constraints, etc
+        """Prepare the mesh for analysis. You can add constraints, etc
         set forces on the nodes etc here.
 
         """
@@ -81,11 +102,9 @@ class Analysis(Shape):
 
     @d_func
     def process_solution(self, system, solver, source, mesh):
-        """ Do something with the solution
-
-        """
+        """Do something with the solution"""
         pass
 
-    @observe('gravity')
+    @observe("gravity")
     def _update_proxy(self, change):
         super()._update_proxy(change)

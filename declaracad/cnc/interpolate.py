@@ -18,12 +18,9 @@ from OCCT.TopoDS import TopoDS_Shape, TopoDS_Face, TopoDS_Edge
 
 
 def distance(
-    points: ListType[Point],
-    start: float,
-    end: float,
-    scale: float = -1
+    points: ListType[Point], start: float, end: float, scale: float = -1
 ) -> Optional[ListType[Point]]:
-    """ Set the z-value of the points by interpolating the
+    """Set the z-value of the points by interpolating the
     distance from start and end points. If the first two points are equal
     None is returned.
 
@@ -68,15 +65,15 @@ def distance(
         last = points[0]
         for p in points[1:]:
             d += last.distance2d(p)
-            t = d/dt
+            t = d / dt
             assert 0 <= t <= 1
-            p.z = (z + dz*t)
+            p.z = z + dz * t
             last = p
     return points
 
 
 def lookup_vertex(graph: DictType[Point, Any], v: Point):
-    """ Lookup the vertex in the graph using the hash, if that fails,
+    """Lookup the vertex in the graph using the hash, if that fails,
     fallback to using equals to find points that are equal within
     the tolerance.
 
@@ -101,9 +98,9 @@ def lookup_vertex(graph: DictType[Point, Any], v: Point):
 
 
 def build_edge_graph(
-    shapes: Iterable[TopoDS_Shape]
+    shapes: Iterable[TopoDS_Shape],
 ) -> DictType[Point, ListType[TopoDS_Shape]]:
-    """ Build a graph of vertices and edges that connect them. This assumes
+    """Build a graph of vertices and edges that connect them. This assumes
     that all edges are unique.
 
     Parameters
@@ -136,7 +133,7 @@ def build_edge_graph(
 
 
 def walk_edges(graph, vertex, edge):
-    """ Start at the given vertex and walk the edge until a leaf or branch
+    """Start at the given vertex and walk the edge until a leaf or branch
     is found.
 
     Parameters
@@ -185,7 +182,7 @@ def walk_edges(graph, vertex, edge):
 
 
 def split_wires(graph):
-    """ Split the graph into wires at their branch points.
+    """Split the graph into wires at their branch points.
 
     Parameters
     ----------
@@ -207,8 +204,7 @@ def split_wires(graph):
             edge = topo.shape
             if Topology.is_shape_in_list(edge, visited_edges):
                 continue
-            edges = [e for v, e in walk_edges(graph, vertex, edge)
-                     if e is not None]
+            edges = [e for v, e in walk_edges(graph, vertex, edge) if e is not None]
             yield Wire(edges=edges).render()
 
             # Add first and last edges to visited list
@@ -218,9 +214,9 @@ def split_wires(graph):
 
 
 def group_connected_wires(
-    wires: Iterable[TopoDS_Shape]
+    wires: Iterable[TopoDS_Shape],
 ) -> ListType[ListType[TopoDS_Shape]]:
-    """ Put the list of wires into a group if they are connected in the same
+    """Put the list of wires into a group if they are connected in the same
     graph.
 
     Parameters
@@ -248,10 +244,9 @@ def group_connected_wires(
 
 
 def group_connected_faces(
-    faces: Iterable[TopoDS_Face],
-    merge: bool = True
+    faces: Iterable[TopoDS_Face], merge: bool = True
 ) -> DictType[TopoDS_Face, SetType[TopoDS_Face]]:
-    """ Create a mapping of each face and the faces which connect to it.
+    """Create a mapping of each face and the faces which connect to it.
 
     Parameters
     ----------

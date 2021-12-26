@@ -26,15 +26,17 @@ from .topology import Topology
 
 class OccWire(OccDependentShape, ProxyWire):
     #: Update the class reference
-    reference = set_default('https://dev.opencascade.org/doc/refman/html/'
-                            'class_b_rep_builder_a_p_i___make_wire.html')
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_builder_a_p_i___make_wire.html"
+    )
 
     curve = Typed(BRepAdaptor_CompCurve)
 
     def _default_ais_shape(self):
         d = self.declaration
         ais_shape = super()._default_ais_shape()
-        if d.line_style != 'solid':
+        if d.line_style != "solid":
             type_of_line = LINE_TYPES[d.line_style]
             ais_shape.Attributes().WireAspect().SetTypeOfLine(type_of_line)
         if d.line_width > 0:
@@ -66,11 +68,11 @@ class OccWire(OccDependentShape, ProxyWire):
         for w in wires:
             builder.Add(w)
         if not builder.IsDone():
-            log.warning('Edges must be connected %s' % d)
+            log.warning("Edges must be connected %s" % d)
         try:
             wire = builder.Wire()
         except RuntimeError as e:
-            msg = f'Error creating wire for {d}: {e}'
+            msg = f"Error creating wire for {d}: {e}"
             raise RuntimeError(msg)
         if d.reverse:
             wire.Reverse()
@@ -86,7 +88,7 @@ class OccWire(OccDependentShape, ProxyWire):
                 self.extract_edges(c, edges)
         else:
             for edge in d.topology.edges:
-                if getattr(d, 'surface', None):
+                if getattr(d, "surface", None):
                     BRepLib.BuildCurves3d_(edge)
                 edges.Append(edge)
 
@@ -94,4 +96,3 @@ class OccWire(OccDependentShape, ProxyWire):
         if self.curve is None:
             self.update_shape()
         return Topology.get_value_at(self.curve, t, derivative)
-

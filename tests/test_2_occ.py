@@ -16,7 +16,8 @@ from declaracad.occ.api import load_model
 
 def test_point():
     from declaracad.occ.shape import Point
-    assert (Point(0, 0) + (1,1)) == Point(1,1)
+
+    assert (Point(0, 0) + (1, 1)) == Point(1, 1)
     assert (Point(1, 1) - (2, 1)) == Point(-1, 0)
     assert Point().distance(Point(3, 4)) == 5
     assert Point().midpoint(Point(4, 2)) == Point(2, 1)
@@ -47,106 +48,103 @@ enamldef Assembly(Part):
 """
 
 TESTS = {
-'box1': """
+    "vertex": """
+    Vertex:
+        position = (1, 2, 0)
+    """,
+    "box1": """
      Box:
          position = (10, 2, 30)
      """,
-
-'cone1': """
+    "cone1": """
      Cone:
          radius = 1
          height = 5
      """,
-
-'cylinder1': """
+    "cylinder1": """
      Cylinder:
          radius = 2
      """,
-
-'cylinder2': """
+    "cylinder2": """
     Cylinder:
         angle = 30*math.pi
     """,
-
-'sphere': """
+    "sphere": """
     Sphere:
         radius = 2
     """,
-
-'sphere-2': """
+    "sphere-2": """
     Sphere:
         angle = math.pi/4
     """,
-'sphere-3': """
+    "sphere-3": """
     Sphere:
         angle = math.pi/4
         angle2 = math.pi/4
     """,
-'sphere-4': """
+    "sphere-4": """
     Sphere:
         angle = math.pi/4
         angle2 = math.pi/4
         angle3 = math.pi/4
     """,
-
-'wedge': """
+    "wedge": """
     Wedge:
         dy = 2
     """,
-
-'torus': """
+    "torus": """
     Torus:
         radius = 2
         radius2 = 0.4
     """,
-'torus-2': """
+    "torus-2": """
     Torus:
         radius = 5
         radius2 = 1
         angle = math.pi
     """,
-'torus-3': """
+    "torus-3": """
     Torus:
         radius = 5
         radius2 = 1
         angle = math.pi
         angle2 = math.pi/4
     """,
-'prism': """
+    "prism": """
     Prism:
         Wire:
             Polyline:
                 points = [(0,5,0), (2,6,0),  (5,4,0), (0,5,0)]
     """,
-'revol': """
+    "revol": """
     Revol:
         Wire:
             Polyline:
                 points = [(0,0,0), (0,2,5),  (0,5,0), (0,0,0)]
     """,
-'circle': """
+    "circle": """
     Wire:
         Circle:
             radius = 10
     """,
-'ellipse': """
+    "ellipse": """
     Wire:
         Ellipse:
             major_radius = 3
             minor_radius = 2
     """,
-'polygon': """
+    "polygon": """
     Wire:
         Polyline:
             points = [(0,0,0), (0,2,5),  (0,5,0), (0,0,0)]
     """,
-'bezier': """
+    "bezier": """
     Wire:
         color = 'blue'
         Bezier: b1:
             points = [ (1,5,2),  (2,6,1),  (3,4,5)]
     """,
-'bspline': """
+    "bspline": """
     Wire:
         color = 'green'
         BSpline: bspline:
@@ -157,40 +155,37 @@ TESTS = {
             ]
 
     """,
-'cut': """
+    "cut": """
     Cut:
         Box:
             pass
         Box:
             position = (0.5, 0.5, 0)
     """,
-'fuse': """
+    "fuse": """
     Fuse:
         Box:
             pass
         Box:
             position = (0.5, 0.5, 0)
     """,
-'common': """
+    "common": """
     Common:
         Box:
             pass
         Box:
             position = (0.5, 0.5, 0)
-    """
+    """,
+    "vertex": """
+    Vertex:
+        position = (1, 2, 3)
+""",
 }
 
 
-@pytest.mark.parametrize('name', TESTS.keys())
+@pytest.mark.parametrize("name", TESTS.keys())
 def test_shapes_render(qt_app, name):
     source = TEMPLATE % TESTS[name]
-    options = {'from_string': True}
-    assembly = load_model(source, options, '.enaml')[0]
+    options = {"from_string": True}
+    assembly = load_model(source, options, ".enaml")[0]
     assert isinstance(assembly.render(), TopoDS_Shape)
-
-
-
-
-
-
-

@@ -11,6 +11,7 @@ Created on Sept 1, 2021
 """
 import warnings
 from atom.api import Atom, Typed, Instance
+
 try:
     from pychrono.core import (
         ChSystem,
@@ -63,7 +64,6 @@ try:
         ChElementTetra_4,
         ChElementTetra_4_P,
         ChElementTetrahedron,
-
         ChContinuumElastic,
     )
 except ImportError as e:
@@ -80,8 +80,8 @@ from declaracad.core.utils import log, log_time
 
 
 SYSTEM_TYPES = {
-    'NSC': ChSystemNSC,
-    'SMC': ChSystemSMC,
+    "NSC": ChSystemNSC,
+    "SMC": ChSystemSMC,
 }
 
 
@@ -272,7 +272,7 @@ class FeaAnalysis(OccDependentShape, ProxyAnalysis):
 
         with log_time("Running FEA..."):
             solution = d.solution_type.title().replace("-", "")
-            solve = getattr(system, f'Do{solution}')
+            solve = getattr(system, f"Do{solution}")
             solve()
 
         with log_time("Processing solution..."):
@@ -282,9 +282,7 @@ class FeaAnalysis(OccDependentShape, ProxyAnalysis):
         return self.source.proxy.ais_shape
 
     def destroy(self):
-        """ Cleanup resources
-
-        """
+        """Cleanup resources"""
         super().destroy()
         if self.mesh:
             del self.mesh

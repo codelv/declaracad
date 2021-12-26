@@ -16,7 +16,7 @@ from declaracad.occ.api import TopoShape
 
 
 def load_brep(filename):
-    """ Load a brep model """
+    """Load a brep model"""
     shape = TopoDS_Shape()
     builder = BRep_Builder()
     BRepTools.Read_(shape, filename, builder, None)
