@@ -7,6 +7,6 @@ channels:
 
 dependencies:
  - python >=3.8
- - gcc-8
+ - gcc
  - pyocct
  - pychrono
