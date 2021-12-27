@@ -17,10 +17,23 @@ enamldef Assembly(Part):
         color = 'lime'
         radius = 5
         position = (0, 5, 10)
-    
+
+    Wire:
+        NormalProjection:
+            color = 'purple'
+            # Case 1: Assign shape
+            shape = surf.topology.faces[0]
+            Transform:
+                shape = circle
+
     NormalProjection:
-        color = 'purple'
-        shape = surf.topology.faces[0]
+        color = 'teal'
+        # No `shape` attribute so the first node is used as the face
         Transform:
-            shape = circle
-        
+            shape = surf
+        Rectangle: rect:
+            position = (-width/2, 2)
+            width = 3
+            height = 2
+    Transform:
+        shape = rect

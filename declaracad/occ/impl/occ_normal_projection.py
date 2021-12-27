@@ -20,11 +20,13 @@ class OccNormalProjection(OccOperation, ProxyNormalProjection):
     def update_shape(self, change=None):
         d = self.declaration
 
-        shapes_to_project = self.child_shapes()
+        shapes = list(self.child_shapes())
         if d.shape:
+            shapes_to_project = shapes
             face = coerce_shape(d.shape)
         else:
-            face, *shapes_to_project = shapes_to_project[0], shapes_to_project[1:]
+            face = shapes[0]
+            shapes_to_project = shapes[1:]
         projection = BRepOffsetAPI_NormalProjection(face)
         if d.max_distance:
             projection.SetMaxDistance(d.max_distance)

@@ -32,7 +32,7 @@ EXAMPLES = (
     "load",
     "middlepath",
     "nemastepper",
-    "normalprojection",
+    "normal_projection",
     "offsets",
     "operations",
     "pipes",
