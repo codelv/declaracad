@@ -12,7 +12,7 @@ Created on Sep 20, 2018
 import os
 import re
 import warnings
-from atom.api import Atom, List, Instance, set_default
+from atom.api import Atom, Dict, Str, List, Instance, ForwardTyped, set_default
 from lxml import etree
 from math import radians, sqrt, tan, atan, atan2, cos, acos, sin, pi
 
@@ -41,7 +41,7 @@ from OCCT.gp import (
     gp_Vec,
 )
 from OCCT.TColgp import TColgp_Array1OfPnt
-from OCCT.TopoDS import TopoDS_Shape, TopoDS_Compound  # , topods
+from OCCT.TopoDS import TopoDS_Shape, TopoDS_Compound, TopoDS_Wire
 
 
 from .occ_shape import OccShape
@@ -189,12 +189,44 @@ def compute_arc_center(x1, y1, rx, ry, phi, large_arc_flag, sweep_flag, x2, y2):
 
 
 class OccSvgNode(Atom):
+    svg = ForwardTyped(lambda: OccSvg)
+
     #: Element
     element = Instance(etree._Element)
+
+    #: Parsed style fields
+    style = Dict()
+
+    #: Fill color
+    fill = Str()
 
     def create_shape(self):
         """Create and return the shape for the given svg node."""
         raise NotImplementedError
+
+    def _default_style(self):
+        style = {}
+        style_attr = self.element.attrib.get("style", "")
+        if style_attr:
+            for it in style_attr.split(";"):
+                k, v = it.strip().split(":", 1)
+                style[k.strip()] = v.strip()
+        return style
+
+    def _default_fill(self):
+        attrib = self.element.attrib
+        fill = attrib.get("fill", None)
+        if fill is None:
+            fill = self.style.get("fill", None)
+        if fill and fill != "transparent":
+            return fill
+        return ""
+
+    def fill_shape(self, wire):
+        fill_mode = self.svg.declaration.fill_mode
+        if fill_mode == "always" or (fill_mode == "auto" and self.fill):
+            return BRepBuilderAPI_MakeFace(wire).Face()
+        return wire
 
 
 class OccSvgEllipse(OccSvgNode):
@@ -205,7 +237,8 @@ class OccSvgEllipse(OccSvgNode):
         rx = parse_unit(attrs.get("rx", 0))
         ry = parse_unit(attrs.get("ry", 0))
         ellipse = make_ellipse((cx, cy, 0), rx, ry)
-        return BRepBuilderAPI_MakeEdge(ellipse).Edge()
+        edge = BRepBuilderAPI_MakeEdge(ellipse).Edge()
+        return self.fill_shape(BRepBuilderAPI_MakeWire(edge).Wire())
 
 
 class OccSvgCircle(OccSvgNode):
@@ -215,7 +248,8 @@ class OccSvgCircle(OccSvgNode):
         cy = parse_unit(attrs.get("cy", 0))
         r = parse_unit(attrs.get("r", 0))
         circle = gp_Circ(gp_Ax2(gp_Pnt(cx, cy, 0), Z_DIR), r)
-        return BRepBuilderAPI_MakeEdge(circle).Edge()
+        edge = BRepBuilderAPI_MakeEdge(circle).Edge()
+        return self.fill_shape(BRepBuilderAPI_MakeWire(edge).Wire())
 
 
 class OccSvgLine(OccSvgNode):
@@ -225,7 +259,9 @@ class OccSvgLine(OccSvgNode):
         y1 = parse_unit(attrs.get("y1", 0))
         x2 = parse_unit(attrs.get("x2", 0))
         y2 = parse_unit(attrs.get("y2", 0))
-        return BRepBuilderAPI_MakeEdge(gp_Pnt(x1, y1, 0), gp_Pnt(x2, y2, 0)).Edge()
+        p1 = gp_Pnt(x1, y1, 0)
+        p2 = gp_Pnt(x2, y2, 0)
+        return BRepBuilderAPI_MakeEdge(p1, p2).Edge()
 
 
 class OccSvgRect(OccSvgNode):
@@ -245,7 +281,7 @@ class OccSvgRect(OccSvgNode):
                 gp_Pnt(x, y + h, 0),
                 True,
             )
-            return shape.Wire()
+            return self.fill_shape(shape.Wire())
         elif rx == 0:
             rx = ry
         elif ry == 0:
@@ -316,7 +352,7 @@ class OccSvgRect(OccSvgNode):
 
         wire = shape.Wire()
         wire.Closed(True)
-        return wire
+        return self.fill_shape(wire)
 
 
 class OccSvgPath(OccSvgNode):
@@ -502,7 +538,7 @@ class OccSvgPath(OccSvgNode):
                 if not last_pnt.IsEqual(start_pnt, 10e-6):
                     edge = BRepBuilderAPI_MakeEdge(last_pnt, start_pnt).Edge()
                     path.Add(edge)
-                shapes.append(path.Wire())
+                shapes.append(self.fill_shape(path.Wire()))
                 path = None  # Close path
                 last_pnt = start_pnt
         if path is not None:
@@ -511,26 +547,30 @@ class OccSvgPath(OccSvgNode):
 
 
 class OccSvgPolyline(OccSvgNode):
+    @property
+    def points(self):
+        return self.element.attrib.get("points", "")
+
     def create_shape(self):
         shape = BRepBuilderAPI_MakePolygon()
-        for m in re.finditer(
-            r"(\-?\d+\.?\d*),(\-?\d+\.?\d*)\s+", self.element.attrib.get("points", "")
-        ):
+        for m in re.finditer(r"(\-?\d+\.?\d*),(\-?\d+\.?\d*)\s+", self.points):
             x, y = map(float, m.groups())
             shape.Add(gp_Pnt(x, y, 0))
         return shape.Wire()
 
 
 class OccSvgPolygon(OccSvgNode):
+    @property
+    def points(self):
+        return self.element.attrib.get("points", "")
+
     def create_shape(self):
         shape = BRepBuilderAPI_MakePolygon()
-        for m in re.finditer(
-            r"(\-?\d+\.?\d*),(\-?\d+\.?\d*)\s+", self.element.attrib.get("points", "")
-        ):
+        for m in re.finditer(r"(\-?\d+\.?\d*),(\-?\d+\.?\d*)\s+", self.points):
             x, y = map(float, m.groups())
             shape.Add(gp_Pnt(x, y, 0))
         shape.Close()
-        return BRepBuilderAPI_MakeFace(shape.Wire()).Shape()
+        return self.fill_shape(shape.Wire())
 
 
 class OccSvgGroup(OccSvgNode):
@@ -544,7 +584,7 @@ class OccSvgGroup(OccSvgNode):
             if OccNode is None:
                 warnings.warn("SVG tag {} is not yet supported.".format(e.tag))
                 continue
-            node = OccNode(element=e)
+            node = OccNode(element=e, svg=self.svg)
             shape = node.create_shape()
             if isinstance(shape, list):
                 shapes.extend(shape)
@@ -591,7 +631,7 @@ class OccSvg(OccShape, ProxySvg):
             svg = etree.parse(os.path.expanduser(d.source)).getroot()
         else:
             svg = etree.fromstring(d.source)
-        node = self.doc = OccSvgDoc(element=svg)
+        node = self.doc = OccSvgDoc(element=svg, svg=self)
         viewbox = svg.attrib.get("viewBox")
         x, y = (0, 0)
         sx, sy = (1, 1)
@@ -630,4 +670,7 @@ class OccSvg(OccShape, ProxySvg):
         self.create_shape()
 
     def set_mirror(self, mirror):
+        self.create_shape()
+
+    def set_fill_mode(self, mode):
         self.create_shape()

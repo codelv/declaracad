@@ -234,6 +234,9 @@ class ProxySvg(ProxyWire):
     def set_mirror(self, mirror):
         raise NotImplementedError
 
+    def set_fill_mode(self, mode):
+        raise NotImplementedError
+
 
 class ProxyMiddlePath(ProxyWire):
     #: A reference to the shape declaration.
@@ -1022,7 +1025,10 @@ class Svg(Wire):
     #: Mirror y
     mirror = d_(Bool(True))
 
-    @observe("source")
+    #: Whether to create faces from nodes
+    fill_mode = d_(Enum("auto", "always", "never"))
+
+    @observe("source", "fill_mode", "mirror")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
