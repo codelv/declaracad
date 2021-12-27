@@ -35,9 +35,13 @@ class OccBSplineSurface(OccShape, ProxyBSplineSurface):
         ncols = len(grid[0])
         points = TColgp_Array2OfPnt(1, nrows, 1, ncols)
         set_value = points.SetValue
-        for i, row in grid:
-            for j, pnt in row:
-                set_value(i, j, pnt)
+        i = 0
+        for row in grid:
+            i += 1
+            j = 0
+            for pnt in row:
+                j += 1
+                set_value(i, j, pnt.proxy)
         return points
 
     def create_shape(self):

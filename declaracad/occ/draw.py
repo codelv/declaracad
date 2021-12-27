@@ -1041,7 +1041,7 @@ class MiddlePath(Wire):
         super()._update_proxy(change)
 
 
-class BSplineSurface(ProxyShape):
+class BSplineSurface(Shape):
     """Create a BSpline surface from a grid of points"""
 
     #: A reference to the shape declaration.
