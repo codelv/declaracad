@@ -7,7 +7,14 @@ tests:
 
     # Create env
     - conda env create -f environment.yml
+
+    # Reinit
+    - conda init bash
+    - source ~/.bashrc
+
+    # Activate env
     - source activate declaracad
+    - conda info
 
     # Install declaracad
     - pip install -e .
