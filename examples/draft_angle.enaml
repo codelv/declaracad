@@ -18,4 +18,3 @@ enamldef Assembly(Part):
                 dx = 10
                 dy = 20
                 dz = 5
-        
