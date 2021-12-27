@@ -51,6 +51,9 @@ class ProxyBooleanOperation(ProxyOperation):
     def set_fix(self, fix):
         raise NotImplementedError
 
+    def set_parallel(self, parallel):
+        raise NotImplementedError
+
     def _do_operation(self, shape1, shape2):
         raise NotImplementedError
 
@@ -306,7 +309,11 @@ class BooleanOperation(Operation):
     #: Attempt to fix issues in the resulting shape
     fix = d_(Bool(False))
 
-    @observe("shape1", "shape2", "unify", "fix")
+    #: If True, put all children in one operation otherwise
+    #: perform a boolean operation with each child one at a time
+    parallel = d_(Bool(False))
+
+    @observe("shape1", "shape2", "unify", "fix", "parallel")
     def _update_proxy(self, change):
         super(BooleanOperation, self)._update_proxy(change)
 

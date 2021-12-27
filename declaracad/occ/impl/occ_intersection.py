@@ -11,7 +11,7 @@ Created on Sep 27, 2016
 """
 from atom.api import set_default
 
-from OCCT.BOPAlgo import BOPAlgo_Section
+from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
 
 from declaracad.occ.algo import ProxyIntersection
 from .occ_algo import OccBooleanOperation, coerce_shape
@@ -24,16 +24,4 @@ class OccIntersection(OccBooleanOperation, ProxyIntersection):
         "occt_user_guides__boolean_operations.html#occt_algorithms_10a"
     )
 
-    def update_shape(self, change=None):
-        section = BOPAlgo_Section()
-        d = self.declaration
-        if d.shape1:
-            section.AddArgument(coerce_shape(d.shape1))
-        if d.shape2:
-            section.AddArgument(coerce_shape(d.shape2))
-        for c in self.children():
-            section.AddArgument(c.shape)
-        section.Perform()
-        if section.HasErrors():
-            raise ValueError("Could not intersect shape %s" % d)
-        self.shape = Topology.cast_shape(section.Shape())
+    op = set_default(BRepAlgoAPI_Section)

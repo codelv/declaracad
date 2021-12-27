@@ -1,0 +1,23 @@
+from declaracad.occ.api import *
+
+
+enamldef Assembly(Part):
+    Fuse:
+        unify = True
+        parallel = True
+        Face:
+            Rectangle:
+                position = (-width/2, -height/2)
+                width = 10
+                height = 10
+        Looper:
+            iterable = [
+                (5, 5),
+                (-5, 5),
+                (5, -5),
+                (-5, -5),
+            ]
+            Face:
+                Circle:
+                    position = loop.item
+                    radius = 3

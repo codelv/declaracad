@@ -47,6 +47,7 @@ EXAMPLES = (
     "thru_sections",
     "turners_cube",
     "vacuum_nozzle",
+    "unify",
 )
 
 

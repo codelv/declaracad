@@ -31,7 +31,7 @@ from OCCT.TopoDS import (
     TopoDS_Compound,
     TopoDS_Vertex,
 )
-
+from OCCT.TopTools import TopTools_ListOfShape
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import (
@@ -64,21 +64,40 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
     def update_shape(self, change=None):
         op = self.op()
         d = self.declaration
+
+        shapes = []
+        unify = d.unify
         if d.shape1 and d.shape2:
-            shape = self.op(coerce_shape(d.shape1), coerce_shape(d.shape2)).Shape()
+            shapes = [coerce_shape(d.shape1), coerce_shape(d.shape2)]
         else:
-            shape = None
+            shapes = []
+        shapes.extend(list(self.child_shapes()))
 
-        for c in self.children():
-            if shape is not None:
-                shape = self.op(shape, c.shape).Shape()
-            else:
-                shape = c.shape
+        shape, *other_shapes = shapes
+        if d.parallel:
+            builder = self.op()
+            builder.SetFuzzyValue(d.tolerance)
+            tool_list = TopTools_ListOfShape()
+            tool_list.Append(shape)
+            builder.SetTools(tool_list)
 
-        if d.unify:
-            tool = ShapeUpgrade_UnifySameDomain(shape)
-            tool.Perform()
-            shape = tool.Shape()
+            shape_list = TopTools_ListOfShape()
+            for s in other_shapes:
+                shape_list.Append(s)
+            builder.SetArguments(shape_list)
+            builder.SetRunParallel(True)
+            builder.Build()
+            builder.Check()
+            if unify:
+                builder.SimplifyResult()
+
+            shape = builder.Shape()
+        else:
+            for other_shape in other_shapes:
+                builder = self.op(shape, other_shape)
+                if unify:
+                    builder.SimplifyResult()
+                shape = builder.Shape()
 
         if d.fix:
             fixer = ShapeFix_Shape(shape)
@@ -86,6 +105,9 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
                 shape = fixer.Shape()
 
         self.shape = Topology.cast_shape(shape)
+
+    def set_parallel(self, parallel):
+        self.update_shape()
 
 
 class OccCommon(OccBooleanOperation, ProxyCommon):

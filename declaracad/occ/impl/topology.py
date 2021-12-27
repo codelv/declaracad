@@ -16,8 +16,8 @@ from typing import List as ListType
 from typing import Set as SetType
 from typing import Tuple as TupleType
 from OCCT import GeomAbs
-from OCCT.BOPAlgo import BOPAlgo_Section
 from OCCT.Bnd import Bnd_Box
+from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_MakeVertex,
@@ -1342,7 +1342,9 @@ class Topology(Atom):
     # -------------------------------------------------------------------------
     # Intersection
     # -------------------------------------------------------------------------
-    def intersection(self, shape: TopoDS_Shape) -> Optional[ListType[TopoDS_Shape]]:
+    def intersection(
+        self, shape: TopoDS_Shape, tol=1e-6
+    ) -> Optional[ListType[TopoDS_Shape]]:
         """Returns the resulting intersection of this and the given shape
         or None if an error or there are no intersections.
 
@@ -1357,24 +1359,17 @@ class Topology(Atom):
             The list of intersections.
 
         """
-        op = BOPAlgo_Section()
-        op.AddArgument(self.shape)
-        op.AddArgument(shape)
-        op.Perform()
+        op = BRepAlgoAPI_Section(self.shape, shape, False)
+        op.SetFuzzyValue(tol)
+        op.Build()
         if op.HasErrors():
             return
-        r = op.Shape()
-        if r.IsNull():
-            return
-        n = r.NbChildren()
+        r = op.SectionEdges()
+        n = r.Size()
         if n == 0:
             return
-        it = TopoDS_Iterator(r)
-        results = []
-        while it.More():
-            results.append(Topology.cast_shape(it.Value()))
-            it.Next()
-        return results
+        cast = Topology.cast_shape
+        return [cast(r.Value(i)) for i in range(1, n + 1)]
 
     # -------------------------------------------------------------------------
     # Distances
