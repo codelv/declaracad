@@ -48,6 +48,35 @@ enamldef Assembly(Part):
 """
 
 TESTS = {
+    "arc-1": """
+    Arc: # circle
+        radius = 2
+        points = [(0, 1), (0, 1)]
+    """,
+    "arc-2": """
+    Arc:
+        radius = 2
+        alpha1 = math.pi/4
+        points = [(0, 1)]
+    """,
+    "arc-3": """
+    Arc:
+        radius = 2
+        alpha1 = math.pi
+        alpha2 = 3/2*math.pi
+    """,
+    "arc-4": """
+    Arc:
+        radius = 2
+        clockwise = True
+        points = [(0, 1), (1, 1)]
+    """,
+    "arc-5": """
+    Arc:
+        radius = 2
+        reverse = True
+        points = [(0, 1), (1, 1)]
+    """,
     "vertex": """
     Vertex:
         position = (1, 2, 0)
@@ -155,6 +184,15 @@ TESTS = {
             ]
 
     """,
+    "bspline-2": """
+    BSpline:
+        tangents = [(1, 0, 0), (0, 1, 0)]
+        points = [
+            (1, 0, 0),
+            (2, -0.5, 0),
+            (3, 1, 0),
+        ]
+    """,
     "cut": """
     Cut:
         Box:
@@ -176,10 +214,6 @@ TESTS = {
         Box:
             position = (0.5, 0.5, 0)
     """,
-    "vertex": """
-    Vertex:
-        position = (1, 2, 3)
-""",
 }
 
 

@@ -12,6 +12,7 @@ from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import load_model
 
 EXAMPLES = (
+    "arcs",
     "bearing",
     "bolt",
     "bottle",

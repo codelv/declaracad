@@ -11,6 +11,7 @@ Created on Dec 24, 2021
 """
 from atom.api import Typed, set_default
 
+from OCCT.gp import gp_Vec
 from OCCT.Geom import Geom_BSplineCurve
 from OCCT.GeomAbs import GeomAbs_C0, GeomAbs_C1, GeomAbs_C2, GeomAbs_C3, GeomAbs_CN
 from OCCT.GeomAPI import GeomAPI_Interpolate, GeomAPI_PointsToBSpline
