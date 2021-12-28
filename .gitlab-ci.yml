@@ -19,8 +19,9 @@ tests:
     # Install declaracad
     - pip install -e .
 
-    # Force copy
+    # Force copy libs, wtf???
     - cp /opt/conda/envs/declaracad/lib/*.so /usr/lib/x86_64-linux-gnu/
+    - cp /opt/conda/envs/declaracad/lib/*.so.* /usr/lib/x86_64-linux-gnu/
 
     # Install testing utils
     - pip install pytest pytest-coverage pytest-qt
