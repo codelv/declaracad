@@ -3,7 +3,7 @@ image: continuumio/miniconda3:master
 tests:
   script:
     - apt-get update -q -y
-    - apt-get install -y libgl1-mesa-glx
+    - apt-get install -y libgl1-mesa-glx xfvb
 
     # Create env
     - conda env create -f environment.yml
@@ -17,4 +17,4 @@ tests:
 
     # Install testing utils
     - pip install pytest pytest-coverage pytest-qt
-    - pytest tests -v --cov declaracad
+    - xvfb-run -s "-screen 0 1920x1080x24 +extension GLX +extension RENDER" pytest tests -v --cov declaracad
