@@ -1,9 +1,9 @@
-image: continuumio/miniconda3:latest
+image: continuumio/miniconda3:master
 
 tests:
   script:
     - apt-get update -q -y
-    - apt-get install -y libgl1-mesa-glx libc6
+    - apt-get install -y libgl1-mesa-glx
 
     # Create env
     - conda env create -f environment.yml
