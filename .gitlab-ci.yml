@@ -8,9 +8,21 @@ tests:
     # Create env
     - conda env create -f environment.yml
 
+    # Reinit
+    - conda init bash
+    - source ~/.bashrc
+
+    # Activate env
+    - source activate declaracad
+    - conda info
+
     # Install declaracad
-    - conda run -n declaracad pip install -e .
+    - pip install -e .
+
+    - ls /opt/conda/envs/declaracad/lib
+
+    - export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:/opt/conda/envs/declaracad/lib"
 
     # Install testing utils
-    - conda run -n declaracad pip install pytest pytest-coverage pytest-qt
-    - conda run -n declaracad pytest tests -v --cov declaracad
+    - pip install pytest pytest-coverage pytest-qt
+    - pytest tests -v --cov declaracad
