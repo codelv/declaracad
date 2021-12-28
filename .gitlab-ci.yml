@@ -18,6 +18,11 @@ tests:
     # Install testing utils
     - pip install pytest pytest-coverage pytest-qt
 
+    # Make Qt Happy
+    - export QT_DEBUG_PLUGINS=1
+    - export QT_QPA_PLATFORM=offscreen
+
+
     # Run
     #- xvfb-run -s "-screen 0 1920x1080x24 +extension GLX +extension RENDER"pytest tests -v --cov declaracad
     - xvfb-run -s "-screen 0 1920x1080x24 +extension GLX +extension RENDER" gdb -ex run -ex bt -ex quit --args python -m pytest tests -v -s
