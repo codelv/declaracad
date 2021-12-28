@@ -74,7 +74,7 @@ try:
         NETGENPlugin_NETGEN_2D3D,
     )
 except ImportError as e:
-    warnings.warn(e)
+    warnings.warn(f"{e}")
 
     # Dummy imports
     SMESH_Gen = object

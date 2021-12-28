@@ -21,7 +21,7 @@ from OCCT.TopoDS import TopoDS_Shape
 try:
     from SMESH.SMDS import SMDS_MeshNode
 except ImportError as e:
-    warnings.warn(e)
+    warnings.warn(str(e))
 
     class SMDS_MeshNode:
         pass

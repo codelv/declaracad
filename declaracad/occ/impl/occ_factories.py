@@ -162,12 +162,6 @@ def occ_offset_shape_factory():
     return OccOffsetShape
 
 
-def occ_one_axis_factory():
-    from .occ_shape import OccOneAxis
-
-    return OccOneAxis
-
-
 def occ_parabola_factory():
     from .occ_parabola import OccParabola
 
@@ -226,12 +220,6 @@ def occ_revol_factory():
     from .occ_revol import OccRevol
 
     return OccRevol
-
-
-def occ_revolution_factory():
-    from .occ_shape import OccRevolution
-
-    return OccRevolution
 
 
 def occ_segment_factory():
@@ -395,9 +383,7 @@ OCC_FACTORIES = {
     "Wedge": occ_wedge_factory,
     #: Primatives
     "HalfSpace": occ_half_space_factory,
-    #'OneAxis': occ_one_axis_factory,
     "Revol": occ_revol_factory,
-    #'Revolution': occ_revolution_factory,
     #: Operations
     "Chamfer": occ_chamfer_factory,
     "Cut": occ_cut_factory,
