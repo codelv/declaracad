@@ -3,7 +3,7 @@ image: continuumio/miniconda3:master
 tests:
   script:
     - apt-get update -q -y
-    - apt-get install -y libgl1-mesa-glx xserver-xorg
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1-mesa-glx xserver-xorg
 
     # Create env
     - conda env create -f environment.yml
