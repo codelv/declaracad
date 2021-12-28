@@ -252,12 +252,6 @@ def occ_svg_factory():
     return OccSvg
 
 
-def occ_sweep_factory():
-    from .occ_shape import OccSweep
-
-    return OccSweep
-
-
 def occ_text_factory():
     from .occ_text import OccText
 
@@ -378,7 +372,6 @@ OCC_FACTORIES = {
     "Cylinder": occ_cylinder_factory,
     "Prism": occ_prism_factory,
     "Sphere": occ_sphere_factory,
-    #'Sweep': occ_sweep_factory,
     "Torus": occ_torus_factory,
     "Wedge": occ_wedge_factory,
     #: Primatives
