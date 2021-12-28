@@ -9,7 +9,9 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
+from OCCT.BRep import BRep_Builder
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_NormalProjection
+from OCCT.TopoDS import TopoDS_Compound
 
 from declaracad.occ.algo import ProxyNormalProjection
 from .occ_algo import OccOperation, coerce_shape
@@ -27,6 +29,7 @@ class OccNormalProjection(OccOperation, ProxyNormalProjection):
         else:
             face = shapes[0]
             shapes_to_project = shapes[1:]
+
         projection = BRepOffsetAPI_NormalProjection(face)
         if d.max_distance:
             projection.SetMaxDistance(d.max_distance)
@@ -37,7 +40,15 @@ class OccNormalProjection(OccOperation, ProxyNormalProjection):
         if not projection.IsDone():
             raise RuntimeError(f"Could not project wire onto face {d}")
 
-        self.shape = Topology.cast_shape(projection.Shape())
+        # Create a compound of wires
+        topo = Topology(shape=projection.Shape())
+        shape = TopoDS_Compound()
+        builder = BRep_Builder()
+        builder.MakeCompound(shape)
+        for wire in Topology.join_edges(topo.edges):
+            builder.Add(shape, wire)
+
+        self.shape = shape
 
     def set_max_distance(self, distance):
         self.update_shape()
