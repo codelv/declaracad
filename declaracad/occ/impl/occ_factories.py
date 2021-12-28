@@ -25,7 +25,7 @@ def occ_bezier_factory():
 
 
 def occ_box_factory():
-    from .occ_shape import OccBox
+    from .occ_box import OccBox
 
     return OccBox
 
@@ -61,7 +61,7 @@ def occ_common_factory():
 
 
 def occ_cone_factory():
-    from .occ_shape import OccCone
+    from .occ_cone import OccCone
 
     return OccCone
 
@@ -73,7 +73,7 @@ def occ_cut_factory():
 
 
 def occ_cylinder_factory():
-    from .occ_shape import OccCylinder
+    from .occ_cylinder import OccCylinder
 
     return OccCylinder
 
@@ -91,7 +91,7 @@ def occ_ellipse_factory():
 
 
 def occ_face_factory():
-    from .occ_shape import OccFace
+    from .occ_face import OccFace
 
     return OccFace
 
@@ -115,7 +115,7 @@ def occ_glue_factory():
 
 
 def occ_half_space_factory():
-    from .occ_shape import OccHalfSpace
+    from .occ_half_space import OccHalfSpace
 
     return OccHalfSpace
 
@@ -199,7 +199,7 @@ def occ_polyline_factory():
 
 
 def occ_prism_factory():
-    from .occ_shape import OccPrism
+    from .occ_prism import OccPrism
 
     return OccPrism
 
@@ -223,7 +223,7 @@ def occ_rectangle_factory():
 
 
 def occ_revol_factory():
-    from .occ_shape import OccRevol
+    from .occ_revol import OccRevol
 
     return OccRevol
 
@@ -247,7 +247,7 @@ def occ_sew_factory():
 
 
 def occ_sphere_factory():
-    from .occ_shape import OccSphere
+    from .occ_sphere import OccSphere
 
     return OccSphere
 
@@ -289,7 +289,7 @@ def occ_thru_sections_factory():
 
 
 def occ_torus_factory():
-    from .occ_shape import OccTorus
+    from .occ_torus import OccTorus
 
     return OccTorus
 
@@ -313,7 +313,7 @@ def occ_vertex_factory():
 
 
 def occ_wedge_factory():
-    from .occ_shape import OccWedge
+    from .occ_wedge import OccWedge
 
     return OccWedge
 
