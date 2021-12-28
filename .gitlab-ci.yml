@@ -8,17 +8,9 @@ tests:
     # Create env
     - conda env create -f environment.yml
 
-    # Reinit
-    - conda init bash
-    - source ~/.bashrc
-
-    # Activate env
-    - source activate declaracad
-    - conda info
-
     # Install declaracad
-    - pip install -e .
+    - conda run -n declaracad pip install -e .
 
     # Install testing utils
-    - pip install pytest pytest-coverage pytest-qt
-    - pytest tests -v --cov declaracad
+    - conda run -n declaracad pip install pytest pytest-coverage pytest-qt
+    - conda run -n declaracad pytest tests -v --cov declaracad
