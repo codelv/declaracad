@@ -19,9 +19,10 @@ tests:
     # Install declaracad
     - pip install -e .
 
+    - ls /usr/lib/x86_64-linux-gnu/
     - ls /opt/conda/envs/declaracad/lib
-
-    - export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:/opt/conda/envs/declaracad/lib"
+    - strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep GLIBCXX
+    - ln -s /opt/conda/envs/declaracad/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 
     # Install testing utils
     - pip install pytest pytest-coverage pytest-qt
