@@ -3,7 +3,7 @@ image: continuumio/miniconda3:latest
 tests:
   script:
     - apt-get update -q -y
-    - apt-get install -y build-essential libgl1-mesa-glx
+    - apt-get install -y libgl1-mesa-glx
 
     # Create env
     - conda env create -f environment.yml
@@ -18,11 +18,6 @@ tests:
 
     # Install declaracad
     - pip install -e .
-
-    - ls /usr/lib/x86_64-linux-gnu/
-    - ls /opt/conda/envs/declaracad/lib
-    - strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep GLIBCXX
-    - ln -s /opt/conda/envs/declaracad/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 
     # Install testing utils
     - pip install pytest pytest-coverage pytest-qt
