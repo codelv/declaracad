@@ -27,11 +27,21 @@ enamldef BoundingBox(Box):
     """
     attr shapes
     attr bounding_box << Topology.bbox(shapes, tolerance=self.tolerance)
+    attr units = 'mm'
     position << bounding_box.min
     transparency = 0.9
+    description = f'Bounds:\n' \
+                  f'dx={format_value(dx)}{units}\n' \
+                  f'dy={format_value(dy)}{units}\n' \
+                  f'dz={format_value(dz)}{units}'
     dx << bounding_box.dx
     dy << bounding_box.dy
     dz << bounding_box.dz
+
+    func format_value(v):
+        if units == 'in':
+            v = v/25.4
+        return round(v, 3)
 
 
 enamldef TopologyPoints(Part): part:
