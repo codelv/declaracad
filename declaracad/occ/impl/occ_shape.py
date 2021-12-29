@@ -320,7 +320,7 @@ class OccShape(ProxyShape):
         bbox = Bnd_Box()
         BRepBndLib.Add_(shape, bbox)
         pmin, pmax = bbox.CornerMin(), bbox.CornerMax()
-        return BBox(*(pmin.X(), pmin.Y(), pmin.Z(), pmax.X(), pmax.Y(), pmax.Z()))
+        return BBox(pmin.X(), pmin.Y(), pmin.Z(), pmax.X(), pmax.Y(), pmax.Z())
 
 
 class OccDependentShape(OccShape):

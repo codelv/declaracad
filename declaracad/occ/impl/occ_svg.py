@@ -35,6 +35,7 @@ from OCCT.gp import (
     gp_Ax3,
     gp_Circ,
     gp_Dir,
+    gp_Dir2d,
     gp_Elips,
     gp_Pnt,
     gp_Pnt2d,
@@ -231,97 +232,103 @@ class OccSvgNode(Atom):
         t = gp_Trsf()
         if not transform:
             return t
-        for m in re.finditer(r"([A-z]+)\s*\(\s*((?:\-?\d+\.?\d*\s*[%a-z]*,?\s*)+)\s*\)", transform):
+        pattern = r"([A-z]+)\s*\(\s*((?:\-?\d+\.?\d*\s*[%a-z]*,?\s*)+)\s*\)"
+        for m in re.finditer(pattern, transform):
             cmd, args = m.groups()
-
-            args = [parse_unit(arg) for arg in args.replace(",", " ").split(" ")]
-            if cmd == 'matrix':
-                matrix = gp_Trsf2d()
-                matrix.SetValues(*args)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'matrix3d':
-                matrix = gp_Trsf()
-                matrix.SetValues(*args)
-                t.Multiply(matrix)
-            elif cmd == 'rotate':
-                if len(args) == 3:
-                    a, x, y = args
-                else:
-                    x = y = 0
-                    a = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetRotation(gp_Pnt2d(x, y), radians(a))
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'translate':
-                if len(args) == 2:
+            try:
+                args = args.replace(",", " ")
+                args = [parse_unit(arg) for arg in args.split(" ")]
+                if cmd == "matrix":
+                    a, b, c, d, e, f = args
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(a, c, e, b, d, f)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "matrix3d":
+                    matrix = gp_Trsf()
+                    matrix.SetValues(*args)
+                    t.Multiply(matrix)
+                elif cmd == "rotate":
+                    if len(args) == 3:
+                        a, x, y = args
+                    else:
+                        x = y = 0
+                        a = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetRotation(gp_Pnt2d(x, y), radians(a))
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "translate":
+                    if len(args) == 2:
+                        x, y = args
+                    else:
+                        x, y = args[0], 0
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(1, 0, x, 0, 1, y)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "translateX":
+                    x = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(1, 0, x, 0, 1, 0)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "translateY":
+                    y = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(1, 0, 0, 0, 1, y)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "scale":
+                    if len(args) == 2:
+                        x, y = args
+                    else:
+                        x = y = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(x, 0, 0, 0, y, 0)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "scaleX":
+                    x = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(x, 0, 0, 0, 1, 0)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "scaleY":
+                    y = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(1, 0, 0, 0, y, 0)
+                    t.Multiply(gp_Trsf(matrix))
+                # elif cmd == 'scaleZ':
+                #    z = args[0]
+                #    matrix = gp_Trsf2d()
+                #    matrix.SetValues(
+                #        1, 0, 0,
+                #        0, 1, 0,
+                #        0, 0, z)
+                #    t.Multiply(gp_Trsf(matrix))
+                # elif cmd == 'scale3d':
+                #    x, y, z = args[0]
+                #    matrix = gp_Trsf2d()
+                #    matrix.SetValues(
+                #        x, 0, 0,
+                #        0, y, 0,
+                #        0, 0, z)
+                #    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "skew":
                     x, y = args
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(1, tan(radians(x)), 0, tan(radians(y)), 1, 0)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "skewX":
+                    x = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(1, tan(radians(x)), 0, 0, 1, 0)
+                    t.Multiply(gp_Trsf(matrix))
+                elif cmd == "skewY":
+                    y = args[0]
+                    matrix = gp_Trsf2d()
+                    matrix.SetValues(1, 0, 0, tan(radians(y)), 1, 0)
+                    t.Multiply(gp_Trsf(matrix))
                 else:
-                    x, y = args[0], 0
-                matrix = gp_Trsf2d()
-                matrix.SetValues(1, 0, x, 0, 1, y)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'translateX':
-                x = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(1, 0, x, 0, 1, 0)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'translateY':
-                y = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(1, 0, 0, 0, 1, y)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'scale':
-                if len(args) == 2:
-                    x, y = args
-                else:
-                    x = y = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(x, 0, 0, 0, y, 0)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'scaleX':
-                x = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(x, 0, 0, 0, 1, 0)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'scaleY':
-                y = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(1, 0, 0, 0, y, 0)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'scaleZ':
-                z = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(
-                    1, 0, 0,
-                    0, 1, 0,
-                    0, 0, z)
-                t.Multiply(gp_Trsf(matrix))
-            #elif cmd == 'scale3d':
-            #    x, y, z = args[0]
-            #    matrix = gp_Trsf2d()
-            #    matrix.SetValues(
-            #        x, 0, 0,
-            #        0, y, 0,
-            #        0, 0, z)
-            #    t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'skew':
-                x, y = args
-                matrix = gp_Trsf2d()
-                matrix.SetValues(1, tan(radians(x)), 0, tan(radians(y)), 1, 0)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'skewX':
-                x = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(1, tan(radians(x)), 0, 0, 1, 0)
-                t.Multiply(gp_Trsf(matrix))
-            elif cmd == 'skewY':
-                y = args[0]
-                matrix = gp_Trsf2d()
-                matrix.SetValues(1, 0, 0, tan(radians(y)), 1, 0)
-                t.Multiply(gp_Trsf(matrix))
-            else:
-                # TODO: ...
-                warnings.warn(f"Unsupported transform {cmd}")
+                    # TODO: ...
+                    warnings.warn(f"Unsupported transform {cmd}")
+            except RuntimeError as e:
+                log.warning(f"Failed to handled transform {cmd} {args}")
+                log.exception(e)
         return t
 
     def fill_shape(self, wire):
@@ -592,6 +599,7 @@ class OccSvgPath(OccSvgNode):
         data = self.element.attrib.get("d")
         shapes = []
         path = None
+        tol = 1e-6
         for cmd, params in self.parse_path(data):
             if cmd == "M":
                 if path is not None:
@@ -637,14 +645,18 @@ class OccSvgPath(OccSvgNode):
                 path.Add(BRepBuilderAPI_MakeEdge(curve).Edge())
                 last_pnt = pnt
             elif cmd == "Z":
-                if not last_pnt.IsEqual(start_pnt, 10e-6):
+                if not last_pnt.IsEqual(start_pnt, tol):
                     edge = BRepBuilderAPI_MakeEdge(last_pnt, start_pnt).Edge()
                     path.Add(edge)
                 shapes.append(self.fill_shape(path.Wire()))
                 path = None  # Close path
                 last_pnt = start_pnt
         if path is not None:
-            shapes.append(path.Wire())
+            shape = path.Wire()
+            if last_pnt.IsEqual(start_pnt, tol):
+                shape = self.fill_shape(shape)
+            shapes.append(shape)
+
         return shapes
 
 
@@ -676,9 +688,9 @@ class OccSvgPolygon(OccSvgNode):
 
 
 class OccSvgGroup(OccSvgNode):
-
     def create_shape(self):
         shapes = []
+        t = self.transform
         for e in self.element:
             tag = e.tag
             if not isinstance(tag, str):
@@ -691,11 +703,11 @@ class OccSvgGroup(OccSvgNode):
                 continue
             node = OccNode(element=e, svg=self.svg)
             result = node.create_shape()
-            t = self.transform.Multiplied(node.transform)
+            trsf = node.transform.Multiplied(t)
             if not isinstance(result, list):
                 result = [result]
             for s in result:
-                shapes.append(BRepBuilderAPI_Transform(s, t, False).Shape())
+                shapes.append(BRepBuilderAPI_Transform(s, trsf, True).Shape())
         return shapes
 
 
@@ -751,26 +763,38 @@ class OccSvg(OccShape, ProxySvg):
         builder = BRep_Builder()
         shape = TopoDS_Compound()
         builder.MakeCompound(shape)
-
         shapes = root.create_shape()
         for s in shapes:
             builder.Add(shape, s)
 
-        bbox = self.get_bounding_box(shape)
-
-        # Move to position and align along direction axis
-        t = self.get_transform()
-        if d.mirror:
-            m = gp_Trsf()
-            m.SetMirror(gp_Ax2(gp_Pnt(*bbox.center), gp_Dir(0, 1, 0)))
-            t.Multiply(m)
-
         # Apply viewport scale
-        s = gp_Trsf()
-        s.SetValues(sx, 0, 0, x, 0, sy, 0, y, 0, 0, 1, 0)
-        t.Multiply(s)
+        t = gp_Trsf()
+        t.SetValues(sx, 0, 0, x, 0, sy, 0, y, 0, 0, 1, 0)
+        shape = BRepBuilderAPI_Transform(shape, t, True).Shape()
 
-        self.shape = BRepBuilderAPI_Transform(shape, t, False).Shape()
+        if d.scale != 1:
+            bbox = self.get_bounding_box(shape)
+            t = gp_Trsf()
+            t.SetScale(gp_Pnt(*bbox.center), d.scale)
+            shape = BRepBuilderAPI_Transform(shape, t, True).Shape()
+
+        if d.center:
+            bbox = self.get_bounding_box(shape)
+            x, y, z = bbox.center
+            t = gp_Trsf()
+            t.SetTranslation(gp_Vec(-x, -y, 0))
+            shape = BRepBuilderAPI_Transform(shape, t, True).Shape()
+
+        if d.mirror:
+            bbox = self.get_bounding_box(shape)
+            t = gp_Trsf()
+            t.SetMirror(gp_Ax2(gp_Pnt(*bbox.center), gp_Dir(0, 1, 0)))
+            shape = BRepBuilderAPI_Transform(shape, t, True).Shape()
+
+        t = self.get_transform()
+        shape = BRepBuilderAPI_Transform(shape, t, True).Shape()
+
+        self.shape = shape
 
     def set_source(self, source):
         self.create_shape()
@@ -779,4 +803,7 @@ class OccSvg(OccShape, ProxySvg):
         self.create_shape()
 
     def set_fill_mode(self, mode):
+        self.create_shape()
+
+    def set_center(self, center):
         self.create_shape()

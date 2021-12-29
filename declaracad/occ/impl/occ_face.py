@@ -8,7 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 """
 from atom.api import set_default
 
-from OCCT.BRepBuilderAPI import (BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace)
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
 from OCCT.TopoDS import TopoDS, TopoDS_Face, TopoDS_Wire, TopoDS_Edge
 
 from declaracad.occ.shape import ProxyFace
@@ -28,7 +28,6 @@ def shape_to_face(shape):
 
 
 class OccFace(OccDependentShape, ProxyFace):
-
     def update_shape(self, change=None):
         d = self.declaration
         if d.wires:
@@ -47,4 +46,3 @@ class OccFace(OccDependentShape, ProxyFace):
 
     def set_wires(self, wires):
         self.update_shape()
-

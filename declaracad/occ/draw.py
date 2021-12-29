@@ -237,6 +237,12 @@ class ProxySvg(ProxyWire):
     def set_fill_mode(self, mode):
         raise NotImplementedError
 
+    def set_center(self, center):
+        raise NotImplementedError
+
+    def set_scale(self, scale):
+        raise NotImplementedError
+
 
 class ProxyMiddlePath(ProxyWire):
     #: A reference to the shape declaration.
@@ -1022,13 +1028,19 @@ class Svg(Wire):
     #: Source file or text
     source = d_(Str())
 
-    #: Mirror y
+    #: Mirror y-axis
     mirror = d_(Bool(True))
+
+    #: Automatically shift to center
+    center = d_(Bool(False))
+
+    #: Scale. Use this to convert units
+    scale = d_(Float(1, strict=False))
 
     #: Whether to create faces from nodes
     fill_mode = d_(Enum("auto", "always", "never"))
 
-    @observe("source", "fill_mode", "mirror")
+    @observe("source", "fill_mode", "mirror", "center", "scale")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
