@@ -67,7 +67,7 @@ try:
         ChContinuumElastic,
     )
 except ImportError as e:
-    warnings.warn(str(e))
+    warnings.warn(f"{e}")
     fea = None
 
 from OCCT.MeshVS import MeshVS_Mesh

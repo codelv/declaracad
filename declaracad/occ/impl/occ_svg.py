@@ -30,14 +30,16 @@ from OCCT.BRepBuilderAPI import (
 from OCCT.GC import GC_MakeArcOfEllipse
 from OCCT.Geom import Geom_BezierCurve, Geom_BSplineCurve
 from OCCT.gp import (
-    gp_Dir,
-    gp_Pnt,
-    gp_Circ,
-    gp_Elips,
     gp_Ax1,
     gp_Ax2,
-    gp_Trsf,
     gp_Ax3,
+    gp_Circ,
+    gp_Dir,
+    gp_Elips,
+    gp_Pnt,
+    gp_Pnt2d,
+    gp_Trsf,
+    gp_Trsf2d,
     gp_Vec,
 )
 from OCCT.TColgp import TColgp_Array1OfPnt
@@ -191,6 +193,9 @@ def compute_arc_center(x1, y1, rx, ry, phi, large_arc_flag, sweep_flag, x2, y2):
 class OccSvgNode(Atom):
     svg = ForwardTyped(lambda: OccSvg)
 
+    #: Transform
+    transform = Instance(gp_Trsf, ())
+
     #: Element
     element = Instance(etree._Element)
 
@@ -214,13 +219,110 @@ class OccSvgNode(Atom):
         return style
 
     def _default_fill(self):
-        attrib = self.element.attrib
-        fill = attrib.get("fill", None)
+        fill = self.element.attrib.get("fill", None)
         if fill is None:
             fill = self.style.get("fill", None)
         if fill and fill != "transparent":
             return fill
         return ""
+
+    def _default_transform(self):
+        transform = self.element.attrib.get("transform", None)
+        t = gp_Trsf()
+        if not transform:
+            return t
+        for m in re.finditer(r"([A-z]+)\s*\(\s*((?:\-?\d+\.?\d*\s*[%a-z]*,?\s*)+)\s*\)", transform):
+            cmd, args = m.groups()
+
+            args = [parse_unit(arg) for arg in args.replace(",", " ").split(" ")]
+            if cmd == 'matrix':
+                matrix = gp_Trsf2d()
+                matrix.SetValues(*args)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'matrix3d':
+                matrix = gp_Trsf()
+                matrix.SetValues(*args)
+                t.Multiply(matrix)
+            elif cmd == 'rotate':
+                if len(args) == 3:
+                    a, x, y = args
+                else:
+                    x = y = 0
+                    a = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetRotation(gp_Pnt2d(x, y), radians(a))
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'translate':
+                if len(args) == 2:
+                    x, y = args
+                else:
+                    x, y = args[0], 0
+                matrix = gp_Trsf2d()
+                matrix.SetValues(1, 0, x, 0, 1, y)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'translateX':
+                x = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(1, 0, x, 0, 1, 0)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'translateY':
+                y = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(1, 0, 0, 0, 1, y)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'scale':
+                if len(args) == 2:
+                    x, y = args
+                else:
+                    x = y = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(x, 0, 0, 0, y, 0)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'scaleX':
+                x = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(x, 0, 0, 0, 1, 0)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'scaleY':
+                y = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(1, 0, 0, 0, y, 0)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'scaleZ':
+                z = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(
+                    1, 0, 0,
+                    0, 1, 0,
+                    0, 0, z)
+                t.Multiply(gp_Trsf(matrix))
+            #elif cmd == 'scale3d':
+            #    x, y, z = args[0]
+            #    matrix = gp_Trsf2d()
+            #    matrix.SetValues(
+            #        x, 0, 0,
+            #        0, y, 0,
+            #        0, 0, z)
+            #    t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'skew':
+                x, y = args
+                matrix = gp_Trsf2d()
+                matrix.SetValues(1, tan(radians(x)), 0, tan(radians(y)), 1, 0)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'skewX':
+                x = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(1, tan(radians(x)), 0, 0, 1, 0)
+                t.Multiply(gp_Trsf(matrix))
+            elif cmd == 'skewY':
+                y = args[0]
+                matrix = gp_Trsf2d()
+                matrix.SetValues(1, 0, 0, tan(radians(y)), 1, 0)
+                t.Multiply(gp_Trsf(matrix))
+            else:
+                # TODO: ...
+                warnings.warn(f"Unsupported transform {cmd}")
+        return t
 
     def fill_shape(self, wire):
         fill_mode = self.svg.declaration.fill_mode
@@ -574,10 +676,13 @@ class OccSvgPolygon(OccSvgNode):
 
 
 class OccSvgGroup(OccSvgNode):
+
     def create_shape(self):
         shapes = []
         for e in self.element:
             tag = e.tag
+            if not isinstance(tag, str):
+                continue  # Comment
             if "{http://www.w3.org/2000/svg}" not in tag:
                 tag = "{http://www.w3.org/2000/svg}" + tag
             OccNode = SVG_NODES.get(tag)
@@ -585,11 +690,12 @@ class OccSvgGroup(OccSvgNode):
                 warnings.warn("SVG tag {} is not yet supported.".format(e.tag))
                 continue
             node = OccNode(element=e, svg=self.svg)
-            shape = node.create_shape()
-            if isinstance(shape, list):
-                shapes.extend(shape)
-            else:
-                shapes.append(shape)
+            result = node.create_shape()
+            t = self.transform.Multiplied(node.transform)
+            if not isinstance(result, list):
+                result = [result]
+            for s in result:
+                shapes.append(BRepBuilderAPI_Transform(s, t, False).Shape())
         return shapes
 
 
@@ -631,14 +737,14 @@ class OccSvg(OccShape, ProxySvg):
             svg = etree.parse(os.path.expanduser(d.source)).getroot()
         else:
             svg = etree.fromstring(d.source)
-        node = self.doc = OccSvgDoc(element=svg, svg=self)
+        root = self.doc = OccSvgDoc(element=svg, svg=self)
         viewbox = svg.attrib.get("viewBox")
         x, y = (0, 0)
         sx, sy = (1, 1)
         if viewbox:
-            ow = parse_unit(svg.attrib.get("width"))
-            oh = parse_unit(svg.attrib.get("height"))
             x, y, iw, ih = map(parse_unit, viewbox.split())
+            ow = parse_unit(svg.attrib.get("width", iw))
+            oh = parse_unit(svg.attrib.get("height", ih))
             sx = ow / iw
             sy = oh / ih
 
@@ -646,7 +752,7 @@ class OccSvg(OccShape, ProxySvg):
         shape = TopoDS_Compound()
         builder.MakeCompound(shape)
 
-        shapes = node.create_shape()
+        shapes = root.create_shape()
         for s in shapes:
             builder.Add(shape, s)
 

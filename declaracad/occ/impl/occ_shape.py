@@ -158,8 +158,12 @@ class OccShape(ProxyShape):
 
     def activate_top_down(self):
         """Activate the proxy for the top-down pass."""
-        self.create_shape()
-        self.init_shape()
+        try:
+            self.create_shape()
+            self.init_shape()
+        except Exception as e:
+            log.exception(e)
+            raise e
 
     def activate_bottom_up(self):
         """Activate the proxy tree for the bottom-up pass."""

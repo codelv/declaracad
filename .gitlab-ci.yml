@@ -19,9 +19,8 @@ tests:
     - pip install pytest pytest-coverage pytest-qt
 
     # Make Qt Happy
-    - export QT_DEBUG_PLUGINS=1
+    # - export QT_DEBUG_PLUGINS=1
     - export QT_QPA_PLATFORM=offscreen
-
 
     # Run
     - pytest tests -v --cov declaracad
