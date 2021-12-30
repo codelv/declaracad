@@ -77,14 +77,15 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
         if d.parallel:
             builder = self.op()
             builder.SetFuzzyValue(d.tolerance)
-            tool_list = TopTools_ListOfShape()
-            tool_list.Append(shape)
-            builder.SetTools(tool_list)
-
             shape_list = TopTools_ListOfShape()
+            shape_list.Append(shape)
+
+            tool_list = TopTools_ListOfShape()
             for s in other_shapes:
-                shape_list.Append(s)
+                tool_list.Append(s)
+
             builder.SetArguments(shape_list)
+            builder.SetTools(tool_list)
             builder.SetRunParallel(True)
             builder.Build()
             builder.Check()
