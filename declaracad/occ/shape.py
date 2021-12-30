@@ -144,6 +144,23 @@ class ProxyCylinder(ProxyShape):
         raise NotImplementedError
 
 
+class ProxyTube(ProxyShape):
+    #: A reference to the shape declaration.
+    declaration = ForwardTyped(lambda: Tube)
+
+    def set_radius(self, r):
+        raise NotImplementedError
+
+    def set_radius2(self, r):
+        raise NotImplementedError
+
+    def set_height(self, height):
+        raise NotImplementedError
+
+    def set_angle(self, angle):
+        raise NotImplementedError
+
+
 class ProxyHalfSpace(ProxyShape):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: HalfSpace)
@@ -555,7 +572,7 @@ class Box(Shape):
 
     @observe("dx", "dy", "dz")
     def _update_proxy(self, change):
-        super(Box, self)._update_proxy(change)
+        super()._update_proxy(change)
 
 
 class Cone(Shape):
@@ -600,7 +617,7 @@ class Cone(Shape):
 
     @observe("radius", "radius2", "height", "angle")
     def _update_proxy(self, change):
-        super(Cone, self)._update_proxy(change)
+        super()._update_proxy(change)
 
 
 class Cylinder(Shape):
@@ -639,7 +656,53 @@ class Cylinder(Shape):
 
     @observe("radius", "height", "angle")
     def _update_proxy(self, change):
-        super(Cylinder, self)._update_proxy(change)
+        super()._update_proxy(change)
+
+
+class Tube(Shape):
+    """ A tube is a cylinder with the inside cut out. The smaller of radius
+    and radius2 will be used as the inner radius.
+
+    Attributes
+    ----------
+
+    height: Float
+        Height of the tube
+    radius: Float
+        Outer radius of the base of the tube
+    radius2: Float
+        Inner radius of the base of the tube
+    angle:
+        The angle to revolve (in radians) the base profile.
+
+    Examples
+    --------
+
+    Tube:
+        height = 5
+        radius = 1
+        radius2 = 0.75
+
+
+    """
+    #: Proxy shape
+    proxy = Typed(ProxyTube)
+
+    #: Radius
+    radius = d_(Float(1, strict=False)).tag(view=True)
+
+    #: Radius 2 size
+    radius2 = d_(Float(0, strict=False)).tag(view=True)
+
+    #: Height
+    height = d_(Float(1, strict=False)).tag(view=True)
+
+    #: Angle
+    angle = d_(Float(0, strict=False)).tag(view=True)
+
+    @observe("radius", "radius2", "height", "angle")
+    def _update_proxy(self, change):
+        super()._update_proxy(change)
 
 
 class HalfSpace(Shape):

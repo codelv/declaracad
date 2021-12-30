@@ -276,6 +276,12 @@ def occ_torus_factory():
     return OccTorus
 
 
+def occ_tube_factory():
+    from .occ_tube import OccTube
+
+    return OccTube
+
+
 def occ_transform_factory():
     from .occ_transform import OccTransform
 
@@ -373,6 +379,7 @@ OCC_FACTORIES = {
     "Prism": occ_prism_factory,
     "Sphere": occ_sphere_factory,
     "Torus": occ_torus_factory,
+    "Tube": occ_tube_factory,
     "Wedge": occ_wedge_factory,
     #: Primatives
     "HalfSpace": occ_half_space_factory,

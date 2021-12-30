@@ -139,6 +139,27 @@ TESTS = {
         angle = math.pi
         angle2 = math.pi/4
     """,
+    "tube-1": """
+    Tube:
+        radius = 5
+        radius2 = 1
+    """,
+    "tube-2": """
+    Tube:
+        radius = 5
+        radius2 = 6
+    """,
+    "Tube-3": """
+    Tube:
+        radius = 5
+        radius2 = 0
+    """,
+    "Tube-4": """
+    Tube:
+        radius = 5
+        radius2 = 3
+        angle = math.pi
+    """,
     "prism": """
     Prism:
         Wire:

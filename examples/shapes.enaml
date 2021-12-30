@@ -1,40 +1,47 @@
 import math
 from enaml.core.api import Looper
 from declaracad.occ.api import (
-    Box, Cone, Cylinder, Sphere, Wedge, Torus, Part
+    Box, Cone, Cylinder, Sphere, Wedge, Torus, Tube, Part
 )
+
 
 enamldef Assembly(Part):
     name = "Primative Shapes"
     Looper:
         iterable << range(2)
-        Box: 
-            position = (10,0,loop_item*10)
+        Box:
+            position = (10,0,loop.item*10)
             dx = 10
             dy = 2
             dz = 5
-              
-        Cone: 
-            position = (0,10,loop_item*10)
+
+        Cone:
+            position = (0,10,loop.item*10)
             radius = 1
             height = 5
-          
-        Cylinder: 
-            position = (10,10,loop_item*10)
+
+        Cylinder:
+            position = (10,10,loop.item*10)
             radius = 2
             #angle = math.pi/2.0
-              
-        Sphere: 
-            position = (0,0,loop_item*10)
+
+        Sphere:
+            position = (0,0,loop.item*10)
             radius = 3
             #angle = 1.5*math.pi
-              
-        Wedge: 
-            position = (-10,0,loop_item*10)
+
+        Wedge:
+            position = (-10,0,loop.item*10)
             dy = 2
-          
+
         Torus:
-            position = (-10,-10,loop_item*10)
+            position = (-10,-10,loop.item*10)
             radius = 2
             radius2 = 0.4
             angle = math.pi
+
+        Tube:
+            position = (-10,10,loop.item*10)
+            radius = 4
+            radius2 = 3.75
+            height = 6

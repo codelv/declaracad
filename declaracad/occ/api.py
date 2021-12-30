@@ -77,6 +77,7 @@ from .shape import (
     Material,
     Box,
     Cylinder,
+    Tube,
     Sphere,
     Cone,
     Wedge,
