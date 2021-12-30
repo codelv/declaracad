@@ -74,7 +74,7 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
         shapes.extend(list(self.child_shapes()))
 
         shape, *other_shapes = shapes
-        if d.parallel:
+        if d.parallel and other_shapes:
             builder = self.op()
             builder.SetFuzzyValue(d.tolerance)
             shape_list = TopTools_ListOfShape()
