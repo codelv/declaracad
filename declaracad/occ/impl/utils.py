@@ -150,6 +150,8 @@ def material_to_material_aspect(material):
         name = "CHARCOAL"
     else:
         name = material.name.upper()
+        if name == 'ALUMINUM':
+            name = 'ALUMINIUM'
     if name == "CUSTOM":
         if material._data is not None:
             return material._data  # Cached value
