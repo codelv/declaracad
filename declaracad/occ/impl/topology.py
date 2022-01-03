@@ -715,7 +715,10 @@ class Topology(Atom):
             The curve or None if it could not be created or if it was not
             of the expected type (if given).
         """
-        edge = TopoDS.Edge_(shape)
+        try:
+            edge = TopoDS.Edge_(shape)
+        except RuntimeError as e:
+            return None
         curve = BRepAdaptor_Curve(edge)
         t = curve.GetType()
         if expected_type is not None and t != expected_type:
@@ -748,7 +751,10 @@ class Topology(Atom):
             The surface or None if it could not be created or did not
             match the expected type (if given).
         """
-        face = TopoDS.Face_(shape)
+        try:
+            face = TopoDS.Face_(shape)
+        except RuntimeError as e:
+            return None
         surface = BRepAdaptor_Surface(face, True)
         t = surface.GetType()
         if expected_type is not None and t != expected_type:
