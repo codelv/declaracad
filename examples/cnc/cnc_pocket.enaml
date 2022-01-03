@@ -1,0 +1,32 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from declaracad.cnc.api import Job, EndMill, JobSimulation, CircularPocket
+
+
+enamldef SimplePart(Part):
+    Cut:
+        transparency = 0.8
+        Box:
+            position = (0, 0, -10)
+            dx = 100
+            dy = 70
+            dz = 10
+        Cylinder:
+            radius = 12
+            position = (50, 50, -height)
+            height = 10
+
+
+enamldef Assembly(Part):
+    SimplePart: part:
+        pass
+    Job: j:
+        filename = 'cnc_pocket.nc'
+        CircularPocket:
+            climb = True
+            surface_speed = 100
+            tool = EndMill(diameter=8, cut=30)
+            pockets = [part.topology.faces[6]]
+    #JobSimulation:
+    #    job = j
+    #    rate = 0.5

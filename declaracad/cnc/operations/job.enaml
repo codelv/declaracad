@@ -70,7 +70,7 @@ enamldef Job(Part):
                 if isinstance(c, Operation) and not c.disabled
             ]
             n = len(enabled_operations)
-            if n == 1:
+            if n == 1 and enabled_operations[0].name:
                 base, ext = os.path.splitext(self.filename)
                 op = enabled_operations[0].name
                 filename = f'{base}-{op}{ext}'

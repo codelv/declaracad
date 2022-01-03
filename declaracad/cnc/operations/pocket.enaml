@@ -45,6 +45,7 @@ enamldef CircularPocket(Operation): operation:
     # ------------------------------------------------------------------------
     # Operation parameters
     # ------------------------------------------------------------------------
+    attr climb: bool = True
 
     #: Clearance added to start above the top
     attr top_clearance = 1
@@ -236,6 +237,7 @@ enamldef CircularPocket(Operation): operation:
                 attr bottom_point = loop.item.bottom
                 attr depth = top_point.z - bottom_point.z
                 attr arc_start = top_point + (0, 0, helix_radius/4)
+                attr d = -1 if climb else 1
                 name = 'Pocket'
 
                 func generate_gcode():
@@ -289,24 +291,25 @@ enamldef CircularPocket(Operation): operation:
                     name = 'Arc merge'
                     attr p = arc_in.points[-1]
                     attr r = arc_in.radius
-                    position = p + (r, 0)
-                    clockwise = True
+                    position = p + (d*r, 0)
+                    clockwise = not climb
                     radius = r
                     points = [
                         p,
-                        p + (r, r)
+                        p + (d*r, r)
                     ]
 
                 Arc: arc_union:
                     color = 'teal'
                     name = 'Arc union'
                     attr p = arc_merge.points[-1]
-                    clockwise = True
-                    position = top_point + (arc_merge.radius, 0)
+                    clockwise = not climb
+
+                    position = top_point + (d*arc_merge.radius, 0)
                     radius = arc_merge.radius*2
                     points = [
                         p,
-                        top_point + (arc_merge.radius * 2, 0)
+                        top_point + (d*arc_merge.radius * 2, 0)
                     ]
 
 
@@ -314,6 +317,7 @@ enamldef CircularPocket(Operation): operation:
                     color = 'teal'
                     radius = helix_radius*3/4
                     max_pitch = helix_pitch
+                    clockwise = not climb
                     height = depth
                     position = top_point
                     spindle_speed = plunge_spindle_speed
@@ -322,7 +326,9 @@ enamldef CircularPocket(Operation): operation:
                 ArcSpiral: spiral:
                     name = 'Spiral'
                     color = 'purple'
+                    rotation = pi if climb else 0
                     position = bottom_point
+                    clockwise = not climb
                     start_radius = helix_radius*3/4
                     end_radius = outside_radius
                     max_step_over = operation.step_over
@@ -334,12 +340,13 @@ enamldef CircularPocket(Operation): operation:
                     name = 'Arc out'
                     radius = helix_radius/4
                     direction = (0, 0, -1)
+                    clockwise = climb
                     # Spiral end point
-                    attr p = bottom_point + (-spiral.end_radius, 0)
-                    position = p + (radius, 0)
+                    attr p = bottom_point + (d*-spiral.end_radius, 0)
+                    position = p + (d*radius, 0)
                     points = [
                         p,
-                        p + (radius, radius)
+                        p + (d*radius, radius)
                     ]
 
                 Arc: arc_up:
@@ -347,10 +354,11 @@ enamldef CircularPocket(Operation): operation:
                     name = 'Arc up'
                     direction = (0, -1, 0)
                     radius = arc_out.radius
+                    clockwise = climb
                     # Spiral end point
                     attr p = arc_out.points[-1]
                     position = p + (0, 0, radius)
-                    points = [p, position + (radius, 0)]
+                    points = [p, position + (d*radius, 0)]
 
                 Polyline:
                     name = 'Return path'
@@ -373,4 +381,3 @@ enamldef CircularPocket(Operation): operation:
                     description = 'Lift'
                     direction = (0, 0, 1)
                     position = lift_point
-
