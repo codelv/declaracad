@@ -1,0 +1,41 @@
+# Created in DeclaraCAD
+from math import radians
+from declaracad.parts.display import Axis
+from declaracad.occ.api import *
+from declaracad.cnc.api import Job, TwistDrill, JobSimulation, DrillingCycle
+
+
+enamldef SimplePart(Part):
+    Cut:
+        transparency = 0.8
+        Cylinder:
+            position = (0, 0, -height)
+            radius = 50
+            height = 10
+        Cylinder: hole:
+            radius = 4
+            position = (0, 40, -height)
+            height = 10
+        Looper:
+            iterable = range(0, 360, 45)
+            Transform:
+                shape = hole
+                operations = [Rotate(angle=radians(loop.item))]
+
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    SimplePart: part:
+        position = (50, 50)
+    Job: j:
+        filename = 'cnc_drill.nc'
+        DrillingCycle:
+            surface_speed = 100
+            depth = -12
+            retract = 5
+            tool = TwistDrill(diameter=8)
+            holes = [part.topology.edges[i] for i in (5, 6, 7, 8, 9, 10, 11, 12)]
+    #JobSimulation:
+    #    job = j
+    #    rate = 0.5
