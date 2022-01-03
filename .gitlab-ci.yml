@@ -16,7 +16,7 @@ tests:
     - pip install -e .
 
     # Install testing utils
-    - pip install pytest pytest-coverage pytest-qt
+    - pip install pytest pytest-coverage pytest-qt enaml-coverage-plugin
 
     # Make Qt Happy
     # - export QT_DEBUG_PLUGINS=1
