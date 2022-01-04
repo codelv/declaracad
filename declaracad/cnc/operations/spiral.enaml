@@ -26,6 +26,9 @@ enamldef ArcSpiral(Part): part:
     #: Step over amount
     attr max_step_over
 
+    #: Start angle relative to the positive x axis
+    attr start_angle = 0
+
     #: Description
     description = f'Arc spiral start {start_radius}, end {end_radius}, step over {step_over}'
 
@@ -75,6 +78,7 @@ enamldef ArcSpiral(Part): part:
             cmds.append(f"P{self.spindle_pause}")
         if self.feedrate:
             cmds.append(f"F{self.feedrate}")
+
         for arc in spiral.children:
             if not isinstance(arc, Arc):
                 continue
@@ -113,37 +117,40 @@ enamldef ArcSpiral(Part): part:
         assert new_step_over < max_step
         return new_step_over
 
+    func generate_arc(i, a, r):
+        p0 = Point(cos(a)*r, sin(a)*r)
+        a += pi
+        p1 = Point(cos(a)*r, sin(a)*r)
+        if i & 1:
+            pos = (cos(a)*step_over, sin(a)*step_over)
+        else:
+            pos = (0, 0)
+        return a, pos, [p0, p1]
+
     func generate_path():
         steps = int(dr/step_over)
         arcs = []
         r = start_radius
-        arcs.append((start_radius, 0, 1))
+        a = start_angle
         for i in range(steps):
+            a, pos, pts = generate_arc(i, a, r)
+            arcs.append((r, pos, pts))
             r += step_over
-            if i & 1:
-                x = 0
-                direction = 1
-            else:
-                x = step_over
-                direction = -1
 
-            arcs.append((r, x, direction))
-
-        #assert r == end_radius
-
-        # Add full circle
-        arcs.append((end_radius, 0, -1))
-        arcs.append((end_radius, 0, 1))
-
+        # Add full circle to ensure final dimension
+        a, pos, pts = generate_arc(0, a, end_radius)
+        arcs.append((end_radius, pos, pts))
+        a, pos, pts = generate_arc(0, a, end_radius)
+        arcs.append((end_radius, pos, pts))
         return arcs
+
     Wire: spiral:
         color = parent.color
         name = 'ArcSpiral'
         Looper:
             iterable = path
             Arc:
-                attr rot = loop.item[2]
                 radius = loop.item[0]
                 clockwise = part.clockwise
-                position = (loop.item[1], 0)
-                points = [(rot*radius, 0), (-rot*radius, 0)]
+                position = loop.item[1]
+                points = loop.item[2]

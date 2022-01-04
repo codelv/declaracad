@@ -326,8 +326,8 @@ enamldef CircularPocket(Operation): operation:
                 ArcSpiral: spiral:
                     name = 'Spiral'
                     color = 'purple'
-                    rotation = pi if climb else 0
                     position = bottom_point
+                    start_angle = pi if climb else 0
                     clockwise = not climb
                     start_radius = helix_radius*3/4
                     end_radius = outside_radius
@@ -336,17 +336,16 @@ enamldef CircularPocket(Operation): operation:
                     feedrate = operation.feedrate
 
                 Arc: arc_out:
-                    color = 'orange'
+                    color = 'blue'
                     name = 'Arc out'
                     radius = helix_radius/4
-                    direction = (0, 0, -1)
-                    clockwise = climb
+                    clockwise = not climb
                     # Spiral end point
-                    attr p = bottom_point + (d*-spiral.end_radius, 0)
-                    position = p + (d*radius, 0)
+                    attr p = bottom_point + (d*spiral.end_radius, 0)
+                    position = p + (-d*radius, 0)
                     points = [
                         p,
-                        p + (d*radius, radius)
+                        p + (-d*radius, -radius)
                     ]
 
                 Arc: arc_up:
@@ -354,11 +353,11 @@ enamldef CircularPocket(Operation): operation:
                     name = 'Arc up'
                     direction = (0, -1, 0)
                     radius = arc_out.radius
-                    clockwise = climb
+                    clockwise = not climb
                     # Spiral end point
                     attr p = arc_out.points[-1]
                     position = p + (0, 0, radius)
-                    points = [p, position + (d*radius, 0)]
+                    points = [p, position + (-d*radius, 0)]
 
                 Polyline:
                     name = 'Return path'
