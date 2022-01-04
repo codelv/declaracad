@@ -70,6 +70,11 @@ enamldef ViewerSettingsPage(Container):
 
     Form:
         Label:
+            text = "Display Units"
+        ObjectCombo:
+            items = list(model.get_member('display_units').items)
+            selected := model.display_units
+        Label:
             text = "Viewer Background"
         ObjectCombo:
             items = list(model.get_member('background_mode').items)

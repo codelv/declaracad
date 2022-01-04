@@ -860,6 +860,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         self.ais_context.SetDisplayMode(mode, True)
         self.redraw()
 
+    def set_display_units(self, units):
+        pass
+
     def set_view_mode(self, mode: str):
         """Set the view mode or (or direction)
 

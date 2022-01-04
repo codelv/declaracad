@@ -39,7 +39,13 @@ from .plugin import (
     ViewerPlugin, ViewerProcess, ViewerAction,  EmptyFileError
 )
 
-
+UNIT_SCALE = {
+    'mm': 1,
+    'cm': 0.1,
+    'm': 0.001,
+    'in': 1/25.4,
+    'ft': 1/(12*25.4),
+}
 
 def expand_dict(p):
     for k, v in p.items():
@@ -76,7 +82,7 @@ enamldef ActionPopup(PopupView): popup:
         Looper:
             iterable << get_actions(actions, search.text)[0:10]
             PushButton:
-                attr action = loop_item
+                attr action = loop.item
                 text = action.name
                 clicked :: popup.on_action_clicked(popup, action)
 
@@ -139,6 +145,11 @@ enamldef ModelViewer(OccViewer): viewer:
         ViewerAction(name="Display diameter dimension (dd)", action=keymap['d']['d']),
         ViewerAction(name="Display angle dimension (da)", action=keymap['d']['a']),
         ViewerAction(name="Toggle consle", action=lambda: viewer.toggle_console()),
+        ViewerAction(name="Units inch (ui)", action=lambda: setattr(viewer, 'display_units', 'in')),
+        ViewerAction(name="Units mm (um)", action=lambda: setattr(viewer, 'display_units', 'mm')),
+        ViewerAction(name="Units cm (uc)", action=lambda: setattr(viewer, 'display_units', 'cm')),
+        ViewerAction(name="Units m (ue)", action=lambda: setattr(viewer, 'display_units', 'm')),
+        ViewerAction(name="Units ft (uf)", action=lambda: setattr(viewer, 'display_units', 'ft')),
     ]
     attr actions: list = get_actions()
 
@@ -155,6 +166,7 @@ enamldef ModelViewer(OccViewer): viewer:
         's': menu_selection_mode.keymap,
         'p': menu_projection.keymap,
         'c': menu_clip_planes.keymap,
+        'u': menu_display_units.keymap,
         'l': {
             'x': lambda: viewer.rotate_view(x=math.radians(-90)),
             'y': lambda: viewer.rotate_view(y=math.radians(-90)),
@@ -175,6 +187,17 @@ enamldef ModelViewer(OccViewer): viewer:
     attr last_key: str = ""
     attr last_key_count: int = 0
     attr keypress_timeout: int = 2000
+
+    func format_unit(value):
+        u = self.display_units
+        s = UNIT_SCALE.get(u, 1)
+        return f'{round(value*s, 3)} {u}'
+
+    func format_point(point):
+        u = self.display_units
+        s = UNIT_SCALE.get(u, 1)
+        x, y, z = point * s
+        return f'({round(x, 3)}, {round(y, 3)}, {round(z, 3)}) {u}'
 
     func get_selected_shapes():
         """ Get all selected shapes
@@ -265,32 +288,32 @@ enamldef ModelViewer(OccViewer): viewer:
     func describe_shape(shape_type, topods_shape):
         if shape_type == 'vertex':
             v = Point(Topology.cast_shape(topods_shape))
-            return [f"  Vertex: {v}"]
+            return [f"  Vertex: {format_point(v)}"]
         elif shape_type == 'node':
             node = topods_shape
-            r = [f"  Node: {node.position}"]
+            r = [f"  Node: {format_point(node.position)}"]
             if node.description:
                 r.append(f'  Desc: {node.description}')
             return r
         elif shape_type == 'edge':
             topology = Topology(shape=topods_shape)
             vertices = len(topology.vertices)
-            length = round(topology.length, 6)
+            length = format_unit(topology.length)
             desc = [
                 f"  Edge: {vertices} vertices",
                 f"  Edge Length: {length}"
             ]
             if Topology.is_circle(topods_shape):
                 c1 = Topology.cast_curve(topods_shape)
-                c = Point(c1.Location())
-                r = round(c1.Radius(), 6)
+                c = format_point(Point(c1.Location()))
+                r = format_unit(c1.Radius())
                 desc.append(f"  Center: {c}")
                 desc.append(f"  Radius: {r}")
             return desc
         elif shape_type == 'wire':
             topology = Topology(shape=topods_shape)
             edges = len(topology.edges)
-            length = round(topology.length, 6)
+            length = format_unit(topology.length)
             desc = [
                 f"  Wire: {edges} edges",
                 f"  Wire Length: {length}"
@@ -299,8 +322,8 @@ enamldef ModelViewer(OccViewer): viewer:
         elif shape_type == 'face':
             if Topology.is_cylinder(topods_shape):
                 c = Topology.cast_surface(topods_shape)
-                r = round(c.Radius(), 6)
-                ctr = Point(c.Location())
+                r = format_unit(c.Radius())
+                ctr = format_point(Point(c.Location()))
                 desc = [
                     f"  Center: {ctr}",
                     f"  Radius: {r}",
@@ -308,9 +331,9 @@ enamldef ModelViewer(OccViewer): viewer:
                 return desc
             if Topology.is_cone(topods_shape):
                 c = Topology.cast_surface(topods_shape)
-                ctr = Point(c.Location())
+                ctr = format_point(Point(c.Location()))
                 angle = round(math.degrees(c.SemiAngle()), 6)
-                r = round(c.RefRadius(), 6)
+                r = format_unit(c.RefRadius())
                 desc = [
                     f"  Center: {ctr}",
                     f"  Angle: {angle}°",
@@ -337,12 +360,12 @@ enamldef ModelViewer(OccViewer): viewer:
                 else:
                     v1 = topods_shapes[0].position
                     v2 = topods_shapes[1].position
-                delta = v2 - v1
-                d = round(v1.distance(v2), 6)
+                delta = format_point(v2 - v1)
+                d = format_unit(v1.distance(v2))
                 what = shape_type[:-1].title()
                 return [
-                    f"  {what} 1: {v1}",
-                    f"  {what} 2: {v2}",
+                    f"  {what} 1: {format_point(v1)}",
+                    f"  {what} 2: {format_point(v2)}",
                     f"  Deltas: {delta}",
                     f"  Distance: {d}",
                 ]
@@ -351,11 +374,11 @@ enamldef ModelViewer(OccViewer): viewer:
                     # Show distance from centers
                     c1 = Point(Topology.cast_curve(topods_shapes[0]).Location())
                     c2 = Point(Topology.cast_curve(topods_shapes[1]).Location())
-                    delta = c2 - c1
-                    d = round(c2.distance(c1), 6)
+                    delta = format_point(c2 - c1)
+                    d = format_unit(c2.distance(c1))
                     return [
-                        f"  Center 1: {c1}",
-                        f"  Center 2: {c2}",
+                        f"  Center 1: {format_point(c1)}",
+                        f"  Center 2: {format_point(c2)}",
                         f"  Center Deltas: {delta}",
                         f"  Center Distance: {d}",
                     ]
@@ -534,13 +557,13 @@ enamldef ModelViewer(OccViewer): viewer:
             Looper:
                 iterable = ('x', 'y', 'z')
                 Action:
-                    text = 'Rotate %s left' % loop_item
-                    tool_tip = 'Rotate view counter clockwise around the %s axis' % loop_item
-                    triggered :: viewer.rotate_view({loop_item: math.radians(-90)})
+                    text = 'Rotate %s left' % loop.item
+                    tool_tip = 'Rotate view counter clockwise around the %s axis' % loop.item
+                    triggered :: viewer.rotate_view({loop.item: math.radians(-90)})
                 Action:
-                    text = 'Rotate %s right' % loop_item
-                    tool_tip = 'Rotate view counter clockwise around the %s axis' % loop_item
-                    triggered :: viewer.rotate_view({loop_item: math.radians(90)})
+                    text = 'Rotate %s right' % loop.item
+                    tool_tip = 'Rotate view counter clockwise around the %s axis' % loop.item
+                    triggered :: viewer.rotate_view({loop.item: math.radians(90)})
 
 
         Action:
@@ -562,10 +585,10 @@ enamldef ModelViewer(OccViewer): viewer:
             Looper:
                 iterable << viewer.get_member('selection_mode').items
                 Action:
-                    text = loop_item.title()
+                    text = loop.item.title()
                     checkable = True
-                    checked << viewer.selection_mode == loop_item
-                    triggered :: set_selection_mode(loop_item)
+                    checked << viewer.selection_mode == loop.item
+                    triggered :: set_selection_mode(loop.item)
 
         Menu: menu_view_direction:
             title = 'View direction'
@@ -593,10 +616,10 @@ enamldef ModelViewer(OccViewer): viewer:
             Looper:
                 iterable << viewer.get_member('view_mode').items
                 Action:
-                    text = loop_item.title()
+                    text = loop.item.title()
                     checkable = True
-                    checked << viewer.view_mode == loop_item
-                    triggered :: set_view_mode(loop_item)
+                    checked << viewer.view_mode == loop.item
+                    triggered :: set_view_mode(loop.item)
         Menu: menu_projection:
             title = 'View projection'
             attr keymap = {
@@ -615,10 +638,10 @@ enamldef ModelViewer(OccViewer): viewer:
             Looper:
                 iterable << viewer.get_member('view_projection').items
                 Action:
-                    text = loop_item.title()
+                    text = loop.item.title()
                     checkable = True
-                    checked << viewer.view_projection == loop_item
-                    triggered :: set_projection_mode(loop_item)
+                    checked << viewer.view_projection == loop.item
+                    triggered :: set_projection_mode(loop.item)
 
         Menu: menu_clip_planes:
             title = 'Clip planes'
@@ -630,7 +653,7 @@ enamldef ModelViewer(OccViewer): viewer:
             Looper:
                 iterable = 'XYZ'
                 Action:
-                    text = loop_item[0]
+                    text = loop.item[0]
                     attr axis = loop.index
                     checkable = True
                     checked << loop.index in viewer.clipped_planes
@@ -696,15 +719,15 @@ enamldef ModelViewer(OccViewer): viewer:
             Looper:
                 iterable << viewer.get_member('display_mode').items
                 Action:
-                    text = loop_item.title()
-                    checked << viewer.display_mode == loop_item
+                    text = loop.item.title()
+                    checked << viewer.display_mode == loop.item
                     checkable = True
                     triggered ::
-                        if loop_item == viewer.display_mode:
+                        if loop.item == viewer.display_mode:
                             # Force it if already set
-                            viewer.proxy.set_display_mode(loop_item)
+                            viewer.proxy.set_display_mode(loop.item)
                         else:
-                            viewer.display_mode = loop_item
+                            viewer.display_mode = loop.item
                         viewer.update_display()
             Action:
                 checkable = True
@@ -736,6 +759,23 @@ enamldef ModelViewer(OccViewer): viewer:
                 text = 'Draw boundaries'
                 checked := viewer.draw_boundaries
                 checked :: viewer.update_display()
+
+        Menu: menu_display_units:
+            title = 'Units'
+            attr keymap = {
+                'i': lambda: setattr(viewer, 'display_units', 'in'),
+                'm': lambda: setattr(viewer, 'display_units', 'mm'),
+                'c': lambda: setattr(viewer, 'display_units', 'cm'),
+                'f': lambda: setattr(viewer, 'display_units', 'ft'),
+                'e': lambda: setattr(viewer, 'display_units', 'm'),
+            }
+            Looper:
+                iterable << viewer.get_member('display_units').items
+                Action:
+                    text = loop.item.title()
+                    checkable = True
+                    checked << viewer.display_units == loop.item
+                    triggered :: viewer.display_units = loop.item
         Action:
             separator = True
         Menu:
@@ -937,8 +977,8 @@ enamldef ViewerWindow(FramelessWindow): window:
                 Looper:
                     iterable << viewer.clipped_planes.values()
                     ClippedPlaneRow:
-                        plane = loop_item[0]
-                        high_plane = loop_item[1]
+                        plane = loop.item[0]
+                        high_plane = loop.item[1]
                         bbox << viewer.bbox
 
 
@@ -1113,8 +1153,8 @@ enamldef ViewerDockItem(DockItem): view:
             Looper: looper:
                 iterable = editor_plugin.documents[:]
                 Action:
-                    attr doc = loop_item
+                    attr doc = loop.item
                     text = format_title(editor_plugin.documents, doc, doc.name, doc.unsaved)
                     checkable = True
-                    checked << view.document == loop_item
-                    triggered :: view.document = loop_item
+                    checked << view.document == loop.item
+                    triggered :: view.document = loop.item

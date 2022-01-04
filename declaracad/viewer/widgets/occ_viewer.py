@@ -233,6 +233,9 @@ class ProxyOccViewer(ProxyControl):
     def set_lock_zoom(self, locked):
         raise NotImplementedError
 
+    def set_display_units(self, units):
+        raise NotImplementedError
+
     def set_animations(self, enabled):
         raise NotImplementedError
 
@@ -360,6 +363,9 @@ class OccViewer(Control):
     #: Lock zoom so the mouse wheel cannot not zoom
     lock_zoom = d_(Bool())
 
+    #: Units for popups
+    display_units = d_(Enum('mm', 'cm', 'm', 'in', 'ft', 'yd'))
+
     #: Lights
     lights = d_(List(ViewerLight))
 
@@ -408,6 +414,7 @@ class OccViewer(Control):
         "grid_mode",
         "grid_colors",
         "animations",
+        "display_units",
     )
     def _update_proxy(self, change):
         """An observer which sends state change to the proxy."""
