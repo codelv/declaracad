@@ -6,7 +6,6 @@ channels:
  - defaults
 
 dependencies:
- - mesa-libgl-devel
  - python >=3.8
  - gcc
  - pyocct
