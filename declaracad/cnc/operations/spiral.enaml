@@ -118,9 +118,9 @@ enamldef ArcSpiral(Part): part:
         return new_step_over
 
     func generate_arc(i, a, r):
-        p0 = Point(cos(a)*r, sin(a)*r)
+        p0 = (cos(a)*r, sin(a)*r)
         a += pi
-        p1 = Point(cos(a)*r, sin(a)*r)
+        p1 = (cos(a)*r, sin(a)*r)
         if i & 1:
             pos = (cos(a)*step_over, sin(a)*step_over)
         else:
