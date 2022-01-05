@@ -380,7 +380,8 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         if sys.platform == "win32":
             display = Aspect_DisplayConnection()
         else:
-            display_name = TCollection_AsciiString(os.environ.get("DISPLAY", "0"))
+            DISPLAY = os.environ.get("DISPLAY", "0")
+            display_name = TCollection_AsciiString(DISPLAY)
             display = Aspect_DisplayConnection(display_name)
         self.display_connection = display
 
@@ -713,7 +714,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             new_lights.append(light)
 
         for light in self.lights:
-            viewer.DelLight(self.light)
+            viewer.DelLight(light)
 
         self.lights = new_lights
 

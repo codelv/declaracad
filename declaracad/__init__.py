@@ -89,6 +89,11 @@ def launch_viewer(args):
     viewer.main(**args.__dict__)
 
 
+def launch_renderer(args):
+    from declaracad.apps import renderer
+    renderer.main(**args.__dict__)
+
+
 def launch_customizer(args):
     init_logging()
     from declaracad.apps import customizer
@@ -129,8 +134,25 @@ def main():
     exporter = subparsers.add_parser("export", help="Export the given file")
     exporter.set_defaults(func=launch_exporter)
     exporter.add_argument(
-        "options", help="File to export or json string of " "ExportOption parameters"
+        "options", help="File to export or json string of ExportOption parameters"
     )
+
+    renderer = subparsers.add_parser("render", help="Render screenshot of file")
+    renderer.set_defaults(func=launch_renderer)
+    renderer.add_argument("filename", help="File to render")
+    renderer.add_argument(
+        "output", nargs="?", default="",
+        help="Output file. If omitted it creates a png in the current directory matching the input filename")
+    renderer.add_argument(
+        "-s", "--size", default="1920x1080", help="Image size in format 'width x height'")
+    renderer.add_argument(
+        "--view_mode", dest="view_mode", default="iso", help="View direction")
+    renderer.add_argument(
+        "--view_projection",
+        dest="view_projection",
+        default="orthographic",
+        help="View projection")
+    renderer.add_argument("--raytracing", action="store_true", help="Raytracing")
 
     customizer = subparsers.add_parser("customize", help="Customize a model")
     customizer.set_defaults(func=launch_customizer)
