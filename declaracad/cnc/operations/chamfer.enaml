@@ -86,14 +86,15 @@ enamldef ArcEaseOut(Part):
     attr arc_radius
     attr climb: bool
     Arc: arc_exit:
-        clockwise = True
+        clockwise = not climb
         radius = min(arc_radius/2, tool.diameter/2)
         name = 'Arc exit'
         # Position is at reverse angle
         attr acosr = cos(start_angle-pi)
         attr asinr = sin(start_angle-pi)
-        attr acos = cos(start_angle-pi/2)
-        attr asin = sin(start_angle-pi/2)
+        attr a = start_angle-3*pi/2 if climb else start_angle-pi/2
+        attr acos = cos(a)
+        attr asin = sin(a)
         position = path_end + (radius*acosr, radius*asinr)
         points = [
             path_end,
@@ -102,16 +103,18 @@ enamldef ArcEaseOut(Part):
 
     Arc: arc_center:
         name = 'Arc approach'
-        clockwise = True
+        clockwise = not climb
         attr arc_exit_start = arc_exit.points[-1]
-        attr acos = cos(start_angle-3*pi/2)
-        attr asin = sin(start_angle-3*pi/2)
+        attr a = start_angle-pi/2 if climb else start_angle-3*pi/2
+        attr acos = cos(a)
+        attr asin = sin(a)
         radius = arc_exit.radius/2
         position = arc_exit_start + (radius*acos, radius*asin)
         points = [
             arc_exit_start,
             arc_exit_start + (2*radius*acos, 2*radius*asin),
         ]
+
     Arc: arc_up:
         name = 'Arc up'
         attr acos = cos(start_angle-pi/2)
@@ -401,7 +404,6 @@ enamldef ChamferOperation(Operation): operation:
                 condition << loop.item['type'] == 'hole'
                 Wire:
                     color = 'slateblue'
-                    reverse = climb
                     ArcEaseOut:
                         climb = operation.climb
                         start_angle = loop.item['start_angle']
