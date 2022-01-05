@@ -248,13 +248,13 @@ enamldef ChamferOperation(Operation): operation:
             if radius is not None:
                 radius -= offset/2
 
+        if climb:
+            # Reverse direction
+            wire = Wire(edges=[wire], reverse=True).render()
+
         curve_topo = Topology(shape=wire)
         start = curve_topo.start_point
         end = curve_topo.end_point
-
-        if climb:
-            # Reverse all...
-            end, start = start, end
 
         if path_type == 'hole':
             r = min(radius/2, tool.diameter/2)/2
@@ -395,10 +395,9 @@ enamldef ChamferOperation(Operation): operation:
                         enter_point = loop.item['enter']
                         arc_radius = loop.item['radius']
 
-            Wire:
+            TopoShape:
                 color = 'magenta'
-                reverse = climb
-                edges = [loop.item['path']]
+                shape = loop.item['path']
 
             Conditional:
                 condition << loop.item['type'] == 'hole'
