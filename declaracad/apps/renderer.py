@@ -18,9 +18,7 @@ with enaml.imports():
 
 
 def export(app: QtApplication, viewer: OccViewer, output: str, **kwargs):
-    """ Initialize the viewer, take the screenshot and then stop the app
-
-    """
+    """Initialize the viewer, take the screenshot and then stop the app"""
     viewer.proxy.init_viewer()
 
     # Parameters
@@ -38,7 +36,7 @@ def main(
     output: str = "",
     size: str = "1920x1080",
     raytracing: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """Launch a single viewer application.
 
@@ -57,9 +55,9 @@ def main(
         raise ValueError("File %s does not exist!" % filename)
     if not output:
         base = os.path.splitext(os.path.split(filename)[-1])[0]
-        output = f'{base}.png'
+        output = f"{base}.png"
 
-    width, height = map(int, re.split('x|-', size))
+    width, height = map(int, re.split("x|-", size))
     renderer = OffscreenRenderer(
         initial_size=(width, height),
         filename=filename,

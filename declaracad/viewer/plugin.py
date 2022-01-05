@@ -400,7 +400,7 @@ class ViewerPlugin(Plugin):
     chordial_deviation = Float(0.001).tag(config=True, viewer=True)
 
     #: Viewer units
-    display_units = Enum('mm', 'cm', 'm', 'in', 'ft').tag(config=True, viewer=True)
+    display_units = Enum("mm", "cm", "m", "in", "ft").tag(config=True, viewer=True)
 
     #: Viewer port
     port = Int()

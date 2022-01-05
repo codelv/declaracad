@@ -16,7 +16,6 @@ from .occ_shape import OccShape, coerce_axis
 
 
 class OccTube(OccShape, ProxyTube):
-
     def create_shape(self):
         d = self.declaration
         outer_radius = max(d.radius, d.radius2)

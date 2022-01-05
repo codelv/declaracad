@@ -91,6 +91,7 @@ def launch_viewer(args):
 
 def launch_renderer(args):
     from declaracad.apps import renderer
+
     renderer.main(**args.__dict__)
 
 
@@ -141,17 +142,26 @@ def main():
     renderer.set_defaults(func=launch_renderer)
     renderer.add_argument("filename", help="File to render")
     renderer.add_argument(
-        "output", nargs="?", default="",
-        help="Output file. If omitted it creates a png in the current directory matching the input filename")
+        "output",
+        nargs="?",
+        default="",
+        help="Output file. If omitted it creates a png in the current directory matching the input filename",
+    )
     renderer.add_argument(
-        "-s", "--size", default="1920x1080", help="Image size in format 'width x height'")
+        "-s",
+        "--size",
+        default="1920x1080",
+        help="Image size in format 'width x height'",
+    )
     renderer.add_argument(
-        "--view_mode", dest="view_mode", default="iso", help="View direction")
+        "--view_mode", dest="view_mode", default="iso", help="View direction"
+    )
     renderer.add_argument(
         "--view_projection",
         dest="view_projection",
         default="orthographic",
-        help="View projection")
+        help="View projection",
+    )
     renderer.add_argument("--raytracing", action="store_true", help="Raytracing")
 
     customizer = subparsers.add_parser("customize", help="Customize a model")

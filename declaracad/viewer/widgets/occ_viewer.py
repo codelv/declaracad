@@ -364,7 +364,7 @@ class OccViewer(Control):
     lock_zoom = d_(Bool())
 
     #: Units for popups
-    display_units = d_(Enum('mm', 'cm', 'm', 'in', 'ft', 'yd'))
+    display_units = d_(Enum("mm", "cm", "m", "in", "ft", "yd"))
 
     #: Lights
     lights = d_(List(ViewerLight))

@@ -660,7 +660,7 @@ class Cylinder(Shape):
 
 
 class Tube(Shape):
-    """ A tube is a cylinder with the inside cut out. The smaller of radius
+    """A tube is a cylinder with the inside cut out. The smaller of radius
     and radius2 will be used as the inner radius.
 
     Attributes
@@ -685,6 +685,7 @@ class Tube(Shape):
 
 
     """
+
     #: Proxy shape
     proxy = Typed(ProxyTube)
 
