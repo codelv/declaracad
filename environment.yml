@@ -6,7 +6,7 @@ channels:
  - defaults
 
 dependencies:
- - {{ cdt('mesa-libgl-devel') }}  # [linux]
+ - mesa-libgl-devel
  - python >=3.8
  - gcc
  - pyocct
