@@ -20,7 +20,7 @@ from declaracad.cnc.operation import (
 )
 
 from declaracad.occ.api import (
-    Arc, Offset, Part, Point, Polyline, Topology, Wire
+    Arc, Offset, Part, Point, Polyline, TopoShape, Topology, Wire
 )
 
 
