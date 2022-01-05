@@ -13,8 +13,7 @@ import signal
 import pytest
 import subprocess
 
-# @pytest.mark.skipIf(sys.platform == 'win32', "Doesn't work")
-@pytest.mark.skip()
+@pytest.mark.skipIf(sys.platform == 'win32', "Doesn't work")
 def test_app():
     p = subprocess.Popen("declaracad", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for i in range(20):
@@ -32,3 +31,10 @@ def test_app():
     # for line in stdout.split(b"\n"):
     #    print(stdout)
     assert b"Workbench stopped" in stdout
+
+
+def test_render():
+    r = subprocess.check_output("declaracad render examples/fillets.enaml --view_mode top".split())
+    assert os.path.exists("fillets.png")
+    with open("fillets.png", "rb") as f:
+        assert b"PNG" in f.read(10)
