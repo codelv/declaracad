@@ -13,7 +13,14 @@ import signal
 import pytest
 import subprocess
 
-@pytest.mark.skipIf(sys.platform == 'win32', "Doesn't work")
+try:
+    from OCCT import OpenGl
+    opengl_unavailable = False
+except ImportError as e:
+    opengl_unavailable = True
+
+
+@pytest.mark.skipif(opengl_unavailable, reason="OpenGL not available")
 def test_app():
     p = subprocess.Popen("declaracad", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for i in range(20):
@@ -28,11 +35,12 @@ def test_app():
         if p.returncode is not None:
             break
     stdout, stderr = p.communicate()
-    # for line in stdout.split(b"\n"):
-    #    print(stdout)
+    for line in stdout.split(b"\n"):
+        print(stdout)
     assert b"Workbench stopped" in stdout
 
 
+@pytest.mark.skipif(opengl_unavailable, reason="OpenGL not available")
 def test_render():
     r = subprocess.check_output("declaracad render examples/fillets.enaml --view_mode top".split())
     assert os.path.exists("fillets.png")
