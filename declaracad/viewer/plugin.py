@@ -57,14 +57,14 @@ if TYPE_CHECKING:
     from declaracad.editor.plugin import Document
 
     with enaml.imports():
-        from .view import ViewerDockItem
+        from .remote import ViewerDockItem
 
 
 @functools.lru_cache
 def is_remote_attr(name: str):
     """Check if the given attr name is valid on the remote viewer."""
     with enaml.imports():
-        from .view import ViewerWindow, ModelViewer
+        from .remote import ViewerWindow, ModelViewer
     attrs = [name]
     if name.startswith("set_"):
         attrs.append(name[4:])
@@ -77,13 +77,13 @@ def is_remote_attr(name: str):
 
 def viewer_factory():
     with enaml.imports():
-        from .view import ViewerDockItem
+        from .remote import ViewerDockItem
     return ViewerDockItem
 
 
 def remote_viewer():
     with enaml.imports():
-        from .view import RemoteViewer
+        from .remote import RemoteViewer
     return RemoteViewer
 
 

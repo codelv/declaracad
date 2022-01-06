@@ -1,5 +1,5 @@
 """
-Copyright (c) 2021, Jairus Martin.
+Copyright (c) 2021-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -22,22 +22,43 @@ from PyQt5.Qsci import QsciLexerCustom
 
 
 class GCodeLexer(QsciLexerCustom):
+    # Style IDs
+    Default = 0
+    Comment = 1
+    Line = 2
+    Number = 3
+    Operator = 4
+    Param = 5
+    GCode = 6
+    MCode = 7
 
+    # Maps to style ID above
     TOKENS = {
         "default": "Default",
         "comment": "Comment",
         "line_number": "Line",
         "number": "Number",
-        "code": "Code",
+        "gcode": "GCode",
+        "mcode": "MCode",
+        "param": "Param",
         "operator": "Operator",
+    }
+
+    # Map gcode token to python token to copy themes
+    STYLE_MAP = {
+        "number": "function_method_name",
+        "gcode": "function_method_name",
+        "mcode": "keyword",
+        "line_number": "class_name",
+        "param": "decorator",
     }
 
     THEMES = {
         "all": {
             "comment": {
-                "color": "#123456",
+                "color": "#CCCCCC",
             },
-            "code": {
+            "keyword": {
                 "color": "#FF00FF",
             },
         }
@@ -81,7 +102,7 @@ class GCodeLexer(QsciLexerCustom):
 
         # 'token_list' is a list of tuples: (token_name, token_len)Using
         token_list = [
-            (token, len(bytearray(token, "utf-8"))) for token in p.findall(text)
+            (token, len(token)) for token in p.findall(text)
         ]
         print(f"Range: {start} to {end}")
         print(f"Tokens: {token_list}")
@@ -96,25 +117,33 @@ class GCodeLexer(QsciLexerCustom):
             if previous_style_nr == 3:
                 multiline_comm_flag = True
         # 4.2 Style the text in a loop
+        set_style = self.setStyling
         for i, token in enumerate(token_list):
             tok, index = token
             if multiline_comm_flag:
-                self.setStyling(index, 1)
+                self.setStyling(index, self.Comment)
                 if tok == ")":
                     multiline_comm_flag = False
             else:
-                if tok[0] in ["M", "G", "N"]:
-                    # Red style
-                    self.setStyling(index, 4)
+                c = tok[0]
+                if c == "G":
+                    set_style(index, self.GCode)
+                elif c == "M":
+                    set_style(index, self.MCode)
+                elif c == "N":
+                    set_style(index, self.Line)
+                elif c in ("X", "Y", "Z", "A", "I", "J", "K"):
+                    set_style(index, self.Param)
+                elif c.isdigit():
+                    set_style(index, self.Number)
                 elif tok in ["{", "}", "[", "]", "#"]:
-                    # Blue style
-                    self.setStyling(index, 2)
+                    set_style(index, self.Operator)
                 elif tok == "(":
                     multiline_comm_flag = True
-                    self.setStyling(index, 1)
+                    set_style(index, self.Comment)
                 else:
                     # Default style
-                    self.setStyling(index, 0)
+                    set_style(index, self.Default)
 
 
 class EnamlLexer(scintilla_lexers.EnamlLexer):
@@ -155,6 +184,13 @@ def install_lexers():
                 t = default_theme.copy()
                 if custom_theme is not None:
                     t.update(custom_theme)
+                elif 'python' in theme:
+                    # Copy any theme styles with matching tokens
+                    python_theme = theme['python']
+                    for token in LexerClass.TOKENS:
+                        py_token = LexerClass.STYLE_MAP.get(token, token)
+                        if py_token in python_theme:
+                            t[token] = python_theme[py_token].copy()
                 theme[name] = t
 
     # Update syntax items

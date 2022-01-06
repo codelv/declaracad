@@ -54,7 +54,7 @@ def plugin_factory():
 
 def item_factory():
     with enaml.imports():
-        from .view import ViewerDockItem
+        from .remote import ViewerDockItem
     return ViewerDockItem
 
 

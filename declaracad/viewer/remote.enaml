@@ -1,0 +1,193 @@
+"""
+Copyright (c) 2016-2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+from enaml.core.api import Looper, Conditional
+from enaml.widgets.api import Container, ScrollArea, Menu, Action
+
+from declaracad.core.api import DockItem, EmbeddedWindow
+from declaracad.core.utils import log, load_icon, format_title
+
+from .plugin import ViewerPlugin, ViewerProcess
+
+
+enamldef RemoteViewer(Container): remote_viewer:
+    attr plugin: ViewerPlugin
+    padding = 0
+
+    #: Process handle for communication with the child viewer
+    attr process: ViewerProcess = ViewerProcess(viewer=self.parent, plugin=plugin)
+    attr protocol << process.protocol
+
+    #: Restart it on initial launch
+    activated :: process.restart()
+
+    func update_background(change):
+        """ Updates the background color on the viewer """
+        c1 = plugin.background_top
+        if plugin.background_mode == 'solid':
+            c2 = c1
+        else:
+            c2 = plugin.background_bottom
+        protocol.set('background_gradient', (c1, c2, plugin.background_fill_method))
+
+    func update_grid_colors(change):
+        c1 = plugin.grid_minor_color
+        c2 = plugin.grid_major_color
+        protocol.set('grid_colors', (c1, c2))
+
+    # Since this is a remote viewer changes have to be passed manually
+    func update_viewer(change):
+        protocol.set(change["name"], change['value'])
+        if change['type'] == 'update':
+            process.redraw()
+
+    #: Mapping of plugin attr name to the update function
+    attr observers = {}
+
+    func bind():
+        """ Bind all plugin observers """
+        if self.observers:
+            self.unbind()
+        for m in plugin.get_viewer_members():
+            # If the member was tagged with a viewer
+            fn = getattr(self, f'update_{m.metadata["viewer"]}', update_viewer)
+            plugin.observe(m.name, fn)
+            self.observers[m.name] = fn
+        self.resync()
+
+    func resync():
+        """ Resync all viewer plugin settings """
+        called = set()
+        for name, fn in observers.items():
+            if fn in called:
+                continue
+            fn({'name': name, 'value': getattr(plugin, name), 'type': 'create'})
+            called.add(fn)
+
+    func unbind():
+        """ Unbind all plugin observers """
+        for n, fn in observers.items():
+            plugin.unobserve(n, fn)
+
+    func cleanup():
+        try:
+            process.terminate()
+            unbind_observers()
+        except:
+            pass
+
+    ScrollArea:
+        widget_resizable = True
+        # When a window container is used as a child of a QAbstractScrollArea or
+        # QMdiArea, it will create a native window for every widget in its
+        # parent chain to allow for proper stacking and clipping
+        # See https://doc.qt.io/qt-5/qwidget.html#createWindowContainer
+        Container:
+            padding = 0
+            Conditional:
+                condition << bool(protocol and protocol.window_id)
+                EmbeddedWindow: window:
+                    # Embedded viewer
+                    window_id = protocol.window_id
+                    activated ::
+                        try:
+                            remote_viewer.bind()
+                        except Exception as e:
+                            log.error("Failed to setup remote viewer:")
+                            log.exception(e)
+
+
+enamldef ViewerDockItem(DockItem): view:
+    name = "3d-viewer-{}".format(id(self))
+
+    alias process: viewer.process
+    attr editor_plugin << plugin.workbench.get_plugin('declaracad.editor')
+
+    title << "Viewer {}".format(format_title(
+        editor_plugin.documents, active_document,
+        active_document.name, active_document.unsaved
+    ))
+
+    # If set the viewer says on this file even if the editor_plugin document
+    # changes
+    attr document = None
+
+    # When either changes update the renderer
+    attr active_document << self.document or editor_plugin.active_document
+    active_document :: process.document = change['value']
+
+    icon = load_icon("bricks")
+    stretch = 4
+    closed :: viewer.cleanup()
+
+    func reload_document():
+        process.document = None
+        process.document = active_document
+
+    func take_screenshot(path):
+        return process.protocol.call('screenshot', path)
+
+    RemoteViewer: viewer:
+        plugin << view.plugin
+        activated :: process.document = active_document
+
+    title_bar_right_clicked ::
+        # Populate the documents
+        looper.iterable = sorted(
+            editor_plugin.documents[:],
+            key=lambda d: os.path.split(d.name)[-1])
+        menu.popup()
+
+    Menu: menu:
+        Action:
+            text = "Split vertically"
+            triggered ::
+                core = plugin.workbench.get_plugin("enaml.workbench.core")
+                core.invoke_command('declaracad.viewer.new_viewer',
+                                    {'target': view.name, 'document': document,
+                                     'position': 'bottom'})
+        Action:
+            text = "Split horizontally"
+            triggered ::
+                core = plugin.workbench.get_plugin("enaml.workbench.core")
+                core.invoke_command('declaracad.viewer.new_viewer',
+                                    {'target': view.name, 'document': document,
+                                     'position': 'right'})
+        Action:
+            separator = True
+        Action:
+            text = "Restart viewer"
+            triggered ::
+                process.terminate()
+                process.restart()
+        Action:
+            text = "Reload document"
+            triggered :: reload_document()
+        Action:
+            separator = True
+        Action:
+            text = "Export screenshot..."
+            triggered ::
+                core = plugin.workbench.get_plugin("enaml.workbench.core")
+                core.invoke_command('declaracad.viewer.screenshot',
+                                    {'target': view.name})
+        Menu:
+            title = "Document"
+            Action:
+                text = "Active document"
+                checkable = True
+                checked << view.document is None
+                triggered :: view.document = None
+            Looper: looper:
+                iterable = editor_plugin.documents[:]
+                Action:
+                    attr doc = loop.item
+                    text = format_title(editor_plugin.documents, doc, doc.name, doc.unsaved)
+                    checkable = True
+                    checked << view.document == loop.item
+                    triggered :: view.document = loop.item

@@ -151,7 +151,8 @@ class Movement(Atom):
     points = List()
 
     def clone(self):
-        return Movement(rapid=self.rapid, points=[Point(*p) for p in self.points])
+        points = [Point(*p) for p in self.points]
+        return Movement(rapid=self.rapid, points=points)
 
 
 def convert(v, scale=1, precision=None):

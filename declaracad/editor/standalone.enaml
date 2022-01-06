@@ -1,0 +1,59 @@
+"""
+Copyright (c) 2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+from enaml.application import Application
+from enaml.core.api import Conditional
+from enaml.widgets.api import MainWindow, Container, MenuBar, Menu, Action
+from enamlx.widgets.api import KeyEvent
+
+from declaracad.core.utils import load_icon
+from .view import EditorFindBar, EditorGotoBar, Editor
+from .plugin import EditorPlugin
+
+
+enamldef EditorMenuBar(MenuBar):
+    Menu:
+        title = '&File'
+        Action:
+            text = 'Quit'
+            triggered :: Application.instance().stop()
+
+
+enamldef StandaloneEditor(MainWindow): view:
+    attr plugin: EditorPlugin
+    title = "DeclaraCAD - Editor"
+    icon = load_icon('logo')
+    alias doc: editor.doc
+    EditorMenuBar:
+        pass
+    Container:
+        padding = 0
+        Conditional:
+            condition << editor.show_find_bar or editor.show_replace_bar
+            EditorFindBar:
+                editor << view.editor
+                show_replace << editor.show_replace_bar
+        Conditional:
+            condition << editor.show_goto_bar
+            EditorGotoBar:
+                editor << view.editor
+        Editor: editor:
+            minimum_size = (640, 480)
+            attr show_find_bar: bool << False
+            attr show_replace_bar: bool << False
+            attr show_goto_bar: bool << False
+            KeyEvent:
+                pressed ::
+                    e = change['value']
+                    k = e['key']
+                    if k == plugin.key_mapping.get('find', '\x06'):
+                        editor.show_find_bar = not editor.show_find_bar
+                    elif k == plugin.key_mapping.get('replace', '\x12'):
+                        editor.show_replace_bar = not editor.show_replace_bar
+                    elif k == plugin.key_mapping.get('goto', '\x0c'):
+                        editor.show_goto_bar = not editor.show_goto_bar

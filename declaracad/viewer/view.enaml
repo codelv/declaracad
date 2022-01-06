@@ -1,33 +1,22 @@
 """
-Copyright (c) 2016-2018, Jairus Martin.
+Copyright (c) 2016-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
 
-Created on Sep 28, 2016
-
-@author: jrm
 """
-import os
-import math
-import inspect
-import traceback
-from datetime import datetime
-from atom.api import Atom, Tuple, Str, Callable
-
 import enaml
+import traceback
+from math import radians, degrees
 from enaml.core.api import Looper, Include, Conditional
 from enaml.application import timed_call, deferred_call
-from enaml.layout.api import align, hbox
-from enaml.qt.QtCore import Qt
 from enaml.widgets.api import (
-    Window, Container, Menu, Action, DualSlider, CheckBox, Label,
-    IPythonConsole, ProgressBar, ScrollArea, PopupView, Field, PushButton,
-    Splitter, SplitItem, Timer
+    Container, Menu, Action, Label,
+    PopupView, Field, PushButton,
 )
 
-from declaracad.core.api import DockItem, EmbeddedWindow, FramelessWindow
+
 from declaracad.core.utils import log, load_icon, format_title
 from declaracad.occ.api import (
     Topology, Point, Part, Shape, AngleDimension, LengthDimension,
@@ -35,9 +24,7 @@ from declaracad.occ.api import (
 )
 
 from .widgets.api import OccViewer, OccViewerClippedPlane
-from .plugin import (
-    ViewerPlugin, ViewerProcess, ViewerAction,  EmptyFileError
-)
+
 
 UNIT_SCALE = {
     'mm': 1,
@@ -168,14 +155,14 @@ enamldef ModelViewer(OccViewer): viewer:
         'c': menu_clip_planes.keymap,
         'u': menu_display_units.keymap,
         'l': {
-            'x': lambda: viewer.rotate_view(x=math.radians(-90)),
-            'y': lambda: viewer.rotate_view(y=math.radians(-90)),
-            'z': lambda: viewer.rotate_view(z=math.radians(-90)),
+            'x': lambda: viewer.rotate_view(x=radians(-90)),
+            'y': lambda: viewer.rotate_view(y=radians(-90)),
+            'z': lambda: viewer.rotate_view(z=radians(-90)),
         },
         'r': {
-            'x': lambda: viewer.rotate_view(x=math.radians(90)),
-            'y': lambda: viewer.rotate_view(y=math.radians(90)),
-            'z': lambda: viewer.rotate_view(z=math.radians(90)),
+            'x': lambda: viewer.rotate_view(x=radians(90)),
+            'y': lambda: viewer.rotate_view(y=radians(90)),
+            'z': lambda: viewer.rotate_view(z=radians(90)),
         },
     }
 
@@ -332,7 +319,7 @@ enamldef ModelViewer(OccViewer): viewer:
             if Topology.is_cone(topods_shape):
                 c = Topology.cast_surface(topods_shape)
                 ctr = format_point(Point(c.Location()))
-                angle = round(math.degrees(c.SemiAngle()), 6)
+                angle = round(degrees(c.SemiAngle()), 6)
                 r = format_unit(c.RefRadius())
                 desc = [
                     f"  Center: {ctr}",
@@ -559,11 +546,11 @@ enamldef ModelViewer(OccViewer): viewer:
                 Action:
                     text = 'Rotate %s left' % loop.item
                     tool_tip = 'Rotate view counter clockwise around the %s axis' % loop.item
-                    triggered :: viewer.rotate_view({loop.item: math.radians(-90)})
+                    triggered :: viewer.rotate_view({loop.item: radians(-90)})
                 Action:
                     text = 'Rotate %s right' % loop.item
                     tool_tip = 'Rotate view counter clockwise around the %s axis' % loop.item
-                    triggered :: viewer.rotate_view({loop.item: math.radians(90)})
+                    triggered :: viewer.rotate_view({loop.item: radians(90)})
 
 
         Action:
@@ -792,369 +779,3 @@ enamldef ModelViewer(OccViewer): viewer:
             Action:
                 text = 'Clear display'
                 triggered :: viewer.clear_display()
-
-
-enamldef ClippedPlaneRow(Container):
-    padding = 0
-    attr plane
-    attr high_plane
-    attr bbox
-    attr axis << plane.direction.index(1)
-    attr labels = {0: 'X', 1: 'Y', 2: 'Z'}
-
-    constraints = [hbox(label, cbx, sldr),
-                   align('v_center', label, cbx, sldr)]
-    func set_position(plane, value):
-        p = list(plane.position)
-        p[axis] = value
-        plane.position = tuple(p)
-    Label: label:
-        text << labels.get(axis, 'Custom')
-    CheckBox: cbx:
-        checked := plane.enabled
-        checked >> high_plane.enabled
-    DualSlider: sldr:
-        func compute_bounds(vmin, vmax):
-            # Divide the value into 100 items
-            scale = 100/(vmax - vmin)
-            return int(vmin*scale), int(vmax*scale), scale
-
-        # min, max, scale
-        attr bounds << compute_bounds(bbox[axis], bbox[axis+3])
-        minimum << bounds[0]-1
-        maximum << bounds[1]+1
-        low_value << int(plane.position[axis]*bounds[2])
-        low_value :: set_position(plane, change['value']/bounds[2])
-        high_value << int(high_plane.position[axis]*bounds[2])
-        high_value :: set_position(high_plane, change['value']/bounds[2])
-
-
-enamldef ViewerWindow(FramelessWindow): window:
-    #: Window title
-    title = "DeclaraCAD"
-
-    #: File to load
-    attr filename: str = "-"
-
-    #: Source code to load. If empty the file will be read from disk
-    attr source: str = ""
-
-    #: Rendered shapes
-    attr models: list = []
-
-    #: Rendered version. Use this to manually trigger re-renders when the source
-    #: code changes.
-    attr version: int = 1
-
-    #: IPC protocol for communication with parent process
-    attr protocol = None
-    alias viewer
-
-    initial_size = (1, 1) if frameless else (960, 480)
-
-    #: Window Icon
-    icon = load_icon('logo')
-
-    # When the filename changes, clear the source so it's loaded from the file
-    filename ::
-        self.source = ""
-
-    func screenshot(filename):
-        # Take a screenshot and save it
-        if filename:
-            path, ext = os.path.splitext(filename.lower())
-            if ext not in ('.bmp', '.png', '.jpeg', '.tiff'):
-                raise ValueError("Filename must be a .jpeg, .png, .bmp, or .tiff")
-            viewer.take_screenshot(filename)
-        return filename
-
-    func send_move_to():
-        """ Remotely invoke a move to command if a vertex is selected
-
-        """
-        if not viewer.selection:
-            log.debug("No selection")
-            return
-
-        for d, items in viewer.selection.selection.items():
-            mapping = items.get('vertexs')
-            if not mapping:
-                continue
-            for index, shape in mapping.items():
-                point = Point(Topology.cast_shape(shape))
-                return send_message(
-                    id='invoke_command',
-                    command_id='declaracad.cnc.rapid_move_to',
-                    parameters={'point': point})
-        log.debug("No point found")
-
-    func send_message(id, **params):
-        """ Send a message to the application over the IPC interface
-        if this view is being used remotely
-
-        Parameters
-        ----------
-        params: Dict
-            Items to send in the message. Must be json serailizable.
-
-        """
-        if protocol and protocol.transport:
-            protocol.invoke_method(id, params)
-
-    func load_source():
-        if filename != "-":
-            try:
-                start_time = datetime.now()
-                # Load the models from source code or disk
-                result = load_model(filename, source)
-                end_time = datetime.now()
-                print(f"Load took {end_time-start_time}")
-                send_message(id='render_success')
-                # Clear clipped planes
-                viewer.clipped_planes = {}
-                viewer.dimensions = []
-                return result
-            except EmptyFileError as e:
-                # When opening an empty / unsaved file, clear the display
-                viewer.clear_display()
-                send_message(id='render_success')
-            except Exception as e:
-                # Notify the client that we got an error
-                send_message(
-                    id='render_error',
-                    error={'message':traceback.format_exc()})
-                traceback.print_exc()
-        return []
-    Container:
-        padding = 0
-        Splitter: splitter:
-            orientation = 'vertical'
-            SplitItem:
-                Container:
-                    padding = 0
-                    ModelViewer: viewer:
-                        resist_height = 'weak'
-                        selection ::
-                            e = change['value']
-                            send_message(id='shape_selection', result=str(e.selection))
-                        # Load the 3d models and include them in the viewer
-                        shapes << load_source() if filename and version else []
-
-                        get_actions => ():
-                            return viewer.default_actions + [
-                                ViewerAction(name="Rapid move to (mt)", action=keymap['m']['t']),
-                            ]
-
-                        get_keymap => ():
-                            km = viewer.default_keymap
-                            km.update({
-                                'm': {
-                                    't': window.send_move_to,
-                                }
-                            })
-                            return km
-
-            Conditional:
-                condition << viewer.show_console
-                SplitItem:
-                    Container:
-                        padding = 0
-                        IPythonConsole:
-                            resist_height = 'weak'
-                            initial_ns = {
-                                'viewer': viewer,
-                            }
-        Conditional:
-            condition << viewer.loading
-            ProgressBar:
-                value << int(viewer.progress)
-                text_visible = True
-
-        Conditional:
-            condition << bool(viewer.clipped_planes)
-
-            Container:
-                Looper:
-                    iterable << viewer.clipped_planes.values()
-                    ClippedPlaneRow:
-                        plane = loop.item[0]
-                        high_plane = loop.item[1]
-                        bbox << viewer.bbox
-
-
-enamldef RemoteViewer(Container): remote_viewer:
-    attr plugin: ViewerPlugin
-    padding = 0
-
-    #: Process handle for communication with the child viewer
-    attr process: ViewerProcess = ViewerProcess(viewer=self.parent, plugin=plugin)
-    attr protocol << process.protocol
-
-    #: Restart it on initial launch
-    activated :: process.restart()
-
-    func update_background(change):
-        """ Updates the background color on the viewer """
-        c1 = plugin.background_top
-        if plugin.background_mode == 'solid':
-            c2 = c1
-        else:
-            c2 = plugin.background_bottom
-        protocol.set('background_gradient', (c1, c2, plugin.background_fill_method))
-
-    func update_grid_colors(change):
-        c1 = plugin.grid_minor_color
-        c2 = plugin.grid_major_color
-        protocol.set('grid_colors', (c1, c2))
-
-    # Since this is a remote viewer changes have to be passed manually
-    func update_viewer(change):
-        protocol.set(change["name"], change['value'])
-        if change['type'] == 'update':
-            process.redraw()
-
-    #: Mapping of plugin attr name to the update function
-    attr observers = {}
-
-    func bind():
-        """ Bind all plugin observers """
-        if self.observers:
-            self.unbind()
-        for m in plugin.get_viewer_members():
-            # If the member was tagged with a viewer
-            fn = getattr(self, f'update_{m.metadata["viewer"]}', update_viewer)
-            plugin.observe(m.name, fn)
-            self.observers[m.name] = fn
-        self.resync()
-
-    func resync():
-        """ Resync all viewer plugin settings """
-        called = set()
-        for name, fn in observers.items():
-            if fn in called:
-                continue
-            fn({'name': name, 'value': getattr(plugin, name), 'type': 'create'})
-            called.add(fn)
-
-    func unbind():
-        """ Unbind all plugin observers """
-        for n, fn in observers.items():
-            plugin.unobserve(n, fn)
-
-    func cleanup():
-        try:
-            process.terminate()
-            unbind_observers()
-        except:
-            pass
-
-    ScrollArea:
-        widget_resizable = True
-        # When a window container is used as a child of a QAbstractScrollArea or
-        # QMdiArea, it will create a native window for every widget in its
-        # parent chain to allow for proper stacking and clipping
-        # See https://doc.qt.io/qt-5/qwidget.html#createWindowContainer
-        Container:
-            padding = 0
-            Conditional:
-                condition << bool(protocol and protocol.window_id)
-                EmbeddedWindow: window:
-                    # Embedded viewer
-                    window_id = protocol.window_id
-                    activated ::
-                        try:
-                            remote_viewer.bind()
-                        except Exception as e:
-                            log.error("Failed to setup remote viewer:")
-                            log.exception(e)
-
-
-enamldef ViewerDockItem(DockItem): view:
-    name = "3d-viewer-{}".format(id(self))
-
-    alias process: viewer.process
-    attr editor_plugin << plugin.workbench.get_plugin('declaracad.editor')
-
-    title << "Viewer {}".format(format_title(
-        editor_plugin.documents, active_document,
-        active_document.name, active_document.unsaved
-    ))
-
-    # If set the viewer says on this file even if the editor_plugin document
-    # changes
-    attr document = None
-
-    # When either changes update the renderer
-    attr active_document << self.document or editor_plugin.active_document
-    active_document :: process.document = change['value']
-
-    icon = load_icon("bricks")
-    stretch = 4
-    closed :: viewer.cleanup()
-
-    func reload_document():
-        process.document = None
-        process.document = active_document
-
-    func take_screenshot(path):
-        return process.protocol.call('screenshot', path)
-
-    RemoteViewer: viewer:
-        plugin << view.plugin
-        activated :: process.document = active_document
-
-    title_bar_right_clicked ::
-        # Populate the documents
-        looper.iterable = sorted(
-            editor_plugin.documents[:],
-            key=lambda d: os.path.split(d.name)[-1])
-        menu.popup()
-
-    Menu: menu:
-        Action:
-            text = "Split vertically"
-            triggered ::
-                core = plugin.workbench.get_plugin("enaml.workbench.core")
-                core.invoke_command('declaracad.viewer.new_viewer',
-                                    {'target': view.name, 'document': document,
-                                     'position': 'bottom'})
-        Action:
-            text = "Split horizontally"
-            triggered ::
-                core = plugin.workbench.get_plugin("enaml.workbench.core")
-                core.invoke_command('declaracad.viewer.new_viewer',
-                                    {'target': view.name, 'document': document,
-                                     'position': 'right'})
-        Action:
-            separator = True
-        Action:
-            text = "Restart viewer"
-            triggered ::
-                process.terminate()
-                process.restart()
-        Action:
-            text = "Reload document"
-            triggered :: reload_document()
-        Action:
-            separator = True
-        Action:
-            text = "Export screenshot..."
-            triggered ::
-                core = plugin.workbench.get_plugin("enaml.workbench.core")
-                core.invoke_command('declaracad.viewer.screenshot',
-                                    {'target': view.name})
-        Menu:
-            title = "Document"
-            Action:
-                text = "Active document"
-                checkable = True
-                checked << view.document is None
-                triggered :: view.document = None
-            Looper: looper:
-                iterable = editor_plugin.documents[:]
-                Action:
-                    attr doc = loop.item
-                    text = format_title(editor_plugin.documents, doc, doc.name, doc.unsaved)
-                    checkable = True
-                    checked << view.document == loop.item
-                    triggered :: view.document = loop.item

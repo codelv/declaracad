@@ -1,0 +1,211 @@
+"""
+Copyright (c) 2016-2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+import os
+import traceback
+from datetime import datetime
+from enaml.core.api import Looper, Conditional
+from enaml.layout.api import align, hbox
+from enaml.widgets.api import (
+    Container, Splitter, SplitItem, IPythonConsole, ProgressBar,
+    Label, CheckBox, DualSlider
+)
+
+from declaracad.occ.api import load_model
+from declaracad.core.widgets import FramelessWindow
+from declaracad.core.utils import log, load_icon
+
+from .plugin import ViewerAction, EmptyFileError
+from .view import ModelViewer
+
+
+enamldef ClippedPlaneRow(Container):
+    padding = 0
+    attr plane
+    attr high_plane
+    attr bbox
+    attr axis << plane.direction.index(1)
+    attr labels = {0: 'X', 1: 'Y', 2: 'Z'}
+
+    constraints = [hbox(label, cbx, sldr),
+                   align('v_center', label, cbx, sldr)]
+    func set_position(plane, value):
+        p = list(plane.position)
+        p[axis] = value
+        plane.position = tuple(p)
+    Label: label:
+        text << labels.get(axis, 'Custom')
+    CheckBox: cbx:
+        checked := plane.enabled
+        checked >> high_plane.enabled
+    DualSlider: sldr:
+        func compute_bounds(vmin, vmax):
+            # Divide the value into 100 items
+            scale = 100/(vmax - vmin)
+            return int(vmin*scale), int(vmax*scale), scale
+
+        # min, max, scale
+        attr bounds << compute_bounds(bbox[axis], bbox[axis+3])
+        minimum << bounds[0]-1
+        maximum << bounds[1]+1
+        low_value << int(plane.position[axis]*bounds[2])
+        low_value :: set_position(plane, change['value']/bounds[2])
+        high_value << int(high_plane.position[axis]*bounds[2])
+        high_value :: set_position(high_plane, change['value']/bounds[2])
+
+
+enamldef ViewerWindow(FramelessWindow): window:
+    #: Window title
+    title = "DeclaraCAD - Viewer"
+
+    #: File to load
+    attr filename: str = "-"
+
+    #: Source code to load. If empty the file will be read from disk
+    attr source: str = ""
+
+    #: Rendered shapes
+    attr models: list = []
+
+    #: Rendered version. Use this to manually trigger re-renders when the source
+    #: code changes.
+    attr version: int = 1
+
+    #: IPC protocol for communication with parent process
+    attr protocol = None
+    alias viewer
+
+    initial_size = (1, 1) if frameless else (960, 480)
+
+    #: Window Icon
+    icon = load_icon('logo')
+
+    # When the filename changes, clear the source so it's loaded from the file
+    filename ::
+        self.source = ""
+
+    func screenshot(filename):
+        # Take a screenshot and save it
+        if filename:
+            path, ext = os.path.splitext(filename.lower())
+            if ext not in ('.bmp', '.png', '.jpeg', '.tiff'):
+                raise ValueError("Filename must be a .jpeg, .png, .bmp, or .tiff")
+            viewer.take_screenshot(filename)
+        return filename
+
+    func send_move_to():
+        """ Remotely invoke a move to command if a vertex is selected
+
+        """
+        if not viewer.selection:
+            log.debug("No selection")
+            return
+
+        for d, items in viewer.selection.selection.items():
+            mapping = items.get('vertexs')
+            if not mapping:
+                continue
+            for index, shape in mapping.items():
+                point = Point(Topology.cast_shape(shape))
+                return send_message(
+                    id='invoke_command',
+                    command_id='declaracad.cnc.rapid_move_to',
+                    parameters={'point': point})
+        log.debug("No point found")
+
+    func send_message(id, **params):
+        """ Send a message to the application over the IPC interface
+        if this view is being used remotely
+
+        Parameters
+        ----------
+        params: Dict
+            Items to send in the message. Must be json serailizable.
+
+        """
+        if protocol and protocol.transport:
+            protocol.invoke_method(id, params)
+
+    func load_source():
+        if filename != "-":
+            try:
+                start_time = datetime.now()
+                # Load the models from source code or disk
+                result = load_model(filename, source)
+                end_time = datetime.now()
+                print(f"Load took {end_time-start_time}")
+                send_message(id='render_success')
+                # Clear clipped planes
+                viewer.clipped_planes = {}
+                viewer.dimensions = []
+                return result
+            except EmptyFileError as e:
+                # When opening an empty / unsaved file, clear the display
+                viewer.clear_display()
+                send_message(id='render_success')
+            except Exception as e:
+                # Notify the client that we got an error
+                send_message(
+                    id='render_error',
+                    error={'message':traceback.format_exc()})
+                traceback.print_exc()
+        return []
+    Container:
+        padding = 0
+        Splitter: splitter:
+            orientation = 'vertical'
+            SplitItem:
+                Container:
+                    padding = 0
+                    ModelViewer: viewer:
+                        resist_height = 'weak'
+                        selection ::
+                            e = change['value']
+                            send_message(id='shape_selection', result=str(e.selection))
+                        # Load the 3d models and include them in the viewer
+                        shapes << load_source() if filename and version else []
+
+                        get_actions => ():
+                            return viewer.default_actions + [
+                                ViewerAction(name="Rapid move to (mt)", action=keymap['m']['t']),
+                            ]
+
+                        get_keymap => ():
+                            km = viewer.default_keymap
+                            km.update({
+                                'm': {
+                                    't': window.send_move_to,
+                                }
+                            })
+                            return km
+
+            Conditional:
+                condition << viewer.show_console
+                SplitItem:
+                    Container:
+                        padding = 0
+                        IPythonConsole:
+                            resist_height = 'weak'
+                            initial_ns = {
+                                'viewer': viewer,
+                            }
+        Conditional:
+            condition << viewer.loading
+            ProgressBar:
+                value << int(viewer.progress)
+                text_visible = True
+
+        Conditional:
+            condition << bool(viewer.clipped_planes)
+            Container:
+                Looper:
+                    iterable << viewer.clipped_planes.values()
+                    ClippedPlaneRow:
+                        plane = loop.item[0]
+                        high_plane = loop.item[1]
+                        bbox << viewer.bbox

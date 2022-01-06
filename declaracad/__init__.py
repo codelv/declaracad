@@ -102,6 +102,13 @@ def launch_customizer(args):
     customizer.main(**args.__dict__)
 
 
+def launch_editor(args):
+    init_logging()
+    from declaracad.apps import editor
+
+    editor.main(**args.__dict__)
+
+
 def launch_workbench(args):
     init_logging()
     from declaracad.apps import workbench
@@ -166,7 +173,11 @@ def main():
 
     customizer = subparsers.add_parser("customize", help="Customize a model")
     customizer.set_defaults(func=launch_customizer)
-    customizer.add_argument("file", help="File to customize")
+    customizer.add_argument("filename", help="File to customize")
+
+    editor = subparsers.add_parser("edit", help="Edit a file")
+    editor.set_defaults(func=launch_editor)
+    editor.add_argument("filename", help="File to edit")
 
     args = parser.parse_args()
 

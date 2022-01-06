@@ -453,24 +453,3 @@ enamldef EditorManifest(PluginManifest):
             shortcut = 'Ctrl+/'
             group = 'comments'
             command = 'declaracad.editor.toggle_comments'
-        #Looper:
-            #iterable = get_examples().items()
-            #Conditional:
-                #condition << bool(loop_item[0])
-                #MenuItem:
-                    #path = '/examples/{}'.format(loop_item[0].replace(" ",'-'))
-                    #label = loop_item[0].split("/")[-1]
-                    #group = 'examples' if len(loop_item[0].split("/")) == 0 else ""
-            #Looper:
-                #iterable = loop_item[1]
-                #ActionItem:
-                    #attr filename = loop_item.split("/")[-1]
-                    #path = '/examples/{}'.format(loop_item.replace(" ",'-'))
-                    #label = filename
-                    #command = 'declaracad.editor.open_file'
-                    #parameters = {'path': 'examples/{}'.format(loop_item), 'name': 'main.py'}
-            # MenuItem:
-            #     path = '/tools'
-            #     label = 'Tools'
-            #     before = 'workspace'
-

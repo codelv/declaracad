@@ -29,7 +29,7 @@ from declaracad.core.utils import log, RemoteLogger, JsonRpcProtocol
 
 
 with enaml.imports():
-    from declaracad.viewer.view import ViewerWindow
+    from declaracad.viewer.standalone import ViewerWindow
 
 
 class ViewerProtocol(JsonRpcProtocol):

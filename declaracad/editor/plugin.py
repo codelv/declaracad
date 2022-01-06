@@ -26,6 +26,7 @@ from atom.api import (
     Int,
     Instance,
     Dict,
+    ForwardTyped,
     observe,
 )
 
@@ -75,6 +76,9 @@ class Document(Model):
     #: Any autocomplete suggestions
     suggestions = List()
 
+    #: For testing
+    plugin = ForwardTyped(lambda: EditorPlugin)
+
     def __repr__(self):
         return "Document<name='{}'>".format(self.name)
 
@@ -121,7 +125,11 @@ class Document(Model):
         from declaracad.core.workbench import DeclaracadWorkbench
 
         workbench = DeclaracadWorkbench.instance()
-        plugin = workbench.get_plugin("declaracad.editor")
+        if workbench is None:
+            # Workbench may be empty when standalone
+            plugin = self.plugin
+        else:
+            plugin = workbench.get_plugin("declaracad.editor")
         self.suggestions = plugin.autocomplete(self.source, self.cursor)
 
 
