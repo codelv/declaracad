@@ -13,6 +13,7 @@ import warnings
 from atom.api import Atom, Typed, Instance
 
 try:
+    from pychrono import fea
     from pychrono.core import (
         ChSystem,
         ChSystemNSC,
@@ -40,31 +41,14 @@ try:
         ChNodeFEAxyzDD,
         ChNodeFEAxyzP,
         ChNodeFEAxyzrot,
-        ChElementBar,
-        ChElementBase,
-        ChElementBeam,
-        ChElementBeamANCF,
-        ChElementBeamEuler,
-        ChElementBeamIGA,
-        ChElementBrick,
-        ChElementBrick_9,
-        ChElementCableANCF,
-        ChElementCorotational,
-        ChElementGeneric,
-        ChElementHexa_20,
-        ChElementHexa_8,
-        ChElementHexahedron,
-        ChElementShell,
-        ChElementShellANCF,
-        ChElementShellANCF_8,
-        ChElementShellBST,
-        ChElementShellReissner4,
-        ChElementSpring,
-        ChElementTetra_10,
-        ChElementTetra_4,
-        ChElementTetra_4_P,
-        ChElementTetrahedron,
         ChContinuumElastic,
+        ChElementBase,
+        ChElementTetraCorot_4,
+        ChElementSpring,
+        ChElementHexaANCF_3813_9,
+        ChElementTetraCorot_10,
+        ChElementHexaCorot_8,
+        ChElementHexaCorot_20,
     )
 except ImportError as e:
     warnings.warn(f"{e}")
@@ -111,30 +95,8 @@ NODE_TYPES = {
 
 
 ELEMENT_TYPES = {
-    "Bar": ChElementBar,
-    "Base": ChElementBase,
-    "Beam": ChElementBeam,
-    "BeamANCF": ChElementBeamANCF,
-    "BeamEuler": ChElementBeamEuler,
-    "BeamIGA": ChElementBeamIGA,
-    "Brick": ChElementBrick,
-    "Brick_9": ChElementBrick_9,
-    "CableANCF": ChElementCableANCF,
-    "Corotational": ChElementCorotational,
-    "Generic": ChElementGeneric,
-    "Hexa_20": ChElementHexa_20,
-    "Hexa_8": ChElementHexa_8,
-    "Hexahedron": ChElementHexahedron,
-    "Shell": ChElementShell,
-    "ShellANCF": ChElementShellANCF,
-    "ShellANCF_8": ChElementShellANCF_8,
-    "ShellBST": ChElementShellBST,
-    "ShellReissner4": ChElementShellReissner4,
-    "Spring": ChElementSpring,
-    "Tetra_10": ChElementTetra_10,
-    "Tetra_4": ChElementTetra_4,
-    "Tetra_4_P": ChElementTetra_4_P,
-    "Tetrahedron": ChElementTetrahedron,
+    e[9:]: getattr(fea, e) for e in dir(fea)
+    if e.startswith("ChElement") and not e.endswith("swigregister")
 }
 
 
@@ -172,17 +134,17 @@ class FeaElement(Atom):
         d = self.occ_element.declaration
         n = len(d.nodes)
         if n == 4:
-            element = ChElementTetra_4()
+            element = ChElementTetraCorot_4()
         elif n == 2:
             element = ChElementSpring()
         elif n == 8:
-            element = ChElementHexa_8()
+            element = ChElementHexaCorot_8()
+        elif n == 9:
+            element = ChElementHexaANCF_3813_9()
         elif n == 10:
-            element = ChElementTetra_10()
+            element = ChElementTetraCorot_10()
         elif n == 20:
-            element = ChElementHexa_20()
-        elif n == 20:
-            element = ChElementHexa_20()
+            element = ChElementHexaCorot_20()
         else:
             log.warning(f"Element with n={n} nodes={d.nodes}")
             return

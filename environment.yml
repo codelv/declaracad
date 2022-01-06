@@ -1,12 +1,13 @@
 name: declaracad
 
 channels:
- - trelau
+ - codelv
  - conda-forge
  - defaults
 
 dependencies:
  - python >=3.8
  - gcc
- - pyocct
- - pychrono
+ - pysmesh >=9.6
+ - pyocct >=7.6
+ - pychrono >=7.0
