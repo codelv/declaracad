@@ -18,7 +18,7 @@ from .occ_shape import coerce_axis
 class OccParabola(OccEdge, ProxyParabola):
     #: Update the class reference
     reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/" "classgp___parab.html"
+        "https://dev.opencascade.org/doc/refman/html/classgp___parab.html"
     )
 
     curve = Typed(Geom_Parabola)

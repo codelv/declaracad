@@ -18,7 +18,7 @@ from .occ_line import OccLine
 class OccBezier(OccLine, ProxyBezier):
     #: Update the class reference
     reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/" "class_geom___bezier_curve.html"
+        "https://dev.opencascade.org/doc/refman/html/class_geom___bezier_curve.html"
     )
 
     curve = Typed(Geom_BezierCurve)

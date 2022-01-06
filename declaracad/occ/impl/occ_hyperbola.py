@@ -18,7 +18,7 @@ from .occ_shape import coerce_axis
 class OccHyperbola(OccEdge, ProxyHyperbola):
     #: Update the class reference
     reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/" "classgp___hypr.html"
+        "https://dev.opencascade.org/doc/refman/html/classgp___hypr.html"
     )
 
     curve = Typed(Geom_Hyperbola)

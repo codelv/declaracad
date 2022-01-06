@@ -23,7 +23,7 @@ from .occ_shape import coerce_axis
 class OccLine(OccEdge, ProxyLine):
     #: Update the class reference
     reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/" "classgp___lin.html"
+        "https://dev.opencascade.org/doc/refman/html/classgp___lin.html"
     )
 
     curve = Typed(Geom_Line)

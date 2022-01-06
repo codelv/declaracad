@@ -36,7 +36,7 @@ FONT_CACHE = {}
 class OccText(OccShape, ProxyText):
     #: Update the class reference
     reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/" "class_topo_d_s___shape.html"
+        "https://dev.opencascade.org/doc/refman/html/class_topo_d_s___shape.html"
     )
 
     builder = Typed(Font_BRepTextBuilder, ())

@@ -22,7 +22,7 @@ from .occ_shape import OccShape
 class OccPlane(OccShape, ProxyPlane):
     #: Update the class reference
     reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/" "classgp___pnt.html"
+        "https://dev.opencascade.org/doc/refman/html/classgp___pnt.html"
     )
 
     curve = Typed(Geom_Plane)

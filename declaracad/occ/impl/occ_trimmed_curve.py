@@ -20,7 +20,7 @@ from .occ_shape import OccShape, coerce_axis
 class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
     #: Update the class reference
     reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/" "class_geom___trimmed_curve.html"
+        "https://dev.opencascade.org/doc/refman/html/class_geom___trimmed_curve.html"
     )
 
     curve = Typed(Geom_TrimmedCurve)
