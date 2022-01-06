@@ -81,7 +81,7 @@ TESTS = {
     Line:
         direction = (0, 1, 0)
         points = [(2, 0, 0)] # Offset point
-    """
+    """,
     "vertex": """
     Vertex:
         position = (1, 2, 0)
