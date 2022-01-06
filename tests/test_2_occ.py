@@ -214,6 +214,11 @@ TESTS = {
             (3, 1, 0),
         ]
     """,
+    "hyperbola": """
+    Hyperbola:
+        major_radius = 10
+        minor_radius = 1
+    """,
     "cut": """
     Cut:
         Box:
