@@ -13,7 +13,7 @@ from atom.api import Typed, set_default
 
 from OCCT.Geom import Geom_Line
 from OCCT.GC import GC_MakeLine
-from OCCT.gp import gp_Lin, gp_Vec
+from OCCT.gp import gp_Lin
 
 from declaracad.occ.draw import ProxyLine
 from .occ_edge import OccEdge, LINE_TYPES
@@ -39,8 +39,8 @@ class OccLine(OccEdge, ProxyLine):
         if n == 2:
             curve = GC_MakeLine(*self.get_transformed_points()).Value()
         elif n == 1:
-            lin = gp_Lin(d.position.proxy, gp_Vec(d.direction.proxy))
-            offset_point = self.get_transformed_points()
+            lin = gp_Lin(d.position.proxy, d.direction.proxy)
+            offset_point = d.points[0].proxy
             curve = GC_MakeLine(lin, offset_point).Value()
         else:
             axis = coerce_axis(d.axis)

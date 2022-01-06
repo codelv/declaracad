@@ -10,7 +10,7 @@ import os
 import pytest
 from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import load_model
-from declaracad.occ.impl.occ_factories import OCC_FACTORIES  # Make sure it installs
+from declaracad.occ.impl import occ_factories  # Make sure it installs
 
 
 @pytest.mark.parametrize("name", os.listdir('examples/cnc/'))
@@ -20,4 +20,7 @@ def test_cnc_examples(qt_app, name):
     assembly = load_model(path)
     for shape in assembly:
         shape.render()
-    assert os.path.exists(f'{example}.nc')
+    output = f'{example}.nc'
+    assert os.path.exists(output)
+    os.remove(output)  # Cleanup
+
