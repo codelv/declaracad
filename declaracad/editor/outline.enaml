@@ -1,0 +1,112 @@
+"""
+Copyright (c) 2017-2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+import ast as python_ast
+from atom.api import Atom
+from enaml.core import enaml_ast
+from enaml.core.parser import parse
+from enaml.core.api import Looper
+from enaml.layout.api import RetractItem
+from enaml.widgets.api import Container
+from enamlx.widgets.api import TreeView, TreeViewItem, TreeViewColumn
+from declaracad.core.api import DockItem
+from declaracad.core.utils import load_icon
+
+
+def parse_python(source):
+    ast = parse(source)
+    nodes = []
+    # Walk ast and pull out nodes we're insterested in
+    for node in ast.body:
+        if isinstance(node, enaml_ast.EnamlDef):
+            nodes.append(node)
+        elif isinstance(node, enaml_ast.PythonModule):
+            for n in node.ast.body:
+                if isinstance(n, (python_ast.ClassDef,
+                                    python_ast.FunctionDef)):
+                    nodes.append(n)
+    # Hack to workaround a segfault when the tree's items are emptied
+    if not nodes:
+        nodes.append(ast)
+    return nodes
+
+def parse_gcode(source):
+    from declaracad.cnc import gcode
+    return [gcode.parse(source)]
+
+
+def format_node(node):
+    """ Create a node for the outline
+
+    Returns
+    -------
+    result: Tuple[str, str, str, str]
+        A tuple of the format (icon, type string, name, description)
+
+    """
+    if isinstance(node, python_ast.FunctionDef):
+        return "tag", node.name, "Function"
+    elif isinstance(node, python_ast.ClassDef):
+        return "brick", node.name, ""
+    elif isinstance(node, enaml_ast.EnamlDef):
+        return "bricks", node.typename, node.base
+    elif isinstance(node, Exception):
+        return "exclamation", str(node), str(node.__class__.__name__)
+    elif isinstance(node, Atom):
+        return format_gcode(node)
+    return "tag_blue", "", str(node), ""
+
+def format_gcode(cmd):
+    return "script", "G-Code", str(len(cmd.commands))
+
+
+enamldef OutlineDockItem(DockItem): view:
+    title = "Outline"
+    name = 'code-outline-item'
+    icon = load_icon('chart_organisation')
+    func create_outline(source):
+        try:
+            syntax = plugin.detect_syntax(plugin.active_document.name)
+            if syntax in ('python', 'enaml'):
+                return parse_python(source)
+            elif syntax == 'gcode':
+                return parse_gcode(source)
+            return []
+        except Exception as e:
+            # We could set errors here?
+            return [e]
+
+    Container:
+        padding = 0
+        TreeView: tree:
+            minimum_size = (320, 320)
+            horizontal_headers = ['Name', 'Type', "Line"]
+            horizontal_stretch = True
+            resize_mode = 'resize_to_contents'
+            items << create_outline(plugin.active_document.source)
+            Looper:
+                iterable << tree.items
+                TreeViewItem:
+                    attr obj << format_node(loop.item)
+                    icon << load_icon(obj[0])
+                    text << obj[1]
+                    double_clicked ::
+                        editor = plugin.get_editor()
+                        # Go to the line
+                        widget = editor.proxy.widget
+                        widget.setCursorPosition(max(0,loop.item.lineno-2), 0)
+                        widget.ensureCursorVisible()
+                        # Retract the item if shown
+                        dock_area = view.parent
+                        dock_area.update_layout(RetractItem(item=view.name))
+
+                    TreeViewColumn:
+                        text << obj[2]
+                    TreeViewColumn:
+                        text << str(getattr(loop.item, 'lineno', 0))
+

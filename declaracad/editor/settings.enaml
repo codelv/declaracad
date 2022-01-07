@@ -84,6 +84,7 @@ enamldef EditorSettingsPage(Container):
             text = "Theme"
         ObjectCombo:
             items = list(THEMES.keys())
+            to_string = lambda it: it.replace("_", " ").title()
             selected := model.theme
         Label:
             pass

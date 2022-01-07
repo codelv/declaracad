@@ -31,6 +31,7 @@ from atom.api import (
 )
 
 from declaracad.core.api import Plugin, Model, log
+from enaml.scintilla.api import Scintilla
 from enaml.scintilla.themes import THEMES
 from enaml.scintilla.mono_font import MONO_FONT
 from enaml.application import timed_call
@@ -153,6 +154,9 @@ class EditorPlugin(Plugin):
     show_scrollbars = Bool(True).tag(config=True)
     file_associations = Dict(
         default={
+            "c": "c",
+            "cpp": "cpp",
+            "cxx": "cpp",
             "py": "python",
             "pyx": "python",
             "pyd": "python",
@@ -463,6 +467,18 @@ class EditorPlugin(Plugin):
     # -------------------------------------------------------------------------
     # Code inspection API
     # -------------------------------------------------------------------------
+    def detect_syntax(self, path):
+        """ Attempt to detect the file syntax """
+        p, ext = os.path.splitext(path)
+        file_type = ext[1:] if ext else ''
+        SYNTAXES = Scintilla.syntax.items
+        if file_type in SYNTAXES:
+            result = file_type
+        else:
+            result = self.file_associations.get(file_type, '')
+        # log.info("Using syntax: {}".format(result))
+        return result
+
     def _default_sys_path(self):
         """Determine the sys path"""
         return [self.project_path]

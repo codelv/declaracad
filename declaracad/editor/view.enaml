@@ -11,17 +11,14 @@ Created on Dec 10, 2015
 """
 import os
 import re
-import ast as python_ast
 
 from enaml.application import deferred_call
-from enaml.core import enaml_ast
 from enaml.core.api import Looper, Conditional
-from enaml.core.parser import parse
 from enaml.colors import parse_color
 from enaml.qt.q_resource_helpers import get_cached_qcolor
 from enaml.qt.QtCore import Qt
 
-from enaml.layout.api import RetractItem, vbox, hbox, align
+from enaml.layout.api import vbox, hbox, align
 from enaml.scintilla.api import Scintilla, ScintillaIndicator, ScintillaMarker
 from enaml.scintilla.themes import THEMES
 from enaml.scintilla.mono_font import MONO_FONT
@@ -29,26 +26,13 @@ from enaml.widgets.api import (
     Container, Timer, MultilineField, Menu, Action, PopupView, Label,
     Field, PushButton, SpinBox
 )
-from enamlx.widgets.api import KeyEvent, TreeView, TreeViewItem, TreeViewColumn
+from enamlx.widgets.api import KeyEvent
 
 from declaracad.core.api import DockItem
 from declaracad.core.utils import load_icon, load_image, log, format_title
 from declaracad.core.widgets import PlainTextEdit
 from .plugin import Document
 
-
-
-def detect_syntax(plugin, path):
-    """ Attempt to detect the file syntax """
-    p, ext = os.path.splitext(path)
-    file_type = ext[1:] if ext else ''
-    SYNTAXES = Scintilla.syntax.items
-    if file_type in SYNTAXES:
-        result = file_type
-    else:
-        result = plugin.file_associations.get(file_type, '')
-    # log.info("Using syntax: {}".format(result))
-    return result
 
 
 def create_indicators(filename, errors):
@@ -278,7 +262,7 @@ enamldef EditorFindBar(Container): bar:
 enamldef Editor(Scintilla): editor:
     hug_height = 'ignore'
     hug_width = 'ignore'
-    syntax << detect_syntax(plugin, doc.name)
+    syntax << plugin.detect_syntax(doc.name)
     attr doc: Document = Document()
     attr editor_font: str << f'{plugin.font_size}pt "{plugin.font_family}"'
     editor_font :: style_timer.start()
@@ -625,14 +609,18 @@ enamldef OutputDockItem(DockItem):
     func watch_output(change):
         try:
             if change['type'] == 'update':
-                output.proxy.widget.setPlainText('\n'.join(change['value']).rstrip('\n'))
+                text = '\n'.join(change['value']).rstrip('\n')
+                output.proxy.widget.setPlainText(text)
             elif change['type'] == 'container':
                 if change['operation'] == 'extend':
-                    output.proxy.widget.appendPlainText('\n'.join(change['items']).rstrip('\n'))
+                    text = '\n'.join(change['items']).rstrip('\n')
+                    output.proxy.widget.appendPlainText(text)
                 elif change['operation'] == 'append':
-                    output.proxy.widget.appendPlainText(change['item'].rstrip('\n'))
+                    text = change['item'].rstrip('\n')
+                    output.proxy.widget.appendPlainText(text)
                 elif change['operation'] == 'set':
-                    output.proxy.widget.setPlainText('\n'.join(change['value']).rstrip('\n'))
+                    text = '\n'.join(change['value']).rstrip('\n')
+                    output.proxy.widget.setPlainText(text)
         except Exception as e:
             log.exception(e)
 
@@ -650,73 +638,4 @@ enamldef OutputDockItem(DockItem):
             hug_width = 'ignore'
             hug_height = 'ignore'
             activated :: rebind(None)
-
-
-enamldef OutlineDockItem(DockItem): view:
-    title = "Outline"
-    name = 'code-outline-item'
-    icon = load_icon('chart_organisation')
-    func create_outline(source):
-        doc = plugin.active_document
-
-        try:
-            ast = parse(source)
-        except Exception as e:
-            # We could set errors here?
-            return [e]
-
-        nodes = []
-        # Walk ast and pull out nodes we're insterested in
-        for node in ast.body:
-            if isinstance(node, enaml_ast.EnamlDef):
-                nodes.append(node)
-            elif isinstance(node, enaml_ast.PythonModule):
-                for n in node.ast.body:
-                    if isinstance(n, (python_ast.ClassDef,
-                                      python_ast.FunctionDef)):
-                        nodes.append(n)
-        # Hack to workaround a segfault when the tree's items are emptied
-        if not nodes:
-            nodes.append(ast)
-        return nodes
-
-    func format_node(node):
-        if isinstance(node, python_ast.FunctionDef):
-            return "tag", "def", node.name, "Function"
-        elif isinstance(node, python_ast.ClassDef):
-            return "brick", "class", node.name, ""
-        elif isinstance(node, enaml_ast.EnamlDef):
-            return "bricks", "enamldef", node.typename, node.base
-        elif isinstance(node, Exception):
-            return "exclamation", "error", str(node), str(node.__class__.__name__)
-        return "tag_blue", "", str(node), ""
-
-    Container:
-        padding = 0
-        TreeView: tree:
-            minimum_size = (320, 320)
-            horizontal_headers = ['Name', 'Type', "Line"]
-            horizontal_stretch = True
-            resize_mode = 'resize_to_contents'
-            items << create_outline(plugin.active_document.source)
-            Looper:
-                iterable << tree.items
-                TreeViewItem:
-                    attr obj << format_node(loop_item)
-                    icon << load_icon(obj[0])
-                    text << obj[2]
-                    double_clicked ::
-                        editor = plugin.get_editor()
-                        # Go to the line
-                        widget = editor.proxy.widget
-                        widget.setCursorPosition(max(0,loop_item.lineno-2), 0)
-                        widget.ensureCursorVisible()
-                        # Retract the item if shown
-                        dock_area = view.parent
-                        dock_area.update_layout(RetractItem(item=view.name))
-
-                    TreeViewColumn:
-                        text << obj[3]
-                    TreeViewColumn:
-                        text << str(loop_item.lineno)
 

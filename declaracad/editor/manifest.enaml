@@ -218,7 +218,7 @@ def output_item_factory():
 
 def outline_item_factory():
   with enaml.imports():
-    from .view import OutlineDockItem
+    from .outline import OutlineDockItem
   return OutlineDockItem
 
 

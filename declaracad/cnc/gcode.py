@@ -43,7 +43,7 @@ class Command(Atom):
     id = Str()
     comment = Str()
     source = Str()
-    line = Int()
+    lineno = Int()
 
     def _default_id(self):
         if self.data:
@@ -103,7 +103,7 @@ class Command(Atom):
 
     def __repr__(self):
         return "Command<{} from '{}' at line {}>".format(
-            self.id, self.source, self.line
+            self.id, self.source, self.lineno
         )
 
 
@@ -240,62 +240,67 @@ def parse(path):
         set_id(cmd)
         cmds.append(cmd)
 
-    with open(path) as f:
-        for i, line in enumerate(f):
-            line = line.strip()
-            if not line:
-                continue
+    if os.path.exists(path):
+        with open(path) as f:
+            source = f.read()
+    else:
+        source = path
+        path = "(source)"
 
-            # Strip comments
-            parts = re.split(r";|\(|%", line, maxsplit=1)
-            data = parts[0].strip()
-            comment = "" if len(parts) == 1 else parts[1]
-            if not data and not comment:
-                continue
+    for i, line in enumerate(source.split("\n")):
+        line = line.strip()
+        if not line:
+            continue
 
-            cmd = Command(comment=comment, source=line, line=i + 1)
-            if not data:
-                cmds.append(cmd)  # Comment
-                continue
+        # Strip comments
+        parts = re.split(r";|\(|%", line, maxsplit=1)
+        data = parts[0].strip()
+        comment = "" if len(parts) == 1 else parts[1]
+        if not data and not comment:
+            continue
 
-            try:
-                # Parse args
-                args = []
-                for c in re.findall(r"[A-z] *-?[\d.]+ *", data):
-                    args.append((c[0].upper(), float(c[1:])))
+        cmd = Command(comment=comment, source=line, lineno=i + 1)
+        if not data:
+            cmds.append(cmd)  # Comment
+            continue
 
-                keys = set((it[0] for it in args))
+        try:
+            # Parse args
+            args = []
+            for c in re.findall(r"[A-z] *-?[\d.]+ *", data):
+                args.append((c[0].upper(), float(c[1:])))
 
-                # Since some files put mode changes on the same line
-                # split them into separate commands
-                cmd.data = d = OrderedDict()
-                for k, v in args:
-                    if k in d:
-                        # HACK: Split out to a new command
-                        # when duplicate keys are given in the same line, eg:
-                        #     N40 G90 G00 X0 Y0
-                        # is split into a G90 and G0
+            keys = set((it[0] for it in args))
+
+            # Since some files put mode changes on the same line
+            # split them into separate commands
+            cmd.data = d = OrderedDict()
+            for k, v in args:
+                if k in d:
+                    # HACK: Split out to a new command
+                    # when duplicate keys are given in the same line, eg:
+                    #     N40 G90 G00 X0 Y0
+                    # is split into a G90 and G0
+                    finish(cmd)
+                    cmd = Command(comment=comment, source=line, lineno=i + 1)
+                    cmd.data = d = OrderedDict()
+                elif k in GCode.AXIS_CODES:
+                    # HACK: If we get move arguments for a non-move split
+                    # the command, eg a
+                    #    N100 G01 X30 Y50
+                    #    N110 G91 X10.1 Y-10.1
+                    # should be split into a G1, G91, G1
+                    cmd_id = set_id(cmd)
+                    if cmd_id not in GCode.MOVE_CODES:
                         finish(cmd)
-                        cmd = Command(comment=comment, source=line, line=i + 1)
+                        cmd = Command(comment=comment, source=line, lineno=i + 1)
                         cmd.data = d = OrderedDict()
-                    elif k in GCode.AXIS_CODES:
-                        # HACK: If we get move arguments for a non-move split
-                        # the command, eg a
-                        #    N100 G01 X30 Y50
-                        #    N110 G91 X10.1 Y-10.1
-                        # should be split into a G1, G91, G1
-                        cmd_id = set_id(cmd)
-                        if cmd_id not in GCode.MOVE_CODES:
-                            finish(cmd)
-                            cmd = Command(comment=comment, source=line, line=i + 1)
-                            cmd.data = d = OrderedDict()
-                    d[k] = v
-                finish(cmd)
-            except ValueError as e:
-                filepath, filename = os.path.split(path)
-                msg = "Failed to parse '%s' at line %s: %s" % (filename, i, e)
-                raise ValueError(msg)
-
+                d[k] = v
+            finish(cmd)
+        except ValueError as e:
+            filepath, filename = os.path.split(path)
+            msg = "Failed to parse '%s' at line %s: %s" % (filename, i + 1, e)
+            raise ValueError(msg)
     return GCode(path=path, commands=cmds)
 
 
