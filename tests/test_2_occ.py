@@ -233,6 +233,7 @@ TESTS = {
     """,
     "fuse": """
     Fuse:
+        fix = True
         Box:
             pass
         Box:
@@ -240,6 +241,7 @@ TESTS = {
     """,
     "common": """
     Common:
+        unify = True
         Box:
             pass
         Box:
