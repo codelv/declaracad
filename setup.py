@@ -19,6 +19,7 @@ requirements = [
     'markdown',
     'enamlx',
     'asyncqt',  # asyncio + qt
+    'nest_asyncio',  # avoid some issues with qtconsole in remote viewer
     'pyserial>=3.5',
     'lxml',
     'PyQt5',

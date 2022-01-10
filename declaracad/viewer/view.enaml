@@ -24,6 +24,7 @@ from declaracad.occ.api import (
 )
 
 from .widgets.api import OccViewer, OccViewerClippedPlane
+from .plugin import ViewerAction
 
 
 UNIT_SCALE = {
@@ -311,9 +312,13 @@ enamldef ModelViewer(OccViewer): viewer:
                 c = Topology.cast_surface(topods_shape)
                 r = format_unit(c.Radius())
                 ctr = format_point(Point(c.Location()))
+                topology = Topology(shape=Topology.cast_shape(topods_shape))
+                umin, umax, vmin, vmax = topology.face_bounds
+                length = format_unit(vmax - vmin)
                 desc = [
                     f"  Center: {ctr}",
                     f"  Radius: {r}",
+                    f"  Length: {length}",
                 ]
                 return desc
             if Topology.is_cone(topods_shape):
@@ -369,6 +374,14 @@ enamldef ModelViewer(OccViewer): viewer:
                         f"  Center Deltas: {delta}",
                         f"  Center Distance: {d}",
                     ]
+        elif n == 3 and shape_type == 'vertexs':
+            v1 = Point(Topology.cast_shape(topods_shapes[0]))
+            v2 = Point(Topology.cast_shape(topods_shapes[1]))
+            v3 = Point(Topology.cast_shape(topods_shapes[2]))
+            angle = round(degrees((v1-v2).angle(v3-v2)), 6)
+            return [
+                f"  Angle: {angle}°",
+            ]
 
     func describe_selection(selection):
         """ Create a text description of the selection.

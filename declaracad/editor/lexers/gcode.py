@@ -165,13 +165,13 @@ class QsciLexerGCode(QsciLexerCustom):
                 "color": "#0488d0",
             },
             "xpos": {
-                "color": "#66b2b2",
+                "color": "#800080",
             },
             "ypos": {
                 "color": "#008080",
             },
             "zpos": {
-                "color": "#006666",
+                "color": "#808000",
             },
         }
     }

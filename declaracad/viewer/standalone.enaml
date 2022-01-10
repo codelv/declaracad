@@ -190,7 +190,6 @@ enamldef ViewerWindow(FramelessWindow): window:
                     Container:
                         padding = 0
                         IPythonConsole:
-                            resist_height = 'weak'
                             initial_ns = {
                                 'viewer': viewer,
                             }

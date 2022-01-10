@@ -15,6 +15,7 @@ import json
 import enaml
 import asyncio
 import traceback
+import warnings
 import faulthandler
 
 faulthandler.enable()
@@ -30,6 +31,13 @@ from declaracad.core.utils import log, RemoteLogger, JsonRpcProtocol
 
 with enaml.imports():
     from declaracad.viewer.standalone import ViewerWindow
+
+
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except ImportError as e:
+    warnings.warn(f"Nest asyncio not found: {e}")
 
 
 class ViewerProtocol(JsonRpcProtocol):
