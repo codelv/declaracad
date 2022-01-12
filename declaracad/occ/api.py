@@ -87,7 +87,6 @@ from .shape import (
     Revol,
     TopoShape,
     RawPart,
-    CachedPart,
 )
 from .mesh import Mesh
 from .impl.topology import Topology

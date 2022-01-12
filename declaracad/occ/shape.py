@@ -24,6 +24,7 @@ from atom.api import (
     Coerced,
     Typed,
     ForwardTyped,
+    ForwardInstance,
     List,
     Enum,
     Event,
@@ -297,11 +298,6 @@ class Shape(ToolkitObject):
     #: Reference to the implementation control
     proxy = Typed(ProxyShape)
 
-    #: Set to true to prevent destruction of the shape when removed
-    #: from the viewer. You need to manually manage it otherwise it'll
-    #: create a memory leak
-    cached = d_(Bool(False))
-
     #: Whether the shape should be displayed and exported when in a part
     #: If set to false this shape will be excluded from the rendered part
     display = d_(Bool(True))
@@ -502,15 +498,83 @@ class Part(Shape):
     #: Optional description of the part
     description = d_(Str())
 
-    #: Static cache
-    cache = {}
-
     #: Transform operations
     transform = d_(List())
+
+    #: Set to true to prevent destruction of the shape when removed
+    #: from the viewer. You need to manually manage it otherwise it'll
+    #: create a memory leak
+    cached = d_(Bool(False))
+
+    #: Static cache to store parts in.
+    cache = {}
+
+    #: Key use for caching. If you create multiple instances of the same
+    #: part use this to distingish between them
+    cache_key = d_(Str())
+
+    #: If true, force delete the cache to reload the cached part
+    reload = d_(Bool())
+
+    #: Reference to the cached part
+    _cached_part = ForwardInstance(lambda: Part)
 
     @property
     def shapes(self):
         return [child for child in self.children if isinstance(child, Shape)]
+
+    def initialize(self):
+        if self.cached:
+            self.is_initialized = True
+            self.initialized()
+            self.insert_cached_part()
+        else:
+            super().initialize()
+
+    def insert_cached_part(self):
+        """ Create and insert the cached part into the parent.
+
+        """
+        key = f"{self.__class__.__qualname__}.{self.cache_key}"
+        cached_part = Part.cache.get(key)
+        if self.reload and cached_part is not None:
+            cached_part.cached = False
+            cached_part.destroy()
+            cached_part = None
+        if cached_part is None or cached_part.proxy is None:
+            # Create a new part and place in new cached part
+            cached_part = self.__class__()
+            cached_part.insert_children(self, self.children)
+            cached_part.initialize()
+            Part.cache[key] = cached_part
+            cached_part.cached = True  # Make sure parent does not delete again
+        else:
+            # Remove children so they do not generate again
+            for c in self.children:
+                c.destroy()
+            del self._children
+        self.parent.insert_children(self, [cached_part])
+        self._cached_part = cached_part
+        self.proxy = cached_part.proxy
+
+    def destroy(self):
+        """ A reimplemented destructor.
+
+        If cached is set to True, destroy removes the shape from the view
+        but does not destroy it.
+
+        """
+        cached = self.cached
+        if cached and self._cached_part is None:
+            # Clear the parent but do not actually destroy
+            self.set_parent(None)
+            return
+        elif cached:
+            # This is the part that was used as a placholder.
+            # Unset the proxy and then destroy so the cached part is left
+            # intact.
+            self.proxy = None
+        super().destroy()
 
 
 class Face(Shape):
@@ -1123,36 +1187,3 @@ class TopoShape(RawShape):
     def get_shape(self):
         return self.shape
 
-
-class CachedPart(Include):
-    """A node which generates a cached instance of a given part."""
-
-    destroy_old = set_default(False)
-
-    #: Part model to generate, this is used as the cache key
-    part = d_(Subclass(Part))
-
-    #: Key use for caching. If you create multiple instances of the same
-    #: part use this to distingish between them
-    cache_key = d_(Str())
-
-    #: If true, force delete the cache to reload the cached part
-    reload = d_(Bool())
-
-    #: A function to generate the model
-    @d_func
-    def create_part(self):
-        return self.part()
-
-    def _default_objects(self):
-        """Generae"""
-        key = f"{self.part.__class__.__qualname__}.{self.cache_key}"
-        model = Part.cache.get(key)
-        if self.reload and model is not None:
-            model.destroy()
-            model = None
-        if model is None or model.proxy is None:
-            part = self.create_part()
-            part.cached = True
-            model = Part.cache[key] = part
-        return [model]

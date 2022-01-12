@@ -223,17 +223,7 @@ enamldef ModelViewer(OccViewer): viewer:
         old = set(change['oldvalue'])
         removed = old - new
         for s in removed:
-            if isinstance(s, Part):
-                keep = False
-                for c in s.children:
-                    if isinstance(c, Shape) and c.cached:
-                        keep = True
-                    else:
-                        c.destroy()
-                if not keep:
-                    s.destroy()
-            else:
-                s.destroy()
+            s.destroy()
 
     Include:
         objects << list(expand_dict(clipped_planes))
@@ -241,11 +231,9 @@ enamldef ModelViewer(OccViewer): viewer:
         # Allow shapes to be cached
         destroy_old = False
         objects << before_render(viewer.shapes)
+        objects :: after_render(change)
     Include:
         objects << viewer.dimensions
-
-    shapes :: deferred_call(after_render, change)
-
     key_pressed ::
         key = change['value'][1].text()
         last_key = self.last_key

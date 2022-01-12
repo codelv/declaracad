@@ -566,7 +566,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             s.displayed = False
             # s.unobserve('ais_shape', self.on_ais_shape_changed)
             if s.get_member("ais_shape").get_slot(s) is None:
-                continue  # Do not trigger creationg
+                continue  # Do not trigger creation
             ais_shape = s.ais_shape
             if ais_shape is not None:
                 displayed_shapes.pop(s.shape, None)
