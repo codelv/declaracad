@@ -598,7 +598,7 @@ class Topology(Atom):
 
     cylinder_surfaces = List()
 
-    def _default_cylinder_surface(self):
+    def _default_cylinder_surfaces(self):
         return self.extract_surfaces(GeomAbs_Cylinder)
 
     bezier_surfaces = List()

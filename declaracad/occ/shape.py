@@ -327,6 +327,10 @@ class Shape(ToolkitObject):
     def _get_x(self):
         return self.position.x
 
+    @observe("position.x")
+    def _update_x(self, change):
+        self.notify("x", change)
+
     def _set_x(self, v):
         self.position.x = v
 
@@ -335,6 +339,10 @@ class Shape(ToolkitObject):
     def _get_y(self):
         return self.position.y
 
+    @observe("position.y")
+    def _update_y(self, change):
+        self.notify("y", change)
+
     def _set_y(self, v):
         self.position.y = v
 
@@ -342,6 +350,10 @@ class Shape(ToolkitObject):
 
     def _get_z(self):
         return self.position.z
+
+    @observe("position.z")
+    def _update_z(self, change):
+        self.notify("z", change)
 
     def _set_z(self, v):
         self.position.z = v
@@ -532,9 +544,7 @@ class Part(Shape):
             super().initialize()
 
     def insert_cached_part(self):
-        """ Create and insert the cached part into the parent.
-
-        """
+        """Create and insert the cached part into the parent."""
         key = f"{self.__class__.__qualname__}.{self.cache_key}"
         cached_part = Part.cache.get(key)
         if self.reload and cached_part is not None:
@@ -558,7 +568,7 @@ class Part(Shape):
         self.proxy = cached_part.proxy
 
     def destroy(self):
-        """ A reimplemented destructor.
+        """A reimplemented destructor.
 
         If cached is set to True, destroy removes the shape from the view
         but does not destroy it.
@@ -1186,4 +1196,3 @@ class TopoShape(RawShape):
 
     def get_shape(self):
         return self.shape
-

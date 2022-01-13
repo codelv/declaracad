@@ -10,6 +10,7 @@ Created on June, 24 2021
 @author: jrm
 """
 import ply.lex as lex
+
 # import ply.yacc as yacc
 # parser = yacc.yacc()
 from PyQt5.Qsci import QsciLexerCustom
@@ -20,46 +21,46 @@ class GCodeLexer:
 
     # List of token names.   This is always required
     tokens = (
-        'NUMBER',
-        'PLUS',
-        'MINUS',
-        'TIMES',
-        'DIVIDE',
-        'LPAREN',
-        'RPAREN',
-        'COMMA',
-        'SPACE',
-        'TAB',
-        'NEWLINE',
-        'CODE',
-        'COMMENT',
+        "NUMBER",
+        "PLUS",
+        "MINUS",
+        "TIMES",
+        "DIVIDE",
+        "LPAREN",
+        "RPAREN",
+        "COMMA",
+        "SPACE",
+        "TAB",
+        "NEWLINE",
+        "CODE",
+        "COMMENT",
     )
 
     # Regular expression rules for simple tokens
-    t_PLUS = r'\+'
-    t_MINUS = r'-'
-    t_TIMES = r'\*'
-    t_DIVIDE = r'/'
-    t_LPAREN = r'\('
-    t_RPAREN = r'\)'
-    t_COMMA = r','
-    t_SPACE = r'\ '
-    t_TAB = r'\t'
-    t_NEWLINE = r'\n'
+    t_PLUS = r"\+"
+    t_MINUS = r"-"
+    t_TIMES = r"\*"
+    t_DIVIDE = r"/"
+    t_LPAREN = r"\("
+    t_RPAREN = r"\)"
+    t_COMMA = r","
+    t_SPACE = r"\ "
+    t_TAB = r"\t"
+    t_NEWLINE = r"\n"
 
     # A regular expression rule with some action code
     def t_NUMBER(self, t):
-        r'\d+\.?\d*'
+        r"\d+\.?\d*"
         t.lexer.value = float(t.value)
         return t
 
     def t_COMMENT(self, t):
-        r'\(.*'
+        r"\(.*"
         t.lexer.value = t.value
         return t
 
     def t_CODE(self, t):
-        r'[_A-Za-z]'
+        r"[_A-Za-z]"
         t.lexer.value = t.value
         return t
 
@@ -121,18 +122,18 @@ class QsciLexerGCode(QsciLexerCustom):
         "gcode": "function_method_name",
         "mcode": "keyword",
         "line_number": "class_name",
-        #"param": "decorator",
+        # "param": "decorator",
     }
 
     CODES = {
-        'G': GCode,
-        'M': MCode,
-        'P': Pause,
-        'F': Feed,
-        'S': Speed,
-        'X': XPos,
-        'Y': YPos,
-        'Z': ZPos,
+        "G": GCode,
+        "M": MCode,
+        "P": Pause,
+        "F": Feed,
+        "S": Speed,
+        "X": XPos,
+        "Y": YPos,
+        "Z": ZPos,
     }
 
     THEMES = {
@@ -206,7 +207,7 @@ class QsciLexerGCode(QsciLexerCustom):
         text = self.parent().text()[start:end]
         lexer = self.lexer
         lexer.input(text)
-        #print(f"Range: {start} to {end}")
+        # print(f"Range: {start} to {end}")
         set_style = self.setStyling
         state = None
         code = None
@@ -216,18 +217,18 @@ class QsciLexerGCode(QsciLexerCustom):
             i = len(token.value)
             t = token.type
             # print(token)
-            if t == 'COMMENT':
+            if t == "COMMENT":
                 set_style(i, self.Comment)
-            elif t == 'CODE':
+            elif t == "CODE":
                 code = token.value
                 state = t
                 style = CODES.get(code, self.Param)
                 set_style(i, style)
-            elif t in ('SPACE', 'TAB', 'NEWLINE'):
+            elif t in ("SPACE", "TAB", "NEWLINE"):
                 state = None
                 set_style(i, self.Default)
-            elif t == 'NUMBER':
-                if state == 'CODE':
+            elif t == "NUMBER":
+                if state == "CODE":
                     set_style(i, style)
                 else:
                     set_style(i, self.Number)

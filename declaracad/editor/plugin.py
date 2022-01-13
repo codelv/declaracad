@@ -32,12 +32,12 @@ from atom.api import (
 
 from declaracad.core.api import Plugin, Model, log
 from enaml.scintilla.api import Scintilla
-from enaml.scintilla.themes import THEMES
 from enaml.scintilla.mono_font import MONO_FONT
 from enaml.application import timed_call
 from enaml.core.enaml_compiler import EnamlCompiler
 from enaml.workbench.core.execution_event import ExecutionEvent
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
+from .themes import THEMES
 from .lexers import install_lexers  # Install lexer
 from types import ModuleType
 from glob import glob
@@ -468,14 +468,14 @@ class EditorPlugin(Plugin):
     # Code inspection API
     # -------------------------------------------------------------------------
     def detect_syntax(self, path):
-        """ Attempt to detect the file syntax """
+        """Attempt to detect the file syntax"""
         p, ext = os.path.splitext(path)
-        file_type = ext[1:] if ext else ''
+        file_type = ext[1:] if ext else ""
         SYNTAXES = Scintilla.syntax.items
         if file_type in SYNTAXES:
             result = file_type
         else:
-            result = self.file_associations.get(file_type, '')
+            result = self.file_associations.get(file_type, "")
         # log.info("Using syntax: {}".format(result))
         return result
 

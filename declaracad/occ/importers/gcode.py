@@ -64,7 +64,7 @@ def load_gcode(filename, **options):
     last_cmd = gcode.Command()
     mode = "absolute"
     log.debug(doc)
-    plane = 'xy'
+    plane = "xy"
     for cmd in doc.commands:
         data = cmd.data
         if cmd.id in ("G0", "G1"):
@@ -99,11 +99,11 @@ def load_gcode(filename, **options):
             last_cmd = cmd
             last_color = color
         elif cmd.id == "G17":
-            plane = 'xy'
+            plane = "xy"
         elif cmd.id == "G18":
-            plane = 'xz'
+            plane = "xz"
         elif cmd.id == "G19":
-            plane = 'yz'
+            plane = "yz"
         elif cmd.id in ("G2", "G3"):
             # TODO: Helical arcs using Z is not implemented
             pos = cmd.position(last)
@@ -145,17 +145,17 @@ def load_gcode(filename, **options):
                 if "P" in data:
                     raise NotImplementedError(f"Helix is not implemented {cmd}")
 
-                if plane == 'xy':
+                if plane == "xy":
                     if i is None and j is None:
                         raise ValueError(f"Invalid arc {cmd} (both I and J missing)")
                     direction = (0, 0, 1)
                     center = last + (i or 0, j or 0)
-                elif plane == 'xz':
+                elif plane == "xz":
                     if i is None and k is None:
                         raise ValueError(f"Invalid arc {cmd} (both I and K missing)")
                     direction = (0, 1, 0)
                     center = last + (i or 0, 0, k or 0)
-                elif plane == 'yz':
+                elif plane == "yz":
                     if k is None and j is None:
                         raise ValueError(f"Invalid arc {cmd} (both J and K missing)")
                     direction = (1, 0, 0)
@@ -164,7 +164,7 @@ def load_gcode(filename, **options):
                     raise RuntimeError("Unreachable code. This is likely a bug")
                 r = center.distance(last)
                 r2 = center.distance(pos)
-                #if abs(r2-r) > 1e-3:
+                # if abs(r2-r) > 1e-3:
                 #    raise ValueError(f"Arc start and end do not match {r} != {r2}")
 
                 items.append(

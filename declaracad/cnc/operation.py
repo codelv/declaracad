@@ -10,6 +10,7 @@ Created on Nov 9, 2021
 @author: jrm
 """
 import math
+import enaml
 import traceback
 from math import ceil, sqrt, sin, cos
 from typing import List as ListType
@@ -36,7 +37,9 @@ from declaracad.occ.api import (
 )
 from declaracad.cnc.optimize import optimize_points
 from declaracad.cnc.interpolate import group_connected_faces
-from declaracad.cnc.cutters import Tool
+
+with enaml.imports():
+    from declaracad.cnc.cutters import Tool
 from enaml.core.declarative import d_, d_func
 
 

@@ -95,7 +95,8 @@ NODE_TYPES = {
 
 
 ELEMENT_TYPES = {
-    e[9:]: getattr(fea, e) for e in dir(fea)
+    e[9:]: getattr(fea, e)
+    for e in dir(fea)
     if e.startswith("ChElement") and not e.endswith("swigregister")
 }
 

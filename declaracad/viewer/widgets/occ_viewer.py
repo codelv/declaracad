@@ -393,7 +393,6 @@ class OccViewer(Control):
     # Observers
     # -------------------------------------------------------------------------
     @observe(
-        "position",
         "display_mode",
         "view_mode",
         "trihedron_mode",

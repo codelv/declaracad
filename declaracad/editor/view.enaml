@@ -20,7 +20,6 @@ from enaml.qt.QtCore import Qt
 
 from enaml.layout.api import vbox, hbox, align
 from enaml.scintilla.api import Scintilla, ScintillaIndicator, ScintillaMarker
-from enaml.scintilla.themes import THEMES
 from enaml.scintilla.mono_font import MONO_FONT
 from enaml.widgets.api import (
     Container, Timer, MultilineField, Menu, Action, PopupView, Label,
@@ -31,6 +30,7 @@ from enamlx.widgets.api import KeyEvent
 from declaracad.core.api import DockItem
 from declaracad.core.utils import load_icon, load_image, log, format_title
 from declaracad.core.widgets import PlainTextEdit
+from .themes import THEMES
 from .plugin import Document
 
 

@@ -11,6 +11,7 @@ import enamlx
 import signal
 from enaml.qt.qt_application import QtApplication
 from declaracad.editor.plugin import EditorPlugin, Document, install_lexers
+
 with enaml.imports():
     from declaracad.editor.standalone import StandaloneEditor
 
@@ -27,10 +28,7 @@ def main(filename: str, **kwargs):
     app = QtApplication()
     plugin = EditorPlugin()
     install_lexers()
-    editor = StandaloneEditor(
-        plugin=plugin,
-        doc=Document(name=filename, plugin=plugin)
-    )
+    editor = StandaloneEditor(plugin=plugin, doc=Document(name=filename, plugin=plugin))
     editor.show()
     signal.signal(signal.SIGINT, lambda *args, **kwargs: app.stop())
     app.start()

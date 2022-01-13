@@ -14,10 +14,10 @@ from atom.api import Enum
 from enaml.core.api import Looper, Conditional
 from enaml.widgets.api import  Container, Menu, Action, WebView
 from enaml.scintilla.api import Scintilla
-from enaml.scintilla.themes import THEMES
 from enamlx.widgets.api import TreeView, TreeViewItem, TreeViewColumn
 from declaracad.core.api import DockItem
 from declaracad.core.utils import load_icon
+from declaracad.editor.themes import THEMES
 
 
 

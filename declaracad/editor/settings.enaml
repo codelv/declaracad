@@ -18,11 +18,11 @@ from enaml.widgets.api import (
     FileDialogEx,RawWidget, CheckBox
 )
 from enamlx.widgets.api import TreeView, TreeViewItem
-from enaml.scintilla.themes import THEMES
 from enaml.qt.QtWidgets import QFontComboBox
 from enaml.core.declarative import d_
 from enaml.qt.QtGui import QFont
 from declaracad.core.api import log
+from declaracad.editor.themes import THEMES
 
 
 class FontCombo(RawWidget):

@@ -115,18 +115,18 @@ enamldef AutoTreeItem(TreeViewItem):
 
 enamldef InheritanceTree(Looper):
     Conditional:
-        condition = not isinstance(loop_item, list)
+        condition = not isinstance(loop.item, list)
         TreeMemberItem:
-            member = loop_item
+            member = loop.item
     Conditional:
-        condition = isinstance(loop_item, list)
+        condition = isinstance(loop.item, list)
         TreeViewItem:
             text = 'inherited'
-            items << loop_item
+            items << loop.item
             Looper:
                 iterable << parent.items
                 TreeMemberItem:
-                    member = loop_item
+                    member = loop.item
 
 
 enamldef ToolboxDockItem(DockItem):
@@ -134,26 +134,25 @@ enamldef ToolboxDockItem(DockItem):
     name = 'toolbox-item'
     icon = load_icon('box')
     closable = False
-
     Container:
         padding = 0
         TreeView: tree:
-            horizontal_headers = ['Name', 'Type']
+            horizontal_headers = ['Name', 'Type', "Package"]
             horizontal_stretch = True
             resize_mode = 'resize_to_contents'
             items << plugin.tools
             Looper:
                 iterable << tree.items
                 TreeViewItem:
-                    attr cls << loop_item.declaration
+                    attr cls << loop.item.declaration
                     text = cls.__name__
-                    tool_tip = format_docs(loop_item.doc)
+                    tool_tip = format_docs(loop.item.doc)
                     items << get_declared_members(cls)
                     Menu:
                         Action:
                             text = "Show reference docs"
-                            attr url = (loop_item.proxy.reference.default_value_mode[-1]
-                                            if hasattr(loop_item.proxy, 'reference') else '')
+                            attr url = (loop.item.proxy.reference.default_value_mode[-1]
+                                            if hasattr(loop.item.proxy, 'reference') else '')
                             visible << bool(url)
                             triggered ::
                                 docs = plugin.workbench.get_plugin("declaracad.docs")
@@ -162,14 +161,14 @@ enamldef ToolboxDockItem(DockItem):
                             separator = True
                         Action:
                             text = "Show proxy class"
-                            attr src = get_source(loop_item.proxy)
+                            attr src = get_source(loop.item.proxy)
                             visible << bool(src)
                             triggered ::
                                 docs = plugin.workbench.get_plugin("declaracad.docs")
                                 docs.set_source(src)
                         Action:
                             text = "Show proxy source"
-                            attr path = inspect.getfile(loop_item.proxy)
+                            attr path = inspect.getfile(loop.item.proxy)
                             visible << bool(path)
                             triggered ::
                                 docs = plugin.workbench.get_plugin("declaracad.docs")
@@ -178,7 +177,7 @@ enamldef ToolboxDockItem(DockItem):
                         Action:
                             text = "Show declaration class"
 
-                            attr src = get_source(loop_item.declaration)
+                            attr src = get_source(loop.item.declaration)
                             visible << bool(src)
                             triggered ::
                                 docs = plugin.workbench.get_plugin("declaracad.docs")
@@ -187,5 +186,7 @@ enamldef ToolboxDockItem(DockItem):
                         attr base = cls.__bases__[0]
                         text = base.__name__
                         tool_tip = format_docs(inspect.getdoc(base))
+                    TreeViewColumn:
+                        text = cls.__module__
                     InheritanceTree:
                         iterable << parent.items

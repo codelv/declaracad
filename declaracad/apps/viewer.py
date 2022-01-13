@@ -35,6 +35,7 @@ with enaml.imports():
 
 try:
     import nest_asyncio
+
     nest_asyncio.apply()
 except ImportError as e:
     warnings.warn(f"Nest asyncio not found: {e}")

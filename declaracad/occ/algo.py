@@ -768,7 +768,7 @@ class DraftAngle(Operation):
     #: other parameters are ignored.
     operations = d_(List(Parameters))
 
-    @observe("shape", "faces", "angle", "operations", "disabled")
+    @observe("faces", "angle", "operations", "disabled")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
