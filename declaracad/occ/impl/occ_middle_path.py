@@ -51,6 +51,10 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         else:
             args = [c.shape for c in self.children()]
 
+        for i, s in enumerate(args):
+            if isinstance(s, Shape):
+                args[i] = s.proxy.shape
+
         first_shape = Topology.cast_shape(args[0])
         if isinstance(first_shape, (TopoDS_Wire, TopoDS_Face)):
             self.middle_path_2d(first_shape)
@@ -59,8 +63,6 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
 
     def middle_path_3d(self, args):
         for i, s in enumerate(args[:]):
-            if isinstance(s, Shape):
-                s = args[i] = s.proxy.shape
             if isinstance(s, TopoDS_Edge):
                 args[i] = BRepBuilderAPI_MakeWire(s).Wire()
         builder = BRepOffsetAPI_MiddlePath(*args)
@@ -69,8 +71,6 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         self.shape = shape
 
     def middle_path_2d(self, shape):
-        if isinstance(shape, Shape):
-            shape = s.proxy.shape
         if isinstance(shape, TopoDS_Wire):
             face = BRepBuilderAPI_MakeFace(shape).Face()
         else:
