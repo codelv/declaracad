@@ -16,6 +16,7 @@ EXAMPLES = (
     "arcs",
     "bearing",
     "birdhouse",
+    "bilo",
     "bolt",
     "bottle",
     "chamfers",

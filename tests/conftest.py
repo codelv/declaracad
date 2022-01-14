@@ -11,6 +11,7 @@ import faulthandler
 
 faulthandler.enable()
 from enaml.qt.qt_application import QtApplication
+from declaracad.occ.impl import occ_factories  # Make sure it installs
 
 
 @pytest.fixture(scope="session")

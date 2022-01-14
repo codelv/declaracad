@@ -519,7 +519,7 @@ class Part(Shape):
     cached = d_(Bool(False))
 
     #: Static cache to store parts in.
-    cache = {}
+    cached_parts = {}
 
     #: Key use for caching. If you create multiple instances of the same
     #: part use this to distingish between them
@@ -528,8 +528,12 @@ class Part(Shape):
     #: If true, force delete the cache to reload the cached part
     reload = d_(Bool())
 
-    #: Reference to the cached part
-    _cached_part = ForwardInstance(lambda: Part)
+    #: Reference to the cached part. If cached is not True this will default
+    #: to `self` making it safe to always use this for references.
+    cache = ForwardInstance(lambda: Part)
+
+    def _default_cache(self):
+        return self
 
     @property
     def shapes(self):
@@ -546,7 +550,7 @@ class Part(Shape):
     def insert_cached_part(self):
         """Create and insert the cached part into the parent."""
         key = f"{self.__class__.__qualname__}.{self.cache_key}"
-        cached_part = Part.cache.get(key)
+        cached_part = Part.cached_parts.get(key)
         if self.reload and cached_part is not None:
             cached_part.cached = False
             cached_part.destroy()
@@ -556,7 +560,7 @@ class Part(Shape):
             cached_part = self.__class__()
             cached_part.insert_children(self, self.children)
             cached_part.initialize()
-            Part.cache[key] = cached_part
+            Part.cached_parts[key] = cached_part
             cached_part.cached = True  # Make sure parent does not delete again
         else:
             # Remove children so they do not generate again
@@ -564,7 +568,7 @@ class Part(Shape):
                 c.destroy()
             del self._children
         self.parent.insert_children(self, [cached_part])
-        self._cached_part = cached_part
+        self.cache = cached_part
         self.proxy = cached_part.proxy
 
     def destroy(self):
@@ -575,14 +579,14 @@ class Part(Shape):
 
         """
         cached = self.cached
-        if cached and self._cached_part is None:
+        if cached and self.cache is self:
             # Clear the parent but do not actually destroy
             self.set_parent(None)
             return
         elif cached:
-            # This is the part that was used as a placholder.
-            # Unset the proxy and then destroy so the cached part is left
-            # intact.
+            # This is the part that was used as a placholder for the cached
+            # part. Unset the proxy and then destroy so the cached part is
+            # left intact.
             self.proxy = None
         super().destroy()
 

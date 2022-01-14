@@ -10,7 +10,6 @@ import os
 import pytest
 from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import load_model
-from declaracad.occ.impl import occ_factories  # Make sure it installs
 
 
 @pytest.mark.parametrize("name", os.listdir('examples/cnc/'))

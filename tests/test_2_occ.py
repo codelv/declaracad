@@ -14,6 +14,22 @@ from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import load_model
 
 
+def test_shape():
+    from declaracad.occ.shape import Shape
+
+    changes = []
+
+    def on_change(change):
+        changes.append(change)
+
+    s = Shape()
+    s.observe('x', on_change)
+    s.position.x = 2
+    s.x = 3
+    assert s.position.x == 3
+    assert len(changes) == 2
+
+
 def test_point():
     from declaracad.occ.shape import Point
 

@@ -1050,7 +1050,7 @@ class MiddlePath(Wire):
 
     proxy = Typed(ProxyMiddlePath)
 
-    #: Must be either empty or 2 or 3 elements.
+    #: Must be either empty 1 to 3 elements.
     #: The last two elements represent the start and ending faces or wires.
     shapes = d_(List((Shape, TopoDS_Shape)))
 

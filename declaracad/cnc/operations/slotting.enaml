@@ -1,0 +1,56 @@
+"""
+Copyright (c) 2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+import traceback
+from math import pi
+from atom.api import Atom, Float, Instance
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.operation import (
+    Operation, generate_arc_gcode, generate_polyline_gcode
+)
+
+enamldef SlottingOperation(Operation): operation:
+    """ Generates a Trochoidal toolpath
+
+    """
+    #: Shape to avoid
+    #: This is typically the part model
+    attr avoid
+
+    #: List of faces to slot
+    attr faces: list
+
+    #: Amount
+    attr step_over = tool.diameter * 0.10
+
+    #: Clearance added to the offset.
+    #: A positive number will leave extra stock between any walls
+    #: A negative number will make take more stock away from the walls
+    attr radial_clearance = 0
+
+    #: Clearance added to the bottom of the hole
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom
+    attr bottom_clearance = 0
+
+    #: Use climb milling
+    attr climb: bool = True
+
+    # --------------------------------------------------------------------------
+    # Speed and feed
+    # --------------------------------------------------------------------------
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)

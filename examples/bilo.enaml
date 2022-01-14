@@ -1,0 +1,22 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Cut: slot:
+        color = '#222'
+        Box:
+            position = (-dx/2, -dy/2)
+            dx = 50
+            dy = 100
+            dz = 2
+        Box:
+            position = (-dx/2, -dy/2, 1)
+            dx = 10
+            dy = 80
+            dz = 1
+    MiddlePath:
+        shapes = slot.topology.faces[10:11]
