@@ -1,0 +1,64 @@
+"""
+Copyright (c) 2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+from enaml.core.api import Looper
+from enaml.widgets.api import Field, Label, CheckBox, ObjectCombo, Form
+from enamlx.widgets.api import DoubleSpinBox
+from .exporter import IgesExporter
+
+
+enamldef OptionsForm(Form):
+    attr model: IgesExporter
+
+    func get_help(name):
+        m = model.get_member(name)
+        if not m.metadata:
+            return ''
+        return m.metadata.get('help', '')
+    Looper:
+        iterable = ("author", "company")
+        Label:
+            text = loop.item.title()
+            tool_tip << get_help(loop.item)
+        Field:
+            text := getattr(model, loop.item)
+    Label:
+        text = "Units"
+        tool_tip << get_help('units')
+    ObjectCombo:
+        items << list(model.get_member('units').items)
+        selected := model.units
+    Label:
+        text = "Precision mode"
+        tool_tip << get_help('precision_mode')
+    ObjectCombo:
+        items << list(model.get_member('precision_mode').items)
+        selected := model.precision_mode
+    Label:
+        text = "Precision value"
+        tool_tip << get_help('precision_val')
+    DoubleSpinBox:
+        value := model.precision_val
+        minimum = 0.0000001
+        single_step = 0.0001
+        maximum = 10000
+        #decimals = 10 # enamlx needs a release
+        activated :: self.proxy.widget.setDecimals(10)
+    Label:
+        text = "Face translation mode"
+        tool_tip << get_help('brep_mode')
+    ObjectCombo:
+        items << list(model.get_member('brep_mode').items)
+        selected := model.brep_mode
+    Label:
+        text = "Convert surfaces"
+        tool_tip << get_help('convertsurface_mode')
+    CheckBox:
+        checked := model.convertsurface_mode
+
+

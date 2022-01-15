@@ -35,7 +35,6 @@ from atom.api import (
     Property,
     ForwardTyped,
     ForwardInstance,
-    Constant,
     Callable,
     observe,
     Typed,
@@ -466,11 +465,12 @@ class ViewerPlugin(Plugin):
 
     def _default_exporters(self) -> ListType["ModelExporter"]:
         """TODO: push to an ExtensionPoint"""
+        from declaracad.occ.exporters.iges.exporter import IgesExporter
         from declaracad.occ.exporters.stl.exporter import StlExporter
         from declaracad.occ.exporters.step.exporter import StepExporter
         from declaracad.occ.exporters.vrml.exporter import VrmlExporter
 
-        return [StlExporter, StepExporter, VrmlExporter]
+        return [IgesExporter, StlExporter, StepExporter, VrmlExporter]
 
     # -------------------------------------------------------------------------
     # Plugin commands

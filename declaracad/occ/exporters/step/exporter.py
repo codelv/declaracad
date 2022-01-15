@@ -11,31 +11,20 @@ Created on Oct 10, 2018
 """
 import os
 import enaml
-from atom.api import Constant, Enum, Float, Str
-from declaracad.occ.api import Part, load_model
+from atom.api import Enum, Float, Str
 from declaracad.viewer.plugin import ModelExporter
-from declaracad.occ.impl.utils import color_to_quantity_color
+from declaracad.occ.impl.document import (
+    create_xcaf_document, create_hascii_list
+)
 
-from OCCT.BinXCAFDrivers import BinXCAFDrivers
 from OCCT.HeaderSection import (
     HeaderSection_FileName,
     HeaderSection_FileDescription,
 )
-from OCCT.STEPCAFControl import STEPCAFControl_Writer
-from OCCT.XCAFApp import XCAFApp_Application
-from OCCT.Interface import Interface_Static, Interface_HArray1OfHAsciiString
+from OCCT.Interface import Interface_Static
 from OCCT.IFSelect import IFSelect_RetDone
-from OCCT.TCollection import TCollection_ExtendedString, TCollection_HAsciiString
-from OCCT.TDocStd import TDocStd_Document
-from OCCT.TDataStd import TDataStd_Name
-from OCCT.XCAFDoc import (
-    XCAFDoc_DocumentTool,
-    XCAFDoc_Material,
-    XCAFDoc_Color,
-    XCAFDoc_ColorGen,
-)
-from OCCT.XmlXCAFDrivers import XmlXCAFDrivers
-from OCCT.Quantity import Quantity_Color
+from OCCT.STEPCAFControl import STEPCAFControl_Writer
+from OCCT.TCollection import TCollection_HAsciiString
 
 
 SetCVal = Interface_Static.SetCVal_
@@ -46,13 +35,6 @@ VERTEX_MODES = {"one compound": 0, "single vertex": 1}
 PRECISION_MODES = {"least": -1, "average": 0, "greatest": 1, "session": 2}
 ASSEMBLY_MODES = {"off": 0, "on": 1, "auto": 2}
 SURFACECURVE_MODES = {"off": 0, "on": 1}
-
-
-def create_ilist(values):
-    r = Interface_HArray1OfHAsciiString(1, len(values))
-    for i, v in enumerate(values):
-        r.SetValue(i + 1, TCollection_HAsciiString(v))
-    return r
 
 
 class StepExporter(ModelExporter):
@@ -97,49 +79,11 @@ class StepExporter(ModelExporter):
             return OptionsForm
 
     def export(self):
-        """Export a DeclaraCAD model from an enaml file to an STL based on the
-        given options.
-
-        Parameters
-        ----------
-        options: declaracad.occ.plugin.ExportOptions
+        """Export a DeclaraCAD model to a STEP file based on the given options.
 
         """
         # Set all params
-        app = XCAFApp_Application.GetApplication_()
-        fmt = TCollection_ExtendedString("BinXCAF")
-        doc = TDocStd_Document(fmt)
-        app.InitDocument(doc)
-
-        shape_tool = XCAFDoc_DocumentTool.ShapeTool_(doc.Main())
-        color_tool = XCAFDoc_DocumentTool.ColorTool_(doc.Main())
-        material_tool = XCAFDoc_DocumentTool.MaterialTool_(doc.Main())
-        notes_tool = XCAFDoc_DocumentTool.NotesTool_(doc.Main())
-
-        # Load the enaml model file
-        parts = load_model(self.filename)
-
-        for part in parts:
-            # Render the part from the declaration
-            part.render()
-            for s in part.proxy.walk_shapes():
-                d = s.declaration
-                ais_shape = s.ais_shape
-                is_part = isinstance(d, Part)
-
-                label = s.tdf_label = shape_tool.NewShape()
-                shape = ais_shape.Shape().Located(s.location)
-                shape_tool.SetShape(label, shape)
-
-                if d.color:
-                    color, alpha = color_to_quantity_color(d.color)
-                    color_tool.SetColor(shape, color, XCAFDoc_ColorGen)
-                # if d.material:
-                #    XCAFDoc_Material.Set_(label, ais_shape.Material())
-                name = TCollection_ExtendedString(
-                    d.name or d.description or d.__class__.__name__
-                )
-                TDataStd_Name.Set_(label, name)
+        doc = create_xcaf_document(self.filename)
 
         # Send it
         exporter = STEPCAFControl_Writer()
@@ -150,7 +94,7 @@ class StepExporter(ModelExporter):
         if self.description:
             tp = HeaderSection_FileDescription.get_type_descriptor_()
             entity = step_model.HeaderEntity(tp)
-            entity.SetDescription(create_ilist(self.description.split("\n")))
+            entity.SetDescription(create_hascii_list(self.description.split("\n")))
 
         tp = HeaderSection_FileName.get_type_descriptor_()
         entity = step_model.HeaderEntity(tp)
@@ -158,14 +102,14 @@ class StepExporter(ModelExporter):
 
         if self.author:
             names = [v.strip() for v in self.author.split(",")]
-            entity.SetAuthor(create_ilist(names))
+            entity.SetAuthor(create_hascii_list(names))
 
         if self.name:
             entity.SetName(TCollection_HAsciiString(self.name))
 
         if self.company:
             names = [v.strip() for v in self.company.split(",")]
-            entity.SetOrganization(create_ilist(names))
+            entity.SetOrganization(create_hascii_list(names))
 
         if self.authorization:
             # Typo!
