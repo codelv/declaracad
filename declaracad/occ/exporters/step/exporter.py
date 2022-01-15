@@ -1,5 +1,5 @@
 """
-Copyright (c) 2018, Jairus Martin.
+Copyright (c) 2018-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -17,11 +17,15 @@ from declaracad.viewer.plugin import ModelExporter
 from declaracad.occ.impl.utils import color_to_quantity_color
 
 from OCCT.BinXCAFDrivers import BinXCAFDrivers
+from OCCT.HeaderSection import (
+    HeaderSection_FileName,
+    HeaderSection_FileDescription,
+)
 from OCCT.STEPCAFControl import STEPCAFControl_Writer
 from OCCT.XCAFApp import XCAFApp_Application
-from OCCT.Interface import Interface_Static
+from OCCT.Interface import Interface_Static, Interface_HArray1OfHAsciiString
 from OCCT.IFSelect import IFSelect_RetDone
-from OCCT.TCollection import TCollection_ExtendedString
+from OCCT.TCollection import TCollection_ExtendedString, TCollection_HAsciiString
 from OCCT.TDocStd import TDocStd_Document
 from OCCT.TDataStd import TDataStd_Name
 from OCCT.XCAFDoc import (
@@ -42,6 +46,13 @@ VERTEX_MODES = {"one compound": 0, "single vertex": 1}
 PRECISION_MODES = {"least": -1, "average": 0, "greatest": 1, "session": 2}
 ASSEMBLY_MODES = {"off": 0, "on": 1, "auto": 2}
 SURFACECURVE_MODES = {"off": 0, "on": 1}
+
+
+def create_ilist(values):
+    r = Interface_HArray1OfHAsciiString(1, len(values))
+    for i, v in enumerate(values):
+        r.SetValue(i + 1, TCollection_HAsciiString(v))
+    return r
 
 
 class StepExporter(ModelExporter):
@@ -70,6 +81,13 @@ class StepExporter(ModelExporter):
     assembly_mode = Enum("off", "on", "auto")
     surfacecurve_mode = Enum("on", "off")
     vertex_mode = Enum("one compound", "single vertex")
+
+    # Step header fields
+    name = Str().tag(help="Step header file name")
+    author = Str().tag(help="Step header author(s). If multiple seperate with a comma.")
+    description = Str().tag(help="Step header description")
+    company = Str().tag(help='Step header company name. If multiple seperate with a comma.')
+    authorization = Str().tag(help="Step authorization header / license")
 
     @classmethod
     def get_options_view(cls):
@@ -127,6 +145,32 @@ class StepExporter(ModelExporter):
         exporter = STEPCAFControl_Writer()
         exporter.SetNameMode(True)
         exporter.SetColorMode(True)
+        step_model = exporter.Writer().WS().Model()
+
+        if self.description:
+            tp = HeaderSection_FileDescription.get_type_descriptor_()
+            entity = step_model.HeaderEntity(tp)
+            entity.SetDescription(create_ilist(self.description.split("\n")))
+
+        tp = HeaderSection_FileName.get_type_descriptor_()
+        entity = step_model.HeaderEntity(tp)
+        entity.SetOriginatingSystem(TCollection_HAsciiString("DeclaraCAD"))
+
+        if self.author:
+            names = [v.strip() for v in self.author.split(",")]
+            entity.SetAuthor(create_ilist(names))
+
+        if self.name:
+            entity.SetName(TCollection_HAsciiString(self.name))
+
+        if self.company:
+            names = [v.strip() for v in self.company.split(",")]
+            entity.SetOrganization(create_ilist(names))
+
+        if self.authorization:
+            # Typo!
+            entity.SetAuthorisation(TCollection_HAsciiString(self.authorization))
+
         SetIVal("write.precision.mode", PRECISION_MODES[self.precision_mode])
         if self.precision_mode == "greatest":
             SetRVal("write.precision.val", self.precision_val)

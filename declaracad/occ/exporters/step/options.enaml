@@ -1,5 +1,5 @@
 """
-Copyright (c) 2017-2018, Jairus Martin.
+Copyright (c) 2017-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -9,6 +9,7 @@ Created on Dec 13, 2017
 
 @author: jrm
 """
+from enaml.core.api import Looper
 from enaml.widgets.api import Field, Label, CheckBox, ObjectCombo, Form
 from enamlx.widgets.api import DoubleSpinBox
 from .exporter import StepExporter
@@ -16,13 +17,20 @@ from .exporter import StepExporter
 
 enamldef OptionsForm(Form):
     attr model: StepExporter
-    
+
     func get_help(name):
         m = model.get_member(name)
         if not m.metadata:
             return ''
         return m.metadata.get('help', '')
-    
+    Looper:
+        iterable = ("name", "description", "author", "company", "authorization")
+        Label:
+            text = loop.item.title()
+            tool_tip << get_help(loop.item)
+        Field:
+            text := getattr(model, loop.item)
+
     Label:
         text = "Schema"
         tool_tip << get_help('schema')
