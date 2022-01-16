@@ -15,6 +15,7 @@ from OCCT.Geom import Geom_TrimmedCurve
 from declaracad.occ.draw import ProxyTrimmedCurve
 from .occ_edge import OccEdge
 from .occ_shape import OccShape, coerce_axis
+from .topology import Topology
 
 
 class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
@@ -37,11 +38,17 @@ class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
 
     def update_shape(self, change=None):
         d = self.declaration
-        child = self.get_first_child()
-        if hasattr(child, "curve"):
-            curve = child.curve
+        shape = d.shape
+        if shape is None:
+            child = self.get_first_child()
+            if hasattr(child, "curve"):
+                curve = child.curve
+            else:
+                curve = BRep_Tool.Curve_(child.shape, 0, 1)[0]
         else:
-            curve = BRep_Tool.Curve_(child.shape, 0, 1)[0]
+            curve = BRep_Tool.Curve_(shape, 0, 1)[0]
+        if curve is None:
+            raise RuntimeError(f"Could not create TrimmedCurve {d} (no curve)")
         trimmed_curve = self.curve = Geom_TrimmedCurve(curve, d.u, d.v)
         self.shape = self.make_edge(trimmed_curve)
 

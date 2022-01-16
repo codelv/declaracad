@@ -21,6 +21,7 @@ def get_all_modules():
     from declaracad.occ import api as occ_api
     from declaracad.cnc import api as cnc_api
     from declaracad.fea import api as fea_api
+
     return (occ_api, cnc_api, fea_api)
 
 

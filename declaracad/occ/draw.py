@@ -159,6 +159,9 @@ class ProxyTrimmedCurve(ProxyLine):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: TrimmedCurve)
 
+    def set_shape(self, shape):
+        raise NotImplementedError
+
     def set_u(self, u):
         raise NotImplementedError
 
@@ -249,6 +252,9 @@ class ProxyMiddlePath(ProxyWire):
     declaration = ForwardTyped(lambda: MiddlePath)
 
     def set_shapes(self, shapes):
+        raise NotImplementedError
+
+    def set_mode(self, mode):
         raise NotImplementedError
 
 
@@ -728,6 +734,9 @@ class TrimmedCurve(Edge):
 
     proxy = Typed(ProxyTrimmedCurve)
 
+    #: Shape to trim. If absent the first child will be used.
+    shape = d_(Instance((Shape, TopoDS_Shape)))
+
     #: First Parameter
     u = d_(Float(0, strict=False))
 
@@ -1054,7 +1063,12 @@ class MiddlePath(Wire):
     #: The last two elements represent the start and ending faces or wires.
     shapes = d_(List((Shape, TopoDS_Shape)))
 
-    @observe("shapes")
+    #: Mode for 2d paths. Normal trims and keep touching edges.
+    #: No-trim ignores edge parameters. No touching removes edges touching
+    #: the face edge.
+    mode = d_(Enum("normal", "not-touching"))
+
+    @observe("shapes", "mode")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 

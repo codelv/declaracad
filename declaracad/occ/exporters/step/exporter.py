@@ -13,9 +13,7 @@ import os
 import enaml
 from atom.api import Enum, Float, Str
 from declaracad.viewer.plugin import ModelExporter
-from declaracad.occ.impl.document import (
-    create_xcaf_document, create_hascii_list
-)
+from declaracad.occ.impl.document import create_xcaf_document, create_hascii_list
 
 from OCCT.HeaderSection import (
     HeaderSection_FileName,
@@ -68,7 +66,9 @@ class StepExporter(ModelExporter):
     name = Str().tag(help="Step header file name")
     author = Str().tag(help="Step header author(s). If multiple seperate with a comma.")
     description = Str().tag(help="Step header description")
-    company = Str().tag(help='Step header company name. If multiple seperate with a comma.')
+    company = Str().tag(
+        help="Step header company name. If multiple seperate with a comma."
+    )
     authorization = Str().tag(help="Step authorization header / license")
 
     @classmethod
@@ -79,9 +79,7 @@ class StepExporter(ModelExporter):
             return OptionsForm
 
     def export(self):
-        """Export a DeclaraCAD model to a STEP file based on the given options.
-
-        """
+        """Export a DeclaraCAD model to a STEP file based on the given options."""
         # Set all params
         doc = create_xcaf_document(self.filename)
 

@@ -1,0 +1,21 @@
+# Created in DeclaraCAD
+from declaracad.parts.display import Axis
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Box: segment:
+        transparency = 0.8
+        dx = 10
+        dy = 5
+        dz = 3
+    TrimmedCurve:
+        color = 'red'
+        u = -10
+        v = 10
+        shape = segment.topology.edges[1]
+    TopoShape:
+        color = 'blue'
+        shape = segment.topology.edges[1]
+        

@@ -208,7 +208,7 @@ class Topology(Atom):
         GeomAbs_BezierCurve: BRepAdaptor_Curve.Bezier,
         GeomAbs_BSplineCurve: BRepAdaptor_Curve.BSpline,
         GeomAbs_OffsetCurve: BRepAdaptor_Curve.OffsetCurve,
-        GeomAbs_OtherCurve: BRepAdaptor_CompCurve,
+        GeomAbs_OtherCurve: lambda c: c,
     }
 
     surface_factory = {
@@ -696,7 +696,7 @@ class Topology(Atom):
     @classmethod
     def cast_curve(
         cls,
-        shape: TopoDS_Edge,
+        shape: Union[TopoDS_Edge, TopoDS_Wire],
         expected_type: Optional[GeomAbs_CurveType] = None,
         convert: bool = True,
     ) -> Optional[Union[Geom_Curve, BRepAdaptor_Curve]]:
@@ -715,11 +715,13 @@ class Topology(Atom):
             The curve or None if it could not be created or if it was not
             of the expected type (if given).
         """
-        try:
-            edge = TopoDS.Edge_(shape)
-        except RuntimeError as e:
+        shape = Topology.cast_shape(shape)
+        if isinstance(shape, TopoDS_Edge):
+            curve = BRepAdaptor_Curve(shape)
+        elif isinstance(shape, TopoDS_Wire):
+            curve = BRepAdaptor_CompCurve(shape)
+        else:
             return None
-        curve = BRepAdaptor_Curve(edge)
         t = curve.GetType()
         if expected_type is not None and t != expected_type:
             return None
@@ -1168,7 +1170,26 @@ class Topology(Atom):
         raise ValueError("Invalid derivative")
 
     @property
-    def face_bounds(self):
+    def curve_bounds(self) -> TupleType[float, float]:
+        """Get the U bounds of an edge or wire.
+
+        Returns
+        -------
+        bounds: Tuple[float, float]
+            Returns in UMin, UMax parametric space.
+
+        """
+        shape = Topology.cast_shape(self.shape)
+        if isinstance(shape, TopoDS_Edge):
+            curve = BRepAdaptor_Curve(shape)
+        elif isinstance(shape, TopoDS_Wire):
+            curve = BRepAdaptor_CompCurve(shape)
+        else:
+            raise TypeError(f"Cannot get curve bounds of {shape}")
+        return (curve.FirstParameter(), curve.LastParameter())
+
+    @property
+    def face_bounds(self) -> TupleType[float, float, float, float]:
         """Get the UV bounds of a face.
 
         Returns
@@ -1217,7 +1238,7 @@ class Topology(Atom):
         return [coerce_point(param(i)) for i in range(1, a.NbPoints() + 1)]
 
     @classmethod
-    def bbox(cls, shapes, optimal=False, tolerance=0):
+    def bbox(cls, shapes, optimal=False, tolerance=0, enlarge=0):
         """Compute the bounding box of the shape or list of shapes
 
         Parameters
@@ -1242,8 +1263,10 @@ class Topology(Atom):
         add = BRepBndLib.AddOptimal_ if optimal else BRepBndLib.Add_
         for s in shapes:
             add(coerce_shape(s), bbox)
-        pmin, pmax = bbox.CornerMin(), bbox.CornerMax()
-        return BBox(*(pmin.X(), pmin.Y(), pmin.Z(), pmax.X(), pmax.Y(), pmax.Z()))
+        if enlarge:
+            bbox.Enlarge(enlarge)
+        pmin, pmax = Point(bbox.CornerMin()), Point(bbox.CornerMax())
+        return BBox(*pmin, *pmax)
 
     # -------------------------------------------------------------------------
     # Edge/Wire Properties
@@ -1251,37 +1274,49 @@ class Topology(Atom):
     @property
     def start_point(self) -> Point:
         """Get the first / start point of a TopoDS_Wire or TopoDS_Edge"""
-        wire = self.shape
-        if isinstance(wire, TopoDS_Edge):
-            wire = BRepBuilderAPI_MakeWire(wire).Wire()
-        curve = BRepAdaptor_CompCurve(wire)
+        shape = self.shape
+        if isinstance(shape, TopoDS_Edge):
+            curve = BRepAdaptor_Curve(shape)
+        elif isinstance(shape, TopoDS_Wire):
+            curve = BRepAdaptor_CompCurve(shape)
+        else:
+            raise TypeError(f"Cannot get start point of {shape}")
         return self.get_value_at(curve, curve.FirstParameter())
 
     @property
     def end_point(self) -> Point:
         """Get the end / last point of a TopoDS_Wire or TopoDS_Edge"""
-        wire = self.shape
-        if isinstance(wire, TopoDS_Edge):
-            wire = BRepBuilderAPI_MakeWire(wire).Wire()
-        curve = BRepAdaptor_CompCurve(wire)
+        shape = Topology.cast_shape(self.shape)
+        if isinstance(shape, TopoDS_Edge):
+            curve = BRepAdaptor_Curve(shape)
+        elif isinstance(shape, TopoDS_Wire):
+            curve = BRepAdaptor_CompCurve(shape)
+        else:
+            raise TypeError(f"Cannot get end point of {shape}")
         return self.get_value_at(curve, curve.LastParameter())
 
     @property
     def start_tangent(self) -> TupleType[Point, Direction]:
         """Get the start tangent point and direction"""
-        wire = self.shape
-        if isinstance(wire, TopoDS_Edge):
-            wire = BRepBuilderAPI_MakeWire(wire).Wire()
-        curve = BRepAdaptor_CompCurve(wire)
+        shape = Topology.cast_shape(self.shape)
+        if isinstance(shape, TopoDS_Edge):
+            curve = BRepAdaptor_Curve(shape)
+        elif isinstance(shape, TopoDS_Wire):
+            curve = BRepAdaptor_CompCurve(shape)
+        else:
+            raise TypeError(f"Cannot get start tangent of {shape}")
         return self.get_value_at(curve, curve.FirstParameter(), 1)
 
     @property
     def end_tangent(self) -> TupleType[Point, Direction]:
         """Get the end tangent point and direction"""
-        wire = self.shape
-        if isinstance(wire, TopoDS_Edge):
-            wire = BRepBuilderAPI_MakeWire(wire).Wire()
-        curve = BRepAdaptor_CompCurve(wire)
+        shape = Topology.cast_shape(self.shape)
+        if isinstance(shape, TopoDS_Edge):
+            curve = BRepAdaptor_Curve(shape)
+        elif isinstance(shape, TopoDS_Wire):
+            curve = BRepAdaptor_CompCurve(shape)
+        else:
+            raise TypeError(f"Cannot get end tangent of {shape}")
         return self.get_value_at(curve, curve.LastParameter(), 1)
 
     @property
@@ -1294,8 +1329,9 @@ class Topology(Atom):
             The outer wire of the face
 
         """
-        if isinstance(self.shape, TopoDS_Face):
-            return BRepTools.OuterWire_(self.shape)
+        shape = Topology.cast_shape(self.shape)
+        if isinstance(shape, TopoDS_Face):
+            return BRepTools.OuterWire_(shape)
         return None
 
     # -------------------------------------------------------------------------

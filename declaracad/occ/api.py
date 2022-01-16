@@ -34,6 +34,7 @@ from .algo import (
     Scale,
     Mirror,
     NormalProjection,
+    Extend,
 )
 from .dimension import (
     AngleDimension,

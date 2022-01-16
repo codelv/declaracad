@@ -10,15 +10,18 @@ from atom.api import Typed, Dict, set_default
 
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
+    BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakeWire,
 )
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MiddlePath
 from OCCT.BRepMAT2d import (
-    BRepMAT2d_BisectingLocus, BRepMAT2d_Explorer,
-    BRepMAT2d_LinkTopoBilo
+    BRepMAT2d_BisectingLocus,
+    BRepMAT2d_Explorer,
+    BRepMAT2d_LinkTopoBilo,
 )
 from OCCT.BRep import BRep_Builder, BRep_Tool
-from OCCT.BRepLib import BRepLib_MakeEdge
+from OCCT.BRepLib import BRepLib
 from OCCT.Geom2dAdaptor import Geom2dAdaptor_Curve
 from OCCT.MAT import MAT_Arc
 from OCCT.TopoDS import TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
@@ -71,6 +74,7 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         self.shape = shape
 
     def middle_path_2d(self, shape):
+        d = self.declaration
         if isinstance(shape, TopoDS_Wire):
             face = BRepBuilderAPI_MakeFace(shape).Face()
         else:
@@ -84,23 +88,37 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         link.Perform(explorer, bilo)
         graph = bilo.Graph()
         surf = BRep_Tool.Surface_(face)
+
+        touching = d.mode in ("normal", "no-trim")
+        tol = d.tolerance
         for j in range(1, graph.NumberOfArcs() + 1):
             arc = graph.Arc(j)
+            if not touching:
+                if arc.FirstNode().Distance() < tol:
+                    continue
+                if arc.SecondNode().Distance() < tol:
+                    continue
+
             bisector = bilo.GeomBis(arc, False)[0]
             curve = Geom2dAdaptor_Curve(bisector.Value())
             t = curve.FirstParameter(), curve.LastParameter()
-            e = BRepLib_MakeEdge(curve.Curve(), surf, *t).Edge()
-            self.graph[e] = arc
+            edge = BRepBuilderAPI_MakeEdge(curve.Curve(), surf, *t).Edge()
+            self.graph[edge] = arc
 
+        builder = BRep_Builder()
         wires = Topology.join_edges(self.graph.keys())
         if len(wires) == 1:
-            self.curve = BRepAdaptor_CompCurve(wires[0])
+            shape = wires[0]
+            self.curve = BRepAdaptor_CompCurve(shape)
         else:
-            builder = BRep_Builder()
             shape = TopoDS_Compound()
             builder.MakeCompound(shape)
             for w in wires:
                 builder.Add(shape, w)
+
+        # Create 3d curves
+        # BRepLib.BuildCurves3d_(shape)
+
         self.shape = shape
 
     def set_shapes(self, shapes):

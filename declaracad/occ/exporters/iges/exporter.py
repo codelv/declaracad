@@ -11,9 +11,7 @@ import enaml
 from atom.api import Bool, Enum, Float, Str
 from declaracad.occ.api import Part, load_model
 from declaracad.viewer.plugin import ModelExporter
-from declaracad.occ.impl.document import (
-    create_xcaf_document, create_hascii_list
-)
+from declaracad.occ.impl.document import create_xcaf_document, create_hascii_list
 
 from OCCT.Interface import Interface_Static
 from OCCT.IFSelect import IFSelect_RetDone
@@ -38,12 +36,13 @@ class IgesExporter(ModelExporter):
     extension = "igs"
 
     convertsurface_mode = Bool(False).tag(
-        help="Convert elementary surfaces to IGES entities")
+        help="Convert elementary surfaces to IGES entities"
+    )
     brep_mode = Enum("faces", "brep").tag(
         help="If 'faces', faces will be translated to IGES 144 (Trimmed sruface) entities, "
-             "no BRep entites will be written to the IGES file. If set to 'brep', "
-             "faces will be translated to IGES 510 (Face) entities, the IGES fill will "
-             "contain BRep entites"
+        "no BRep entites will be written to the IGES file. If set to 'brep', "
+        "faces will be translated to IGES 510 (Face) entities, the IGES fill will "
+        "contain BRep entites"
     )
     units = Enum("mm", "inch")
     precision_mode = Enum("average", "least", "greatest", "session")
@@ -55,7 +54,9 @@ class IgesExporter(ModelExporter):
 
     # Step header fields
     author = Str().tag(help="Model author(s). If multiple seperate with a comma.")
-    company = Str().tag(help='Model header company name. If multiple seperate with a comma.')
+    company = Str().tag(
+        help="Model header company name. If multiple seperate with a comma."
+    )
 
     @classmethod
     def get_options_view(cls):
@@ -65,9 +66,7 @@ class IgesExporter(ModelExporter):
             return OptionsForm
 
     def export(self):
-        """Export a DeclaraCAD model to an IGES file based on the given options.
-
-        """
+        """Export a DeclaraCAD model to an IGES file based on the given options."""
         # Set all params
         doc = create_xcaf_document(self.filename)
 
@@ -80,7 +79,9 @@ class IgesExporter(ModelExporter):
         SetCVal("write.iges.header.company", self.company)
         SetCVal("write.iges.header.product", "DeclaraCAD")
 
-        precision_mode = IgesExporter.precision_mode.items.index(self.precision_mode)-1
+        precision_mode = (
+            IgesExporter.precision_mode.items.index(self.precision_mode) - 1
+        )
         SetIVal("write.precision.mode", precision_mode)
         if self.precision_mode == "greatest":
             SetRVal("write.precision.val", self.precision_val)

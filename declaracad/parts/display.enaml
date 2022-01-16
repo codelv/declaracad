@@ -26,7 +26,8 @@ enamldef BoundingBox(Box):
 
     """
     attr shapes
-    attr bounding_box << Topology.bbox(shapes, tolerance=self.tolerance)
+    attr enlarge = 0
+    attr bounding_box << Topology.bbox(shapes, tolerance=self.tolerance, enlarge=self.enlarge)
     attr units = 'mm'
     position << bounding_box.min
     transparency = 0.9

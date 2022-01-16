@@ -223,7 +223,8 @@ enamldef ModelViewer(OccViewer): viewer:
         old = set(change['oldvalue'])
         removed = old - new
         for s in removed:
-            s.destroy()
+            if not s.is_destroyed:
+                s.destroy()
 
     Include:
         objects << list(expand_dict(clipped_planes))

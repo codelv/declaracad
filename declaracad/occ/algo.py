@@ -266,6 +266,20 @@ class ProxyNormalProjection(ProxyOperation):
         raise NotImplementedError
 
 
+class ProxyExtend(ProxyOperation):
+    #: A reference to the Shape declaration.
+    declaration = ForwardTyped(lambda: Extend)
+
+    def set_shape(self, shape):
+        raise NotImplementedError
+
+    def set_mode(self, mode):
+        raise NotImplementedError
+
+    def set_parameters(self, parameters):
+        raise NotImplementedError
+
+
 class Operation(Shape):
     """Base class for Operations that are applied to other shapes."""
 
@@ -927,7 +941,7 @@ class Transform(Operation):
 
     @observe("operations")
     def _update_proxy(self, change):
-        super(Transform, self)._update_proxy(change)
+        super()._update_proxy(change)
 
 
 class Sew(Operation):
@@ -954,3 +968,23 @@ class NormalProjection(Operation):
 
     #: Max distance
     max_distance = d_(Float(strict=False))
+
+
+class Extend(Operation):
+    """Extend a curve or surface by it's parameters"""
+
+    #: Reference to the implementation control
+    proxy = Typed(ProxyExtend)
+
+    #: The shape to extend.
+    shape = d_(Instance((Shape, TopoDS_Shape)))
+
+    #: How to interpret the parameters
+    mode = d_(Enum("length", "parameter"))
+
+    #: List of extend operations
+    operations = d_(List())
+
+    @observe("shape", "mode", "operations")
+    def _update_proxy(self, change):
+        super()._update_proxy(change)

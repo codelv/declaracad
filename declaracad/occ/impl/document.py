@@ -22,9 +22,8 @@ from OCCT.XCAFDoc import (
 )
 
 
-
 def create_xcaf_document(filename: str) -> TDocStd_Document:
-    """ Load the model and create an XCAF document for it.
+    """Load the model and create an XCAF document for it.
 
     Parameters
     ----------
@@ -72,7 +71,6 @@ def create_xcaf_document(filename: str) -> TDocStd_Document:
             )
             TDataStd_Name.Set_(label, name)
     return doc
-
 
 
 def create_hascii_list(values):
