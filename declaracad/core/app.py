@@ -72,13 +72,8 @@ class Application(QtApplication):
                 task = self.queue.get(block=False)
                 await task
             except Empty:
-                self.process_events()
                 await asyncio.sleep(0.1)
             except Exception as e:
-                if "cannot enter context" in str(e):
-                    # HACK: Something is jacked up
-                    await asyncio.sleep(0.1)
-                    continue
                 log.exception(e)
 
     def on_async_exception(self, loop, context):
