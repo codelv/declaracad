@@ -24,7 +24,7 @@ from OCCT.BRep import BRep_Builder, BRep_Tool
 from OCCT.BRepLib import BRepLib
 from OCCT.Geom2dAdaptor import Geom2dAdaptor_Curve
 from OCCT.MAT import MAT_Arc
-from OCCT.TopoDS import TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+from OCCT.TopoDS import TopoDS, TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 
 from declaracad.occ.draw import ProxyMiddlePath
@@ -39,9 +39,14 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         "class_b_rep_offset_a_p_i___middle_path.html"
     )
 
+    # ------------------------------------------------------------------------
+    # 2D Parameters
+    # ------------------------------------------------------------------------
     bilo = Typed(BRepMAT2d_BisectingLocus)
     link = Typed(BRepMAT2d_LinkTopoBilo)
+    explorer = Typed(BRepMAT2d_Explorer)
     graph = Dict(TopoDS_Edge, MAT_Arc)
+    face = Typed(TopoDS_Face)
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -79,7 +84,8 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
             face = BRepBuilderAPI_MakeFace(shape).Face()
         else:
             face = shape
-        explorer = BRepMAT2d_Explorer(face)
+        self.face = face
+        explorer = self.explorer = BRepMAT2d_Explorer(face)
         bilo = self.bilo = BRepMAT2d_BisectingLocus()
         bilo.Compute(explorer)
         if not bilo.IsDone():
@@ -98,11 +104,12 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
                     continue
                 if arc.SecondNode().Distance() < tol:
                     continue
-
-            bisector = bilo.GeomBis(arc, False)[0]
-            curve = Geom2dAdaptor_Curve(bisector.Value())
+            bisector, rev = bilo.GeomBis(arc, False)
+            curve = bisector.Value()
             t = curve.FirstParameter(), curve.LastParameter()
-            edge = BRepBuilderAPI_MakeEdge(curve.Curve(), surf, *t).Edge()
+            # Use the basis curve or the type information is lost
+            c = curve.BasisCurve().Geom2dCurve()
+            edge = BRepBuilderAPI_MakeEdge(c, surf, *t).Edge()
             self.graph[edge] = arc
 
         builder = BRep_Builder()

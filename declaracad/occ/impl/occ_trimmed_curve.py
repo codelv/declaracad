@@ -48,6 +48,8 @@ class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
         else:
             curve = BRep_Tool.Curve_(shape, 0, 1)[0]
         if curve is None:
+            curve = Topology.cast_curve(shape)
+        if curve is None:
             raise RuntimeError(f"Could not create TrimmedCurve {d} (no curve)")
         trimmed_curve = self.curve = Geom_TrimmedCurve(curve, d.u, d.v)
         self.shape = self.make_edge(trimmed_curve)
