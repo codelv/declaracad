@@ -1,0 +1,111 @@
+"""
+Copyright (c) 2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Jan 17, 2022
+
+"""
+from declaracad.occ.api import Part, Point, Arc, Segment, Conditional
+
+
+enamldef Trochoid(Part): part:
+    """ Create a trochoid from arcs with enter and exits.
+
+    """
+    #: Width of the trochoid
+    attr width
+
+    #: Direction the trochoid is pointing
+    attr tangent
+
+    #: Radius of the wave. If this is less than 1/2 the width
+    #: a segment will be inserted to connect the two wave sections.
+    attr wave_radius = width/2
+
+    #: Radius of the return arcs
+    attr return_radius = wave_radius/2
+
+    #: Center position of the arcs
+    attr center_point: Point = Point(0, 0, 0)
+
+    #: Point of the center of the wave head
+    attr head_point << wave_in.points[-1].midpoint(wave_out.points[0])
+
+    attr start_point << arc_in.points[0]
+    attr end_point << arc_out.points[-1]
+
+    # Aliases
+    alias arc_in
+    alias wave_in
+    alias wave_out
+    alias arc_out
+
+    #: Clockwise or not
+    attr climb: bool = True
+
+    #: Internal
+    attr d = direction.cross(part.tangent)
+
+    Arc: arc_in:
+        color = 'orange'
+        as_wire = True
+        clockwise = not climb
+        radius = return_radius
+        attr p = wave_in.points[0]
+        func get_tangent():
+            t = wave_in.topology.start_tangent[1]
+            return t.reversed() if climb else t
+        attr t = get_tangent()
+        position = p.offset(radius, wave_in.position - p)
+        points = [
+            position.offset(radius if climb else -radius, t),
+            p
+        ]
+    Arc: wave_in:
+        radius = wave_radius
+        color = 'blue'
+        as_wire = True
+        clockwise = not climb
+        position = center_point.offset(radius-width/2 if climb else width/2-radius, d)
+        points = [
+            center_point.offset(-width/2 if climb else width/2, d),
+            position.offset(radius, part.tangent),
+        ]
+    Conditional:
+        condition << wave_in.points[-1] != wave_out.points[0]
+        Segment:
+            color = 'blue'
+            as_wire = True
+            points = [
+                wave_in.points[-1],
+                wave_out.points[0]
+            ]
+    Arc: wave_out:
+        color = 'blue'
+        as_wire = True
+        radius = wave_in.radius
+        clockwise = not climb
+        position = center_point.offset(
+            width/2-radius if climb else radius-width/2, d)
+        points = [
+            position.offset(radius, part.tangent),
+            center_point.offset(width/2 if climb else -width/2, d),
+        ]
+    Arc: arc_out:
+        color = 'orange'
+        as_wire = True
+        clockwise = not climb
+        radius = arc_in.radius
+        attr p = wave_out.points[-1]
+        func get_tangent():
+            t = wave_out.topology.end_tangent[1]
+            return t if climb else t.reversed()
+        attr t = get_tangent()
+        position = p.offset(radius, wave_out.position - p)
+        points = [
+            p,
+            position.offset(radius if climb else -radius, t),
+        ]

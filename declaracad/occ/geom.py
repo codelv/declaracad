@@ -15,13 +15,14 @@ from atom.api import Atom, Float, Typed, Property
 from contextlib import contextmanager
 
 from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec
+from OCCT.Geom import Geom_Line
 from OCCT.BRep import BRep_Tool
 from OCCT.TopoDS import TopoDS_Shape
 
 try:
     from SMESH.SMDS import SMDS_MeshNode
 except ImportError as e:
-    warnings.warn(str(e))
+    warnings.warn(f"{e}")
 
     class SMDS_MeshNode:
         pass
@@ -229,6 +230,26 @@ class Point(Atom):
         for k, v in kwargs:
             setattr(k, v)
         return p
+
+    def offset(self, distance: float, direction: "Direction") -> "Point":
+        """ Create a point offset by distance in the given direction
+
+        Parameters
+        ----------
+        distance: float
+            The offset distance
+        direction: Union[Tuple[float, ...], Direction, gp_Dir]
+            The direction to offset. Will be coerced
+
+        Returns
+        -------
+        p: Point
+            Point offset from this point
+
+        """
+        # Use proxy to so it is normalized
+        d = coerce_direction(direction).proxy
+        return Point(Geom_Line(self.proxy, d).Value(distance))
 
     def __hash__(self):
         return hash(self[:])

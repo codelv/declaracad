@@ -8,11 +8,70 @@ The full license is in the file LICENSE, distributed with this software.
 """
 import traceback
 from math import pi
-from atom.api import Atom, Float, Instance
-from enaml.core.api import Conditional, Looper
-from declaracad.cnc.operation import (
-    Operation, generate_arc_gcode, generate_polyline_gcode
+from atom.api import Atom, Float, Instance, Property
+from enaml.core.api import Conditional, Looper, Include
+from declaracad.occ.geom import coerce_point
+from declaracad.occ.api import (
+    Arc, DisplayArrow, Part, Point, Polyline,  MiddlePath, TrimmedCurve,
+    Topology, TopoShape, Wire
 )
+from declaracad.cnc.operation import (
+    Tool, Operation, generate_arc_gcode, generate_polyline_gcode
+)
+
+from .trochoid import Trochoid
+
+
+class SlottingData(Atom):
+    middle_path = Instance(MiddlePath)
+    width = Float(strict=False)
+    step_over = Float(strict=False)
+    wire = Instance(Wire)
+    def _get_path(self):
+        return self.wire.render()
+
+    path = Property(_get_path, cached=True)
+
+    def compute_width(self, tool, position, tangent):
+        return self.width - tool.diameter
+
+
+enamldef SlotCutPath(Part): cut_path:
+    attr tool: Tool
+    attr data: SlottingData
+
+    attr start_point = data.wire.topology.start_point
+    attr last_point = start_point
+    attr end_point << get_end_point()
+    attr width
+    attr simple_slot: bool = data.width == tool.diameter
+
+    func get_end_point():
+        if simple_slot:
+            return data.wire.topology.end_point
+        else:
+            self.render()
+            return self.last_point
+
+    Include:
+        objects = [data.wire] if simple_slot else []
+    Looper:
+        iterable = [] if simple_slot else \
+            Topology.parametrize_length(data.path, length=data.step_over, n=1)
+        Polyline:
+            color = 'lime'
+            line_style = 'dashed'
+            name = 'Rapid move'
+            points = [
+                last_point,
+                trochoid.start_point
+            ]
+        Trochoid: trochoid:
+            tangent = loop.item[1]
+            center_point = loop.item[0]
+            width = cut_path.data.compute_width(cut_path.tool, *loop.item)
+            constructed :: cut_path.last_point = self.end_point
+
 
 enamldef SlottingOperation(Operation): operation:
     """ Generates a Trochoidal toolpath
@@ -23,6 +82,7 @@ enamldef SlottingOperation(Operation): operation:
     attr avoid
 
     #: List of faces to slot
+    attr slot_width
     attr faces: list
 
     #: Amount
@@ -41,6 +101,11 @@ enamldef SlottingOperation(Operation): operation:
     #: Use climb milling
     attr climb: bool = True
 
+    #: Distance to extend past the start and end when cutting an
+    #: open ended slot
+    attr extend_start = 2 * tool.diameter
+    attr extend_end = 2 * tool.diameter
+
     # --------------------------------------------------------------------------
     # Speed and feed
     # --------------------------------------------------------------------------
@@ -54,3 +119,134 @@ enamldef SlottingOperation(Operation): operation:
 
     #: Feedrate calculation
     feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+    #: Generated toolpath data
+    attr toolpath = generate_toolpath()
+
+    func generate_toolpath():
+        tool_radius = tool.diameter/2
+
+        toolpath = []
+        for face in self.faces:
+            if bottom_clearance:
+                face = Transform(
+                    shape=face,
+                    position=(0, 0, bottom_clearance)
+                ).render()
+            middle_path = MiddlePath(
+                mode='not-touching',
+                shapes=[face])
+            middle_path.render()
+            edges = []
+            for edge in middle_path.topology.edges:
+                topo = Topology(shape=edge)
+                umin, umax = topo.curve_bounds
+                u = umin - extend_start
+                v = umax + extend_end
+                curve = TrimmedCurve(shape=edge, u=u, v=v)
+                edges.append(curve.render())
+
+            data = SlottingData(
+                middle_path=middle_path,
+                width=self.slot_width - self.radial_clearance,
+                step_over=self.step_over,
+                wire=Wire(edges=edges)
+            )
+            toolpath.append(data)
+
+        return toolpath
+
+    generate_gcode => ():
+        cmds = []
+        if self.disabled:
+            return cmds
+        try:
+            # Change tool
+            cmds.append("(Slotting path)")
+            job = self.parent
+            fmt = job.format_value
+
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed or not self.feedrate:
+                raise ValueError(
+                    "Surface speed must be set for a slot."
+                    "Use surface_speed=v or manually set feed and speed"
+                )
+
+            # Turn on spindle and coolant from base operation
+            cmds.extend(Operation.generate_gcode(self))
+            for child in self.children:
+                if hasattr(child, 'generate_gcode'):
+                    cmds.extend(child.generate_gcode(fmt))
+
+            if self.coolant:
+                # Turn off coolant
+                cmds.append("M9")
+
+            if self.spindle_speed:
+                # Stop spindle it should have already retracted
+                cmds.append("M5")
+
+            p = coerce_point(end_point)
+            cmds.append(
+                f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
+            )
+
+            cmds.append('') # Ensure Add newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
+    Looper:
+        iterable << [] if operation.disabled else operation.toolpath
+        Part: path:
+            func generate_gcode(fmt):
+                cmds = []
+                for child in self.children:
+                    if isinstance(child, Polyline):
+                        rapid = child.name == 'Rapid move'
+                        cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
+                    elif isinstance(child, Arc):
+                        cmds.extend(generate_arc_gcode(child, fmt))
+                    elif isinstance(child, Wire):
+                        cmds.extend(generate_wire_gcode(child, fmt))
+                return cmds
+            attr slot_start = slot.start_point
+            attr slot_end = slot.end_point
+            attr drop_point = Point(slot_start.x, slot_start.y, start_point.z)
+            attr lift_point = Point(slot_end.x, slot_end.y, start_point.z)
+
+            Polyline:
+                name = 'Rapid move'
+                line_style = 'dashed'
+                color = 'lime'
+                points = [start_point, drop_point, slot_start]
+            DisplayArrow: drop_arrow:
+                color = 'red'
+                cone_size = (0.6, 1.5)
+                tube_size = (0.3, 3)
+                description = 'Drop'
+                direction = (0, 0, -1)
+                position = drop_point + (0, 0, 3)
+            SlotCutPath: slot:
+                tool = operation.tool
+                data = loop.item
+            Polyline:
+                name = 'Rapid move'
+                line_style = 'dashed'
+                color = 'lime'
+                points = [slot_end, lift_point, start_point]
+            DisplayArrow:
+                color = 'green'
+                cone_size = drop_arrow.cone_size
+                tube_size = drop_arrow.tube_size
+                description = 'Lift'
+                direction = (0, 0, 1)
+                position = lift_point

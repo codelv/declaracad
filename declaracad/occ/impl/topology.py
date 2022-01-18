@@ -1238,6 +1238,25 @@ class Topology(Atom):
         return [coerce_point(param(i)) for i in range(1, a.NbPoints() + 1)]
 
     @classmethod
+    def parametrize_length(cls, shape, length, n=0):
+        """ Parametrize a curve
+
+        """
+        length = float(length)
+        shape = Topology.cast_shape(shape)
+        if isinstance(shape, TopoDS_Wire):
+            c = BRepAdaptor_CompCurve(shape)
+        elif isinstance(shape, TopoDS_Edge):
+            c = BRepAdaptor_Curve(shape)
+        else:
+            raise TypeError(f"Cannot parametrize {shape}")
+        start, end = c.FirstParameter(), c.LastParameter()
+        a = GCPnts_UniformAbscissa(c, length, start, end)
+        for i in range(1, a.NbPoints()):
+            t = a.Parameter(i)
+            yield Topology.curve_value_at(c, t, n)
+
+    @classmethod
     def bbox(cls, shapes, optimal=False, tolerance=0, enlarge=0):
         """Compute the bounding box of the shape or list of shapes
 
