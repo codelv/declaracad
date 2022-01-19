@@ -715,7 +715,7 @@ class Topology(Atom):
             The curve or None if it could not be created or if it was not
             of the expected type (if given).
         """
-        shape = Topology.cast_shape(shape)
+        shape = cls.cast_shape(shape)
         if isinstance(shape, TopoDS_Edge):
             curve = BRepAdaptor_Curve(shape)
         elif isinstance(shape, TopoDS_Wire):
@@ -1067,11 +1067,11 @@ class Topology(Atom):
     # Parametrization
     # -------------------------------------------------------------------------
     @classmethod
-    def get_value_at(cls, curve, t, derivative=0):
+    def get_value_at(cls, curve, t: float, derivative: int = 0):
         return cls.curve_value_at(curve, t, derivative)
 
     @classmethod
-    def curve_value_at(cls, curve, t, derivative=0):
+    def curve_value_at(cls, curve, t: float, derivative: int = 0):
         """Get the value of the curve at parameter t with it's derivatives.
 
         Parameters
@@ -1110,7 +1110,7 @@ class Topology(Atom):
                 coerce_direction(v2),
                 coerce_direction(v3),
             )
-        raise ValueError("Invalid derivative")
+        raise ValueError(f"Invalid derivative n={derivative}")
 
     @classmethod
     def offset_curve_value_at(
@@ -1179,12 +1179,8 @@ class Topology(Atom):
             Returns in UMin, UMax parametric space.
 
         """
-        shape = Topology.cast_shape(self.shape)
-        if isinstance(shape, TopoDS_Edge):
-            curve = BRepAdaptor_Curve(shape)
-        elif isinstance(shape, TopoDS_Wire):
-            curve = BRepAdaptor_CompCurve(shape)
-        else:
+        curve = Topology.cast_curve(self.shape, convert=False)
+        if curve is None:
             raise TypeError(f"Cannot get curve bounds of {shape}")
         return (curve.FirstParameter(), curve.LastParameter())
 
@@ -1202,8 +1198,13 @@ class Topology(Atom):
         return BRepTools.UVBounds_(self.shape, 0, 0, 0, 0)
 
     @classmethod
-    def discretize(cls, wire, deflection, method="quasi-deflection"):
-        """Convert a wire to points.
+    def discretize(
+        cls,
+        shape: Union[TopoDS_Wire, TopoDS_Edge],
+        deflection: Union[float, int],
+        method: str = "quasi-deflection",
+    ) -> Iterable[Point]:
+        """Convert an edge or wire to points.
 
         Parameters
         ----------
@@ -1214,47 +1215,103 @@ class Topology(Atom):
             Number of points to use
         methode: Str
             A value of either 'deflection' or 'abissca'
-        Returns
+
+        Yields
         -------
-        points: List[Point]
+        points: Point
             A list of points that make up the curve
 
         """
-        c = BRepAdaptor_CompCurve(wire)
-        start = c.FirstParameter()
-        end = c.LastParameter()
+        curve = Topology.cast_curve(shape, convert=False)
+        if curve is None:
+            raise TypeError(f"Cannot discretize {shape}")
+        return Topology.discretize_curve(curve, deflection, method)
+
+    @classmethod
+    def discretize_curve(
+        cls,
+        curve: Union[BRepAdaptor_Curve, BRepAdaptor_CompCurve],
+        deflection: Union[float, int],
+        method: str = "quasi-deflection",
+    ) -> Iterable[Point]:
+        """Convert a curve to points.
+
+        Parameters
+        ----------
+        deflection: Float or Int
+            Maximum deflection allowed if method is 'deflection' or
+            'quasi-'defelction' else this is the number of points
+        n: Int
+            Number of points to use
+        methode: Str
+            A value of either 'deflection' or 'abissca'
+
+        Yields
+        -------
+        points: Point
+            A list of points that make up the curve
+
+        """
+        start, end = curve.FirstParameter(), curve.LastParameter()
         fn = DISCRETIZE_METHODS[method.lower().replace("uniform", "")]
-        a = fn(c, deflection, start, end)
+        a = fn(curve, deflection, start, end)
         if method.endswith("abscissa"):
 
             def param(i):
-                return c.Value(a.Parameter(i))
+                return curve.Value(a.Parameter(i))
 
         else:
 
             def param(i):
                 return a.Value(i)
 
-        return [coerce_point(param(i)) for i in range(1, a.NbPoints() + 1)]
+        for i in range(1, a.NbPoints() + 1):
+            yield coerce_point(param(i))
 
     @classmethod
-    def parametrize_length(cls, shape, length, n=0):
-        """ Parametrize a curve
+    def parametrize_by_length(
+        cls, shape: Union[TopoDS_Wire, TopoDS_Edge], length: float
+    ) -> Iterable[TupleType[Union[BRepAdaptor_CompCurve, BRepAdaptor_Curve], float]]:
+        """Parametrize an edge or wire.
+
+        Parameters
+        ----------
+        length: float
+            The distance between each parameter
+
+        Yields
+        -------
+        param: Tuple[BRepAdaptor_Curve, float]
+            The curve and the parameter
+
+
+        """
+        curve = Topology.cast_curve(shape, convert=False)
+        if curve is None:
+            raise TypeError(f"Cannot parametrize {shape}")
+        length = float(length)
+        start, end = curve.FirstParameter(), curve.LastParameter()
+        a = GCPnts_UniformAbscissa(curve, length, start, end)
+        for i in range(1, a.NbPoints() + 1):
+            yield (curve, a.Parameter(i))
+
+    @classmethod
+    def parametrize_curve_by_length(
+        cls, curve: Union[BRepAdaptor_CompCurve, BRepAdaptor_Curve], length: float
+    ) -> Iterable[TupleType[float]]:
+        """Parametrize a curve
+
+        Yields
+        -------
+        param: Tuple[BRepAdaptor_Curve, float]
+            The curve and the parameter
 
         """
         length = float(length)
-        shape = Topology.cast_shape(shape)
-        if isinstance(shape, TopoDS_Wire):
-            c = BRepAdaptor_CompCurve(shape)
-        elif isinstance(shape, TopoDS_Edge):
-            c = BRepAdaptor_Curve(shape)
-        else:
-            raise TypeError(f"Cannot parametrize {shape}")
-        start, end = c.FirstParameter(), c.LastParameter()
-        a = GCPnts_UniformAbscissa(c, length, start, end)
-        for i in range(1, a.NbPoints()):
-            t = a.Parameter(i)
-            yield Topology.curve_value_at(c, t, n)
+        start, end = curve.FirstParameter(), curve.LastParameter()
+        a = GCPnts_UniformAbscissa(curve, length, start, end)
+        for i in range(1, a.NbPoints() + 1):
+            yield a.Parameter(i)
 
     @classmethod
     def bbox(cls, shapes, optimal=False, tolerance=0, enlarge=0):

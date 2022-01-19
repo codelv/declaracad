@@ -232,7 +232,7 @@ class Point(Atom):
         return p
 
     def offset(self, distance: float, direction: "Direction") -> "Point":
-        """ Create a point offset by distance in the given direction
+        """Create a point offset by distance in the given direction
 
         Parameters
         ----------
