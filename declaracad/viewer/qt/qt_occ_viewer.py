@@ -547,10 +547,13 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                 qt_app.processEvents()
 
         if isinstance(occ_shape, OccPart):
+            d.rendered()
             for d in occ_shape.declaration.traverse():
                 proxy = getattr(d, "proxy", None)
                 if proxy is None:
                     continue
+                if isinstance(proxy, OccPart):
+                    d.rendered()
                 if isinstance(proxy, OccDimension):
                     self.add_dimension_to_display(proxy)
                 elif isinstance(proxy, OccDisplayItem):
@@ -634,11 +637,15 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         self._redisplay_timer.start()
 
     def on_redisplay_requested(self):
+        d = self.declaration
         self.ais_context.UpdateCurrentViewer()
 
         # Recompute bounding box
         bbox = self.get_bounding_box(self._displayed_shapes.keys())
-        self.declaration.bbox = BBox(*bbox)
+        d.bbox = BBox(*bbox)
+
+        # Trigger loaded
+        d.rendered()
 
     # -------------------------------------------------------------------------
     # Viewer API

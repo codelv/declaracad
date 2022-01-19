@@ -385,6 +385,9 @@ class OccViewer(Control):
     mouse_wheeled = d_(Event(), writable=False)
     mouse_moved = d_(Event(), writable=False)
 
+    #: Triggered when the model is rendered in the viewer
+    rendered = d_(Event(), writable=False)
+
     #: Loading status
     loading = d_(Bool(), writable=False)
     progress = d_(Float(strict=False), writable=False)

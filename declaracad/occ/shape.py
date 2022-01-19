@@ -532,6 +532,9 @@ class Part(Shape):
     #: to `self` making it safe to always use this for references.
     cache = ForwardInstance(lambda: Part)
 
+    #: Triggered when the part is rendered in the viewer
+    rendered = d_(Event(), writable=False)
+
     def _default_cache(self):
         return self
 

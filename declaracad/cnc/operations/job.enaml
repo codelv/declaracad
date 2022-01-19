@@ -121,14 +121,20 @@ enamldef Job(Part):
 enamldef JobSimulation(Part): simulation:
     attr job: Job
     attr rate = 0.2
+    attr autostart: bool = True
     attr disabled: bool = False
     attr index: int = 0
     attr frames: list = []
     attr current_tool: Part
 
+    rendered ::
+        if self.autostart:
+            self.start()
+
     func start():
         if self.disabled:
             return
+        self.render() # Force start
         frames = []
         for c in self.job.children:
             if isinstance(c, Operation):
@@ -162,5 +168,4 @@ enamldef JobSimulation(Part): simulation:
 
     Timer: timer:
         interval = 16
-        activated :: simulation.start()
         timeout :: simulation.animate()
