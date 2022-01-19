@@ -23,7 +23,8 @@ from OCCT.BRepMAT2d import (
 from OCCT.BRep import BRep_Builder, BRep_Tool
 from OCCT.BRepLib import BRepLib
 from OCCT.Geom2dAdaptor import Geom2dAdaptor_Curve
-from OCCT.MAT import MAT_Arc
+from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Tangent, GeomAbs_Intersection
+from OCCT.MAT import MAT_Arc, MAT_Left
 from OCCT.TopoDS import TopoDS, TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 
@@ -47,6 +48,12 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
     explorer = Typed(BRepMAT2d_Explorer)
     graph = Dict(TopoDS_Edge, MAT_Arc)
     face = Typed(TopoDS_Face)
+
+    join_types = {
+        "arc": GeomAbs_Arc,
+        "tangent": GeomAbs_Tangent,
+        "intersection": GeomAbs_Intersection,
+    }
 
     def update_shape(self, change=None):
         d = self.declaration
@@ -87,9 +94,15 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         self.face = face
         explorer = self.explorer = BRepMAT2d_Explorer(face)
         bilo = self.bilo = BRepMAT2d_BisectingLocus()
-        bilo.Compute(explorer)
+
+        is_open = False
+
+        join_type = self.join_types[d.join_type]
+        line_index = 1
+        side = MAT_Left
+        bilo.Compute(explorer, line_index, side, join_type, is_open)
         if not bilo.IsDone():
-            raise RuntimeError(f"Could not build path {d}")
+            raise RuntimeError(f"Could not build middle path {d}")
         link = self.link = BRepMAT2d_LinkTopoBilo()
         link.Perform(explorer, bilo)
         graph = bilo.Graph()
@@ -113,15 +126,10 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
             self.graph[edge] = arc
 
         builder = BRep_Builder()
-        wires = Topology.join_edges(self.graph.keys())
-        if len(wires) == 1:
-            shape = wires[0]
-            self.curve = BRepAdaptor_CompCurve(shape)
-        else:
-            shape = TopoDS_Compound()
-            builder.MakeCompound(shape)
-            for w in wires:
-                builder.Add(shape, w)
+        shape = TopoDS_Compound()
+        builder.MakeCompound(shape)
+        for e in self.graph.keys():
+            builder.Add(shape, e)
 
         # Create 3d curves
         # BRepLib.BuildCurves3d_(shape)
@@ -129,4 +137,10 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         self.shape = shape
 
     def set_shapes(self, shapes):
+        self.update_shape()
+
+    def set_mode(self, mode):
+        self.update_shape()
+
+    def set_join_type(self, join_type):
         self.update_shape()

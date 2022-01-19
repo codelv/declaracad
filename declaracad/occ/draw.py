@@ -1068,7 +1068,10 @@ class MiddlePath(Wire):
     #: the face edge.
     mode = d_(Enum("normal", "not-touching"))
 
-    @observe("shapes", "mode")
+    #: Joint type for 2d paths.
+    join_type = d_(Enum("arc", "tangent", "intersection"))
+
+    @observe("shapes", "mode", "join_type")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
