@@ -10,6 +10,7 @@ Created on Nov 9, 2021
 @author: jrm
 """
 import traceback
+from math import pi
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import (
     Operation, generate_arc_gcode, generate_polyline_gcode
@@ -50,6 +51,21 @@ enamldef FacingOperation(Operation):
 
     #: Amount to go past the edge of the face
     attr step_past = tool.diameter/2 + 10
+
+    # ------------------------------------------------------------------------
+    # Speed and feed
+    # ------------------------------------------------------------------------
+
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
 
     # ------------------------------------------------------------------------
     # Internal variables
