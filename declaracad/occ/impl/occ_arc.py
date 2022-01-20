@@ -80,7 +80,8 @@ class OccArc(OccLine, ProxyArc):
                     "- two or three points\n\t"
                     "- radius and 2 points\n\t"
                     "- radius, alpha1 and one point\n\t"
-                    "- radius, alpha1 and alpha2"
+                    "- radius, alpha1 and alpha2\n\t"
+                    f"got radius={d.radius} points={d.points} (n={n})"
                 )
         except RuntimeError as e:
             raise RuntimeError(f"Could not create arc {d}: {e}")
