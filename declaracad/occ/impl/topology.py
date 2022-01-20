@@ -9,7 +9,7 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
-from atom.api import Atom, Instance, Typed, Bool, List
+from atom.api import Atom, Instance, Typed, Bool, List, Property
 from typing import Any, Iterable, Optional, TypeVar, Union
 from typing import Dict as DictType
 from typing import List as ListType
@@ -348,7 +348,8 @@ class Topology(Atom):
     def _default_compounds(self):
         return self._loop_topo(TopAbs_COMPOUND)
 
-    def ordered_vertices_from_wire(self, wire: TopoDS_Wire) -> ListType[TopoDS_Vertex]:
+    @classmethod
+    def ordered_vertices_from_wire(cls, wire: TopoDS_Wire) -> ListType[TopoDS_Vertex]:
         """Get vertices from a wire.
 
         Parameters
@@ -357,7 +358,8 @@ class Topology(Atom):
         """
         return WireExplorer(wire=wire).ordered_vertices()
 
-    def ordered_edges_from_wire(self, wire: TopoDS_Wire) -> ListType[TopoDS_Edge]:
+    @classmethod
+    def ordered_edges_from_wire(cls, wire: TopoDS_Wire) -> ListType[TopoDS_Edge]:
         """Get edges from a wire.
 
         Parameters
@@ -1169,8 +1171,9 @@ class Topology(Atom):
             )
         raise ValueError("Invalid derivative")
 
-    @property
-    def curve_bounds(self) -> TupleType[float, float]:
+    curve_bounds = Property(cached=True)
+
+    def _get_curve_bounds(self) -> TupleType[float, float]:
         """Get the U bounds of an edge or wire.
 
         Returns
@@ -1184,8 +1187,9 @@ class Topology(Atom):
             raise TypeError(f"Cannot get curve bounds of {shape}")
         return (curve.FirstParameter(), curve.LastParameter())
 
-    @property
-    def face_bounds(self) -> TupleType[float, float, float, float]:
+    face_bounds = Property(cached=True)
+
+    def _get_face_bounds(self) -> TupleType[float, float, float, float]:
         """Get the UV bounds of a face.
 
         Returns
@@ -1347,9 +1351,11 @@ class Topology(Atom):
     # -------------------------------------------------------------------------
     # Edge/Wire Properties
     # -------------------------------------------------------------------------
-    @property
-    def start_point(self) -> Point:
-        """Get the first / start point of a TopoDS_Wire or TopoDS_Edge"""
+    start_point = Property(cached=True)
+
+    def _get_start_point(self) -> Point:
+        """Get the first / start point of a TopoDS_Wire or TopoDS_Edge.
+        """
         shape = self.shape
         if isinstance(shape, TopoDS_Edge):
             curve = BRepAdaptor_Curve(shape)
@@ -1357,10 +1363,15 @@ class Topology(Atom):
             curve = BRepAdaptor_CompCurve(shape)
         else:
             raise TypeError(f"Cannot get start point of {shape}")
-        return self.get_value_at(curve, curve.FirstParameter())
+        if Topology.is_reversed(shape):
+            t = curve.LastParameter()
+        else:
+            t = curve.FirstParameter()
+        return self.get_value_at(curve, t)
 
-    @property
-    def end_point(self) -> Point:
+    end_point = Property(cached=True)
+
+    def _get_end_point(self) -> Point:
         """Get the end / last point of a TopoDS_Wire or TopoDS_Edge"""
         shape = Topology.cast_shape(self.shape)
         if isinstance(shape, TopoDS_Edge):
@@ -1369,10 +1380,15 @@ class Topology(Atom):
             curve = BRepAdaptor_CompCurve(shape)
         else:
             raise TypeError(f"Cannot get end point of {shape}")
-        return self.get_value_at(curve, curve.LastParameter())
+        if Topology.is_reversed(shape):
+            t = curve.FirstParameter()
+        else:
+            t = curve.LastParameter()
+        return self.get_value_at(curve, t)
 
-    @property
-    def start_tangent(self) -> TupleType[Point, Direction]:
+    start_tangent = Property(cached=True)
+
+    def _get_start_tangent(self) -> TupleType[Point, Direction]:
         """Get the start tangent point and direction"""
         shape = Topology.cast_shape(self.shape)
         if isinstance(shape, TopoDS_Edge):
@@ -1381,10 +1397,15 @@ class Topology(Atom):
             curve = BRepAdaptor_CompCurve(shape)
         else:
             raise TypeError(f"Cannot get start tangent of {shape}")
-        return self.get_value_at(curve, curve.FirstParameter(), 1)
+        if Topology.is_reversed(shape):
+            t = curve.LastParameter()
+        else:
+            t = curve.FirstParameter()
+        return self.get_value_at(curve, t, 1)
 
-    @property
-    def end_tangent(self) -> TupleType[Point, Direction]:
+    end_tangent = Property(cached=True)
+
+    def _get_end_tangent(self) -> TupleType[Point, Direction]:
         """Get the end tangent point and direction"""
         shape = Topology.cast_shape(self.shape)
         if isinstance(shape, TopoDS_Edge):
@@ -1393,10 +1414,15 @@ class Topology(Atom):
             curve = BRepAdaptor_CompCurve(shape)
         else:
             raise TypeError(f"Cannot get end tangent of {shape}")
-        return self.get_value_at(curve, curve.LastParameter(), 1)
+        if Topology.is_reversed(shape):
+            t = curve.FirstParameter()
+        else:
+            t = curve.LastParameter()
+        return self.get_value_at(curve, t, 1)
 
-    @property
-    def outer_wire(self) -> Optional[TopoDS_Wire]:
+    outer_wire = Property(cached=True)
+
+    def _get_outer_wire(self) -> Optional[TopoDS_Wire]:
         """If the shape is a face, return the most outer wire, otherwise None.
 
         Returns
@@ -1414,24 +1440,27 @@ class Topology(Atom):
     # Shape Properties
     # -------------------------------------------------------------------------
 
-    @property
-    def length(self):
+    length = Property(cached=True)
+
+    def _get_length(self):
         props = GProp_GProps()
         BRepGProp.LinearProperties_(self.shape, props, True)
         return props.Mass()  # Don't ask
 
     mass = length
 
-    @property
-    def center_point(self) -> Point:
+    center_point = Property(cached=True)
+
+    def _get_center_point(self) -> Point:
         """Return the center point of this shape as computed by the bounding
         box.
 
         """
         return Topology.bbox(shapes=[self.shape]).center
 
-    @property
-    def area(self) -> float:
+    area = Property(cached=True)
+
+    def _get_area(self) -> float:
         """Compute the area of the surface. It may be negative indicating
         the direction is reversed.
 
@@ -1445,8 +1474,9 @@ class Topology(Atom):
         BRepGProp.SurfaceProperties_(self.shape, props, True)
         return props.Mass()
 
-    @property
-    def volume(self) -> float:
+    volume = Property(cached=True)
+
+    def _get_volume(self) -> float:
         """Volume of a solid.
 
         Properties
