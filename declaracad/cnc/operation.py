@@ -110,23 +110,32 @@ def generate_polyline_gcode(
 def generate_wire_gcode(wire: Wire, format_value) -> ListType[str]:
     """Generate code for a Wire"""
     cmds = []
+    last_point = wire.topology.start_point
     for edge in wire.topology.edges:
         topo = Topology(shape=edge)
         if Topology.is_line(edge):
-            for p in (topo.start_point, topo.end_point):
+            points = [topo.start_point, topo.end_point]
+            for p in points:
                 x, y, z = map(format_value, p)
                 cmds.append(f"G1 X{x} Y{y} Z{z}")
+            assert last_point == points[0]
+            last_point = points[-1]
         elif Topology.is_circle(edge):
             curve = Topology.cast_curve(edge)
+            points = [topo.start_point, topo.end_point]
             arc = Arc(
                 direction=Direction(curve.Axis().Direction()),
                 position=Point(curve.Location()),
                 radius=curve.Radius(),
-                points=[topo.start_point, topo.end_point],
+                clockwise=Topology.is_reversed(edge),
+                points=points,
             )
+            assert last_point == points[0]
+            last_point = points[-1]
             cmds.extend(generate_arc_gcode(arc, format_value))
         else:
             raise NotImplementedError("TODO: Cannot create gcode for wire")
+
 
     if not wire.description:
         wire.description = "Gcode: \n%s\n" % "\n".join(cmds)

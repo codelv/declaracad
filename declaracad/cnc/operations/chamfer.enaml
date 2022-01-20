@@ -24,7 +24,7 @@ from declaracad.occ.api import (
 )
 
 
-enamldef ArcEaseIn(Part):
+enamldef ArcEaseIn(Wire):
     attr enter_point
     attr path_start
     attr start_angle
@@ -36,6 +36,7 @@ enamldef ArcEaseIn(Part):
         attr asin = sin(start_angle-pi/2)
         direction = (acos, asin, 0)
         clockwise = True
+        as_wire = True
         name = 'Arc down'
         color = 'orange'
         attr arc_start = arc_center.points[0]
@@ -49,6 +50,7 @@ enamldef ArcEaseIn(Part):
         color = 'lime'
         name = 'Arc approach'
         clockwise = not climb
+        as_wire = True
         attr a = start_angle + (-3*pi/2 if climb else 3*pi/2)
         attr acos = cos(a)
         attr asin = sin(a)
@@ -63,7 +65,7 @@ enamldef ArcEaseIn(Part):
         color = 'teal'
         clockwise = not climb
         name = 'Arc enter'
-
+        as_wire = True
         attr a1 = start_angle + (-pi/2 if climb else pi/2)
         attr a2 = start_angle + (pi if climb else -pi)
 
@@ -79,7 +81,7 @@ enamldef ArcEaseIn(Part):
             path_start
         ]
 
-enamldef ArcEaseOut(Part):
+enamldef ArcEaseOut(Wire):
     attr start_angle
     attr path_end
     attr exit_point
@@ -89,6 +91,7 @@ enamldef ArcEaseOut(Part):
         clockwise = not climb
         radius = min(arc_radius/2, tool.diameter/2)
         name = 'Arc exit'
+        as_wire = True
         # Position is at reverse angle
         attr acosr = cos(start_angle-pi)
         attr asinr = sin(start_angle-pi)
@@ -104,6 +107,7 @@ enamldef ArcEaseOut(Part):
     Arc: arc_center:
         name = 'Arc approach'
         clockwise = not climb
+        as_wire = True
         attr arc_exit_start = arc_exit.points[-1]
         attr a = start_angle-pi/2 if climb else start_angle-3*pi/2
         attr acos = cos(a)
@@ -120,6 +124,7 @@ enamldef ArcEaseOut(Part):
         attr acos = cos(start_angle-pi/2)
         attr asin = sin(start_angle-pi/2)
         direction = (acos, asin, 0)# if arc_start in
+        as_wire = True
         attr arc_start = arc_center.points[-1]
         radius = arc_center.radius
         position = (arc_start.x, arc_start.y, exit_point.z)
@@ -362,7 +367,7 @@ enamldef ChamferOperation(Operation): operation:
         Part: path:
 
             func generate_gcode(fmt):
-                cmds = []
+                cmds = [f"(Chamfer {loop.item['type']} {loop.index + 1})"]
                 for child in self.children:
                     if isinstance(child, Polyline):
                         rapid = child.name == 'Rapid move'
@@ -386,29 +391,26 @@ enamldef ChamferOperation(Operation): operation:
 
             Conditional:
                 condition << loop.item['type'] == 'hole'
-                Wire:
-                    color = 'coral'
-                    ArcEaseIn:
-                        start_angle = loop.item['start_angle']
-                        climb = operation.climb
-                        path_start = loop.item['start']
-                        enter_point = loop.item['enter']
-                        arc_radius = loop.item['radius']
+                ArcEaseIn:
+                    start_angle = loop.item['start_angle']
+                    climb = operation.climb
+                    path_start = loop.item['start']
+                    enter_point = loop.item['enter']
+                    arc_radius = loop.item['radius']
 
-            TopoShape:
+            Wire:
                 color = 'magenta'
-                shape = loop.item['path']
+                edges = [loop.item['path']]
 
             Conditional:
                 condition << loop.item['type'] == 'hole'
-                Wire:
-                    color = 'slateblue'
-                    ArcEaseOut:
-                        climb = operation.climb
-                        start_angle = loop.item['start_angle']
-                        path_end = loop.item['end']
-                        exit_point = loop.item['exit']
-                        arc_radius = loop.item['radius']
+
+                ArcEaseOut:
+                    climb = operation.climb
+                    start_angle = loop.item['start_angle']
+                    path_end = loop.item['end']
+                    exit_point = loop.item['exit']
+                    arc_radius = loop.item['radius']
 
             Polyline:
                 name = 'Rapid move'
