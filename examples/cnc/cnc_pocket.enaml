@@ -23,7 +23,6 @@ enamldef Assembly(Part):
     Job: j:
         filename = 'cnc_pocket.nc'
         CircularPocket:
-            climb = True
             surface_speed = 100
             tool = EndMill(diameter=8, cut=30)
             pockets = [part.topology.faces[6]]

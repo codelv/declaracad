@@ -48,6 +48,7 @@ EXAMPLES = (
     "threads",
     "thru_sections",
     "turners_cube",
+    "trimmed",
     "vacuum_nozzle",
     "unify",
 )

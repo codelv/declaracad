@@ -10,13 +10,10 @@ import pytest
 from textwrap import dedent
 
 from OCCT.TopoDS import TopoDS_Shape
-
-from declaracad.occ.api import load_model
+from declaracad.occ.api import load_model, Point, Shape, Segment
 
 
 def test_shape():
-    from declaracad.occ.shape import Shape
-
     changes = []
 
     def on_change(change):
@@ -31,8 +28,6 @@ def test_shape():
 
 
 def test_point():
-    from declaracad.occ.shape import Point
-
     assert (Point(0, 0) + (1, 1)) == Point(1, 1)
     assert (Point(1, 1) - (2, 1)) == Point(-1, 0)
     assert Point().distance(Point(3, 4)) == 5
@@ -52,6 +47,31 @@ def test_point():
 
     with pytest.raises(TypeError):
         Point(1, 2, 3) * Point(1, 2, 3)
+
+
+def test_point_offset():
+    p = Point(0, 0, 0)
+    a = p.offset(5, (1, 0, 0))
+
+    p = Point(1, 0, 0)
+    a = p.offset(5, (1, 0, 0))
+    assert a == Point(6, 0, 0)
+
+    a = p.offset(5, (0, 1, 0))
+    assert a == Point(1, 5, 0)
+
+
+def test_topo_start_point():
+    points = [(0, 0), (10, 0)]
+    segment = Segment(points=points)
+    segment.render()
+    assert segment.topology.start_point == points[0]
+    points = [(10, 0), (0, 0)]
+    segment = Segment(points=points)
+    segment.render()
+    assert segment.topology.start_point == points[0]
+
+
 
 
 TEMPLATE = """
