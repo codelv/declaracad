@@ -23,6 +23,7 @@ from .trochoid import Trochoid
 
 
 class SlottingData(Atom):
+    tool = Instance(Tool)
     middle_path = Instance(MiddlePath)
     width = Float(strict=False)
     step_over = Float(strict=False)
@@ -32,8 +33,8 @@ class SlottingData(Atom):
 
     path = Property(_get_path, cached=True)
 
-    def compute_width(self, tool, position, tangent):
-        return self.width - tool.diameter
+    def compute_width(self, curve, t):
+        return self.width - self.tool.diameter
 
 
 enamldef SlotCutPath(Part): cut_path:
@@ -56,8 +57,7 @@ enamldef SlotCutPath(Part): cut_path:
     Include:
         objects = [data.wire] if simple_slot else []
     Looper:
-        iterable = [] if simple_slot else \
-            Topology.parametrize_length(data.path, length=data.step_over, n=1)
+        iterable = [] if simple_slot else Topology.parametrize_by_length(data.path, data.step_over)
         Polyline:
             color = 'lime'
             line_style = 'dashed'
@@ -67,9 +67,10 @@ enamldef SlotCutPath(Part): cut_path:
                 trochoid.start_point
             ]
         Trochoid: trochoid:
-            tangent = loop.item[1]
-            center_point = loop.item[0]
-            width = cut_path.data.compute_width(cut_path.tool, *loop.item)
+            attr curve_d1 = Topology.curve_value_at(loop.item[0], loop.item[1], 1)
+            tangent = curve_d1[1]
+            center_point = curve_d1[0]
+            width = cut_path.data.compute_width(*loop.item)
             constructed :: cut_path.last_point = self.end_point
 
 
@@ -150,6 +151,7 @@ enamldef SlottingOperation(Operation): operation:
                 edges.append(curve.render())
 
             data = SlottingData(
+                tool=self.tool,
                 middle_path=middle_path,
                 width=self.slot_width - self.radial_clearance,
                 step_over=self.step_over,

@@ -234,7 +234,7 @@ enamldef ChamferOperation(Operation): operation:
                     normal_distance=normal_distance
                 ).render()
                 offset_zmin = Topology.bbox(offset_wire).zmin
-            except RuntimeException as e:
+            except RuntimeError as e:
                 offset_zmin = zmin + 1 # force reverse
 
             # If direction is wrong reverse

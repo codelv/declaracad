@@ -65,13 +65,15 @@ class Command(Atom):
 
     waypoint = Property(_get_waypoint, cached=True)
 
-    def position(self, last):
+    def position(self, last, scale: float = 1):
         """Get the 3D-position of this cmd's XYZ coordinates.
 
         Parameters
         ----------
         last: Point
-            The previous position.
+            The previous position. Already converted!
+        scale: float
+            Scale for the units
 
         Returns
         -------
@@ -84,9 +86,9 @@ class Command(Atom):
         y = data.get("Y")
         z = data.get("Z")
         return Point(
-            last.x if x is None else x,
-            last.y if y is None else y,
-            last.z if z is None else z,
+            last.x if x is None else x * scale,
+            last.y if y is None else y * scale,
+            last.z if z is None else z * scale,
         )
 
     def _get_feedrate(self):

@@ -65,13 +65,15 @@ def load_gcode(filename, **options):
     mode = "absolute"
     log.debug(doc)
     plane = "xy"
+    units = options.get("units", "mm")
+    scale = 25.4 if units == "in" else 1
     for cmd in doc.commands:
         data = cmd.data
         if cmd.id in ("G0", "G1"):
             if mode == "absolute":
-                pos = cmd.position(last)
+                pos = cmd.position(last, scale)
             else:
-                pos = last + cmd.position(zero)
+                pos = last + cmd.position(zero, scale)
 
             if last == pos:
                 log.debug(f"Duplicate: {cmd}")
@@ -104,12 +106,20 @@ def load_gcode(filename, **options):
             plane = "xz"
         elif cmd.id == "G19":
             plane = "yz"
+        elif cmd.id == "G20":
+            units = "in"
+            scale = 25.4
+        elif cmd.id == "G21":
+            units = "mm"
+            scale = 1
         elif cmd.id in ("G2", "G3"):
             # TODO: Helical arcs using Z is not implemented
-            pos = cmd.position(last)
+            pos = cmd.position(last, scale)
             clockwise = cmd.id == "G2"
             r = data.get("R")
             if r is not None:
+                r *= scale
+
                 # Solve for center
                 delta = pos - last
                 if delta.z != 0:
@@ -149,17 +159,17 @@ def load_gcode(filename, **options):
                     if i is None and j is None:
                         raise ValueError(f"Invalid arc {cmd} (both I and J missing)")
                     direction = (0, 0, 1)
-                    center = last + (i or 0, j or 0)
+                    center = last + (i * scale or 0, j * scale or 0)
                 elif plane == "xz":
                     if i is None and k is None:
                         raise ValueError(f"Invalid arc {cmd} (both I and K missing)")
                     direction = (0, 1, 0)
-                    center = last + (i or 0, 0, k or 0)
+                    center = last + (i * scale or 0, 0, k * scale or 0)
                 elif plane == "yz":
                     if k is None and j is None:
                         raise ValueError(f"Invalid arc {cmd} (both J and K missing)")
                     direction = (1, 0, 0)
-                    center = last + (0, j or 0, k or 0)
+                    center = last + (0, j * scale or 0, k * scale or 0)
                 else:
                     raise RuntimeError("Unreachable code. This is likely a bug")
                 r = center.distance(last)
@@ -193,19 +203,19 @@ def load_gcode(filename, **options):
             last_cmd = cmd
         elif cmd.id == "G5":
             # Cubic B-Spline
-            points = [last, last + Point(data["X"], data["Y"])]
+            points = [last, last + Point(data["X"] * scale, data["Y"] * scale)]
 
             # For first
             if last_cmd.id != "G5":
-                points.append(points[-1] + Point(data["I"], data["J"]))
+                points.append(points[-1] + Point(data["I"] * scale, data["J"] * scale))
             elif "I" in data and "J" in data:
-                points.append(points[-1] + Point(data["I"], data["J"]))
+                points.append(points[-1] + Point(data["I"] * scale, data["J"] * scale))
             elif "I" in data or "J" in data:
                 # Must both be specified or nether
                 raise ValueError(f"Incomplete G5 command {cmd}")
 
             # Last point
-            points.append(points[-1] + Point(cmd["P"], cmd["Q"]))
+            points.append(points[-1] + Point(cmd["P"] * scale, cmd["Q"] * scale))
 
             items.append(
                 Bezier(
@@ -217,11 +227,11 @@ def load_gcode(filename, **options):
             last = points[-1]
             last_cmd = cmd
         elif cmd.id == "G5.1":
-            c1 = last + Point(data["X"], data["Y"])
+            c1 = last + Point(data["X"] * scale, data["Y"] * scale)
             i, j = data.get("I"), data.get("J")
             if i is None and j is None:
                 raise ValueError(f"Incomplete G5.1 command {cmd}")
-            c2 = c1 + Point(i or 0, j or 0)
+            c2 = c1 + Point(i * scale or 0, j * scale or 0)
             items.append(
                 Bezier(
                     points=[last, c1, c2],

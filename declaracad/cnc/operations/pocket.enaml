@@ -23,6 +23,7 @@ from declaracad.occ.api import (
 from declaracad.occ.geom import coerce_point
 from .helix import ArcHelix
 from .spiral import ArcSpiral
+from .trochoid import Trochoid
 
 
 class CircularPocketData(Atom):
@@ -380,3 +381,108 @@ enamldef CircularPocket(Operation): operation:
                     description = 'Lift'
                     direction = (0, 0, 1)
                     position = lift_point
+
+
+
+enamldef PocketOperation(Operation): slot:
+
+    #: Step over
+    attr step_over = tool.diameter/10
+
+    #: List of faces to pocket
+    attr pockets: list = []
+
+    # ------------------------------------------------------------------------
+    # Operation parameters
+    # ------------------------------------------------------------------------
+    attr climb: bool = True
+
+    #: Clearance added to start above the top
+    attr top_clearance = 1
+
+    #: Clearance added to the bottom of the hole
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom (if closed)
+    attr bottom_clearance = 0
+
+    #: Clearance added to the diameter.
+    #: A positive number will make the cut diameter bigger.
+    #: A negative number will make it smaller
+    attr radial_clearance = 0
+
+    func get_distances(middle_path, edge):
+        arc = middle_path.proxy.graph[edge]
+        return (arc.FirstNode().Distance(), arc.SecondNode().Distance())
+
+    func generate_pocket(face):
+        data = []
+
+        if bottom_clearance:
+            transform = Transform(shape=face, position=(0, 0, bottom_clearance))
+            face = transform.render()
+
+        middle_path = MiddlePath(shapes=[face])
+        middle_path.render()
+
+        for i, edge in enumerate(middle_path.topology.edges):
+            r = get_distances(middle_path, edge)
+            if not r:
+                print(f"Couldn't find edge {i}")
+                continue
+            d1, d2 = r
+            umin, umax = Topology(shape=edge).curve_bounds
+            slope = abs((d2 - d1)/(umax-umin))
+
+            for curve, t in Topology.parametrize_by_length(edge, step_over):
+                pos, tangent = Topology.curve_value_at(curve, t, 1)
+                w = 2 * (d1 + slope * t)
+                d = w - tool.diameter - radial_clearance
+                if d <= 0:
+                    continue
+                data.insert(0, (pos, -tangent, d))
+        return data
+
+    func get_data():
+        results = []
+        for face in self.pockets:
+            results.append(generate_pocket(face))
+        return results
+
+    Looper: outer_loop:
+        iterable = get_data()
+        Part: pocket_toolpath:
+            attr last_point = start_point
+
+            func generate_gcode():
+                cmds = []
+                for child in self.children:
+                    if hasattr(child, 'generate_gcode'):
+                        cmds.extend(child.generate_gcode())
+                    elif isinstance(child, Arc):
+                        cmds.extend(generate_arc_gcode(child, format_value))
+                    elif isinstance(child, Polyline):
+                        cmds.extend(generate_polyline_gcode(
+                            child, format_value, rapid=True))
+                return cmds
+            Looper:
+                iterable = loop.item
+                Polyline:
+                    color = 'lime'
+                    line_style = 'dashed'
+                    func get_points():
+                        points = [
+                            last_point,
+                            trochoid.start_point
+                        ]
+                        if outer_loop.index == 0:
+                            p = points[-1]
+                            points.insert(1, (p.x, p.y, last_point.z))
+                        return points
+
+                    points = get_points()
+                Trochoid: trochoid:
+                    width = loop_item[2]
+                    tangent = loop.item[1]
+                    return_radius = min(width/4, tool.diameter/4)
+                    center_point = loop.item[0]
+                    constructed :: pocket_toolpath.last_point = self.end_point

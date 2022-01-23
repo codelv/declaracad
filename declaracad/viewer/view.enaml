@@ -284,8 +284,10 @@ enamldef ModelViewer(OccViewer): viewer:
                 c1 = Topology.cast_curve(topods_shape)
                 c = format_point(Point(c1.Location()))
                 r = format_unit(c1.Radius())
+                d = format_unit(2 * c1.Radius())
                 desc.append(f"  Center: {c}")
                 desc.append(f"  Radius: {r}")
+                desc.append(f"  Diameter: {d}")
             return desc
         elif shape_type == 'wire':
             topology = Topology(shape=topods_shape)
@@ -300,6 +302,7 @@ enamldef ModelViewer(OccViewer): viewer:
             if Topology.is_cylinder(topods_shape):
                 c = Topology.cast_surface(topods_shape)
                 r = format_unit(c.Radius())
+                d = format_unit(2 * c.Radius())
                 ctr = format_point(Point(c.Location()))
                 topology = Topology(shape=Topology.cast_shape(topods_shape))
                 umin, umax, vmin, vmax = topology.face_bounds
@@ -307,6 +310,7 @@ enamldef ModelViewer(OccViewer): viewer:
                 desc = [
                     f"  Center: {ctr}",
                     f"  Radius: {r}",
+                    f"  Diameter: {d}",
                     f"  Length: {length}",
                 ]
                 return desc
@@ -315,10 +319,12 @@ enamldef ModelViewer(OccViewer): viewer:
                 ctr = format_point(Point(c.Location()))
                 angle = round(degrees(c.SemiAngle()), 6)
                 r = format_unit(c.RefRadius())
+                d = format_unit(2 * c.RefRadius())
                 desc = [
                     f"  Center: {ctr}",
                     f"  Angle: {angle}°",
                     f"  Radius: {r}",
+                    f"  Diameter: {d}",
                 ]
                 return desc
         elif shape_type == 'mesh':

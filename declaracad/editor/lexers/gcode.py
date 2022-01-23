@@ -46,7 +46,7 @@ class GCodeLexer:
     t_COMMA = r","
     t_SPACE = r"\ "
     t_TAB = r"\t"
-    t_NEWLINE = r"\n"
+    t_NEWLINE = r"\r?\n"
 
     # A regular expression rule with some action code
     def t_NUMBER(self, t):
@@ -204,7 +204,11 @@ class QsciLexerGCode(QsciLexerCustom):
 
     def styleText(self, start, end):
         self.startStyling(start)
-        text = self.parent().text()[start:end]
+
+        # Encode and decode to fix unicode issues...
+        data = self.parent().text().encode('utf-8')[start:end]
+        text = data.decode()
+
         lexer = self.lexer
         lexer.input(text)
         # print(f"Range: {start} to {end}")
@@ -214,9 +218,9 @@ class QsciLexerGCode(QsciLexerCustom):
         style = self.Default
         CODES = self.CODES
         for token in lexer:
-            i = len(token.value)
+            i = len(token.value.encode('utf-8'))
             t = token.type
-            # print(token)
+            #print((token, i))
             if t == "COMMENT":
                 set_style(i, self.Comment)
             elif t == "CODE":
