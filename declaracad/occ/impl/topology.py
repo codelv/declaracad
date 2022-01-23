@@ -301,34 +301,41 @@ class Topology(Atom):
     # -------------------------------------------------------------------------
     # Shape Topology
     # -------------------------------------------------------------------------
-    faces = List()
+    faces = List(TopoDS_Face)
 
     def _default_faces(self):
         return self._loop_topo(TopAbs_FACE)
 
     # Note: This filters out duplicates
-    vertices = List()
+    vertices = List(TopoDS_Vertex)
 
     def _default_vertices(self):
-        return Topology.unique_shapes(self._loop_topo(TopAbs_VERTEX))
+        if isinstance(self.shape, TopoDS_Wire):
+            vertices = WireExplorer(wire=self.shape).ordered_vertices()
+        else:
+            vertices = self._loop_topo(TopAbs_VERTEX)
+        return Topology.unique_shapes(vertices)
 
     #: Get a list of points from vertices
-    points = List()
+    points = List(Point)
 
     def _default_points(self):
         return [coerce_point(v) for v in self.vertices]
 
-    edges = List()
+    edges = List(TopoDS_Edge)
 
     def _default_edges(self):
-        return self._loop_topo(TopAbs_EDGE)
+        if isinstance(self.shape, TopoDS_Wire):
+            return WireExplorer(wire=self.shape).ordered_edges()
+        else:
+            return self._loop_topo(TopAbs_EDGE)
 
-    wires = List()
+    wires = List(TopoDS_Wire)
 
     def _default_wires(self):
         return self._loop_topo(TopAbs_WIRE)
 
-    shells = List()
+    shells = List(TopoDS_Shell)
 
     def _default_shells(self):
         return self._loop_topo(TopAbs_SHELL)
@@ -338,12 +345,12 @@ class Topology(Atom):
     def _default_solids(self):
         return self._loop_topo(TopAbs_SOLID)
 
-    comp_solids = List()
+    comp_solids = List(TopoDS_CompSolid)
 
     def _default_comp_solids(self):
         return self._loop_topo(TopAbs_COMPSOLID)
 
-    compounds = List()
+    compounds = List(TopoDS_Compound)
 
     def _default_compounds(self):
         return self._loop_topo(TopAbs_COMPOUND)
