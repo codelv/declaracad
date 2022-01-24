@@ -13,11 +13,13 @@ import math
 import warnings
 from atom.api import Atom, Float, Typed, Property
 from contextlib import contextmanager
-
-from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec
+from typing import Optional
+from typing import Tuple as TupleType
+from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec, gp_Ax1
 from OCCT.Geom import Geom_Line
 from OCCT.BRep import BRep_Tool
 from OCCT.TopoDS import TopoDS_Shape
+
 
 try:
     from SMESH.SMDS import SMDS_MeshNode
@@ -281,9 +283,20 @@ class Direction(Point):
     def __neg__(self):
         return self.reversed()
 
-    def reversed(self):
+    def reversed(self) -> "Direction":
         """Return a reversed copy"""
         v = self.proxy.Reversed()
+        return Direction(v.X(), v.Y(), v.Z())
+
+    def rotated(
+        self, angle: float, axis: Optional[TupleType[Point, "Direction"]] = None
+    ) -> "Direction":
+        """Rotate by angle radians about the given axis. The axis defaults
+        to the origin and z direction.
+
+        """
+        axis = gp_Ax1(axis[0].proxy, axis[1].proxy) if axis else gp.OZ_()
+        v = self.proxy.Rotated(axis, angle)
         return Direction(v.X(), v.Y(), v.Z())
 
     @classmethod

@@ -13,7 +13,7 @@ from math import pi, sqrt
 from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import (
     load_model, Point, Shape, Segment, Box, Cylinder, Cone, Topology,
-    Ellipse, Rectangle, Face, Wire
+    Ellipse, Rectangle, Face, Wire, Direction
 )
 
 
@@ -63,6 +63,12 @@ def test_point_offset():
 
     a = p.offset(5, (0, 1, 0))
     assert a == Point(1, 5, 0)
+
+
+def test_direction():
+    d = Direction(1, 0, 0)
+    assert d.reversed() == Direction(-1, 0, 0)
+    assert d.rotated(pi/2) == Direction(0, 1, 0)
 
 
 def test_topo_start_point(qt_app):
