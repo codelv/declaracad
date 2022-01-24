@@ -1,4 +1,5 @@
 # Created in DeclaraCAD
+from math import pi
 from declaracad.occ.api import *
 from declaracad.parts.display import Axis
 
@@ -21,4 +22,48 @@ enamldef Assembly(Part):
         points = [
             (3, 2),
             (3, 0),
+        ]
+    
+    # Arc with two angles going clockwise with 0 at x-axis
+    Arc:
+        color = 'lime'
+        radius = 1
+        position = (-5, 0, 0)
+        alpha1 = 0
+        alpha2 = pi/2
+    Arc:
+        color = 'green'
+        radius = 1
+        position = (-5, 0, 0)
+        alpha1 = pi/2
+        alpha2 = pi
+    Arc:
+        color = 'red'
+        radius = 1
+        position = (-5, 0, 0)
+        alpha1 = pi
+        alpha2 = 3*pi/2
+    
+    # Angle from start point to angle from x-axis
+    Arc:
+        color = 'purple'
+        radius = 1
+        position = (-5, 3, 0)
+        alpha1 = 0
+        points = [position + (0, 1, 0)]
+    Arc:
+        color = 'teal'
+        radius = 1
+        position = (-5, 3, 0)
+        alpha1 = pi/2
+        points = [position + (1, 0, 0)]
+        
+    # Arc with two offset points
+    Arc:
+        color = 'magenta'
+        radius = 1
+        position = (-5, -3, 0)
+        points = [
+            position.offset(radius, (1, 1, 0)),
+            position.offset(radius, (-1, 0, 0)),
         ]
