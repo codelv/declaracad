@@ -61,15 +61,17 @@ def test_point_offset():
     assert a == Point(1, 5, 0)
 
 
-def test_topo_start_point():
+def test_topo_start_point(qt_app):
     points = [(0, 0), (10, 0)]
     segment = Segment(points=points)
     segment.render()
     assert segment.topology.start_point == points[0]
+    assert segment.topology.end_point == points[-1]
     points = [(10, 0), (0, 0)]
     segment = Segment(points=points)
     segment.render()
     assert segment.topology.start_point == points[0]
+    assert segment.topology.end_point == points[-1]
 
 
 
