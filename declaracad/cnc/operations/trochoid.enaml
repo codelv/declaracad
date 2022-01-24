@@ -34,8 +34,15 @@ enamldef Trochoid(Part): part:
     #: Point of the center of the wave head
     attr head_point << wave_in.points[-1].midpoint(wave_out.points[0])
 
-    attr start_point << arc_in.points[0]
-    attr end_point << arc_out.points[-1]
+    #: Start and end points
+    attr start_point << arc_in.topology.start_point
+    attr end_point << arc_out.topology.end_point
+
+    #: Enter and exit tangents
+    attr default_enter_tangent = tangent.cross(self.direction if climb else -self.direction)
+    attr default_exit_tangent = tangent.cross(-self.direction if climb else self.direction)
+    attr enter_tangent = default_enter_tangent
+    attr exit_tangent = default_exit_tangent
 
     # Aliases
     alias arc_in
@@ -50,25 +57,21 @@ enamldef Trochoid(Part): part:
     attr d = direction.cross(part.tangent)
 
     Arc: arc_in:
-        color = 'orange'
+        color = 'orangered'
         as_wire = True
         clockwise = not climb
         radius = return_radius
         attr p = wave_in.points[0]
-        func get_tangent():
-            t = wave_in.topology.start_tangent[1]
-            return t.reversed() if climb else t
-        attr t = get_tangent()
         position = p.offset(radius, wave_in.position - p)
         points = [
-            position.offset(radius if climb else -radius, t),
+            position.offset(radius, enter_tangent.rotated(-pi/2 if climb else pi/2)),
             p
         ]
     Arc: wave_in:
         radius = wave_radius
         color = 'blue'
-        as_wire = True
         clockwise = not climb
+        as_wire = True
         position = center_point.offset(radius-width/2 if climb else width/2-radius, d)
         points = [
             center_point.offset(-width/2 if climb else width/2, d),
@@ -98,14 +101,10 @@ enamldef Trochoid(Part): part:
         color = 'orange'
         as_wire = True
         clockwise = not climb
-        radius = arc_in.radius
+        radius = return_radius
         attr p = wave_out.points[-1]
-        func get_tangent():
-            t = wave_out.topology.end_tangent[1]
-            return t if climb else t.reversed()
-        attr t = get_tangent()
         position = p.offset(radius, wave_out.position - p)
         points = [
             p,
-            position.offset(radius if climb else -radius, t),
+            position.offset(radius, exit_tangent.rotated(pi/2 if climb else -pi/2))
         ]

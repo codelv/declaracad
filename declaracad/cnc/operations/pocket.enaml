@@ -1,5 +1,5 @@
 """
-Copyright (c) 2021, Jairus Martin.
+Copyright (c) 2021-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -11,7 +11,7 @@ Created on Nov 11, 2021
 """
 import traceback
 from math import pi
-from atom.api import Atom, Float, Instance
+from atom.api import Atom, Float, Instance, List
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import (
     Operation, generate_arc_gcode, generate_polyline_gcode
@@ -384,10 +384,22 @@ enamldef CircularPocket(Operation): operation:
 
 
 
-enamldef PocketOperation(Operation): slot:
+
+class PocketData(Atom):
+    depth = Float(strict=False)
+    helix_start = Instance(Point)
+    spiral_start = Instance(Point)
+    spiral_radius = Float(strict=False)
+    end = Instance(Point)
+    steps = List()
+
+enamldef PocketOperation(Operation): operation:
 
     #: Step over
-    attr step_over = tool.diameter/10
+    attr step_over = tool.diameter*0.2
+
+    #: Shape being pocketed
+    attr part
 
     #: List of faces to pocket
     attr pockets: list = []
@@ -410,79 +422,174 @@ enamldef PocketOperation(Operation): slot:
     #: A negative number will make it smaller
     attr radial_clearance = 0
 
+    #: Helix radius
+    attr helix_radius = tool.diameter*1/3
+
+    # Change in z per revolution of helix
+    attr helix_pitch = tool.diameter * 0.06
+
     func get_distances(middle_path, edge):
         arc = middle_path.proxy.graph[edge]
         return (arc.FirstNode().Distance(), arc.SecondNode().Distance())
 
-    func generate_pocket(face):
-        data = []
+    func generate_pocket(face) -> PocketData:
+        data = PocketData()
 
         if bottom_clearance:
             transform = Transform(shape=face, position=(0, 0, bottom_clearance))
             face = transform.render()
 
+        bbox = Topology.bbox(part)
+        # TODO: Determine proper depth...
+        data.depth = bbox.zmax + top_clearance - Topology.bbox(face).zmax
+
         middle_path = MiddlePath(shapes=[face])
         middle_path.render()
 
+        # TODO: Start with largest first
         for i, edge in enumerate(middle_path.topology.edges):
             r = get_distances(middle_path, edge)
             if not r:
                 print(f"Couldn't find edge {i}")
                 continue
             d1, d2 = r
-            umin, umax = Topology(shape=edge).curve_bounds
+            topo = Topology(shape=edge)
+            umin, umax = topo.curve_bounds
             slope = abs((d2 - d1)/(umax-umin))
-
+            # Order is reversed??
+            data.helix_start = topo.end_point + (0, 0, data.depth)
+            data.spiral_start = topo.end_point
+            data.spiral_radius = max(d1, d2) - tool.diameter/2 - radial_clearance
+            data.end = topo.start_point
             for curve, t in Topology.parametrize_by_length(edge, step_over):
                 pos, tangent = Topology.curve_value_at(curve, t, 1)
                 w = 2 * (d1 + slope * t)
                 d = w - tool.diameter - radial_clearance
                 if d <= 0:
                     continue
-                data.insert(0, (pos, -tangent, d))
+                data.steps.insert(0, (pos, -tangent, d))
+            data.steps.pop(0) # Remove last
         return data
 
-    func get_data():
+    func get_toolpath():
         results = []
         for face in self.pockets:
             results.append(generate_pocket(face))
         return results
 
-    Looper: outer_loop:
-        iterable = get_data()
+    attr toolpath = get_toolpath()
+    Looper:
+        iterable = toolpath
         Part: pocket_toolpath:
             attr last_point = start_point
+            attr data = loop.item
+            attr drop_point = Point(data.helix_start.x, data.helix_start.y, start_point.z)
+            DisplayArrow: drop_arrow:
+                color = 'red'
+                cone_size = (0.6, 1.5)
+                tube_size = (0.3, 3)
+                description = 'Drop'
+                direction = (0, 0, -1)
+                position = drop_point + (0, 0, 3)
+            Polyline:
+                color = 'lime'
+                line_style = 'dashed'
+                points = [
+                    last_point,
+                    drop_point,
+                    arc_in.points[0]
+                ]
+            Arc: arc_in:
+                # Arc into center
+                color = 'purple'
+                name = 'Arc in'
+                direction = (1, 0, 0)
+                radius = helix_radius/4
+                position = helix.position + (0, radius, radius)
+                points = [
+                    helix.position+(0, 0, radius),
+                    helix.position+(0, radius, 0)
+                ]
 
-            func generate_gcode():
-                cmds = []
-                for child in self.children:
-                    if hasattr(child, 'generate_gcode'):
-                        cmds.extend(child.generate_gcode())
-                    elif isinstance(child, Arc):
-                        cmds.extend(generate_arc_gcode(child, format_value))
-                    elif isinstance(child, Polyline):
-                        cmds.extend(generate_polyline_gcode(
-                            child, format_value, rapid=True))
-                return cmds
-            Looper:
-                iterable = loop.item
+            Arc: arc_merge:
+                color = 'teal'
+                name = 'Arc merge'
+                attr p = arc_in.points[-1]
+                attr r = arc_in.radius
+                attr d = -1 if climb else 1
+                position = p + (d*r, 0)
+                clockwise = not climb
+                radius = r
+                points = [
+                    p,
+                    p + (d*r, r)
+                ]
+
+            Arc: arc_union:
+                color = 'teal'
+                name = 'Arc union'
+                attr p = arc_merge.points[-1]
+                attr d = -1 if climb else 1
+                clockwise = not climb
+
+                position = helix.position + (d*arc_merge.radius, 0)
+                radius = arc_merge.radius*2
+                points = [
+                    p,
+                    helix.position + (d*arc_merge.radius * 2, 0)
+                ]
+            ArcHelix: helix:
+                color = 'teal'
+                radius = helix_radius*3/4
+                max_pitch = helix_pitch
+                clockwise = not climb
+                height = data.depth
+                position = data.helix_start
+            ArcSpiral: spiral:
+                color = 'purple'
+                position = data.spiral_start
+                start_angle = pi if climb else 0
+                clockwise = not climb
+                start_radius = helix_radius*3/4
+                end_radius = data.spiral_radius
+                max_step_over = operation.step_over/2
+                spindle_speed = operation.spindle_speed
+                feedrate = operation.feedrate
+                activated :: pocket_toolpath.last_point = position.offset(end_radius, (-1, 0, 0))
+            Looper: looper:
+                iterable = loop.item.steps
+                attr is_last = loop.index + 1 == len(toolpath)
                 Polyline:
                     color = 'lime'
-                    line_style = 'dashed'
-                    func get_points():
-                        points = [
-                            last_point,
-                            trochoid.start_point
-                        ]
-                        if outer_loop.index == 0:
-                            p = points[-1]
-                            points.insert(1, (p.x, p.y, last_point.z))
-                        return points
-
-                    points = get_points()
+                    line_style = 'dashed' if loop.index > 0 else 'solid'
+                    points = [
+                        last_point,
+                        trochoid.start_point if loop.index > 0 else trochoid.wave_in.points[0]
+                    ]
                 Trochoid: trochoid:
                     width = loop_item[2]
                     tangent = loop.item[1]
                     return_radius = min(width/4, tool.diameter/4)
+                    arc_in.display = loop.index > 0
+                    attr a = atan2(step_over, width/2)
+                    enter_tangent = tangent.rotated(-pi/2+a) if loop.index > 0 else default_enter_tangent
+                    exit_tangent = tangent.rotated(pi/2+a)
                     center_point = loop.item[0]
                     constructed :: pocket_toolpath.last_point = self.end_point
+
+
+            DisplayArrow: lift_arrow:
+                color = 'green'
+                cone_size = (0.6, 1.5)
+                tube_size = (0.3, 3)
+                description = 'Lift'
+                direction = (0, 0, 1)
+                position = return_path.lift_point
+            Polyline: return_path:
+                color = 'lime'
+                line_style = 'dashed'
+                attr lift_point = (last_point.x, last_point.y, start_point.z)
+                points = [
+                    last_point,
+                    lift_point,
+                ] + [start_point] if looper.is_last else []

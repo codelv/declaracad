@@ -53,6 +53,8 @@ enamldef ArcHelix(Part): part:
     #: Use incremental arc commands
     attr incremental: bool = True
 
+    alias helix
+
     attr gcode: str = generate_gcode()
 
     description = "".join((

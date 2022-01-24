@@ -59,6 +59,8 @@ enamldef ArcSpiral(Part): part:
     attr clockwise: bool = True
     attr incremental: bool = True
 
+    alias spiral
+
     attr gcode: str = generate_gcode()
 
     description = "".join((
