@@ -8,6 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 """
 import pytest
 from textwrap import dedent
+from math import pi, sqrt
 
 from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import (
@@ -270,6 +271,13 @@ def test_topo_bbox(qt_app):
     assert bbox.min == Point(-2, -2, -2)
     assert bbox.max == Point(3, 3, 3)
 
+
+def test_topo_distance(qt_app):
+    box = Box()
+    box.render()
+    cyl = Cylinder(position=(5, 0, 0))
+    assert abs(box.topology.min_distance_between(cyl.render()) - 3) < 1e-6
+    assert abs(box.topology.max_distance_between(cyl.render()) - 3) < 1e-6
 
 
 TEMPLATE = """
