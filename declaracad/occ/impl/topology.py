@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016-2018, Jairus Martin.
+Copyright (c) 2016-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -901,8 +901,7 @@ class Topology(Atom):
             Whether the shape is a part of a line
         """
         return (
-            cls.cast_curve(shape, expected_type=GeomAbs_Line, convert=False)
-            is not None
+            cls.cast_curve(shape, expected_type=GeomAbs_Line, convert=False) is not None
         )
 
     @classmethod
@@ -1367,8 +1366,7 @@ class Topology(Atom):
     start_point = Property(cached=True)
 
     def _get_start_point(self) -> Point:
-        """Get the first / start point of a TopoDS_Wire or TopoDS_Edge.
-        """
+        """Get the first / start point of a TopoDS_Wire or TopoDS_Edge."""
         shape = self.shape
         if isinstance(shape, TopoDS_Edge):
             curve = BRepAdaptor_Curve(shape)

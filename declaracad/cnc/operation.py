@@ -136,7 +136,6 @@ def generate_wire_gcode(wire: Wire, format_value) -> ListType[str]:
         else:
             raise NotImplementedError("TODO: Cannot create gcode for wire")
 
-
     if not wire.description:
         wire.description = "Gcode: \n%s\n" % "\n".join(cmds)
 

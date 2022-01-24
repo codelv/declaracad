@@ -206,7 +206,7 @@ class QsciLexerGCode(QsciLexerCustom):
         self.startStyling(start)
 
         # Encode and decode to fix unicode issues...
-        data = self.parent().text().encode('utf-8')[start:end]
+        data = self.parent().text().encode("utf-8")[start:end]
         text = data.decode()
 
         lexer = self.lexer
@@ -218,9 +218,9 @@ class QsciLexerGCode(QsciLexerCustom):
         style = self.Default
         CODES = self.CODES
         for token in lexer:
-            i = len(token.value.encode('utf-8'))
+            i = len(token.value.encode("utf-8"))
             t = token.type
-            #print((token, i))
+            # print((token, i))
             if t == "COMMENT":
                 set_style(i, self.Comment)
             elif t == "CODE":
