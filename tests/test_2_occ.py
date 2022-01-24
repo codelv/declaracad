@@ -12,7 +12,7 @@ from textwrap import dedent
 from OCCT.TopoDS import TopoDS_Shape
 from declaracad.occ.api import (
     load_model, Point, Shape, Segment, Box, Cylinder, Cone, Topology,
-    Ellipse, Rectangle
+    Ellipse, Rectangle, Face, Wire
 )
 
 
@@ -189,13 +189,87 @@ def test_topo_length(qt_app):
     points = [(0, 0), (10, 0)]
     segment = Segment(points=points)
     segment.render()
-    assert segment.topology.length == 10
+    assert abs(segment.topology.length - 10) < 1e-6
+
+
+def test_topo_area(qt_app):
+    face = Face(wires=[Rectangle(width=5, height=4).render()])
+    face.render()
+    assert abs(face.topology.area - 20) < 1e-6
+
+
+def test_topo_volume(qt_app):
+    box = Box(dx=2, dy=1, dz=1)
+    box.render()
+    assert abs(box.topology.volume - 2 * 1 * 1) < 1e-6
 
 
 def test_topo_center_point(qt_app):
     box = Box()
     box.render()
     assert box.topology.center_point == Point(0.5, 0.5, 0.5)
+
+
+def test_topo_curve_bounds(qt_app):
+    points = [(0, 0), (10, 0)]
+    segment = Segment(points=points)
+    segment.render()
+    assert segment.topology.curve_bounds == (0, 10)
+
+    with pytest.raises(TypeError):
+        box = Box()
+        box.render()
+        topo = Topology(shape=box.topology.faces[0])
+        topo.curve_bounds
+
+
+def test_topo_surface_bounds(qt_app):
+    box = Box(dx=10, dy=1)
+    box.render()
+    face = Topology(shape=box.topology.faces[5])
+    assert face.surface_bounds == (0, 10, 0, 1)
+
+    with pytest.raises(TypeError):
+        edge = Topology(shape=box.topology.edges[0])
+        edge.surface_bounds
+
+
+def test_topo_discretize(qt_app):
+    points = [(0, 0), (10, 0)]
+    segment = Segment(points=points)
+    line = segment.render()
+
+    pts = list(Topology.discretize(line, 3, method="abscissa"))
+    assert pts == [Point(0, 0), Point(5, 0), Point(10, 0)]
+
+    pts = list(Topology.discretize(line, 1e-4, method="deflection"))
+    assert pts == [Point(0, 0), Point(10, 0)]
+
+    with pytest.raises(TypeError):
+        box = Box()
+        Topology.discretize(box.render(), 2)
+
+
+def test_topo_bbox(qt_app):
+    empty = Topology.bbox([])
+    assert empty.center == Point(0, 0)
+
+    box = Box(dx=1, dy=2, dz=3, position=(-0.25, 2, -1))
+    box.render()
+    bbox = Topology.bbox([box])
+    assert bbox.min == Point(-0.25, 2, -1)
+    assert bbox.center == Point(0.25, 3, 0.5)
+    assert bbox.max == Point(0.75, 4, 2)
+    assert abs(bbox.dx - box.dx) < 1e-6
+    assert abs(bbox.dy - box.dy) < 1e-6
+    assert abs(bbox.dz - box.dz) < 1e-6
+
+    # Enlarge expands box in all directions by the value
+    box = Box()
+    bbox = Topology.bbox(box.render(), enlarge=2)
+    assert bbox.min == Point(-2, -2, -2)
+    assert bbox.max == Point(3, 3, 3)
+
 
 
 TEMPLATE = """

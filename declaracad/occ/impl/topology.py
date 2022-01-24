@@ -1192,15 +1192,15 @@ class Topology(Atom):
             Returns in UMin, UMax parametric space.
 
         """
-        curve = Topology.cast_curve(self.shape, convert=False)
+        curve = self.cast_curve(self.shape, convert=False)
         if curve is None:
-            raise TypeError(f"Cannot get curve bounds of {shape}")
+            raise TypeError(f"Cannot get curve bounds of {self.shape}")
         return (curve.FirstParameter(), curve.LastParameter())
 
-    face_bounds = Property(cached=True)
+    surface_bounds = Property(cached=True)
 
-    def _get_face_bounds(self) -> TupleType[float, float, float, float]:
-        """Get the UV bounds of a face.
+    def _get_surface_bounds(self) -> TupleType[float, float, float, float]:
+        """Get the UV bounds of a surface.
 
         Returns
         -------
@@ -1209,7 +1209,10 @@ class Topology(Atom):
             parametric space of F.
 
         """
-        return BRepTools.UVBounds_(self.shape, 0, 0, 0, 0)
+        shape = self.cast_shape(self.shape)
+        if not Topology.is_face(shape):
+            raise TypeError(f"Cannot get surface bounds of {self.shape}")
+        return BRepTools.UVBounds_(shape, 0, 0, 0, 0)
 
     @classmethod
     def discretize(

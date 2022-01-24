@@ -304,8 +304,8 @@ enamldef ModelViewer(OccViewer): viewer:
                 r = format_unit(c.Radius())
                 d = format_unit(2 * c.Radius())
                 ctr = format_point(Point(c.Location()))
-                topology = Topology(shape=Topology.cast_shape(topods_shape))
-                umin, umax, vmin, vmax = topology.face_bounds
+                topology = Topology(shape=topods_shape)
+                umin, umax, vmin, vmax = topology.surface_bounds
                 length = format_unit(vmax - vmin)
                 desc = [
                     f"  Center: {ctr}",

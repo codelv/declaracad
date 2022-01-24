@@ -190,7 +190,7 @@ enamldef ChamferOperation(Operation): operation:
             )
         radius = cone.RefRadius()
         vertices = [Point(v) for v in topo.vertices]
-        umin, umax, vmin, vmax = topo.face_bounds
+        umin, umax, vmin, vmax = topo.surface_bounds
         alpha = umax - umin
         top = bottom = vertices[0]
         for v in vertices[1:]:

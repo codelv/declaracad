@@ -94,7 +94,7 @@ class BBox(Atom):
         return Point(self.xmin, self.ymin, self.zmin)
 
     def _get_max(self):
-        return Point(self.xmax, self.xmax, self.xmax)
+        return Point(self.xmax, self.ymax, self.zmax)
 
     min = Property(_get_min)
     max = Property(_get_max)
