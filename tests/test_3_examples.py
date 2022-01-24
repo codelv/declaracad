@@ -24,6 +24,7 @@ EXAMPLES = (
     "dimensions",
     "draw",
     "draft_angle",
+    "endpoints.enaml",
     "exhaust_flange",
     "faces",
     "fillets",
