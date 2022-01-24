@@ -870,9 +870,10 @@ class Topology(Atom):
         bool: Bool
             Whether the shape is a part of circle
         """
-        edge = TopoDS.Edge_(shape)
-        curve = BRepAdaptor_Curve(edge)
-        return curve.GetType() == GeomAbs.GeomAbs_Circle
+        return (
+            cls.cast_curve(shape, expected_type=GeomAbs_Circle, convert=False)
+            is not None
+        )
 
     @classmethod
     def is_ellipse(cls, shape) -> bool:
@@ -884,9 +885,10 @@ class Topology(Atom):
         bool: Bool
             Whether the shape is a part of an ellipse
         """
-        edge = TopoDS.Edge_(shape)
-        curve = BRepAdaptor_Curve(edge)
-        return curve.GetType() == GeomAbs.GeomAbs_Ellipse
+        return (
+            cls.cast_curve(shape, expected_type=GeomAbs_Ellipse, convert=False)
+            is not None
+        )
 
     @classmethod
     def is_line(cls, shape) -> bool:
@@ -898,9 +900,10 @@ class Topology(Atom):
         bool: Bool
             Whether the shape is a part of a line
         """
-        edge = TopoDS.Edge_(shape)
-        curve = BRepAdaptor_Curve(edge)
-        return curve.GetType() == GeomAbs.GeomAbs_Line
+        return (
+            cls.cast_curve(shape, expected_type=GeomAbs_Line, convert=False)
+            is not None
+        )
 
     @classmethod
     def is_plane(cls, shape) -> bool:

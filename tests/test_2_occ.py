@@ -10,7 +10,10 @@ import pytest
 from textwrap import dedent
 
 from OCCT.TopoDS import TopoDS_Shape
-from declaracad.occ.api import load_model, Point, Shape, Segment
+from declaracad.occ.api import (
+    load_model, Point, Shape, Segment, Box, Cylinder, Cone, Topology,
+    Ellipse, Rectangle
+)
 
 
 def test_shape():
@@ -66,14 +69,133 @@ def test_topo_start_point(qt_app):
     segment = Segment(points=points)
     segment.render()
     assert segment.topology.start_point == points[0]
-    assert segment.topology.end_point == points[-1]
+    assert segment.topology.end_point == points[1]
+
+    assert segment.topology.points[0] == points[0]
+    assert segment.topology.points[1] == points[1]
+
     points = [(10, 0), (0, 0)]
     segment = Segment(points=points)
     segment.render()
     assert segment.topology.start_point == points[0]
-    assert segment.topology.end_point == points[-1]
+    assert segment.topology.end_point == points[1]
 
 
+def test_topo_is_vertex(qt_app):
+    box = Box()
+    box.render()
+    assert Topology.is_vertex(box.topology.vertices[0])
+    assert not Topology.is_vertex(box.topology.edges[0])
+    assert not Topology.is_vertex(Box)
+
+
+def test_topo_is_edge(qt_app):
+    box = Box()
+    box.render()
+    assert not Topology.is_edge(box.topology.vertices[0])
+    assert Topology.is_edge(box.topology.edges[0])
+    assert not Topology.is_edge(Box)
+
+
+def test_topo_is_wire(qt_app):
+    box = Box()
+    box.render()
+    assert not Topology.is_wire(box.topology.vertices[0])
+    assert Topology.is_wire(box.topology.wires[0])
+    assert not Topology.is_wire(Box)
+
+
+def test_topo_is_face(qt_app):
+    box = Box()
+    box.render()
+    assert not Topology.is_face(box.topology.wires[0])
+    assert Topology.is_face(box.topology.faces[0])
+    assert not Topology.is_face(Box)
+
+
+def test_topo_is_shell(qt_app):
+    box = Box()
+    box.render()
+    assert not Topology.is_shell(box.topology.wires[0])
+    assert not Topology.is_shell(Box)
+    assert Topology.is_shell(box.topology.shells[0])
+
+
+def test_topo_is_solid(qt_app):
+    box = Box()
+    box.render()
+    assert not Topology.is_solid(box.topology.wires[0])
+    assert not Topology.is_solid(Box)
+    assert Topology.is_solid(box.proxy.shape)
+
+
+def test_topo_is_line(qt_app):
+    box = Box()
+    box.render()
+    assert Topology.is_line(box.topology.edges[0])
+    assert not Topology.is_line(box.topology.faces[0])
+
+
+def test_topo_is_plane(qt_app):
+    box = Box()
+    box.render()
+    assert Topology.is_plane(box.topology.faces[0])
+    assert not Topology.is_plane(box.topology.edges[0])
+
+
+def test_topo_is_cylinder(qt_app):
+    cylinder = Cylinder()
+    cylinder.render()
+    assert Topology.is_cylinder(cylinder.topology.faces[0])
+    assert not Topology.is_cylinder(cylinder.topology.faces[1])
+    assert not Topology.is_cylinder(cylinder.topology.edges[0])
+
+
+def test_topo_is_cone(qt_app):
+    cone = Cone()
+    cone.render()
+    assert Topology.is_cone(cone.topology.faces[0])
+    assert not Topology.is_cone(cone.topology.faces[1])
+    assert not Topology.is_cone(cone.topology.edges[0])
+
+    cylinder = Cylinder()
+    cylinder.render()
+    assert not Topology.is_cone(cylinder.topology.faces[0])
+
+
+def test_topo_is_circle(qt_app):
+    cylinder = Cylinder()
+    cylinder.render()
+    assert Topology.is_circle(cylinder.topology.edges[0])
+    assert not Topology.is_circle(cylinder.topology.edges[1])
+
+
+def test_topo_is_ellipse(qt_app):
+    ellipse = Ellipse(major_radius=1, minor_radius=0.5)
+    ellipse.render()
+    assert Topology.is_ellipse(ellipse.topology.edges[0])
+
+
+def test_topo_is_clockwise(qt_app):
+    rect = Rectangle(width=1, height=2)
+    rect.render()
+    assert Topology.is_clockwise(rect.topology.wires[0])
+    rect = Rectangle(width=1, height=2)
+    rect.render()
+    assert not Topology.is_clockwise(rect.topology.wires[0].Reversed())
+
+
+def test_topo_length(qt_app):
+    points = [(0, 0), (10, 0)]
+    segment = Segment(points=points)
+    segment.render()
+    assert segment.topology.length == 10
+
+
+def test_topo_center_point(qt_app):
+    box = Box()
+    box.render()
+    assert box.topology.center_point == Point(0.5, 0.5, 0.5)
 
 
 TEMPLATE = """
