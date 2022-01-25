@@ -319,6 +319,7 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
             # Save reference to which viewer this is
             self.dock_item = dock_item
             process = dock_item.process
+            process.restarts = 0  # Reset
             process.protocol = self
             self.window_id = window_id
             log.debug(f"viewer {dock_item.name} connected!")

@@ -1,5 +1,5 @@
 """
-Copyright (c) 2021, Jairus Martin.
+Copyright (c) 2021-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -13,6 +13,7 @@ import math
 import enaml
 import traceback
 from math import ceil, sqrt, sin, cos
+from typing import Callable, Optional
 from typing import List as ListType
 from atom.api import Atom, Bool, Enum, Float, Instance, Str, Coerced
 from datetime import datetime
@@ -44,7 +45,7 @@ from enaml.core.declarative import d_, d_func
 
 
 def generate_arc_gcode(
-    arc: Arc, format_value, incremental: bool = True
+    arc: Arc, format_value: Callable[[float], float], incremental: bool = True
 ) -> ListType[str]:
     """Generate gcodee for an Arc"""
 
@@ -96,7 +97,7 @@ def generate_arc_gcode(
 
 
 def generate_polyline_gcode(
-    polyline: Polyline, format_value, rapid: bool = False
+    polyline: Polyline, format_value: Callable[[float], float], rapid: bool = False
 ) -> ListType[str]:
     """Generate gcodee for a Polyline"""
     cmds = []
@@ -107,7 +108,9 @@ def generate_polyline_gcode(
     return cmds
 
 
-def generate_wire_gcode(wire: Wire, format_value) -> ListType[str]:
+def generate_wire_gcode(
+    wire: Wire, format_value: Callable[[float], float]
+) -> ListType[str]:
     """Generate code for a Wire"""
     cmds = []
     last_point = wire.topology.start_point
@@ -142,6 +145,28 @@ def generate_wire_gcode(wire: Wire, format_value) -> ListType[str]:
     return cmds
 
 
+def generate_part_gcode(
+    part: Part, format_value: Callable[[float], float]
+) -> ListType[str]:
+    """Generate code for a Part"""
+    cmds: ListType[str] = []
+    for child in part.children:
+        if not getattr(child, 'display', True):
+            continue  # Do not render hidden items
+        if hasattr(child, "generate_gcode"):
+            cmds.extend(child.generate_gcode(format_value))
+        elif isinstance(child, Polyline):
+            rapid = child.name == "Rapid move"
+            cmds.extend(generate_polyline_gcode(child, format_value, rapid))
+        elif isinstance(child, Arc):
+            cmds.extend(generate_arc_gcode(child, format_value))
+        elif isinstance(child, Wire):
+            cmds.extend(generate_wire_gcode(child, format_value))
+        elif isinstance(child, Part):
+            cmds.extend(generate_part_gcode(child, format_value))
+    return cmds
+
+
 class Operation(Part):
     """A single machining operation."""
 
@@ -154,9 +179,6 @@ class Operation(Part):
     #: Spindle control
     #: If zero off, if positive, CW, if negative CCW
     spindle_speed = d_(Float(strict=False))
-
-    #: Dwell after spindle speed to allow time for ramp up/down
-    spindle_dwell = d_(Float(1.0, strict=False))
 
     #: Feedrate of the operation
     feedrate = d_(Float(strict=False))
@@ -175,6 +197,9 @@ class Operation(Part):
     #: Ending point of operation
     end_point = d_(Coerced(Point, coercer=coerce_point))
 
+    #: Heading for gcode output
+    operation_type = d_(Str())
+
     def _default_start_point(self):
         return self.parent.start_point
 
@@ -185,20 +210,15 @@ class Operation(Part):
     gcode = d_(Str())
 
     @d_func
-    def generate_gcode(self) -> ListType[str]:
+    def generate_spindle_start_gcode(
+        self, format_value: Optional[Callable[[float], float]] = None
+    ) -> ListType[str]:
         cmds = []
-        job = self.parent
-        if self.feedrate:
-            cmds.append(f"F{self.feedrate}")
 
-        if self.spindle_speed:
-            s = abs(self.spindle_speed)
-            mcode = "M3" if self.spindle_speed > 0 else "M3"
-            cmds.append(f"S{s} {mcode}")
-
-            if self.spindle_dwell:
-                # Wait for spindle to ramp up
-                cmds.append(f"P{self.spindle_dwell}")
+        # Turn on spindle and coolant from base operation
+        s = abs(self.spindle_speed)
+        mcode = "M3" if self.spindle_speed > 0 else "M3"
+        cmds.append(f"S{s} {mcode}")
 
         if self.coolant == "mist":
             cmds.append("M7")
@@ -206,8 +226,69 @@ class Operation(Part):
             cmds.append("M8")
         else:
             cmds.append(f"M9")
-
         return cmds
+
+    @d_func
+    def generate_toolpath_gcode(
+        self, format_value: Optional[Callable[[float], float]] = None
+    ) -> ListType[str]:
+        """Generate gcode output for this operation"""
+        cmds = self.generate_spindle_start_gcode()
+        cmds.extend(generate_part_gcode(self, format_value))
+        if 'M5' not in cmds:
+            cmds.extend(self.generate_spindle_stop_gcode())
+        return cmds
+
+    @d_func
+    def generate_spindle_stop_gcode(
+        self, format_value: Optional[Callable[[float], float]] = None
+    ) -> ListType[str]:
+        cmds = []
+        if self.coolant:
+            # Turn off coolant
+            cmds.append("M9")
+
+        # Stop spindle it should have already retracted
+        cmds.append("M5")
+        return cmds
+
+    @d_func
+    def generate_gcode(
+        self, format_value: Optional[Callable[[float], float]] = None
+    ) -> ListType[str]:
+        """Generate gcode output for this operation. If the disabled flag
+        is set this just returns a comment.
+
+        """
+        if self.disabled:
+            return [f"({self.operation_type} is disabled)"]
+
+        job = self.parent
+        format_value = format_value or job.format_value
+        cmds = [f"({self.operation_type})"]
+        try:
+            # Change tool
+            if self.tool:
+                cmds.extend(self.tool.generate_gcode())
+
+            if not self.spindle_speed:
+                raise ValueError(
+                    f"Spindle speed must be set for {self}. "
+                    f"Use spindle_speed=value or set surface_speed=value "
+                    f"to automatically calculate it."
+                )
+
+            if self.feedrate:
+                cmds.append(f"F{self.feedrate}")
+
+            cmds.extend(self.generate_toolpath_gcode(format_value))
+            cmds.append("")  # Ensure newline
+            return cmds
+        except Exception as e:
+            msg = f"(Error generating gcode: {e} for {self})"
+            print(msg)
+            traceback.print_exc()
+            return [msg]
 
     def _default_gcode(self):
         return "\n".join(self.generate_gcode())

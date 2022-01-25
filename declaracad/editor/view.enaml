@@ -532,6 +532,13 @@ enamldef EditorDockItem(DockItem): view:
                 core.invoke_command('declaracad.editor.reload_document',
                                     {'document':doc})
         Action:
+            text = "Open containing folder"
+            triggered ::
+                core = plugin.workbench.get_plugin("enaml.workbench.core")
+                core.invoke_command(
+                    'declaracad.editor.open_containing_folder',
+                    {'path': doc.name})
+        Action:
             separator = True
         Action:
             text = "Split vertically"

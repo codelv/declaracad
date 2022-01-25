@@ -65,7 +65,7 @@ enamldef ArcHelix(Part): part:
         f"  Feed: {feedrate}\n" if feedrate else "",
     ))
 
-    func generate_gcode():
+    func generate_gcode(format_value):
         cmds = []
         code = 'G2' if self.clockwise else 'G3'
         pos = self.position

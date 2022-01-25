@@ -10,13 +10,9 @@ Created on Nov 22, 2021
 @author: jrm
 """
 import math
-import traceback
 from math import sin, cos, pi, ceil
 from enaml.core.api import Conditional, Looper
-from declaracad.cnc.operation import (
-    Operation, generate_polyline_gcode, generate_arc_gcode, generate_wire_gcode
-)
-
+from declaracad.cnc.operation import Operation
 from declaracad.occ.api import (
     Arc, Common, Cut, DisplayArrow, Face, Intersection, HalfSpace, Offset,
     Part, Point, Polyline, Topology, TopoShape, Transform, Wire
@@ -24,6 +20,9 @@ from declaracad.occ.api import (
 
 
 enamldef SideCutOperation(Operation): operation:
+    #: G-Code Heading
+    operation_type = f"Side cut {' '+ name if name else ''}"
+
     #: Shape to avoid
     #: This is typically the part model
     attr avoid
@@ -77,54 +76,6 @@ enamldef SideCutOperation(Operation): operation:
         d = shape.topology.min_distance_between(furthest_point)
         return d + tool.diameter/2
 
-    generate_gcode => ():
-        cmds = []
-        if self.disabled:
-            return cmds
-        try:
-            # Change tool
-            cmds.append(f"(Side cut {' '+ name if name else ''})")
-
-            if self.tool:
-                cmds.extend(self.tool.generate_gcode())
-
-            if not self.spindle_speed or not self.feedrate:
-                raise ValueError(
-                    "Surface speed must be set for a side cut."
-                    "Use surface_speed=v or manually set feed and speed"
-                )
-
-            # Turn on spindle and coolant from base operation
-            cmds.extend(Operation.generate_gcode(self))
-
-            job = self.parent
-            fmt = job.format_value
-            for child in self.children:
-                if hasattr(child, 'generate_gcode'):
-                    cmds.extend(child.generate_gcode(fmt))
-
-            if self.coolant:
-                # Turn off coolant
-                cmds.append("M9")
-
-            if self.spindle_speed:
-                # Stop spindle it should have already retracted
-                cmds.append("M5")
-
-            p = end_point
-            cmds.append(
-                f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
-            )
-
-            cmds.append('') # Ensure Add newline
-            return cmds
-        except Exception as e:
-            msg = f"(Error generating gcode: {e} for {self})"
-            print(msg)
-            traceback.print_exc()
-            return [msg]
-
-
     Looper: looper:
         iterable = [] if disabled else faces
         Part: cut_path:
@@ -144,18 +95,6 @@ enamldef SideCutOperation(Operation): operation:
                 offset = Offset(shape=topo.outer_wire, offset=tool.diameter/2 + abs(radial_clearance))
                 offset.render()
                 return offset.topology.outer_wire
-
-            func generate_gcode(fmt):
-                cmds = []
-                for child in self.children:
-                    if isinstance(child, Polyline):
-                        rapid = child.name == 'Rapid move'
-                        cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
-                    elif isinstance(child, Arc):
-                        cmds.extend(generate_arc_gcode(child, fmt))
-                    elif isinstance(child, Wire):
-                        cmds.extend(generate_wire_gcode(child, fmt))
-                return cmds
 
             Offset: avoidance_area:
                 color = 'purple'

@@ -8,7 +8,10 @@ with enaml.imports():
     from declaracad.cnc.operations.drilling import DrillingCycle
     from declaracad.cnc.operations.chamfer import ChamferOperation
     from declaracad.cnc.operations.facing import FacingOperation
-    from declaracad.cnc.operations.pocket import CircularPocket, CircularPocketData
+    from declaracad.cnc.operations.pocket import (
+        CircularPocket, CircularPocketData,
+        PocketOperation, PocketData
+    )
     from declaracad.cnc.operations.sidecut import SideCutOperation
     from declaracad.cnc.operations.slotting import SlottingOperation
     from declaracad.cnc.operations.job import Job, JobSimulation

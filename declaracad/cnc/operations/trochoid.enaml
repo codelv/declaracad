@@ -8,6 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 Created on Jan 17, 2022
 
 """
+from math import pi
 from declaracad.occ.api import Part, Point, Arc, Segment, Conditional
 
 

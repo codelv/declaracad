@@ -114,7 +114,8 @@ class GCode(Atom):
     commands = List(Command)
 
     AXIS_CODES = "XYZABCUVW"
-    ID_CODES = "GMTS"
+    # Codes that will be put in their own command if their own single line
+    ID_CODES = "GMTSPF"
     MOVE_CODES = ("G0", "G1", "G2", "G3", "G5", "G5.1")
 
     COLORMAP = {

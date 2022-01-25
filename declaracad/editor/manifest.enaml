@@ -277,7 +277,7 @@ enamldef EditorManifest(PluginManifest):
         point = 'enaml.workbench.core.commands'
         Command:
             id = 'declaracad.editor.close_file'
-            handler = lambda event:plugin_command('close_file', event)
+            handler = lambda event: plugin_command('close_file', event)
         Command:
             id = 'declaracad.editor.save_file'
             handler = save_file
@@ -290,6 +290,9 @@ enamldef EditorManifest(PluginManifest):
         Command:
             id = 'declaracad.editor.open_file'
             handler = open_file
+        Command:
+            id = 'declaracad.editor.open_containing_folder'
+            handler = lambda event: plugin_command('open_containing_folder', event)
         Command:
             id = 'declaracad.editor.reload_document'
             handler = reload_document

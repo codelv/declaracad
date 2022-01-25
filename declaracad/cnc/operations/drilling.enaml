@@ -9,7 +9,6 @@ Created on Nov 9, 2021
 
 @author: jrm
 """
-import traceback
 from math import ceil, pi
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import Operation
@@ -24,6 +23,7 @@ enamldef DrillingCycle(Operation): operation:
     All values are in mm. Use the job to convert to inches.
 
     """
+    operation_type = f"Drilling cycle{' ' + name if name else ''}"
 
     #: List of circular edges, cylinder faces, or points
     attr holes: list = []
@@ -147,84 +147,56 @@ enamldef DrillingCycle(Operation): operation:
         path.append(coerce_point(end_point))
         return path
 
-    generate_gcode => ():
-        """ Generate gcode output for this operation
+    generate_toolpath_gcode => (format_value):
+        """ Generate custom gcode output for this operation
 
         """
         cmds = []
-        if self.disabled:
-            return cmds
-        try:
-            # Change tool
-            if self.tool:
-                cmds.extend(self.tool.generate_gcode())
+        p = self.path[0]
+        d = format_value(depth)
+        r = format_value(retract)
 
-            if not self.spindle_speed or not self.feedrate:
-                raise ValueError(
-                    "Surface speed must be set for a drilling cycle."
-                    "Use surface_speed=v or manually set feed and speed"
-                )
+        # Move to top of first hole
+        for p in self.path[0:2]:
+            x, y, z = map(format_value, p)
+            cmds.append(f'G0 X{x} Y{y} Z{z}')
 
-            job = self.parent
-            fmt = job.format_value
-            p = self.path[0]
-            d = fmt(depth)
-            r = fmt(retract)
-            cmds.append(f"(Drilling cycle{' ' + self.name if self.name else ''})")
+        # Start spindle
+        cmds.extend(self.generate_spindle_start_gcode(format_value))
 
-            # Move to top of first hole
-            for p in self.path[0:2]:
-                cmds.append(f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}')
+        if peck:
+            code = 'G83' if full_retract else 'G73'
+        elif dwell:
+            code = 'G82'
+        else:
+            code = 'G81'
 
-            # Turn on spindle and coolant from base operation
-            cmds.extend(Operation.generate_gcode(self))
+        if code == 'G73' and dwell:
+            raise ValueError("Cannot use dwell with G73. Disable dwell or use full_peck=True")
 
+        for p in self.optimized_positions:
+            cmd = [
+                'G90', # Absolute
+                code,
+                'G98',
+                f'X{format_value(p.x)}',
+                f'Y{format_value(p.y)}',
+                f'Z{d}',
+                f'R{r}',
+            ]
             if peck:
-                code = 'G83' if full_retract else 'G73'
-            elif dwell:
-                code = 'G82'
-            else:
-                code = 'G81'
+                cmd.append(f'Q{format_value(peck)}')
+            if dwell:
+                cmd.append(f'P{dwell}')
+            cmds.append(' '.join(cmd))
 
-            if code == 'G73' and dwell:
-                raise ValueError("Cannot use dwell with G73. Disable dwell or use full_peck=True")
+        cmds.extend(self.generate_spindle_stop_gcode(format_value))
 
-            for p in self.optimized_positions:
-                cmd = [
-                    'G90', # Absolute
-                    code,
-                    'G98',
-                    f'X{fmt(p.x)}',
-                    f'Y{fmt(p.y)}',
-                    f'Z{d}',
-                    f'R{r}',
-                ]
-                if peck:
-                    cmd.append(f'Q{fmt(peck)}')
-                if dwell:
-                    cmd.append(f'P{dwell}')
-                cmds.append(' '.join(cmd))
-
-            if self.coolant:
-                # Turn off coolant
-                cmds.append("M9")
-
-            if self.spindle_speed:
-                # Stop spindle it should have already retracted
-                cmds.append("M5")
-
-            # Add lift and return point
-            for p in self.path[-2:]:
-                cmds.append(
-                    f'G0 X{fmt(p.x)} Y{fmt(p.y)} Z{fmt(p.z)}'
-                )
-            cmds.append('') # Ensure newline
-            return cmds
-        except Exception as e:
-            msg = f"(Error generating gcode: {e} for {self})"
-            print(msg)
-            traceback.print_exc()
-            return [msg]
+        # Add lift and return point
+        for p in self.path[-2:]:
+            x, y, z = map(format_value, p)
+            cmds.append(f'G0 X{x} Y{y} Z{z}')
+        return cmds
 
     Conditional:
         condition << not operation.disabled

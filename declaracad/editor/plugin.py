@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-Copyright (c) 2017, Jairus Martin.
+Copyright (c) 2017-2022, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
@@ -12,9 +11,11 @@ Created on Dec 10, 2015
 """
 import os
 import re
+import sys
 import jedi
 import enaml
 import traceback
+import subprocess
 from textwrap import dedent
 from atom.api import (
     Enum,
@@ -29,7 +30,7 @@ from atom.api import (
     ForwardTyped,
     observe,
 )
-
+from typing import Union
 from declaracad.core.api import Plugin, Model, log
 from enaml.scintilla.api import Scintilla
 from enaml.scintilla.mono_font import MONO_FONT
@@ -334,9 +335,13 @@ class EditorPlugin(Plugin):
             self.documents = self._default_documents()
         return self.documents[0]
 
-    def new_file(self, event):
+    def new_file(self, event: Union[str, ExecutionEvent]):
         """Create a new file with the given path"""
-        path = event.parameters.get("path")
+        if isinstance(event, ExecutionEvent):
+            path = event.parameters.get("path")
+        else:
+            path = event
+
         if not path:
             return
         if not os.path.dirname(path):
@@ -357,7 +362,7 @@ class EditorPlugin(Plugin):
         self.documents.append(doc)
         self.active_document = doc
 
-    def close_file(self, event):
+    def close_file(self, event: Union[str, ExecutionEvent]):
         """Close the file with the given path and remove it from
         the document list. If multiple documents with the same file
         are open this only closes the first one it finds.
@@ -394,9 +399,12 @@ class EditorPlugin(Plugin):
         elif self.active_document == doc:
             self.active_document = self.documents[0]
 
-    def open_file(self, event):
+    def open_file(self, event: Union[str, ExecutionEvent]):
         """Open a file from the local filesystem"""
-        path = event.parameters["path"]
+        if isinstance(event, ExecutionEvent):
+            path = event.parameters.get("path")
+        else:
+            path = event
 
         #: Check if the document is already open
         for doc in self.documents:
@@ -415,7 +423,25 @@ class EditorPlugin(Plugin):
         if editor:
             editor.set_text(doc.source)
 
-    def save_file(self, event):
+    def open_containing_folder(self, event: Union[str, ExecutionEvent]):
+        """ Open the folder containing the given file path
+
+        """
+        if isinstance(event, ExecutionEvent):
+            path = event.parameters.get("path")
+        else:
+            path = event
+        folder = os.path.dirname(path)
+        if not os.path.exists(folder):
+            return
+        if 'win32' in sys.platform:
+            os.startfile(folder, 'explore')
+        elif sys.platform == "darwin":
+            subprocess.call(["open", folder])
+        else:
+            subprocess.call(["xdg-open", folder])
+
+    def save_file(self, event: ExecutionEvent):
         """Save the currently active document to disk"""
         # Make sure it's in sync with the editor first
         editor = self.get_editor()
@@ -448,7 +474,7 @@ class EditorPlugin(Plugin):
         with open(path, "w") as f:
             f.write(doc.source)
 
-    def reload_document(self, document):
+    def reload_document(self, document: Document):
         """Reload the source from disk
 
         Parameters
@@ -467,7 +493,7 @@ class EditorPlugin(Plugin):
     # -------------------------------------------------------------------------
     # Code inspection API
     # -------------------------------------------------------------------------
-    def detect_syntax(self, path):
+    def detect_syntax(self, path: str):
         """Attempt to detect the file syntax"""
         p, ext = os.path.splitext(path)
         file_type = ext[1:] if ext else ""

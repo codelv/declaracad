@@ -15,10 +15,7 @@ from math import sin, cos, pi
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.interpolate import group_connected_faces
 from declaracad.cnc.optimize import optimize_points
-from declaracad.cnc.operation import (
-    Operation, generate_polyline_gcode, generate_arc_gcode, generate_wire_gcode
-)
-
+from declaracad.cnc.operation import Operation, generate_part_gcode
 from declaracad.occ.api import (
     Arc, Offset, Part, Point, Polyline, TopoShape, Topology, Wire
 )
@@ -135,6 +132,8 @@ enamldef ArcEaseOut(Wire):
 
 
 enamldef ChamferOperation(Operation): operation:
+    operation_type = "Chamfer operation"
+
     #: List of edges to cut. Each item can be a Chamfer refernce,
     #: a chamfered surface, or a set of edges or wires
     attr edges: list
@@ -318,64 +317,14 @@ enamldef ChamferOperation(Operation): operation:
             ordered_data.append(data[i])
         return ordered_data
 
-    generate_gcode => ():
-        """ Generate gcode output for this operation
-
-        """
-        cmds = []
-        if self.disabled:
-            return cmds
-        try:
-
-            job = self.parent
-            fmt = job.format_value
-
-            cmds.append("(Chamfer operation)")
-            # Change tool
-            if self.tool:
-                cmds.extend(self.tool.generate_gcode())
-
-            if not self.spindle_speed:
-                raise ValueError(
-                    "Spindle speed must be set for a chamfer operation."
-                    "Use spindle_speed=value."
-                )
-            # Turn on spindle and coolant from base operation
-            cmds.extend(Operation.generate_gcode(self))
-            for child in self.children:
-                if hasattr(child, 'generate_gcode'):
-                    cmds.extend(child.generate_gcode(fmt))
-
-            if self.coolant:
-                # Turn off coolant
-                cmds.append("M9")
-
-            if self.spindle_speed:
-                # Stop spindle it should have already retracted
-                cmds.append("M5")
-
-            cmds.append('') # Ensure newline
-            return cmds
-        except Exception as e:
-            msg = f"(Error generating gcode: {e} for {self})"
-            print(msg)
-            traceback.print_exc()
-            return [msg]
-
     Looper:
         iterable << [] if disabled else toolpath
         Part: path:
 
             func generate_gcode(fmt):
                 cmds = [f"(Chamfer {loop.item['type']} {loop.index + 1})"]
-                for child in self.children:
-                    if isinstance(child, Polyline):
-                        rapid = child.name == 'Rapid move'
-                        cmds.extend(generate_polyline_gcode(child, fmt, rapid=rapid))
-                    elif isinstance(child, Arc):
-                        cmds.extend(generate_arc_gcode(child, fmt))
-                    elif isinstance(child, Wire):
-                        cmds.extend(generate_wire_gcode(child, fmt))
+                job = operation.parent
+                cmds.extend(generate_part_gcode(self, job.format_value))
                 return cmds
 
             Polyline:

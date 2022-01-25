@@ -10,9 +10,16 @@ Created on Aug 31, 2020
 @author: jrm
 """
 import cmath
+import enaml
 from declaracad.cnc import gcode
-from declaracad.occ.api import Vertex, Point, Polyline, Bezier, Arc, Wire, Circle
+from declaracad.occ.api import (
+    Arc, Bezier, Circle, Direction, Vertex, Point, Polyline, Wire
+)
 from declaracad.core.utils import log
+
+with enaml.imports():
+    from declaracad.parts.display import Axis, BoundingBox
+
 
 COLORMAP = {
     "rapid": "green",
@@ -20,6 +27,20 @@ COLORMAP = {
     "arc": "orange",
     "plunge": "blue",
 }
+
+
+def normal_direction(plane: str) -> Direction:
+    """ Get the normal direction for the given plane.
+
+    """
+    if plane == "xy":
+        return Direction(0, 0, 1)
+    elif plane == "xz":
+        return Direction(0, 1, 0)
+    elif plane == "yz":
+        return Direction(1, 0, 0)
+    else:
+        raise ValueError(f"Unknown plane direction {plane}")
 
 
 def load_gcode(filename, **options):
@@ -45,7 +66,7 @@ def load_gcode(filename, **options):
     doc = gcode.parse(filename)
     start = Point(0, 0, 0)
     last = start
-    items = []
+    items = [Axis()]
 
     #
     merge_points = options.get("merge_points", True)
@@ -66,6 +87,7 @@ def load_gcode(filename, **options):
     log.debug(doc)
     plane = "xy"
     units = options.get("units", "mm")
+    feedrate = options.get("feedrate", 0)
     scale = 25.4 if units == "in" else 1
     for cmd in doc.commands:
         data = cmd.data
@@ -95,7 +117,12 @@ def load_gcode(filename, **options):
             else:
                 # Start a new one
                 items.append(
-                    Polyline(points=[last, pos], description=cmd.source, color=color)
+                    Polyline(
+                        points=[last, pos],
+                        description=f'Gcode: {cmd.source}',
+                        color=color,
+                        line_style="dashed" if cmd.id == "G0" else "solid"
+                    )
                 )
             last = pos
             last_cmd = cmd
@@ -136,15 +163,15 @@ def load_gcode(filename, **options):
                 y = (midpoint.y + u * delta.x / q).real
 
                 center = Point(x, y, pos.z)
-
                 items.append(
                     Arc(
+                        direction=normal_direction(plane),
                         position=center,
                         radius=r,
                         clockwise=clockwise,
                         points=[last, pos],
                         color=arc_color,
-                        description=cmd.source,
+                        description=f'Gcode: {cmd.source}',
                     )
                 )
             # elif 'U' in data:
@@ -155,27 +182,56 @@ def load_gcode(filename, **options):
                 if "P" in data:
                     raise NotImplementedError(f"Helix is not implemented {cmd}")
 
+                helix = 0
                 if plane == "xy":
                     if i is None and j is None:
                         raise ValueError(f"Invalid arc {cmd} (both I and J missing)")
-                    direction = (0, 0, 1)
                     center = last + (i * scale or 0, j * scale or 0)
+                    z = data.get("Z")
+                    if z is not None:
+                        helix = z * scale - last.z
                 elif plane == "xz":
                     if i is None and k is None:
                         raise ValueError(f"Invalid arc {cmd} (both I and K missing)")
-                    direction = (0, 1, 0)
                     center = last + (i * scale or 0, 0, k * scale or 0)
+                    y = data.get("Y")
+                    if y is not None:
+                        helix = y * scale - last.y
                 elif plane == "yz":
                     if k is None and j is None:
                         raise ValueError(f"Invalid arc {cmd} (both J and K missing)")
-                    direction = (1, 0, 0)
                     center = last + (0, j * scale or 0, k * scale or 0)
+                    x = data.get("X")
+                    if x is not None:
+                        helix = x * scale - last.x
                 else:
                     raise RuntimeError("Unreachable code. This is likely a bug")
                 r = center.distance(last)
                 r2 = center.distance(pos)
                 # if abs(r2-r) > 1e-3:
-                #    raise ValueError(f"Arc start and end do not match {r} != {r2}")
+                #      print(f"Warning: Arc start and end do not match {r} != {r2}")
+
+                direction = normal_direction(plane)
+                helical = abs(helix) > 1e-6
+                if helical:
+                    # Recompute direction, center, and radius
+                    pitch = helix * 4
+                    b = helix/2
+                    r = cmath.sqrt(r**2 + helix**2).real
+                    if plane == 'xy':
+                        rot = 1 if i > 0 else -1
+                        center = center + (0, 0, b)
+                        direction = (rot*-b, 0, r)
+                    elif plane == 'xz':
+                        rot = 1 if k > 0 else -1
+                        center = center + (0, b, 0)
+                        direction = (rot*-b, r, 0)
+                    elif plane == 'yz':
+                        rot = 1 if j > 0 else -1
+                        center = center + (b, 0, 0)
+                        direction = (r, 0, rot*-b)
+                    else:
+                        assert False, "Unreachable"
 
                 items.append(
                     Arc(
@@ -185,7 +241,11 @@ def load_gcode(filename, **options):
                         clockwise=clockwise,
                         points=[last, pos],
                         color=arc_color,
-                        description=cmd.source,
+                        description=''.join([
+                            'Helical\n  ' if helical else '',
+                            f'Plane {plane.upper()}\n  ',
+                            f'Gcode: {cmd.source}'
+                        ]),
                     )
                 )
             last = pos
@@ -221,7 +281,7 @@ def load_gcode(filename, **options):
                 Bezier(
                     points=points,
                     color=normal_color,
-                    description=cmd.source,
+                    description=f'Gcode: {cmd.source}',
                 )
             )
             last = points[-1]
@@ -236,7 +296,7 @@ def load_gcode(filename, **options):
                 Bezier(
                     points=[last, c1, c2],
                     color=normal_color,
-                    description=cmd.source,
+                    description=f'Gcode: {cmd.source}',
                 )
             )
             last_cmd = cmd
@@ -247,5 +307,9 @@ def load_gcode(filename, **options):
             mode = "incremental"
         else:
             log.debug(f"Ignoring: {cmd}")
+
+    # Show bbox?
+    # bbox = BoundingBox(shapes=items[1:])
+    # items.append(bbox)
 
     return items
