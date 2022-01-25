@@ -36,6 +36,6 @@ enamldef Assembly(Part):
             retract = 5
             tool = TwistDrill(diameter=8)
             holes = [part.topology.edges[i] for i in (5, 6, 7, 8, 9, 10, 11, 12)]
-    #JobSimulation:
-    #    job = j
-    #    rate = 0.5
+    JobSimulation:
+        job = j
+        rate = 0.5

@@ -21,7 +21,7 @@ enamldef Assembly(Part):
     SimplePart: part:
         pass
     Job: j:
-        filename = 'cnc_pocket.nc'
+        filename = 'cnc_circular_pocket.nc'
         CircularPocket:
             surface_speed = 100
             tool = EndMill(diameter=8, cut=30)

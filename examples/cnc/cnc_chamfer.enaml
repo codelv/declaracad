@@ -64,9 +64,9 @@ enamldef Assembly(Part):
     
     TopChamfer: top:
         pass
-    BottomChamfer: bottom:
-        pass
+    #BottomChamfer: bottom:
+    #    pass
    
     JobSimulation:
-        job = bottom.job
+        job = top.job
         rate = 0.5

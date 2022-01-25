@@ -1,0 +1,32 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import Part, Cut, Box
+from declaracad.cnc.api import PocketOperation, EndMill, Job, JobSimulation
+
+enamldef SimplePart(Part):
+    Cut: box:
+        material = 'steel'
+        Box:
+            position = (0, 0, -dz)
+            dx = 30
+            dy = 50
+            dz = 5
+        Box:
+            position = (2.5, 2.5, -dz)
+            dx = 25
+            dy = 45
+            dz = 2
+
+enamldef Assembly(Part):
+    SimplePart: box:
+        pass
+    Job: j:
+        name = 'cnc_pocket.nc'
+        PocketOperation:
+            surface_speed = 120
+            tool = EndMill(diameter=4)
+            part = box
+            pockets = [box.topology.faces[10]]
+    JobSimulation: simulation:
+        job = j
+        
+        
