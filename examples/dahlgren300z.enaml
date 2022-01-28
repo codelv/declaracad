@@ -16,6 +16,7 @@ def angle2d(p1, p2, i=0, j=1):
 
 enamldef BasePlate(Box):
     material = 'charcoal'
+    color = '#555'
     position = (0, 0, -dz)
     dx = 34
     dy = 26
@@ -119,7 +120,7 @@ enamldef CarriageCutout(Transform):
             dy << 6
             dz << 6
 
-enamldef  EngraverColumn(Part): part:
+enamldef EngraverColumn(Part): part:
     attr plate_thickness = 0.125
     attr height = 13.5
     attr width = 2
@@ -189,14 +190,15 @@ enamldef  EngraverColumn(Part): part:
         dy << depth # top size
         dz << plate_thickness
     Transform:
+        name = 'front plate'
         material << part.material
         operations << [Rotate(
-                                        point=front_cover.position,
-                                        direction=(1,0,0),
-                                        angle=math.pi-angle2d(arch_poly.points[-2], arch_poly.points[-1], i=1, j=2)
-                                )]
+                point=front_cover.position,
+                direction=(1,0,0),
+                angle=math.pi-angle2d(arch_poly.points[-2], arch_poly.points[-1], i=1, j=2)
+        )]
         Box: front_cover:
-            position =(0, arch_depth/4, 11+2*plate_thickness)
+            position =(0, 0, 6.3+2*plate_thickness)
             dy = plate_thickness
             dx = width
             dz = distance2d(arch_poly.points[-2],  arch_poly.points[-1],i=1, j=2)
@@ -410,7 +412,7 @@ enamldef StepperMotor(Part):
                 shape = profile
     Transform:
         operations = [Translate(z=height/8)]
-        Prism: body:
+        Prism:
             material = 'copper'
             vector << (0, 0, height/2)
             Transform:
@@ -489,12 +491,14 @@ enamldef SpindleHolder(Transform): holder:
     )]
     attr height = 1.8
     attr gap_size = 0.05
+    color = '#103'
     Cut:
         Chamfer:
             distance = 0.5
             operations << [
                 (box.topology.edges[4], box.topology.faces[2]),
-                (box.topology.edges[6], box.topology.faces[2]),
+                (box.topology.edges[0], box.topology.faces[2]),
+                #(box.topology.edges[6], box.topology.faces[1]),
             ]
             Box: box:
                 dx = 1.8
