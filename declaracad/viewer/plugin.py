@@ -10,47 +10,48 @@ Created on Dec 13, 2017
 
 @author: jrm
 """
-import os
-import sys
-import json
-import time
-import enaml
 import asyncio
 import functools
-import jsonpickle
-from typing import List as ListType
-from typing import Optional, Iterator, TYPE_CHECKING
-
+import json
+import os
+import sys
+import time
 from asyncio.base_events import Server
+from typing import TYPE_CHECKING, Iterator
+from typing import List as ListType
+from typing import Optional
+
+import enaml
+import jsonpickle
 from atom.api import (
     Atom,
-    ContainerList,
-    Str,
-    Float,
-    Dict,
     Bool,
-    Int,
-    Instance,
-    Enum,
-    Property,
-    ForwardTyped,
-    ForwardInstance,
     Callable,
-    observe,
+    ContainerList,
+    Dict,
+    Enum,
+    Float,
+    ForwardInstance,
+    ForwardTyped,
+    Instance,
+    Int,
+    Property,
+    Str,
     Typed,
+    observe,
     set_default,
 )
-from declaracad.core.api import Plugin, Model, log
+from enaml.application import deferred_call, timed_call
+from enaml.colors import ColorMember
+from enaml.layout.api import InsertItem
+
+from declaracad.core.api import Model, Plugin, log
 from declaracad.core.utils import (
     JsonRpcProtocol,
     ProcessLineReceiver,
     get_bootstrap_cmd,
 )
 from declaracad.occ.shape import Part
-from enaml.application import timed_call, deferred_call
-from enaml.colors import ColorMember
-from enaml.layout.api import InsertItem
-
 
 if TYPE_CHECKING:
     from declaracad.editor.plugin import Document
@@ -63,7 +64,7 @@ if TYPE_CHECKING:
 def is_remote_attr(name: str):
     """Check if the given attr name is valid on the remote viewer."""
     with enaml.imports():
-        from .remote import ViewerWindow, ModelViewer
+        from .remote import ModelViewer, ViewerWindow
     attrs = [name]
     if name.startswith("set_"):
         attrs.append(name[4:])
@@ -467,8 +468,8 @@ class ViewerPlugin(Plugin):
     def _default_exporters(self) -> ListType["ModelExporter"]:
         """TODO: push to an ExtensionPoint"""
         from declaracad.occ.exporters.iges.exporter import IgesExporter
-        from declaracad.occ.exporters.stl.exporter import StlExporter
         from declaracad.occ.exporters.step.exporter import StepExporter
+        from declaracad.occ.exporters.stl.exporter import StlExporter
         from declaracad.occ.exporters.vrml.exporter import VrmlExporter
 
         return [IgesExporter, StlExporter, StepExporter, VrmlExporter]

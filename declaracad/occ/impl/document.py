@@ -6,20 +6,20 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-from declaracad.occ.api import Part, load_model
-from declaracad.occ.impl.utils import color_to_quantity_color
-
 from OCCT.Interface import Interface_HArray1OfHAsciiString
 from OCCT.TCollection import TCollection_ExtendedString, TCollection_HAsciiString
 from OCCT.TDataStd import TDataStd_Name
 from OCCT.TDocStd import TDocStd_Document
 from OCCT.XCAFApp import XCAFApp_Application
 from OCCT.XCAFDoc import (
-    XCAFDoc_DocumentTool,
-    XCAFDoc_Material,
     XCAFDoc_Color,
     XCAFDoc_ColorGen,
+    XCAFDoc_DocumentTool,
+    XCAFDoc_Material,
 )
+
+from declaracad.occ.api import Part, load_model
+from declaracad.occ.impl.utils import color_to_quantity_color
 
 
 def create_xcaf_document(filename: str) -> TDocStd_Document:

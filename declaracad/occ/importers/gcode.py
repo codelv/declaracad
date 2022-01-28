@@ -10,12 +10,21 @@ Created on Aug 31, 2020
 @author: jrm
 """
 import cmath
+
 import enaml
+
 from declaracad.cnc import gcode
-from declaracad.occ.api import (
-    Arc, Bezier, Circle, Direction, Vertex, Point, Polyline, Wire
-)
 from declaracad.core.utils import log
+from declaracad.occ.api import (
+    Arc,
+    Bezier,
+    Circle,
+    Direction,
+    Point,
+    Polyline,
+    Vertex,
+    Wire,
+)
 
 with enaml.imports():
     from declaracad.parts.display import Axis, BoundingBox
@@ -30,9 +39,7 @@ COLORMAP = {
 
 
 def normal_direction(plane: str) -> Direction:
-    """ Get the normal direction for the given plane.
-
-    """
+    """Get the normal direction for the given plane."""
     if plane == "xy":
         return Direction(0, 0, 1)
     elif plane == "xz":
@@ -119,9 +126,9 @@ def load_gcode(filename, **options):
                 items.append(
                     Polyline(
                         points=[last, pos],
-                        description=f'Gcode: {cmd.source}',
+                        description=f"Gcode: {cmd.source}",
                         color=color,
-                        line_style="dashed" if cmd.id == "G0" else "solid"
+                        line_style="dashed" if cmd.id == "G0" else "solid",
                     )
                 )
             last = pos
@@ -171,7 +178,7 @@ def load_gcode(filename, **options):
                         clockwise=clockwise,
                         points=[last, pos],
                         color=arc_color,
-                        description=f'Gcode: {cmd.source}',
+                        description=f"Gcode: {cmd.source}",
                     )
                 )
             # elif 'U' in data:
@@ -216,20 +223,20 @@ def load_gcode(filename, **options):
                 if helical:
                     # Recompute direction, center, and radius
                     pitch = helix * 4
-                    b = helix/2
-                    r = cmath.sqrt(r**2 + helix**2).real
-                    if plane == 'xy':
+                    b = helix / 2
+                    r = cmath.sqrt(r ** 2 + helix ** 2).real
+                    if plane == "xy":
                         rot = 1 if i > 0 else -1
                         center = center + (0, 0, b)
-                        direction = (rot*-b, 0, r)
-                    elif plane == 'xz':
+                        direction = (rot * -b, 0, r)
+                    elif plane == "xz":
                         rot = 1 if k > 0 else -1
                         center = center + (0, b, 0)
-                        direction = (rot*-b, r, 0)
-                    elif plane == 'yz':
+                        direction = (rot * -b, r, 0)
+                    elif plane == "yz":
                         rot = 1 if j > 0 else -1
                         center = center + (b, 0, 0)
-                        direction = (r, 0, rot*-b)
+                        direction = (r, 0, rot * -b)
                     else:
                         assert False, "Unreachable"
 
@@ -241,11 +248,13 @@ def load_gcode(filename, **options):
                         clockwise=clockwise,
                         points=[last, pos],
                         color=arc_color,
-                        description=''.join([
-                            'Helical\n  ' if helical else '',
-                            f'Plane {plane.upper()}\n  ',
-                            f'Gcode: {cmd.source}'
-                        ]),
+                        description="".join(
+                            [
+                                "Helical\n  " if helical else "",
+                                f"Plane {plane.upper()}\n  ",
+                                f"Gcode: {cmd.source}",
+                            ]
+                        ),
                     )
                 )
             last = pos
@@ -281,7 +290,7 @@ def load_gcode(filename, **options):
                 Bezier(
                     points=points,
                     color=normal_color,
-                    description=f'Gcode: {cmd.source}',
+                    description=f"Gcode: {cmd.source}",
                 )
             )
             last = points[-1]
@@ -296,7 +305,7 @@ def load_gcode(filename, **options):
                 Bezier(
                     points=[last, c1, c2],
                     color=normal_color,
-                    description=f'Gcode: {cmd.source}',
+                    description=f"Gcode: {cmd.source}",
                 )
             )
             last_cmd = cmd

@@ -9,13 +9,12 @@ Created on Dec 6, 2015
 
 @author: jrm
 """
+import faulthandler
+import logging
 import os
 import sys
-import logging
-import faulthandler
 from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler
-
 
 version = "0.4.1"
 

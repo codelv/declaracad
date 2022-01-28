@@ -12,9 +12,10 @@ Created on Sep 27, 2016
 from atom.api import set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_ThruSections
-from OCCT.TopoDS import TopoDS_Vertex, TopoDS_Edge, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Vertex, TopoDS_Wire
 
 from declaracad.occ.algo import ProxyThruSections
+
 from .occ_algo import OccOperation
 
 

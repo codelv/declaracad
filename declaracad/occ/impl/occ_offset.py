@@ -10,18 +10,14 @@ Created on Sep 27, 2016
 @author: jrm
 """
 from atom.api import set_default
-
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
-from OCCT.BRepOffsetAPI import (
-    BRepOffsetAPI_MakeOffset,
-    BRepOffsetAPI_MakeOffsetShape,
-)
-
-from OCCT.BRepOffset import BRepOffset_Skin, BRepOffset_Pipe, BRepOffset_RectoVerso
-from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Tangent, GeomAbs_Intersection
+from OCCT.BRepOffset import BRepOffset_Pipe, BRepOffset_RectoVerso, BRepOffset_Skin
+from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape
+from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 from declaracad.occ.algo import ProxyOffset, ProxyOffsetShape
+
 from .occ_algo import OccOperation, coerce_shape
 from .topology import Topology
 

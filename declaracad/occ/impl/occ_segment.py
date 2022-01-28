@@ -10,11 +10,11 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from atom.api import Typed, set_default
-
 from OCCT.GC import GC_MakeSegment
 from OCCT.Geom import Geom_TrimmedCurve
 
 from declaracad.occ.draw import ProxySegment
+
 from .occ_line import OccLine
 
 

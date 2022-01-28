@@ -10,25 +10,24 @@ Created on Dec 23, 2021
 @author: jrm
 """
 from atom.api import Instance, set_default
-
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakePipe
 from OCCT.GeomFill import (
+    GeomFill_IsConstantNormal,
     GeomFill_IsCorrectedFrenet,
+    GeomFill_IsDarboux,
+    GeomFill_IsDiscreteTrihedron,
     GeomFill_IsFixed,
     GeomFill_IsFrenet,
-    GeomFill_IsConstantNormal,
-    GeomFill_IsDarboux,
     GeomFill_IsGuideAC,
-    GeomFill_IsGuidePlan,
     GeomFill_IsGuideACWithContact,
+    GeomFill_IsGuidePlan,
     GeomFill_IsGuidePlanWithContact,
-    GeomFill_IsDiscreteTrihedron,
 )
 from OCCT.TopoDS import TopoDS_Edge
 
-
 from declaracad.occ.algo import ProxyPipe
+
 from .occ_algo import OccOperation, OccShape, coerce_shape
 
 

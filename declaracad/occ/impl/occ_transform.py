@@ -9,13 +9,14 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
-from atom.api import set_default, Instance
-
+from atom.api import Instance, set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
-from OCCT.gp import gp_Trsf, gp_Ax1, gp_Ax2, gp_Ax3, gp_Vec, gp_Pnt, gp_Dir
-from declaracad.occ.algo import ProxyTransform, Translate, Rotate, Scale, Mirror
-from .occ_shape import OccShape
+from OCCT.gp import gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
+
+from declaracad.occ.algo import Mirror, ProxyTransform, Rotate, Scale, Translate
+
 from .occ_algo import OccOperation, coerce_shape
+from .occ_shape import OccShape
 from .topology import Topology
 
 

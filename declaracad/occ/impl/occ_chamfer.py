@@ -10,20 +10,20 @@ Created on Dec 23, 2021
 @author: jrm
 """
 from atom.api import Dict, set_default
-
-from OCCT.BRepTools import BRepTools
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.BRepFilletAPI import (
     BRepFilletAPI_MakeChamfer,
-    BRepFilletAPI_MakeFillet2d,
     BRepFilletAPI_MakeFillet,
+    BRepFilletAPI_MakeFillet2d,
 )
+from OCCT.BRepTools import BRepTools
 from OCCT.gp import gp_Pnt2d
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 from OCCT.TColgp import TColgp_Array1OfPnt2d
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import ProxyChamfer
+
 from .occ_algo import OccOperation
 from .topology import Topology
 

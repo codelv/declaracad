@@ -9,10 +9,11 @@ Created on Dec 6, 2015
 
 @author: jrm
 """
-import sys
-import signal
-import enaml
 import faulthandler
+import signal
+import sys
+
+import enaml
 
 faulthandler.enable()
 
@@ -20,19 +21,19 @@ import enamlx
 
 enamlx.install()
 
-from declaracad.core.workbench import DeclaracadWorkbench
 from declaracad.core.utils import log
+from declaracad.core.workbench import DeclaracadWorkbench
 
 with enaml.imports():
     #: TODO autodiscover these
-    from declaracad.core.manifest import DeclaracadManifest
-    from declaracad.ui.manifest import UIManifest
-    from declaracad.viewer.manifest import ViewerManifest
+    from declaracad.cnc.manifest import CncManifest
     from declaracad.console.manifest import ConsoleManifest
+    from declaracad.core.manifest import DeclaracadManifest
     from declaracad.docs.manifest import DocsManifest
     from declaracad.editor.manifest import EditorManifest
     from declaracad.toolbox.manifest import ToolboxManifest
-    from declaracad.cnc.manifest import CncManifest
+    from declaracad.ui.manifest import UIManifest
+    from declaracad.viewer.manifest import ViewerManifest
 
 try:
     # Required on Qt 5.10+

@@ -11,10 +11,13 @@ Created on Aug 22, 2020
 """
 import sys
 import time
+
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
+
+from declaracad.core.utils import log
 from declaracad.occ.api import Topology
 from declaracad.occ.geom import coerce_point
-from declaracad.core.utils import log
+
 from . import interpolate
 
 

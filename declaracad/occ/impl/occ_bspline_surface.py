@@ -10,15 +10,15 @@ Created on Dec 24, 2021
 @author: jrm
 """
 from atom.api import Typed, set_default
-
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.Geom import Geom_BSplineSurface
 from OCCT.GeomAPI import GeomAPI_PointsToBSplineSurface
 from OCCT.TColgp import TColgp_Array2OfPnt
 
 from declaracad.occ.draw import ProxyBSplineSurface
-from .occ_shape import OccShape
+
 from .occ_bspline import CONTINUITY
+from .occ_shape import OccShape
 from .topology import Topology
 
 

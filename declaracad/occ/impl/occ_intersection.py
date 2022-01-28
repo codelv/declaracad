@@ -10,10 +10,10 @@ Created on Sep 27, 2016
 @author: jrm
 """
 from atom.api import set_default
-
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
 
 from declaracad.occ.algo import ProxyIntersection
+
 from .occ_algo import OccBooleanOperation, coerce_shape
 from .topology import Topology
 

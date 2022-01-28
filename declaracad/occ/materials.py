@@ -11,15 +11,15 @@ Created on Aug 24, 2021
 """
 from atom.api import (
     Atom,
-    Float,
     Bool,
-    Str,
     Coerced,
-    Value,
     Enum,
+    Float,
+    FloatRange,
+    Str,
     Tuple,
     Typed,
-    FloatRange,
+    Value,
 )
 from enaml.colors import Color, ColorMember
 

@@ -9,20 +9,20 @@ Created on Jul 12, 2015
 
 @author: jrm
 """
+import asyncio
+import functools
+import logging
 import os
 import sys
 import time
-import asyncio
-import logging
-import functools
 import traceback
-import jsonpickle
-from atom.api import Atom, Instance, Bool, Bytes, ContainerList, Dict, Int, Value
 from contextlib import contextmanager
-from enaml.image import Image
-from enaml.icon import Icon, IconImage
-from enaml.application import Application, timed_call
 
+import jsonpickle
+from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
+from enaml.application import Application, timed_call
+from enaml.icon import Icon, IconImage
+from enaml.image import Image
 
 # -----------------------------------------------------------------------------
 # Logger

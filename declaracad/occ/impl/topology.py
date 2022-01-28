@@ -9,104 +9,107 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
-from atom.api import Atom, Instance, Typed, Bool, List, Property
-from typing import Any, Iterable, Optional, TypeVar, Union
+from typing import Any
 from typing import Dict as DictType
+from typing import Iterable
 from typing import List as ListType
+from typing import Optional
 from typing import Set as SetType
 from typing import Tuple as TupleType
+from typing import TypeVar, Union
+
+from atom.api import Atom, Bool, Instance, List, Property, Typed
 from OCCT import GeomAbs
 from OCCT.Bnd import Bnd_Box
-from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeWire,
-    BRepBuilderAPI_MakeVertex,
-    BRepBuilderAPI_MakeFace,
-)
 from OCCT.BRepAdaptor import (
-    BRepAdaptor_Curve,
     BRepAdaptor_CompCurve,
+    BRepAdaptor_Curve,
     BRepAdaptor_Surface,
 )
+from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.BRepTools import BRepTools, BRepTools_WireExplorer
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakeVertex,
+    BRepBuilderAPI_MakeWire,
+)
 from OCCT.BRepExtrema import BRepExtrema_DistShapeShape
 from OCCT.BRepGProp import BRepGProp
+from OCCT.BRepTools import BRepTools, BRepTools_WireExplorer
+from OCCT.Extrema import Extrema_ExtFlag_MAX, Extrema_ExtFlag_MIN
 from OCCT.GC import GC_MakeSegment
 from OCCT.GCPnts import (
-    GCPnts_UniformDeflection,
+    GCPnts_QuasiUniformAbscissa,
     GCPnts_QuasiUniformDeflection,
     GCPnts_UniformAbscissa,
-    GCPnts_QuasiUniformAbscissa,
+    GCPnts_UniformDeflection,
 )
 from OCCT.Geom import (
-    Geom_Ellipse,
     Geom_Circle,
-    Geom_Parabola,
+    Geom_Curve,
+    Geom_Ellipse,
     Geom_Hyperbola,
     Geom_Line,
-    Geom_TrimmedCurve,
-    Geom_Curve,
-    Geom_Surface,
     Geom_OffsetCurve,
+    Geom_Parabola,
+    Geom_Surface,
+    Geom_TrimmedCurve,
 )
 from OCCT.GeomAbs import (
-    GeomAbs_Line,
-    GeomAbs_Circle,
-    GeomAbs_Ellipse,
-    GeomAbs_Hyperbola,
-    GeomAbs_Parabola,
     GeomAbs_BezierCurve,
     GeomAbs_BSplineCurve,
+    GeomAbs_Circle,
+    GeomAbs_Cone,
+    GeomAbs_CurveType,
+    GeomAbs_Cylinder,
+    GeomAbs_Ellipse,
+    GeomAbs_Hyperbola,
+    GeomAbs_Line,
     GeomAbs_OffsetCurve,
     GeomAbs_OtherCurve,
-    GeomAbs_SurfaceType,
-    GeomAbs_CurveType,
+    GeomAbs_Parabola,
     GeomAbs_Plane,
-    GeomAbs_Cylinder,
-    GeomAbs_Cone,
-    GeomAbs_Torus,
     GeomAbs_Sphere,
+    GeomAbs_SurfaceType,
+    GeomAbs_Torus,
 )
-from OCCT.GProp import GProp_GProps
 from OCCT.gp import gp_Pnt, gp_Vec
-from OCCT.Extrema import Extrema_ExtFlag_MAX, Extrema_ExtFlag_MIN
+from OCCT.GProp import GProp_GProps
+from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
 from OCCT.TopAbs import (
-    TopAbs_VERTEX,
-    TopAbs_EDGE,
-    TopAbs_FACE,
-    TopAbs_WIRE,
-    TopAbs_SHELL,
-    TopAbs_SOLID,
     TopAbs_COMPOUND,
     TopAbs_COMPSOLID,
+    TopAbs_EDGE,
+    TopAbs_FACE,
     TopAbs_REVERSED,
     TopAbs_ShapeEnum,
+    TopAbs_SHELL,
+    TopAbs_SOLID,
+    TopAbs_VERTEX,
+    TopAbs_WIRE,
 )
 from OCCT.TopExp import TopExp, TopExp_Explorer
 from OCCT.TopoDS import (
     TopoDS,
-    TopoDS_Wire,
-    TopoDS_Vertex,
-    TopoDS_Edge,
-    TopoDS_Face,
-    TopoDS_Shell,
-    TopoDS_Solid,
     TopoDS_Compound,
     TopoDS_CompSolid,
-    TopoDS_Shape,
+    TopoDS_Edge,
+    TopoDS_Face,
     TopoDS_Iterator,
+    TopoDS_Shape,
+    TopoDS_Shell,
+    TopoDS_Solid,
+    TopoDS_Vertex,
+    TopoDS_Wire,
 )
 from OCCT.TopTools import (
-    TopTools_ListOfShape,
-    TopTools_ListIteratorOfListOfShape,
-    TopTools_IndexedDataMapOfShapeListOfShape,
     TopTools_HSequenceOfShape,
+    TopTools_IndexedDataMapOfShapeListOfShape,
+    TopTools_ListIteratorOfListOfShape,
+    TopTools_ListOfShape,
 )
 
-from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
-
-from ..shape import Direction, Point, BBox, coerce_point, coerce_direction
+from ..shape import BBox, Direction, Point, coerce_direction, coerce_point
 
 T = TypeVar("T")
 

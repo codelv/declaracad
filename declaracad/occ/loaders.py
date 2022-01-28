@@ -10,8 +10,9 @@ Created on Aug 31, 2020
 @author: jrm
 """
 import os
-import enaml
 from typing import Optional
+
+import enaml
 
 
 def load_model(

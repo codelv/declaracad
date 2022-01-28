@@ -6,11 +6,13 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+import signal
+
 import enaml
 import enamlx
-import signal
 from enaml.qt.qt_application import QtApplication
-from declaracad.editor.plugin import EditorPlugin, Document, install_lexers
+
+from declaracad.editor.plugin import Document, EditorPlugin, install_lexers
 
 with enaml.imports():
     from declaracad.editor.standalone import StandaloneEditor

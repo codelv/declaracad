@@ -13,6 +13,7 @@ from OCCT.BRepOffsetAPI import BRepOffsetAPI_DraftAngle
 from OCCT.gp import gp_Pln
 
 from declaracad.occ.algo import ProxyDraftAngle
+
 from .occ_algo import OccOperation, coerce_shape
 
 

@@ -7,10 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import Typed, set_default
-
 from OCCT.Geom import Geom_Circle
 
 from declaracad.occ.draw import ProxyCircle
+
 from .occ_edge import OccEdge
 from .occ_shape import coerce_axis
 
@@ -25,7 +25,7 @@ class OccCircle(OccEdge, ProxyCircle):
 
     def create_shape(self):
         d = self.declaration
-        curve = self.curve = Geom_Circle(coerce_axis(d.axis), d.radius)
+        curve = self.curve = Geom_Circle(coerce_axis(d.axis), abs(d.radius))
         self.shape = self.make_edge(curve)
 
     def set_radius(self, r):

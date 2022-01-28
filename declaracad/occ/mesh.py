@@ -10,25 +10,27 @@ Created on Aug 3, 2021
 @author: jrm
 """
 from typing import Optional
+
 from atom.api import (
     Atom,
-    Value,
-    Typed,
-    ForwardTyped,
-    Enum,
-    Dict,
     Bool,
-    Float,
-    Property,
-    List,
-    Str,
-    Int,
     Coerced,
+    Dict,
+    Enum,
+    Float,
+    ForwardTyped,
+    Int,
+    List,
+    Property,
+    Str,
+    Typed,
+    Value,
     observe,
 )
-from enaml.core.declarative import d_, d_func
 from enaml.colors import Color, ColorMember
-from .shape import ProxyShape, Shape, Point, Direction, coerce_direction, coerce_point
+from enaml.core.declarative import d_, d_func
+
+from .shape import Direction, Point, ProxyShape, Shape, coerce_direction, coerce_point
 
 
 class ProxyNode(Atom):

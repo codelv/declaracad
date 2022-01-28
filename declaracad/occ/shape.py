@@ -12,50 +12,49 @@ Created on Sep 30, 2016
 """
 import math
 from math import pi
+
 from atom.api import (
     Atom,
-    Tuple,
-    Instance,
     Bool,
-    Str,
-    Float,
-    FloatRange,
-    Property,
     Coerced,
-    Typed,
-    ForwardTyped,
-    ForwardInstance,
-    List,
     Enum,
     Event,
-    Value,
+    Float,
+    FloatRange,
+    ForwardInstance,
+    ForwardTyped,
+    Instance,
+    List,
+    Property,
+    Str,
     Subclass,
+    Tuple,
+    Typed,
+    Value,
     observe,
     set_default,
 )
-from enaml.core.declarative import d_, d_func
-from enaml.core.api import Include
 from enaml.colors import ColorMember
+from enaml.core.api import Include
+from enaml.core.declarative import d_, d_func
 from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject
 
+#: TODO: This breaks the proxy pattern
+from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape, TopoDS_Shell
 
 from declaracad.core.utils import log, process_events
 
-#: TODO: This breaks the proxy pattern
-from OCCT.TopoDS import TopoDS_Face, TopoDS_Shell, TopoDS_Shape
-
 from .geom import (
     BBox,
-    Point,
     Direction,
-    coerce_point,
+    Point,
     coerce_direction,
+    coerce_point,
     coerce_rotation,
     settings,
 )
-
-from .materials import Texture, Material
+from .materials import Material, Texture
 
 
 class ProxyShape(ProxyControl):

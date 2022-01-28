@@ -11,15 +11,15 @@ Created on Dec 26, 2020
 """
 import math
 import warnings
-from atom.api import Atom, Float, Typed, Property
 from contextlib import contextmanager
 from typing import Optional
 from typing import Tuple as TupleType
-from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec, gp_Ax1
-from OCCT.Geom import Geom_Line
-from OCCT.BRep import BRep_Tool
-from OCCT.TopoDS import TopoDS_Shape
 
+from atom.api import Atom, Float, Property, Typed
+from OCCT.BRep import BRep_Tool
+from OCCT.Geom import Geom_Line
+from OCCT.gp import gp, gp_Ax1, gp_Dir, gp_Pnt, gp_Vec
+from OCCT.TopoDS import TopoDS_Shape
 
 try:
     from SMESH.SMDS import SMDS_MeshNode

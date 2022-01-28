@@ -10,15 +10,15 @@ Created on Jul 12, 2015
 @author: jrm
 """
 import os
-import jsonpickle as pickle
 
+import enaml
+import jsonpickle as pickle
 from atom.api import Str
 from enaml.widgets.api import Container
 from enaml.workbench.ui.api import Workspace
+
 from declaracad import get_log_dir
 from declaracad.core.utils import log
-
-import enaml
 
 with enaml.imports():
     from .manifest import UIManifest

@@ -8,13 +8,12 @@ The full license is in the file LICENSE, distributed with this software.
 Created on Jan, 15 2022
 """
 from atom.api import set_default
-from .occ_algo import OccOperation, coerce_shape
-from .topology import Topology
-
-
-from OCCT.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_CompCurve
+from OCCT.BRepAdaptor import BRepAdaptor_CompCurve, BRepAdaptor_Curve
 from OCCT.GeomLib import GeomLib
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+
+from .occ_algo import OccOperation, coerce_shape
+from .topology import Topology
 
 
 class OccExtend(OccOperation, ProxyTrimmedCurve):

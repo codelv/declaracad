@@ -10,10 +10,12 @@ Created on June, 24 2021
 @author: jrm
 """
 from atom.api import Validate
-from enaml.scintilla.api import Scintilla
-from enaml.qt.QtGui import QColor, QFont
 from enaml.qt import scintilla_lexers, scintilla_tokens
+from enaml.qt.QtGui import QColor, QFont
+from enaml.scintilla.api import Scintilla
+
 from declaracad.editor.themes import THEMES
+
 from .gcode import QsciLexerGCode
 
 CUSTOM_LEXERS = {

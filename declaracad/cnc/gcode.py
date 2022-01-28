@@ -12,21 +12,23 @@ Created on Aug 18, 2020
 import os
 import re
 from collections import OrderedDict
+
 from atom.api import (
     Atom,
-    Property,
-    List,
-    Instance,
-    Str,
-    Int,
-    Enum,
-    Float,
     Bool,
     Dict,
+    Enum,
+    Float,
+    Instance,
+    Int,
+    List,
+    Property,
+    Str,
     observe,
 )
 from OCCT.BRep import BRep_Builder
 from OCCT.TopoDS import TopoDS_Compound
+
 from declaracad.occ.api import Point
 
 

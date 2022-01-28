@@ -9,15 +9,16 @@ Created on May 16, 2020
 
 @author: jrm
 """
-import ezdxf
 from math import radians
-from declaracad.core.utils import log
-from declaracad.occ.api import Segment, Arc, Circle, TopoShape
 
+import ezdxf
 from OCCT.BRep import BRep_Builder
+from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
 from OCCT.TopoDS import TopoDS_Compound
 from OCCT.TopTools import TopTools_HSequenceOfShape
-from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
+
+from declaracad.core.utils import log
+from declaracad.occ.api import Arc, Circle, Segment, TopoShape
 
 
 def load_dxf(filename):

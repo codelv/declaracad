@@ -10,15 +10,12 @@ Created on Sept 1, 2021
 @author: jrm
 """
 import warnings
-from atom.api import Atom, Typed, Instance
+
+from atom.api import Atom, Instance, Typed
 
 try:
     from pychrono import fea
     from pychrono.core import (
-        ChSystem,
-        ChSystemNSC,
-        ChSystemSMC,
-        ChVectorD,
         ChSolver,
         ChSolverADMM,
         ChSolverAPGD,
@@ -32,8 +29,20 @@ try:
         ChSolverSparseLU,
         ChSolverSparseQR,
         ChSolverVI,
+        ChSystem,
+        ChSystemNSC,
+        ChSystemSMC,
+        ChVectorD,
     )
     from pychrono.fea import (
+        ChContinuumElastic,
+        ChElementBase,
+        ChElementHexaANCF_3813_9,
+        ChElementHexaCorot_8,
+        ChElementHexaCorot_20,
+        ChElementSpring,
+        ChElementTetraCorot_4,
+        ChElementTetraCorot_10,
         ChMesh,
         ChNodeFEAbase,
         ChNodeFEAxyz,
@@ -41,14 +50,6 @@ try:
         ChNodeFEAxyzDD,
         ChNodeFEAxyzP,
         ChNodeFEAxyzrot,
-        ChContinuumElastic,
-        ChElementBase,
-        ChElementTetraCorot_4,
-        ChElementSpring,
-        ChElementHexaANCF_3813_9,
-        ChElementTetraCorot_10,
-        ChElementHexaCorot_8,
-        ChElementHexaCorot_20,
     )
 except ImportError as e:
     warnings.warn(f"{e}")
@@ -56,12 +57,11 @@ except ImportError as e:
 
 from OCCT.MeshVS import MeshVS_Mesh
 
-from declaracad.fea.analysis import ProxyAnalysis, Analysis
-from declaracad.occ.api import Mesh, Point
-from declaracad.occ.impl.occ_shape import OccDependentShape
-from declaracad.occ.impl.occ_mesh import OccNode, OccElement, OccMeshTopology
 from declaracad.core.utils import log, log_time
-
+from declaracad.fea.analysis import Analysis, ProxyAnalysis
+from declaracad.occ.api import Mesh, Point
+from declaracad.occ.impl.occ_mesh import OccElement, OccMeshTopology, OccNode
+from declaracad.occ.impl.occ_shape import OccDependentShape
 
 SYSTEM_TYPES = {
     "NSC": ChSystemNSC,

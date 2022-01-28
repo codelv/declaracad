@@ -10,21 +10,22 @@ Created on Dec 24, 2021
 @author: jrm
 """
 import os
-from atom.api import Typed, set_default
 
+from atom.api import Typed, set_default
 from OCCT import Graphic3d
-from OCCT.gp import gp_Ax3
 from OCCT.Font import (
-    Font_FontMgr,
     Font_BRepFont,
     Font_BRepTextBuilder,
-    Font_FontAspect,
     Font_FA_Regular,
+    Font_FontAspect,
+    Font_FontMgr,
 )
-from OCCT.TCollection import TCollection_AsciiString
+from OCCT.gp import gp_Ax3
 from OCCT.NCollection import NCollection_String
+from OCCT.TCollection import TCollection_AsciiString
 
 from declaracad.occ.draw import ProxyText
+
 from .occ_shape import OccShape, coerce_axis
 
 #: Track registered fonts

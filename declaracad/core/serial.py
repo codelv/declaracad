@@ -15,9 +15,10 @@ Posix platforms only, Python 3.4+ only.
 Windows event loops can not wait for serial ports with the current
 implementation. It should be possible to get that working though.
 """
-import os
-import serial
 import asyncio
+import os
+
+import serial
 
 try:
     import termios

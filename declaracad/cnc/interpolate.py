@@ -9,12 +9,16 @@ Created on Dec 27, 2020
 
 @author: jrm
 """
-from typing import Any, Optional, Iterable
-from typing import List as ListType
+from typing import Any
 from typing import Dict as DictType
+from typing import Iterable
+from typing import List as ListType
+from typing import Optional
 from typing import Set as SetType
-from declaracad.occ.api import Topology, Wire, Point
-from OCCT.TopoDS import TopoDS_Shape, TopoDS_Face, TopoDS_Edge
+
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape
+
+from declaracad.occ.api import Point, Topology, Wire
 
 
 def distance(

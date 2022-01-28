@@ -10,7 +10,7 @@ Created on Dec 6, 2015
 @author: jrm
 """
 from .models import Model, Plugin
+from .utils import log
+from .widgets import EmbeddedWindow, FramelessWindow
 from .widgets import PickableDockArea as DockArea
 from .widgets import PickableDockItem as DockItem
-from .widgets import EmbeddedWindow, FramelessWindow
-from .utils import log

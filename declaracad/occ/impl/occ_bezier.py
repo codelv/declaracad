@@ -7,11 +7,11 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import Typed, set_default
-
 from OCCT.Geom import Geom_BezierCurve
 from OCCT.TColgp import TColgp_Array1OfPnt
 
 from declaracad.occ.draw import ProxyBezier
+
 from .occ_line import OccLine
 
 

@@ -9,21 +9,23 @@ Created on Aug 24, 2020
 
 @author: jrm
 """
-import sys
-import inspect
 import asyncio
+import inspect
 import logging
-from queue import Queue, Empty
-from functools import wraps, partial
+import sys
+from functools import partial, wraps
+from queue import Empty, Queue
+
 from asyncqt import QEventLoop
 from atom.api import Atom, Bool, Instance
 from enaml.qt.qt_application import QtApplication
+
 from declaracad.core.utils import log
+from declaracad.fea.impl import fea_factories
 
 # Import factories
 from declaracad.occ.impl import occ_factories
 from declaracad.viewer.qt import qt_factories
-from declaracad.fea.impl import fea_factories
 
 
 class Application(QtApplication):

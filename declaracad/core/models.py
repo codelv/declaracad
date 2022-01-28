@@ -9,15 +9,17 @@ Created on Dec 6, 2017
 
 @author: jrm
 """
-import os
 import json
-import enaml
+import os
 import traceback
+
+import enaml
 import jsonpickle as pickle
-from atom.api import Atom, Str, List, Member, Dict
-from enaml.workbench.plugin import Plugin as EnamlPlugin
+from atom.api import Atom, Dict, List, Member, Str
 from enaml.widgets.api import Container
-from .utils import log, clip
+from enaml.workbench.plugin import Plugin as EnamlPlugin
+
+from .utils import clip, log
 
 
 # -----------------------------------------------------------------------------

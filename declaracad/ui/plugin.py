@@ -10,16 +10,16 @@ Created on Jul 12, 2015
 @author: jrm
 """
 import enaml
-from atom.api import Atom, List, Str, Instance, Dict, Enum
-from declaracad.core.api import Plugin, DockItem, log
-
+from atom.api import Atom, Dict, Enum, Instance, List, Str
 from enaml.layout.api import (
     AreaLayout,
     DockBarLayout,
     HSplitLayout,
-    VSplitLayout,
     TabLayout,
+    VSplitLayout,
 )
+
+from declaracad.core.api import DockItem, Plugin, log
 
 from . import extensions
 

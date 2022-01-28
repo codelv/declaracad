@@ -10,30 +10,31 @@ Created on Sep 26, 2016
 @author: jrm
 """
 import math
+
 from atom.api import (
     Atom,
-    Event,
-    List,
-    Tuple,
     Bool,
-    Int,
-    Enum,
-    Typed,
-    ForwardTyped,
-    observe,
     Coerced,
     Dict,
-    Str,
+    Enum,
+    Event,
     Float,
-    Instance,
     FloatRange,
+    ForwardTyped,
+    Instance,
+    Int,
+    List,
+    Str,
+    Tuple,
+    Typed,
+    observe,
     set_default,
 )
-from enaml.core.declarative import d_
 from enaml.colors import Color, ColorMember, parse_color
+from enaml.core.declarative import d_
 from enaml.widgets.control import Control, ProxyControl
 
-from declaracad.occ.shape import BBox, Point, Direction
+from declaracad.occ.shape import BBox, Direction, Point
 
 
 def color_pair_coercer(arg):

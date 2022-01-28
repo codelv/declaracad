@@ -7,10 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import set_default
-
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeWedge
 
 from declaracad.occ.shape import ProxyWedge
+
 from .occ_shape import OccShape, coerce_axis
 
 

@@ -7,16 +7,16 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 import os
+
 import enaml
 from atom.api import Bool, Enum, Float, Str
-from declaracad.occ.api import Part, load_model
-from declaracad.viewer.plugin import ModelExporter
-from declaracad.occ.impl.document import create_xcaf_document, create_hascii_list
-
-from OCCT.Interface import Interface_Static
 from OCCT.IFSelect import IFSelect_RetDone
 from OCCT.IGESCAFControl import IGESCAFControl_Writer
+from OCCT.Interface import Interface_Static
 
+from declaracad.occ.api import Part, load_model
+from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
+from declaracad.viewer.plugin import ModelExporter
 
 SetCVal = Interface_Static.SetCVal_
 SetIVal = Interface_Static.SetIVal_

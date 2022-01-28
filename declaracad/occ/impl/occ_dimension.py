@@ -10,34 +10,32 @@ Created on March 25, 2020
 @author: jrm
 """
 from atom.api import Typed
-from OCCT.PrsDim import (
-    PrsDim_AngleDimension,
-    PrsDim_DiameterDimension,
-    PrsDim_LengthDimension,
-    PrsDim_RadiusDimension,
-    PrsDim_Dimension,
-)
 from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
 from OCCT.GC import GC_MakePlane
-from OCCT.gp import gp_Pnt, gp_Dir
-from OCCT.TCollection import TCollection_AsciiString
-from OCCT.TopoDS import TopoDS, TopoDS_Edge, TopoDS_Vertex, TopoDS_Shape
-from OCCT.TopAbs import TopAbs_ShapeEnum
-
-from ..dimension import (
-    ProxyDimension,
-    ProxyAngleDimension,
-    ProxyDiameterDimension,
-    ProxyRadiusDimension,
-    ProxyLengthDimension,
+from OCCT.gp import gp_Dir, gp_Pnt
+from OCCT.PrsDim import (
+    PrsDim_AngleDimension,
+    PrsDim_DiameterDimension,
+    PrsDim_Dimension,
+    PrsDim_LengthDimension,
+    PrsDim_RadiusDimension,
 )
-from ..shape import Point
-
-from .occ_shape import Topology
+from OCCT.TCollection import TCollection_AsciiString
+from OCCT.TopAbs import TopAbs_ShapeEnum
+from OCCT.TopoDS import TopoDS, TopoDS_Edge, TopoDS_Shape, TopoDS_Vertex
 
 from declaracad.core.utils import log
 
+from ..dimension import (
+    ProxyAngleDimension,
+    ProxyDiameterDimension,
+    ProxyDimension,
+    ProxyLengthDimension,
+    ProxyRadiusDimension,
+)
+from ..shape import Point
+from .occ_shape import Topology
 from .utils import color_to_quantity_color
 
 

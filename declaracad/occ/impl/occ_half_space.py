@@ -7,12 +7,12 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import set_default
-
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeHalfSpace
 from OCCT.gp import gp_Pln
 
 from declaracad.occ.shape import ProxyHalfSpace
+
 from .occ_shape import OccDependentShape, coerce_axis
 
 

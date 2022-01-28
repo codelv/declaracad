@@ -7,12 +7,12 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import set_default
-
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakePrism
 from OCCT.gp import gp_Vec
 
 from declaracad.occ.shape import ProxyPrism
-from .occ_shape import OccShape, OccDependentShape, coerce_shape
+
+from .occ_shape import OccDependentShape, OccShape, coerce_shape
 
 
 class OccPrism(OccDependentShape, ProxyPrism):

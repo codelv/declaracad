@@ -10,13 +10,14 @@ Created on Oct 10, 2018
 @author: jrm
 """
 import os
-import enaml
 from textwrap import dedent
+
+import enaml
 from atom.api import Constant, Enum, Float, Str
+from OCCT.VrmlAPI import VrmlAPI_RepresentationOfShape, VrmlAPI_Writer
+
 from declaracad.occ.api import load_model
 from declaracad.viewer.plugin import ModelExporter
-
-from OCCT.VrmlAPI import VrmlAPI_Writer, VrmlAPI_RepresentationOfShape
 
 
 class VrmlExporter(ModelExporter):

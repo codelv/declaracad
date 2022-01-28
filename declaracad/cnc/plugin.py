@@ -9,31 +9,33 @@ Created on Aug 8, 2018
 
 @author: jrm
 """
+import asyncio
 import time
 import uuid
-import serial
-import asyncio
 from typing import Union
+
+import serial
 from atom.api import (
     Atom,
-    Instance,
-    Subclass,
-    Str,
-    Int,
     Bool,
-    ContainerList,
     Bytes,
+    ContainerList,
     Enum,
-    List,
     Float,
+    Instance,
+    Int,
+    List,
+    Str,
+    Subclass,
     observe,
 )
 from enaml.application import Application, deferred_call
 from serial.tools.list_ports import comports
 
-from declaracad.core.api import Plugin, Model, log
+from declaracad.core.api import Model, Plugin, log
 from declaracad.core.serial import SerialTransport, create_serial_connection
 from declaracad.occ.api import Point
+
 from . import gcode
 
 

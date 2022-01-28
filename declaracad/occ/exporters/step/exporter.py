@@ -10,20 +10,17 @@ Created on Oct 10, 2018
 @author: jrm
 """
 import os
+
 import enaml
 from atom.api import Enum, Float, Str
-from declaracad.viewer.plugin import ModelExporter
-from declaracad.occ.impl.document import create_xcaf_document, create_hascii_list
-
-from OCCT.HeaderSection import (
-    HeaderSection_FileName,
-    HeaderSection_FileDescription,
-)
-from OCCT.Interface import Interface_Static
+from OCCT.HeaderSection import HeaderSection_FileDescription, HeaderSection_FileName
 from OCCT.IFSelect import IFSelect_RetDone
+from OCCT.Interface import Interface_Static
 from OCCT.STEPCAFControl import STEPCAFControl_Writer
 from OCCT.TCollection import TCollection_HAsciiString
 
+from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
+from declaracad.viewer.plugin import ModelExporter
 
 SetCVal = Interface_Static.SetCVal_
 SetIVal = Interface_Static.SetIVal_

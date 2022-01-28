@@ -11,37 +11,40 @@ Created on Dec 10, 2015
 """
 import os
 import re
-import sys
-import jedi
-import enaml
-import traceback
 import subprocess
+import sys
+import traceback
+from glob import glob
 from textwrap import dedent
+from types import ModuleType
+from typing import Union
+
+import enaml
+import jedi
 from atom.api import (
-    Enum,
+    Bool,
     ContainerList,
+    Dict,
+    Enum,
+    ForwardTyped,
+    Instance,
+    Int,
+    List,
     Str,
     Tuple,
-    Bool,
-    List,
-    Int,
-    Instance,
-    Dict,
-    ForwardTyped,
     observe,
 )
-from typing import Union
-from declaracad.core.api import Plugin, Model, log
-from enaml.scintilla.api import Scintilla
-from enaml.scintilla.mono_font import MONO_FONT
 from enaml.application import timed_call
 from enaml.core.enaml_compiler import EnamlCompiler
-from enaml.workbench.core.execution_event import ExecutionEvent
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
-from .themes import THEMES
+from enaml.scintilla.api import Scintilla
+from enaml.scintilla.mono_font import MONO_FONT
+from enaml.workbench.core.execution_event import ExecutionEvent
+
+from declaracad.core.api import Model, Plugin, log
+
 from .lexers import install_lexers  # Install lexer
-from types import ModuleType
-from glob import glob
+from .themes import THEMES
 
 
 def editor_item_factory():
@@ -424,9 +427,7 @@ class EditorPlugin(Plugin):
             editor.set_text(doc.source)
 
     def open_containing_folder(self, event: Union[str, ExecutionEvent]):
-        """ Open the folder containing the given file path
-
-        """
+        """Open the folder containing the given file path"""
         if isinstance(event, ExecutionEvent):
             path = event.parameters.get("path")
         else:
@@ -434,8 +435,8 @@ class EditorPlugin(Plugin):
         folder = os.path.dirname(path)
         if not os.path.exists(folder):
             return
-        if 'win32' in sys.platform:
-            os.startfile(folder, 'explore')
+        if "win32" in sys.platform:
+            os.startfile(folder, "explore")
         elif sys.platform == "darwin":
             subprocess.call(["open", folder])
         else:

@@ -14,6 +14,7 @@ from OCCT.BRepOffsetAPI import BRepOffsetAPI_NormalProjection
 from OCCT.TopoDS import TopoDS_Compound
 
 from declaracad.occ.algo import ProxyNormalProjection
+
 from .occ_algo import OccOperation, coerce_shape
 from .topology import Topology
 

@@ -9,11 +9,13 @@ Created on Aug 4, 2018
 
 @author: jrm
 """
+import faulthandler
 import sys
 import time
+
 import enaml
 import jsonpickle
-import faulthandler
+
 from declaracad.core.app import Application
 
 

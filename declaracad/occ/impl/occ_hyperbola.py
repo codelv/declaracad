@@ -7,10 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import Typed, set_default
-
 from OCCT.Geom import Geom_Hyperbola
 
 from declaracad.occ.draw import ProxyHyperbola
+
 from .occ_edge import OccEdge
 from .occ_shape import coerce_axis
 

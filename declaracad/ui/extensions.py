@@ -9,7 +9,7 @@ Created on Dec 11, 2017
 
 @author: jrm
 """
-from atom.api import Str, Callable, Enum
+from atom.api import Callable, Enum, Str
 from enaml.core.declarative import Declarative, d_
 
 DOCK_ITEM_POINT = "declaracad.ui.dock.items"

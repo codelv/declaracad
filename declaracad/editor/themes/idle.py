@@ -7,7 +7,6 @@
 # ------------------------------------------------------------------------------
 from enaml.scintilla.mono_font import MONO_FONT
 
-
 # TODO add many more syntaxes to this theme.
 #: A Scintilla highlight theme based on the Python IDLE environment.
 IDLE_THEME = {

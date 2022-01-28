@@ -7,9 +7,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 @author: jrm
 """
-from atom.api import Bool, Typed, ForwardTyped, Tuple, Float, observe
-from enaml.core.declarative import d_
+from atom.api import Bool, Float, ForwardTyped, Tuple, Typed, observe
 from enaml.colors import ColorMember
+from enaml.core.declarative import d_
 from enaml.widgets.control import Control, ProxyControl
 
 

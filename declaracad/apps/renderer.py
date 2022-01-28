@@ -8,13 +8,15 @@ The full license is in the file LICENSE, distributed with this software.
 """
 import os
 import re
+
 import enaml
-from declaracad.occ.impl import occ_factories
-from declaracad.viewer.qt import qt_factories
 from enaml.qt.qt_application import QtApplication
 
+from declaracad.occ.impl import occ_factories
+from declaracad.viewer.qt import qt_factories
+
 with enaml.imports():
-    from declaracad.viewer.offscreen import OffscreenRenderer, OccViewer
+    from declaracad.viewer.offscreen import OccViewer, OffscreenRenderer
 
 
 def export(app: QtApplication, viewer: OccViewer, output: str, **kwargs):

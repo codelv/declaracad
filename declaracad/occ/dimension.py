@@ -9,8 +9,8 @@ Created on March 25, 2020
 
 @author: jrm
 """
-from atom.api import Bool, Coerced, Float, List, Typed, ForwardTyped, Str, observe
-from enaml.colors import ColorMember, Color
+from atom.api import Bool, Coerced, Float, ForwardTyped, List, Str, Typed, observe
+from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject

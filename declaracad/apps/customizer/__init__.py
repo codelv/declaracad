@@ -10,6 +10,7 @@ Created on July 28, 2018
 @author: jrm
 """
 import os
+
 import enaml
 import enamlx
 
@@ -20,7 +21,6 @@ from declaracad import occ
 occ.install()
 from declaracad.core.app import Application
 from declaracad.occ.api import load_model
-
 
 with enaml.imports():
     from .view import Main

@@ -9,8 +9,9 @@ Created on Aug 31, 2020
 
 @author: jrm
 """
-from OCCT.IFSelect import IFSelect_RetDone, IFSelect_ItemsByEntity
+from OCCT.IFSelect import IFSelect_ItemsByEntity, IFSelect_RetDone
 from OCCT.STEPControl import STEPControl_Reader
+
 from declaracad.occ.api import TopoShape
 
 

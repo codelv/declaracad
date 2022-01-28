@@ -9,25 +9,26 @@ Created on July 28, 2018
 
 @author: jrm
 """
+import asyncio
+import faulthandler
+import json
 import os
 import sys
-import json
-import enaml
-import asyncio
 import traceback
 import warnings
-import faulthandler
+
+import enaml
 
 faulthandler.enable()
 
+from atom.api import Atom, Bool, Dict, Float, Instance, Str, Typed
+
 # FIXME: The frozen app won't start without this before importing atom
 from enaml import qt
+from enaml.application import deferred_call, timed_call
 
-from atom.api import Atom, Instance, Typed, Bool, Dict, Float, Str
-from enaml.application import timed_call, deferred_call
 from declaracad.core.app import Application
-from declaracad.core.utils import log, RemoteLogger, JsonRpcProtocol
-
+from declaracad.core.utils import JsonRpcProtocol, RemoteLogger, log
 
 with enaml.imports():
     from declaracad.viewer.standalone import ViewerWindow

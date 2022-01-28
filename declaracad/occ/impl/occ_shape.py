@@ -11,65 +11,62 @@ Created on Sep 30, 2016
 """
 import os
 from math import pi
-from typing import Union, Tuple as TupleType
+from typing import Tuple as TupleType
+from typing import Union
+
 from atom.api import (
     Atom,
     Bool,
     Instance,
     List,
-    Typed,
-    Str,
     Property,
+    Str,
+    Typed,
     observe,
     set_default,
 )
-
-from OCCT.AIS import AIS_Shape, AIS_TexturedShape, AIS_MultipleConnectedInteractive
+from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBndLib import BRepBndLib
-
-from OCCT.gp import gp, gp_Pnt, gp_Dir, gp_Vec, gp_Ax1, gp_Ax2, gp_Ax3, gp_Trsf, gp_Pln
-from OCCT.TopoDS import (
-    TopoDS,
-    TopoDS_Wire,
-    TopoDS_Vertex,
-    TopoDS_Edge,
-    TopoDS_Face,
-    TopoDS_Shell,
-    TopoDS_Solid,
-    TopoDS_Compound,
-    TopoDS_CompSolid,
-    TopoDS_Shape,
-    TopoDS_Iterator,
-)
-from OCCT.TopLoc import TopLoc_Location
+from OCCT.gp import gp, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pln, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TDF import TDF_Label
-
-from declaracad.occ.shape import (
-    ProxyShape,
-    ProxyPart,
-    ProxyFace,
-    ProxyBox,
-    ProxyRawPart,
-    ProxyRawShape,
-    ProxyLoadShape,
-    BBox,
-    Shape,
-    Point,
-    Direction,
-    coerce_point,
-    coerce_direction,
+from OCCT.TopLoc import TopLoc_Location
+from OCCT.TopoDS import (
+    TopoDS,
+    TopoDS_Compound,
+    TopoDS_CompSolid,
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Iterator,
+    TopoDS_Shape,
+    TopoDS_Shell,
+    TopoDS_Solid,
+    TopoDS_Vertex,
+    TopoDS_Wire,
 )
 
-from declaracad.occ.algo import Translate, Rotate, Scale, Mirror
-
-from .utils import color_to_quantity_color, material_to_material_aspect
-from .topology import Topology
-
 from declaracad.core.utils import log
+from declaracad.occ.algo import Mirror, Rotate, Scale, Translate
+from declaracad.occ.shape import (
+    BBox,
+    Direction,
+    Point,
+    ProxyBox,
+    ProxyFace,
+    ProxyLoadShape,
+    ProxyPart,
+    ProxyRawPart,
+    ProxyRawShape,
+    ProxyShape,
+    Shape,
+    coerce_direction,
+    coerce_point,
+)
 
+from .topology import Topology
+from .utils import color_to_quantity_color, material_to_material_aspect
 
 DX = gp_Dir(1, 0, 0)
 DXN = gp_Dir(-1, 0, 0)

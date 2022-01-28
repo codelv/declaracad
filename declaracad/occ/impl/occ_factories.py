@@ -198,6 +198,12 @@ def occ_prism_factory():
     return OccPrism
 
 
+def occ_circuit_factory():
+    from .occ_circuit import OccCircuit
+
+    return OccCircuit
+
+
 def occ_raw_part_factory():
     from .occ_shape import OccRawPart
 
@@ -415,6 +421,7 @@ OCC_FACTORIES = {
     "Parabola": occ_parabola_factory,
     "Plane": occ_plane_factory,
     "Polyline": occ_polyline_factory,
+    "Circuit": occ_circuit_factory,
     "Rectangle": occ_rectangle_factory,
     "Segment": occ_segment_factory,
     "Svg": occ_svg_factory,

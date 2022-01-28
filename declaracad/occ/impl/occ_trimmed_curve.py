@@ -7,12 +7,11 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import Typed, set_default
-
 from OCCT.BRep import BRep_Tool
 from OCCT.Geom import Geom_TrimmedCurve
 
-
 from declaracad.occ.draw import ProxyTrimmedCurve
+
 from .occ_edge import OccEdge
 from .occ_shape import OccShape, coerce_axis
 from .topology import Topology

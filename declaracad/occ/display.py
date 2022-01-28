@@ -11,23 +11,24 @@ Created on Dec 27, 2020
 """
 
 import math
+
 from atom.api import (
     Bool,
     Coerced,
     Float,
-    List,
-    Tuple,
-    Str,
-    Typed,
     ForwardTyped,
+    List,
+    Str,
+    Tuple,
+    Typed,
     observe,
 )
-from enaml.colors import ColorMember, Color
+from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject
 
-from .geom import Direction, Point, coerce_point, coerce_direction
+from .geom import Direction, Point, coerce_direction, coerce_point
 
 
 class ProxyDisplayItem(ProxyControl):

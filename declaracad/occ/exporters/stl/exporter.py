@@ -11,15 +11,16 @@ Created on Oct 10, 2018
 """
 import os
 import time
-import enaml
-from atom.api import Constant, Enum, Float, Str, Bool
-from declaracad.occ.api import load_model
-from declaracad.viewer.plugin import ModelExporter
 
+import enaml
+from atom.api import Bool, Constant, Enum, Float, Str
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepMesh import BRepMesh_IncrementalMesh
 from OCCT.StlAPI import StlAPI_Writer
 from OCCT.TopoDS import TopoDS_Compound
+
+from declaracad.occ.api import load_model
+from declaracad.viewer.plugin import ModelExporter
 
 
 class StlExporter(ModelExporter):

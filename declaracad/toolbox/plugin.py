@@ -12,15 +12,17 @@ Created on Dec 10, 2015
 """
 import inspect
 import logging
-from atom.api import Atom, Subclass, List, Str, Value
-from declaracad.core.api import Plugin, Model, log
+
+from atom.api import Atom, List, Str, Subclass, Value
 from enaml.application import Application
+
+from declaracad.core.api import Model, Plugin, log
 
 
 def get_all_modules():
-    from declaracad.occ import api as occ_api
     from declaracad.cnc import api as cnc_api
     from declaracad.fea import api as fea_api
+    from declaracad.occ import api as occ_api
 
     return (occ_api, cnc_api, fea_api)
 

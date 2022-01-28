@@ -10,25 +10,27 @@ Created on Sept 1, 2021
 @author: jrm
 """
 import warnings
+
 from atom.api import (
     Atom,
-    Value,
-    Typed,
-    ForwardTyped,
-    Enum,
-    Dict,
     Bool,
+    Coerced,
+    Dict,
+    Enum,
     Float,
+    ForwardTyped,
+    Int,
     Property,
     Str,
-    Int,
-    Coerced,
+    Typed,
+    Value,
     observe,
 )
-from enaml.core.declarative import d_, d_func
 from enaml.colors import ColorMember
-from declaracad.occ.shape import ProxyShape, Shape, Direction, coerce_direction
+from enaml.core.declarative import d_, d_func
+
 from declaracad.occ.mesh import Node as MeshNode
+from declaracad.occ.shape import Direction, ProxyShape, Shape, coerce_direction
 
 
 class ProxyAnalysis(ProxyShape):

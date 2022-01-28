@@ -9,30 +9,31 @@ Created on Sept 27, 2016
 
 @author: jrm
 """
-from math import sin, cos, tan, pi
+from math import cos, pi, sin, tan
+
 from atom.api import (
+    Atom,
     Bool,
-    List,
-    Float,
-    Typed,
-    ForwardTyped,
-    Str,
-    Enum,
-    Property,
-    Int,
-    Dict,
     Coerced,
+    Dict,
+    Enum,
+    Float,
+    ForwardTyped,
     Instance,
+    Int,
+    List,
+    Property,
     Range,
-    set_default,
+    Str,
+    Typed,
     observe,
+    set_default,
 )
 from enaml.core.declarative import d_
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
 
+from .geom import Direction, Point, coerce_direction, coerce_point
 from .shape import ProxyShape, Shape
-from .geom import Point as Pt, Direction, coerce_point, coerce_direction
-
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Wire, TopoDS_Face, TopoDS_Shape
 
 
 class ProxyPlane(ProxyShape):
@@ -73,6 +74,9 @@ class ProxyEdge(ProxyShape):
     def set_solve(self, params):
         raise NotImplementedError
 
+    def set_reverse(self, reverse):
+        raise NotImplementedError
+
 
 class ProxyLine(ProxyEdge):
     #: A reference to the shape declaration.
@@ -98,9 +102,6 @@ class ProxyArc(ProxyEdge):
         raise NotImplementedError
 
     def set_alpha2(self, a):
-        raise NotImplementedError
-
-    def set_reverse(self, reverse):
         raise NotImplementedError
 
     def set_clockwise(self, clockwise):
@@ -198,15 +199,20 @@ class ProxyText(ProxyShape):
 class ProxyWire(ProxyEdge):
     declaration = ForwardTyped(lambda: Wire)
 
-    def set_reverse(self, reverse):
-        raise NotImplementedError
-
 
 class ProxyPolyline(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Polyline)
 
     def set_closed(self, closed):
+        raise NotImplementedError
+
+
+class ProxyCircuit(ProxyWire):
+    #: A reference to the shape declaration.
+    declaration = ForwardTyped(lambda: Circuit)
+
+    def set_circles(self, circles):
         raise NotImplementedError
 
 
@@ -257,6 +263,9 @@ class ProxyMiddlePath(ProxyWire):
     def set_mode(self, mode):
         raise NotImplementedError
 
+    def set_join_type(self, join_type):
+        raise NotImplementedError
+
 
 class ProxyBSplineSurface(ProxyShape):
     #: A reference to the shape declaration.
@@ -296,7 +305,7 @@ class Plane(Shape):
     proxy = Typed(ProxyPlane)
 
     #: Bounds of plane (optional) a tuple of [(umin, umin), (vmax, vmax)]
-    bounds = d_(List(Coerced(Pt, coercer=coerce_point)))
+    bounds = d_(List(Coerced(Point, coercer=coerce_point)))
 
 
 class Vertex(Shape):
@@ -355,6 +364,13 @@ class Edge(Shape):
     #: When given these will be use to solve for inputs to the shape
     solve = d_(Dict())
 
+    #: Reverse
+    reverse = d_(Bool()).tag(view=True)
+
+    @observe("reverse", "as_wire")
+    def _update_proxy(self, change):
+        super()._update_proxy(change)
+
     def get_value_at(self, t, derivative=0):
         """Get the value of the curve derivative at t. If the edge has no
         internal parametric curve representation this will throw an error.
@@ -397,7 +413,7 @@ class Line(Edge):
     proxy = Typed(ProxyLine)
 
     #: List of points
-    points = d_(List(Coerced(Pt, coercer=coerce_point)))
+    points = d_(List(Coerced(Point, coercer=coerce_point)))
 
     @property
     def start(self):
@@ -487,9 +503,6 @@ class Arc(Line):
 
     #: 2nd Angle circle (optional)
     alpha2 = d_(Float(0, strict=False)).tag(view=True)
-
-    #: Reverse
-    reverse = d_(Bool()).tag(view=True)
 
     #: Clockwise (sweep direction, when using two points)
     clockwise = d_(Bool()).tag(view=True)
@@ -772,10 +785,7 @@ class Wire(Edge):
     #: Edges used to create this wire
     edges = d_(List())
 
-    #: Reverse the order of the wire
-    reverse = d_(Bool())
-
-    @observe("edges", "reverse")
+    @observe("edges")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
@@ -853,7 +863,7 @@ class Polyline(Wire):
     closed = d_(Bool(False)).tag(view=True)
 
     #: List of points
-    points = d_(List(Coerced(Pt, coercer=coerce_point)))
+    points = d_(List(Coerced(Point, coercer=coerce_point)))
 
     @property
     def start(self):
@@ -917,7 +927,60 @@ class Polygon(Polyline):
         a = 2 * pi / n
         if self.inscribed:
             r /= cos(pi / n)
-        return [Pt(x=cos(i * a) * r, y=sin(i * a) * r) for i in range(n)]
+        return [Point(x=cos(i * a) * r, y=sin(i * a) * r) for i in range(n)]
+
+
+def coerce_circle(value):
+    from declaracad.occ.api import Topology
+
+    if isinstance(value, (tuple, list)):
+        n = len(value)
+        radius = None
+        reverse = False
+        position = None
+        for arg in value:
+            if isinstance(arg, (int, float)):
+                radius = arg
+            elif isinstance(arg, bool):
+                reverse = arg
+            else:
+                position = arg
+        return Circle(radius=radius, reverse=reverse, position=position)
+    if isinstance(value, dict):
+        return Circle(**value)
+    if isinstance(value, Circle):
+        return value
+    if Topology.is_circle(value):
+        return Circle(radius=value.Radius(), position=value.Location())
+    raise TypeError(f"Cannot coerce {value} to Circle")
+
+
+class Circuit(Wire):
+    """Creates a circuit around a set of circles. Typically
+    used for creating belts or chains. A circle a negative radius is used
+    to indicate the circuit should go around the "inside".  The reverse
+    argument on each circle can be used to reverse the arc direction.
+
+    Examples
+    --------
+    Circuit:
+       circles = [
+            (2, (0, 0)),
+            (5, (10, 10)),
+            (5, (0, 20)),
+       ]
+
+    """
+
+    proxy = Typed(ProxyCircuit)
+
+    #: List of tuple of (radius, Point). If radius is negative it is assumed
+    #: To mean the inside.
+    circles = d_(List(Coerced(Circle, coercer=coerce_circle)))
+
+    @observe("circles")
+    def _update_proxy(self, change):
+        super()._update_proxy(change)
 
 
 class Rectangle(Wire):
@@ -1083,7 +1146,7 @@ class BSplineSurface(Shape):
     proxy = Typed(ProxyBSplineSurface)
 
     #: List of list of points
-    points = d_(List(List(Coerced(Pt, coercer=coerce_point))))
+    points = d_(List(List(Coerced(Point, coercer=coerce_point))))
 
     #: Use interpolation method. This will automatically be used if periodic
     #: is True or tangents are given.

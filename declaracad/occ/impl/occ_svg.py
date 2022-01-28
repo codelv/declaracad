@@ -12,17 +12,17 @@ Created on Sep 20, 2018
 import os
 import re
 import warnings
-from atom.api import Atom, Dict, Str, List, Instance, ForwardTyped, set_default
-from lxml import etree
-from math import radians, sqrt, tan, atan, atan2, cos, acos, sin, pi
+from math import acos, atan, atan2, cos, pi, radians, sin, sqrt, tan
 
+from atom.api import Atom, Dict, ForwardTyped, Instance, List, Str, set_default
+from lxml import etree
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
-    BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_MakeFace,
     BRepBuilderAPI_MakePolygon,
+    BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_Transform,
 )
 
@@ -44,13 +44,12 @@ from OCCT.gp import (
     gp_Vec,
 )
 from OCCT.TColgp import TColgp_Array1OfPnt
-from OCCT.TopoDS import TopoDS_Shape, TopoDS_Compound, TopoDS_Wire
-
-
-from .occ_shape import OccShape
-from ..draw import ProxySvg
+from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape, TopoDS_Wire
 
 from declaracad.core.utils import log
+
+from ..draw import ProxySvg
+from .occ_shape import OccShape
 
 Z_DIR = gp_Dir(0, 0, 1)
 NEG_Z_DIR = gp_Dir(0, 0, -1)

@@ -10,21 +10,21 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from atom.api import Typed
-
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
     BRepBuilderAPI_MakePolygon,
-    BRepBuilderAPI_Transform,
     BRepBuilderAPI_MakeWire,
+    BRepBuilderAPI_Transform,
 )
 from OCCT.GC import GC_MakeArcOfEllipse
 from OCCT.gp import gp_Pnt
 from OCCT.TopoDS import TopoDS
 
 from declaracad.occ.draw import ProxyRectangle
-from .occ_wire import OccWire
+
 from .occ_svg import make_ellipse
+from .occ_wire import OccWire
 
 
 class OccRectangle(OccWire, ProxyRectangle):

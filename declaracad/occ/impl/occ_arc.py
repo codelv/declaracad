@@ -6,15 +6,16 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-from atom.api import Typed, set_default
 from math import pi
 
-from OCCT.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Vec
-from OCCT.Geom import Geom_TrimmedCurve
+from atom.api import Typed, set_default
 from OCCT.GC import GC_MakeArcOfCircle
+from OCCT.Geom import Geom_TrimmedCurve
+from OCCT.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Vec
 
 from declaracad.occ.draw import ProxyArc
 from declaracad.occ.geom import Direction
+
 from .occ_line import OccLine
 
 

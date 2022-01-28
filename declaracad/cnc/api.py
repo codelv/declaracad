@@ -1,17 +1,18 @@
 import enaml
 
-
 from declaracad.cnc.operation import Operation
 
 with enaml.imports():
-    from declaracad.cnc.cutters import Tool, TwistDrill, EndMill, FaceMill, ChamferMill
-    from declaracad.cnc.operations.drilling import DrillingCycle
+    from declaracad.cnc.cutters import ChamferMill, EndMill, FaceMill, Tool, TwistDrill
     from declaracad.cnc.operations.chamfer import ChamferOperation
+    from declaracad.cnc.operations.drilling import DrillingCycle
     from declaracad.cnc.operations.facing import FacingOperation
+    from declaracad.cnc.operations.job import Job, JobSimulation
     from declaracad.cnc.operations.pocket import (
-        CircularPocket, CircularPocketData,
-        PocketOperation, PocketData
+        CircularPocket,
+        CircularPocketData,
+        PocketData,
+        PocketOperation,
     )
     from declaracad.cnc.operations.sidecut import SideCutOperation
     from declaracad.cnc.operations.slotting import SlottingOperation
-    from declaracad.cnc.operations.job import Job, JobSimulation

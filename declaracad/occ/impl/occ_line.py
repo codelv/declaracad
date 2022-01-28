@@ -10,13 +10,13 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from atom.api import Typed, set_default
-
-from OCCT.Geom import Geom_Line
 from OCCT.GC import GC_MakeLine
+from OCCT.Geom import Geom_Line
 from OCCT.gp import gp_Lin
 
 from declaracad.occ.draw import ProxyLine
-from .occ_edge import OccEdge, LINE_TYPES
+
+from .occ_edge import LINE_TYPES, OccEdge
 from .occ_shape import coerce_axis
 
 

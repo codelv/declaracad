@@ -12,6 +12,7 @@ Created on Aug 31, 2020
 from OCCT.BRep import BRep_Builder
 from OCCT.RWStl import RWStl
 from OCCT.TopoDS import TopoDS_Face
+
 from declaracad.occ.api import TopoShape
 
 

@@ -9,15 +9,16 @@ Created on Dec 7, 2017
 
 @author: jrm
 """
-from atom.api import Typed, ForwardTyped, Instance, Int, Bool, set_default
+from atom.api import Bool, ForwardTyped, Instance, Int, Typed, set_default
 from enaml.core.declarative import d_
-from enaml.widgets.api import DockArea, DockItem, Window, Container, Label, RawWidget
-from enaml.workbench.api import Plugin
+from enaml.qt.qt_factories import QT_FACTORIES
+from enaml.qt.qt_window import QtWindow
 from enaml.qt.QtCore import Qt
 from enaml.qt.QtGui import QWindow
-from enaml.qt.QtWidgets import QWidget, QPlainTextEdit
-from enaml.qt.qt_window import QtWindow
-from enaml.qt.qt_factories import QT_FACTORIES
+from enaml.qt.QtWidgets import QPlainTextEdit, QWidget
+from enaml.widgets.api import Container, DockArea, DockItem, Label, RawWidget, Window
+from enaml.workbench.api import Plugin
+
 
 # -----------------------------------------------------------------------------
 # Custom widgets

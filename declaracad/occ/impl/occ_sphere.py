@@ -6,11 +6,13 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-from atom.api import set_default
 from math import pi
+
+from atom.api import set_default
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeSphere
 
 from declaracad.occ.shape import ProxySphere
+
 from .occ_shape import OccShape, coerce_axis
 
 

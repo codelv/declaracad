@@ -7,10 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import set_default
-
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeBox
 
 from declaracad.occ.shape import ProxyBox
+
 from .occ_shape import OccShape, coerce_axis
 
 

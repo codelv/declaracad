@@ -11,22 +11,22 @@ Created on Sep 28, 2016
 """
 from atom.api import (
     Atom,
-    Instance,
-    ForwardInstance,
-    Typed,
-    ForwardTyped,
-    List,
-    Enum,
-    Tuple,
-    Float,
     Bool,
     Coerced,
+    Enum,
+    Float,
+    ForwardInstance,
+    ForwardTyped,
+    Instance,
+    List,
+    Tuple,
+    Typed,
     Value,
     observe,
 )
 from enaml.core.declarative import d_
 
-from .geom import Point, Direction, coerce_direction
+from .geom import Direction, Point, coerce_direction
 from .shape import ProxyShape, Shape, TopoDS_Shape
 
 

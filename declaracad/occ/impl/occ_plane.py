@@ -10,12 +10,12 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from atom.api import Typed, set_default
-
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.Geom import Geom_Plane
 from OCCT.gp import gp_Pln
 
 from declaracad.occ.draw import ProxyPlane
+
 from .occ_shape import OccShape
 
 

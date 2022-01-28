@@ -6,11 +6,9 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-from atom.api import Typed, Bool
-
+from atom.api import Bool, Typed
 from enaml.qt.qt_control import QtControl
-
-from OCCT.gp import gp_Pnt, gp_Dir, gp_Ax3
+from OCCT.gp import gp_Ax3, gp_Dir, gp_Pnt
 from OCCT.Graphic3d import Graphic3d_ClipPlane, Graphic3d_MaterialAspect
 
 from declaracad.core.utils import log

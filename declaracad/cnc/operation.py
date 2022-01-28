@@ -10,37 +10,41 @@ Created on Nov 9, 2021
 @author: jrm
 """
 import math
-import enaml
 import traceback
-from math import ceil, sqrt, sin, cos
-from typing import Callable, Optional
-from typing import List as ListType
-from atom.api import Atom, Bool, Enum, Float, Instance, Str, Coerced
 from datetime import datetime
-from declaracad.occ.geom import coerce_point
+from math import ceil, cos, sin, sqrt
+from typing import Callable
+from typing import List as ListType
+from typing import Optional
+
+import enaml
+from atom.api import Atom, Bool, Coerced, Enum, Float, Instance, Str
+
+from declaracad.cnc.interpolate import group_connected_faces
+from declaracad.cnc.optimize import optimize_points
 from declaracad.occ.api import (
-    DisplayArrow,
+    Arc,
+    Conditional,
+    Cylinder,
     Direction,
-    Point,
+    DisplayArrow,
+    HalfSpace,
+    Include,
+    Looper,
+    Offset,
     Part,
+    Point,
     Polyline,
+    Timer,
     Topology,
     Vertex,
     Wire,
-    Arc,
-    HalfSpace,
-    Cylinder,
-    Timer,
-    Looper,
-    Include,
-    Conditional,
-    Offset,
 )
-from declaracad.cnc.optimize import optimize_points
-from declaracad.cnc.interpolate import group_connected_faces
+from declaracad.occ.geom import coerce_point
 
 with enaml.imports():
     from declaracad.cnc.cutters import Tool
+
 from enaml.core.declarative import d_, d_func
 
 
@@ -151,7 +155,7 @@ def generate_part_gcode(
     """Generate code for a Part"""
     cmds: ListType[str] = []
     for child in part.children:
-        if not getattr(child, 'display', True):
+        if not getattr(child, "display", True):
             continue  # Do not render hidden items
         if hasattr(child, "generate_gcode"):
             cmds.extend(child.generate_gcode(format_value))
@@ -235,7 +239,7 @@ class Operation(Part):
         """Generate gcode output for this operation"""
         cmds = self.generate_spindle_start_gcode()
         cmds.extend(generate_part_gcode(self, format_value))
-        if 'M5' not in cmds:
+        if "M5" not in cmds:
             cmds.extend(self.generate_spindle_stop_gcode())
         return cmds
 

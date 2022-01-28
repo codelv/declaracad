@@ -6,13 +6,14 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-from atom.api import Atom
 from typing import Tuple as TupleType
-from declaracad.occ.geom import Point, Direction
 
-from OCCT.gp import gp_Lin2d
+from atom.api import Atom
 from OCCT.GccAna import GccAna_Circ2d3Tan
-from OCCT.GccEnt import GccEnt_QualifiedLin, GccEnt_QualifiedCirc
+from OCCT.GccEnt import GccEnt_QualifiedCirc, GccEnt_QualifiedLin
+from OCCT.gp import gp_Lin2d
+
+from declaracad.occ.geom import Direction, Point
 
 
 class Solver(Atom):

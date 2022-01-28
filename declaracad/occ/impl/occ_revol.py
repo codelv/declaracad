@@ -7,11 +7,11 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import set_default
-
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeRevol
 from OCCT.gp import gp_Ax1
 
 from declaracad.occ.shape import ProxyRevol
+
 from .occ_shape import OccDependentShape, coerce_shape
 
 

@@ -11,68 +11,70 @@ Created on Aug 3, 2021
 """
 import os
 import warnings
-from typing import Optional, Iterator, Union
-from atom.api import Dict, Typed, ForwardTyped
+from typing import Iterator, Optional, Union
+
+from atom.api import Dict, ForwardTyped, Typed
 from enaml.colors import Color
 from OCCT.BRepCheck import BRepCheck_Analyzer
 from OCCT.BRepMesh import (
     BRepMesh_Context,
+    BRepMesh_DelabellaMeshAlgoFactory,
     BRepMesh_FaceDiscret,
     BRepMesh_IncrementalMesh,
-    BRepMesh_DelabellaMeshAlgoFactory,
 )
-from OCCT.TopoDS import TopoDS_Shape
-from OCCT.ShapeBuild import ShapeBuild_ReShape
-from OCCT.ShapeFix import ShapeFix_Shape, ShapeFix_ShapeTolerance
 from OCCT.MeshVS import (
+    MeshVS_DA_BackInteriorColor,
+    MeshVS_DA_BeamColor,
+    MeshVS_DA_BeamType,
+    MeshVS_DA_BeamWidth,
+    MeshVS_DA_ColorReflection,
+    MeshVS_DA_DisplayNodes,
+    MeshVS_DA_EdgeColor,
+    MeshVS_DA_EdgeWidth,
+    MeshVS_DA_InteriorColor,
+    MeshVS_DA_MarkerColor,
+    MeshVS_DA_MarkerScale,
+    MeshVS_DA_MarkerType,
+    MeshVS_DA_ShowEdges,
+    MeshVS_ElementalColorPrsBuilder,
     MeshVS_Mesh,
     MeshVS_MeshPrsBuilder,
     MeshVS_NodalColorPrsBuilder,
-    MeshVS_ElementalColorPrsBuilder,
-    MeshVS_DA_MarkerColor,
-    MeshVS_DA_MarkerScale,
-    MeshVS_DA_DisplayNodes,
-    MeshVS_DA_MarkerType,
-    MeshVS_DA_ShowEdges,
-    MeshVS_DA_EdgeColor,
-    MeshVS_DA_EdgeWidth,
-    MeshVS_DA_BeamColor,
-    MeshVS_DA_BeamWidth,
-    MeshVS_DA_BeamType,
-    MeshVS_DA_InteriorColor,
-    MeshVS_DA_BackInteriorColor,
-    MeshVS_DA_ColorReflection,
 )
+from OCCT.ShapeBuild import ShapeBuild_ReShape
+from OCCT.ShapeFix import ShapeFix_Shape, ShapeFix_ShapeTolerance
 from OCCT.TColStd import (
     TColStd_Array1OfInteger,
     TColStd_MapIteratorOfPackedMapOfInteger,
 )
-from .occ_shape import OccShape, OccDependentShape
-from .occ_vertex import MARKERS
-from .utils import color_to_quantity_color
-from declaracad.occ.shape import Point
-from declaracad.occ.mesh import (
-    Shape,
-    Node,
-    Element,
-    ProxyMesh,
-    ProxyIterator,
-    ProxyMeshTopology,
-    ProxyNode,
-    ProxyElement,
-)
+from OCCT.TopoDS import TopoDS_Shape
 
 from declaracad.core.utils import log, log_time
+from declaracad.occ.mesh import (
+    Element,
+    Node,
+    ProxyElement,
+    ProxyIterator,
+    ProxyMesh,
+    ProxyMeshTopology,
+    ProxyNode,
+    Shape,
+)
+from declaracad.occ.shape import Point
+
+from .occ_shape import OccDependentShape, OccShape
+from .occ_vertex import MARKERS
+from .utils import color_to_quantity_color
 
 try:
-    from SMESH.SMDSAbs import SMDSAbs_Node
-    from SMESH.SMESH import SMESH_MeshVSLink, SMESH_Mesh, SMESH_subMesh, SMESH_Gen
-    from SMESH.SMESHDS import SMESHDS_Mesh
-    from SMESH.SMDS import SMDS_MeshNode, SMDS_MeshElement, SMDS_MeshElement
     from SMESH.NETGENPlugin import (
-        NETGENPlugin_SimpleHypothesis_3D,
         NETGENPlugin_NETGEN_2D3D,
+        NETGENPlugin_SimpleHypothesis_3D,
     )
+    from SMESH.SMDS import SMDS_MeshElement, SMDS_MeshNode
+    from SMESH.SMDSAbs import SMDSAbs_Node
+    from SMESH.SMESH import SMESH_Gen, SMESH_Mesh, SMESH_MeshVSLink, SMESH_subMesh
+    from SMESH.SMESHDS import SMESHDS_Mesh
 except ImportError as e:
     warnings.warn(f"{e}")
 

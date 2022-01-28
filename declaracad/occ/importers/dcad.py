@@ -1,10 +1,10 @@
 import os
-import enaml
 from types import ModuleType
-from enaml.core.parser import parse
-from enaml.core.import_hooks import EnamlCompiler
-
 from typing import Optional
+
+import enaml
+from enaml.core.import_hooks import EnamlCompiler
+from enaml.core.parser import parse
 
 with enaml.imports():
     from declaracad.occ.loader import LoadedPart
