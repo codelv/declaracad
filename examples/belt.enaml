@@ -1,0 +1,37 @@
+# Created in DeclaraCAD
+from declaracad.parts.display import Axis
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+
+    Include:
+        objects = belt.circles
+        
+    Extrude:
+        vector = (0, 0, 1)
+        color = '#333'
+        Loft:
+            Circuit: belt:
+                
+                circles = [
+                    (2,  (1, 1)),
+                    (2,   (10, 5)),
+                    (2,   (10, 20)),
+                    (-2,   (5, 17)),
+                    (2,   (1, 20)),
+                ]
+            Offset:
+                offset = 0.1
+                shape = belt
+
+
+
+    Circuit:
+        color = 'red'
+        circles = [
+           Circle(radius=-2,  position=(0, 10, 10)),
+           Circle(radius=2,  reverse=True, position=(0, 10, 15)),
+           Circle(radius=5,  position=(0, 20, 20)),
+        ]

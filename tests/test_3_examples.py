@@ -17,6 +17,7 @@ EXAMPLES = (
     "bearing",
     "birdhouse",
     "bilo",
+    "belt",
     "bolt",
     "bottle",
     "chamfers",
