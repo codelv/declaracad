@@ -8,13 +8,13 @@ enamldef Assembly(Part):
 
     Include:
         objects = belt.circles
-        
+
     Extrude:
         vector = (0, 0, 1)
         color = '#333'
         Loft:
             Circuit: belt:
-                
+                offset = 0.2
                 circles = [
                     (2,  (1, 1)),
                     (2,   (10, 5)),
@@ -22,13 +22,14 @@ enamldef Assembly(Part):
                     (-2,   (5, 17)),
                     (2,   (1, 20)),
                 ]
-            Offset:
-                offset = 0.1
-                shape = belt
+            Circuit:
+                offset = -0.2
+                circles = belt.circles
 
 
 
     Circuit:
+        display = False
         color = 'red'
         circles = [
            Circle(radius=-2,  position=(0, 10, 10)),

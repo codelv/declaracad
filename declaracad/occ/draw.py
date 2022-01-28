@@ -212,6 +212,9 @@ class ProxyCircuit(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Circuit)
 
+    def set_offset(self, offset):
+        raise NotImplementedError
+
     def set_circles(self, circles):
         raise NotImplementedError
 
@@ -974,11 +977,14 @@ class Circuit(Wire):
 
     proxy = Typed(ProxyCircuit)
 
+    #: Offset value
+    offset = d_(Float(strict=False))
+
     #: List of tuple of (radius, Point). If radius is negative it is assumed
     #: To mean the inside.
     circles = d_(List(Coerced(Circle, coercer=coerce_circle)))
 
-    @observe("circles")
+    @observe("offset", "circles")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 

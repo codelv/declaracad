@@ -33,7 +33,9 @@ from .topology import Topology
 class OccCircuit(OccWire, ProxyCircuit):
     curve = Typed(BRepAdaptor_CompCurve)
 
-    def calculate_parameters(self, circles: list, pln: gp_Pln, clockwise: bool):
+    def calculate_parameters(
+        self, circles: list, pln: gp_Pln, clockwise: bool, offset: float
+    ):
         normal = pln.Position().Direction()
 
         enclosing = GccEnt.Enclosing_
@@ -43,7 +45,12 @@ class OccCircuit(OccWire, ProxyCircuit):
 
         for circle in circles:
             axis = gp_Ax2(circle.position.proxy, normal)
-            geom_circle = Geom_Circle(gp_Circ(axis, abs(circle.radius)))
+            if offset < 0:
+                dr = offset if circle.radius < 0 else 0
+            else:
+                dr = 0 if circle.radius < 0 else offset
+            r = abs(circle.radius + dr)
+            geom_circle = Geom_Circle(gp_Circ(axis, r))
             c = GeomAPI.To2d_(geom_circle, pln).Circ2d()
             reverse = circle.radius < 0
 
@@ -78,7 +85,7 @@ class OccCircuit(OccWire, ProxyCircuit):
         edges = []
 
         #: List of parameters
-        parameters = list(self.calculate_parameters(circles, pln, clockwise))
+        parameters = list(self.calculate_parameters(circles, pln, clockwise, d.offset))
 
         # Solution of last intersection
         a0: Optional[float] = None
