@@ -69,22 +69,31 @@ class OccCircuit(OccWire, ProxyCircuit):
     def create_shape(self):
         d = self.declaration
         circles = d.circles[:]
-        if len(circles) < 3:
-            raise ValueError("At least 3 circles are required")
+
+        n = len(circles)
+        if n < 2:
+            raise ValueError("At least 2 circles are required")
 
         # Determine direction
-        polygon = BRepBuilderAPI_MakePolygon()
-        for circle in circles:
-            polygon.Add(circle.position.proxy)
-        clockwise = Topology.is_clockwise(polygon.Wire())
-        if d.reverse:
-            clockwise = not clockwise
+        if n > 2:
+            polygon = BRepBuilderAPI_MakePolygon()
+            for circle in circles:
+                polygon.Add(circle.position.proxy)
+            clockwise = Topology.is_clockwise(polygon.Wire())
 
-        # Normal plane
-        builder = gce_MakePln(*(c.position.proxy for c in circles[0:3]))
+            # Normal plane
+            builder = gce_MakePln(*(c.position.proxy for c in circles[0:3]))
+        else:
+            c = circles[0]
+            builder = gce_MakePln(c.position.proxy, c.direction.proxy)
+            clockwise = True
+
         if not builder.IsDone():
             raise ValueError(f"Could not build {d}: Circles must be on the same plane")
         pln = builder.Value()
+
+        if d.reverse:
+            clockwise = not clockwise
 
         tol = d.tolerance
         shape = BRepBuilderAPI_MakeWire()

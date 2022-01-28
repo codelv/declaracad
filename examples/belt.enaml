@@ -36,3 +36,11 @@ enamldef Assembly(Part):
            Circle(radius=-2, reverse=True, position=(0, 10, 15), direction=(1, 0, 0)),
            Circle(radius=5, reverse=True, position=(0, 20, 20), direction=(1, 0, 0)),
         ]
+
+
+    Circuit: simple:
+        color = 'blue'
+        circles = [
+           (2, (-10, 0)),
+           (3, (-15, 0)),
+        ]

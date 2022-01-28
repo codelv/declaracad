@@ -689,7 +689,7 @@ class Topology(Atom):
     # Shape introspection
     # -------------------------------------------------------------------------
     @classmethod
-    def cast_shape(cls, topods_shape: TopoDS_Shape) -> TopoDS_Shape:
+    def cast_shape(cls, shape: TopoDS_Shape) -> Optional[TopoDS_Shape]:
         """Convert a TopoDS_Shape into it's actual type, ex an TopoDS_Edge
 
         Parameters
@@ -699,11 +699,13 @@ class Topology(Atom):
 
         Returns
         -------
-        shape: TopoDS_Shape
-            The actual shape.
+        shape: Optional[TopoDS_Shape]
+            The actual shape or None if the value is not a TopoDS_Shape.
 
         """
-        return cls.topo_factory[topods_shape.ShapeType()](topods_shape)
+        if not isinstance(shape, TopoDS_Shape):
+            return None
+        return cls.topo_factory[shape.ShapeType()](shape)
 
     @classmethod
     def cast_curve(

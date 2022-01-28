@@ -953,8 +953,11 @@ def coerce_circle(value):
         return Circle(**value)
     if isinstance(value, Circle):
         return value
+    if isinstance(value, Shape) and getattr(value, 'radius', None):
+        return Circle(radius=value.radius, position=value.position)
     if Topology.is_circle(value):
-        return Circle(radius=value.Radius(), position=value.Location())
+        curve = Topology.cast_curve(value)
+        return Circle(radius=curve.Radius(), position=value.Location())
     raise TypeError(f"Cannot coerce {value} to Circle")
 
 
