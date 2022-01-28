@@ -345,6 +345,27 @@ enamldef PocketOperation(Operation): operation:
     attr pockets: list = []
 
     # ------------------------------------------------------------------------
+    # Speed and feed
+    # ------------------------------------------------------------------------
+
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    #: Plunge feedrate is slower
+    attr plunge_spindle_speed = spindle_speed * 0.75
+
+    #: Plunge feedrate is slower
+    attr plunge_feedrate = feedrate * 0.25
+
+    # ------------------------------------------------------------------------
     # Operation parameters
     # ------------------------------------------------------------------------
     attr climb: bool = True
@@ -481,6 +502,9 @@ enamldef PocketOperation(Operation): operation:
                 clockwise = not climb
                 height = data.depth
                 position = data.helix_start
+                feedrate = plunge_feedrate
+                spindle_speed = plunge_spindle_speed
+
             ArcSpiral: spiral:
                 color = 'purple'
                 position = data.spiral_start
