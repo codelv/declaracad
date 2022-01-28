@@ -48,6 +48,7 @@ EXAMPLES = (
     "svg",
     "sweeps",
     "threads",
+    "tube",
     "thru_sections",
     "turners_cube",
     "trimmed",

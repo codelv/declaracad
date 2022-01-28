@@ -1,0 +1,24 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Tube:
+        radius = 4
+        radius2 = 3.75
+        height = 6
+    Tube:
+        position = (10, 0)
+        radius = 2
+        radius2 = 0
+        height = 6
+    Tube:
+        position = (0, 10)
+        radius = 0
+        radius2 = 2
+        height = 6
+    
+    Tube:
+        position = (-10, 0)
+        radius = 2
+        radius2 = 3
+        height = 6

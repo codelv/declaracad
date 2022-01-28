@@ -71,6 +71,11 @@ def test_direction():
     assert d.rotated(pi/2) == Direction(0, 1, 0)
 
 
+def test_topo_cast_shape(qt_app):
+    # Invalid type returns None
+    assert Topology.cast_shape(None) is None
+
+
 def test_topo_start_point(qt_app):
     points = [(0, 0), (10, 0)]
     segment = Segment(points=points)
@@ -173,6 +178,7 @@ def test_topo_is_cone(qt_app):
 def test_topo_is_circle(qt_app):
     cylinder = Cylinder()
     cylinder.render()
+    assert not Topology.is_circle(None)  # Invalid type
     assert Topology.is_circle(cylinder.topology.edges[0])
     assert not Topology.is_circle(cylinder.topology.edges[1])
 
