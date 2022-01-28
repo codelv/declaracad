@@ -687,6 +687,13 @@ class OccSvgPolygon(OccSvgNode):
 
 
 class OccSvgGroup(OccSvgNode):
+    # Do not warn for these
+    excluded_tags = (
+        "{http://www.w3.org/2000/svg}defs",
+        "{http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd}namedview",
+        "{http://www.w3.org/2000/svg}metadata"
+    )
+
     def create_shape(self):
         shapes = []
         t = self.transform
@@ -694,11 +701,12 @@ class OccSvgGroup(OccSvgNode):
             tag = e.tag
             if not isinstance(tag, str):
                 continue  # Comment
-            if "{http://www.w3.org/2000/svg}" not in tag:
-                tag = "{http://www.w3.org/2000/svg}" + tag
+            if not tag.startswith("{"):
+                tag = "{http://www.w3.org/2000/svg}%s" % tag
             OccNode = SVG_NODES.get(tag)
             if OccNode is None:
-                warnings.warn("SVG tag {} is not yet supported.".format(e.tag))
+                if tag not in self.excluded_tags:
+                    warnings.warn("SVG tag %s is not yet supported." % tag)
                 continue
             node = OccNode(element=e, svg=self.svg)
             result = node.create_shape()
