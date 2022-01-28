@@ -54,12 +54,16 @@ class OccCircuit(OccWire, ProxyCircuit):
             c = GeomAPI.To2d_(geom_circle, pln).Circ2d()
             reverse = circle.radius < 0
 
-            if circle.reverse:
-                enclosing, outside = outside, enclosing
             if reverse:
-                param = enclosing(c)
+                if circle.reverse:
+                    param = outside(c)
+                else:
+                    param = enclosing(c)
             else:
-                param = outside(c)
+                if circle.reverse:
+                    param = enclosing(c)
+                else:
+                    param = outside(c)
             yield (param, geom_circle, reverse)
 
     def create_shape(self):
@@ -73,6 +77,8 @@ class OccCircuit(OccWire, ProxyCircuit):
         for circle in circles:
             polygon.Add(circle.position.proxy)
         clockwise = Topology.is_clockwise(polygon.Wire())
+        if d.reverse:
+            clockwise = not clockwise
 
         # Normal plane
         builder = gce_MakePln(*(c.position.proxy for c in circles[0:3]))
@@ -121,11 +127,14 @@ class OccCircuit(OccWire, ProxyCircuit):
             a0 = a2
 
         # Add first with initial solution
+        if next_reverse:
+            a2, afirst = afirst, a2
         edge = BRepBuilderAPI_MakeEdge(next_circle, a2, afirst).Edge()
         shape.Add(edge)
 
-        curve = self.curve = BRepAdaptor_CompCurve(shape.Wire())
-        self.shape = curve.Wire()
+        wire = shape.Wire()
+        curve = self.curve = BRepAdaptor_CompCurve(wire)
+        self.shape = wire
 
     def init_layout(self):
         # This does not depened on children

@@ -27,12 +27,12 @@ enamldef Assembly(Part):
                 circles = belt.circles
 
 
-
-    Circuit:
-        display = False
-        color = 'red'
+    Include:
+        objects = idler.circles
+    Circuit: idler:
+        color = 'blue'
         circles = [
-           Circle(radius=-2,  position=(0, 10, 10)),
-           Circle(radius=2,  reverse=True, position=(0, 10, 15)),
-           Circle(radius=5,  position=(0, 20, 20)),
+           Circle(radius=2, reverse=True, position=(0, 10, 10), direction=(1, 0, 0)),
+           Circle(radius=-2, reverse=True, position=(0, 10, 15), direction=(1, 0, 0)),
+           Circle(radius=5, reverse=True, position=(0, 20, 20), direction=(1, 0, 0)),
         ]
