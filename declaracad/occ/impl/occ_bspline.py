@@ -11,15 +11,14 @@ Created on Dec 24, 2021
 """
 from atom.api import Typed, set_default
 from OCCT.Geom import Geom_BSplineCurve
-from OCCT.GeomAbs import GeomAbs_C0, GeomAbs_C1, GeomAbs_C2, GeomAbs_C3, GeomAbs_CN
+from OCCT.GeomAbs import (GeomAbs_C0, GeomAbs_C1, GeomAbs_C2, GeomAbs_C3,
+                          GeomAbs_CN)
 from OCCT.GeomAPI import GeomAPI_Interpolate, GeomAPI_PointsToBSpline
 from OCCT.gp import gp_Vec
-from OCCT.TColgp import TColgp_Array1OfPnt, TColgp_Array1OfVec, TColgp_HArray1OfPnt
-from OCCT.TColStd import (
-    TColStd_Array1OfReal,
-    TColStd_HArray1OfBoolean,
-    TColStd_HArray1OfReal,
-)
+from OCCT.TColgp import (TColgp_Array1OfPnt, TColgp_Array1OfVec,
+                         TColgp_HArray1OfPnt)
+from OCCT.TColStd import (TColStd_Array1OfReal, TColStd_HArray1OfBoolean,
+                          TColStd_HArray1OfReal)
 
 from declaracad.occ.draw import ProxyBSpline
 

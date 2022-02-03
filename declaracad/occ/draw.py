@@ -11,24 +11,9 @@ Created on Sept 27, 2016
 """
 from math import cos, pi, sin, tan
 
-from atom.api import (
-    Atom,
-    Bool,
-    Coerced,
-    Dict,
-    Enum,
-    Float,
-    ForwardTyped,
-    Instance,
-    Int,
-    List,
-    Property,
-    Range,
-    Str,
-    Typed,
-    observe,
-    set_default,
-)
+from atom.api import (Atom, Bool, Coerced, Dict, Enum, Float, ForwardTyped,
+                      Instance, Int, List, Property, Range, Str, Typed,
+                      observe, set_default)
 from enaml.core.declarative import d_
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
 
@@ -953,8 +938,10 @@ def coerce_circle(value):
         return Circle(**value)
     if isinstance(value, Circle):
         return value
-    if isinstance(value, Shape) and getattr(value, 'radius', None):
-        return Circle(radius=value.radius, position=value.position)
+    if isinstance(value, Shape) and getattr(value, "radius", None):
+        return Circle(
+            radius=value.radius, direction=value.direction, position=value.position
+        )
     if Topology.is_circle(value):
         curve = Topology.cast_curve(value)
         return Circle(radius=curve.Radius(), position=value.Location())

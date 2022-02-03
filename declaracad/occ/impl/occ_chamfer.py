@@ -11,11 +11,9 @@ Created on Dec 23, 2021
 """
 from atom.api import Dict, set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
-from OCCT.BRepFilletAPI import (
-    BRepFilletAPI_MakeChamfer,
-    BRepFilletAPI_MakeFillet,
-    BRepFilletAPI_MakeFillet2d,
-)
+from OCCT.BRepFilletAPI import (BRepFilletAPI_MakeChamfer,
+                                BRepFilletAPI_MakeFillet,
+                                BRepFilletAPI_MakeFillet2d)
 from OCCT.BRepTools import BRepTools
 from OCCT.gp import gp_Pnt2d
 from OCCT.TColgp import TColgp_Array1OfPnt2d

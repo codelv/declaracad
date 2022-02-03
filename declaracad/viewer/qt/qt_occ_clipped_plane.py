@@ -13,7 +13,8 @@ from OCCT.Graphic3d import Graphic3d_ClipPlane, Graphic3d_MaterialAspect
 
 from declaracad.core.utils import log
 from declaracad.occ.impl.utils import color_to_quantity_color
-from declaracad.viewer.widgets.occ_clipped_plane import ProxyOccViewerClippedPlane
+from declaracad.viewer.widgets.occ_clipped_plane import \
+    ProxyOccViewerClippedPlane
 
 
 class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):

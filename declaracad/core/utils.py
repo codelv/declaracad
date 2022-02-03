@@ -19,7 +19,8 @@ import traceback
 from contextlib import contextmanager
 
 import jsonpickle
-from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
+from atom.api import (Atom, Bool, Bytes, ContainerList, Dict, Instance, Int,
+                      Value)
 from enaml.application import Application, timed_call
 from enaml.icon import Icon, IconImage
 from enaml.image import Image

@@ -11,25 +11,9 @@ Created on Sep 26, 2016
 """
 import math
 
-from atom.api import (
-    Atom,
-    Bool,
-    Coerced,
-    Dict,
-    Enum,
-    Event,
-    Float,
-    FloatRange,
-    ForwardTyped,
-    Instance,
-    Int,
-    List,
-    Str,
-    Tuple,
-    Typed,
-    observe,
-    set_default,
-)
+from atom.api import (Atom, Bool, Coerced, Dict, Enum, Event, Float,
+                      FloatRange, ForwardTyped, Instance, Int, List, Str,
+                      Tuple, Typed, observe, set_default)
 from enaml.colors import Color, ColorMember, parse_color
 from enaml.core.declarative import d_
 from enaml.widgets.control import Control, ProxyControl

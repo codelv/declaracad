@@ -141,10 +141,57 @@ enamldef CounterSunkHex(Part): bolt:
                 radius = head.radius * 1/2
                 height = bolt.length
     
-        
+    
+enamldef ButtonSocketBolt(Part): bolt:
+    attr length = 8
+    attr diameter = 3
+    alias head
+    alias body
+    
+    Chamfer:
+        material = bolt.material
+        color = bolt.color
+        transparency = bolt.transparency
+        distance = body.radius/4
+    #    # disabled = True
+        operations = [self.children[0].topology.faces[1]]
+        Fuse: 
+            Fillet:
+                radius = diameter/10
+                operations = [self.children[0].topology.edges[0]]
+                #disabled = True
+                Cut: 
+                    Sphere: head:
+                        position = (0, 0, diameter/2-self.radius)
+                        radius = bolt.diameter*1.5
+                    HalfSpace:
+                        side = (0, 0, -1)
+                        position = (0, 0, 0)
+                        
+                    Extrude: prism:
+                        vector = (0, 0, head.radius)
+                        Face:
+                            Polygon: hexagon:
+                                position = (0, 0, head.z)
+                                count = 6
+                                radius = bolt.diameter/2          
+                
+            Cylinder: body:
+                position = (0, 0, -bolt.length)
+                radius = bolt.diameter/2
+                height = bolt.length
+    
         
 enamldef Assembly(Part):
+    ButtonSocketBolt:
+        color = 'purple'
+        material = 'charcoal'
+        position = (-30, 0)
+        length = 20
+        diameter = 4
+        
     CounterSunkPhillips:
+        position = (10, -10)
         diameter = 8
         length = 10
     

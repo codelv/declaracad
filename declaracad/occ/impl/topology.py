@@ -21,93 +21,46 @@ from typing import TypeVar, Union
 from atom.api import Atom, Bool, Instance, List, Property, Typed
 from OCCT import GeomAbs
 from OCCT.Bnd import Bnd_Box
-from OCCT.BRepAdaptor import (
-    BRepAdaptor_CompCurve,
-    BRepAdaptor_Curve,
-    BRepAdaptor_Surface,
-)
+from OCCT.BRepAdaptor import (BRepAdaptor_CompCurve, BRepAdaptor_Curve,
+                              BRepAdaptor_Surface)
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeFace,
-    BRepBuilderAPI_MakeVertex,
-    BRepBuilderAPI_MakeWire,
-)
+from OCCT.BRepBuilderAPI import (BRepBuilderAPI_MakeFace,
+                                 BRepBuilderAPI_MakeVertex,
+                                 BRepBuilderAPI_MakeWire)
 from OCCT.BRepExtrema import BRepExtrema_DistShapeShape
 from OCCT.BRepGProp import BRepGProp
 from OCCT.BRepTools import BRepTools, BRepTools_WireExplorer
 from OCCT.Extrema import Extrema_ExtFlag_MAX, Extrema_ExtFlag_MIN
 from OCCT.GC import GC_MakeSegment
-from OCCT.GCPnts import (
-    GCPnts_QuasiUniformAbscissa,
-    GCPnts_QuasiUniformDeflection,
-    GCPnts_UniformAbscissa,
-    GCPnts_UniformDeflection,
-)
-from OCCT.Geom import (
-    Geom_Circle,
-    Geom_Curve,
-    Geom_Ellipse,
-    Geom_Hyperbola,
-    Geom_Line,
-    Geom_OffsetCurve,
-    Geom_Parabola,
-    Geom_Surface,
-    Geom_TrimmedCurve,
-)
-from OCCT.GeomAbs import (
-    GeomAbs_BezierCurve,
-    GeomAbs_BSplineCurve,
-    GeomAbs_Circle,
-    GeomAbs_Cone,
-    GeomAbs_CurveType,
-    GeomAbs_Cylinder,
-    GeomAbs_Ellipse,
-    GeomAbs_Hyperbola,
-    GeomAbs_Line,
-    GeomAbs_OffsetCurve,
-    GeomAbs_OtherCurve,
-    GeomAbs_Parabola,
-    GeomAbs_Plane,
-    GeomAbs_Sphere,
-    GeomAbs_SurfaceType,
-    GeomAbs_Torus,
-)
+from OCCT.GCPnts import (GCPnts_QuasiUniformAbscissa,
+                         GCPnts_QuasiUniformDeflection, GCPnts_UniformAbscissa,
+                         GCPnts_UniformDeflection)
+from OCCT.Geom import (Geom_Circle, Geom_Curve, Geom_Ellipse, Geom_Hyperbola,
+                       Geom_Line, Geom_OffsetCurve, Geom_Parabola,
+                       Geom_Surface, Geom_TrimmedCurve)
+from OCCT.GeomAbs import (GeomAbs_BezierCurve, GeomAbs_BSplineCurve,
+                          GeomAbs_Circle, GeomAbs_Cone, GeomAbs_CurveType,
+                          GeomAbs_Cylinder, GeomAbs_Ellipse, GeomAbs_Hyperbola,
+                          GeomAbs_Line, GeomAbs_OffsetCurve,
+                          GeomAbs_OtherCurve, GeomAbs_Parabola, GeomAbs_Plane,
+                          GeomAbs_Sphere, GeomAbs_SurfaceType, GeomAbs_Torus)
 from OCCT.gp import gp_Pnt, gp_Vec
 from OCCT.GProp import GProp_GProps
 from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
-from OCCT.TopAbs import (
-    TopAbs_COMPOUND,
-    TopAbs_COMPSOLID,
-    TopAbs_EDGE,
-    TopAbs_FACE,
-    TopAbs_REVERSED,
-    TopAbs_ShapeEnum,
-    TopAbs_SHELL,
-    TopAbs_SOLID,
-    TopAbs_VERTEX,
-    TopAbs_WIRE,
-)
+from OCCT.TopAbs import (TopAbs_COMPOUND, TopAbs_COMPSOLID, TopAbs_EDGE,
+                         TopAbs_FACE, TopAbs_REVERSED, TopAbs_ShapeEnum,
+                         TopAbs_SHELL, TopAbs_SOLID, TopAbs_VERTEX,
+                         TopAbs_WIRE)
 from OCCT.TopExp import TopExp, TopExp_Explorer
-from OCCT.TopoDS import (
-    TopoDS,
-    TopoDS_Compound,
-    TopoDS_CompSolid,
-    TopoDS_Edge,
-    TopoDS_Face,
-    TopoDS_Iterator,
-    TopoDS_Shape,
-    TopoDS_Shell,
-    TopoDS_Solid,
-    TopoDS_Vertex,
-    TopoDS_Wire,
-)
-from OCCT.TopTools import (
-    TopTools_HSequenceOfShape,
-    TopTools_IndexedDataMapOfShapeListOfShape,
-    TopTools_ListIteratorOfListOfShape,
-    TopTools_ListOfShape,
-)
+from OCCT.TopoDS import (TopoDS, TopoDS_Compound, TopoDS_CompSolid,
+                         TopoDS_Edge, TopoDS_Face, TopoDS_Iterator,
+                         TopoDS_Shape, TopoDS_Shell, TopoDS_Solid,
+                         TopoDS_Vertex, TopoDS_Wire)
+from OCCT.TopTools import (TopTools_HSequenceOfShape,
+                           TopTools_IndexedDataMapOfShapeListOfShape,
+                           TopTools_ListIteratorOfListOfShape,
+                           TopTools_ListOfShape)
 
 from ..shape import BBox, Direction, Point, coerce_direction, coerce_point
 

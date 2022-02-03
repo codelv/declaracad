@@ -9,22 +9,18 @@ The full license is in the file LICENSE, distributed with this software.
 from atom.api import Dict, Typed, set_default
 from OCCT.BRep import BRep_Builder, BRep_Tool
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeEdge,
-    BRepBuilderAPI_MakeFace,
-    BRepBuilderAPI_MakeWire,
-)
+from OCCT.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
+                                 BRepBuilderAPI_MakeFace,
+                                 BRepBuilderAPI_MakeWire)
 from OCCT.BRepLib import BRepLib
-from OCCT.BRepMAT2d import (
-    BRepMAT2d_BisectingLocus,
-    BRepMAT2d_Explorer,
-    BRepMAT2d_LinkTopoBilo,
-)
+from OCCT.BRepMAT2d import (BRepMAT2d_BisectingLocus, BRepMAT2d_Explorer,
+                            BRepMAT2d_LinkTopoBilo)
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MiddlePath
 from OCCT.Geom2dAdaptor import Geom2dAdaptor_Curve
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
 from OCCT.MAT import MAT_Arc, MAT_Left
-from OCCT.TopoDS import TopoDS, TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+from OCCT.TopoDS import (TopoDS, TopoDS_Compound, TopoDS_Edge, TopoDS_Face,
+                         TopoDS_Wire)
 
 from declaracad.occ.draw import ProxyMiddlePath
 

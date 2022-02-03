@@ -13,13 +13,15 @@ import os
 
 import enaml
 from atom.api import Enum, Float, Str
-from OCCT.HeaderSection import HeaderSection_FileDescription, HeaderSection_FileName
+from OCCT.HeaderSection import (HeaderSection_FileDescription,
+                                HeaderSection_FileName)
 from OCCT.IFSelect import IFSelect_RetDone
 from OCCT.Interface import Interface_Static
 from OCCT.STEPCAFControl import STEPCAFControl_Writer
 from OCCT.TCollection import TCollection_HAsciiString
 
-from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
+from declaracad.occ.impl.document import (create_hascii_list,
+                                          create_xcaf_document)
 from declaracad.viewer.plugin import ModelExporter
 
 SetCVal = Interface_Static.SetCVal_

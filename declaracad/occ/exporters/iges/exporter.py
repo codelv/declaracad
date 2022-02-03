@@ -15,7 +15,8 @@ from OCCT.IGESCAFControl import IGESCAFControl_Writer
 from OCCT.Interface import Interface_Static
 
 from declaracad.occ.api import Part, load_model
-from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
+from declaracad.occ.impl.document import (create_hascii_list,
+                                          create_xcaf_document)
 from declaracad.viewer.plugin import ModelExporter
 
 SetCVal = Interface_Static.SetCVal_

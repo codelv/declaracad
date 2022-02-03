@@ -22,7 +22,6 @@ import enaml
 faulthandler.enable()
 
 from atom.api import Atom, Bool, Dict, Float, Instance, Str, Typed
-
 # FIXME: The frozen app won't start without this before importing atom
 from enaml import qt
 from enaml.application import deferred_call, timed_call

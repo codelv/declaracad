@@ -13,13 +13,8 @@ import os
 
 from atom.api import Typed, set_default
 from OCCT import Graphic3d
-from OCCT.Font import (
-    Font_BRepFont,
-    Font_BRepTextBuilder,
-    Font_FA_Regular,
-    Font_FontAspect,
-    Font_FontMgr,
-)
+from OCCT.Font import (Font_BRepFont, Font_BRepTextBuilder, Font_FA_Regular,
+                       Font_FontAspect, Font_FontMgr)
 from OCCT.gp import gp_Ax3
 from OCCT.NCollection import NCollection_String
 from OCCT.TCollection import TCollection_AsciiString

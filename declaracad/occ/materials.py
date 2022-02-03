@@ -9,18 +9,8 @@ Created on Aug 24, 2021
 
 @author: jrm
 """
-from atom.api import (
-    Atom,
-    Bool,
-    Coerced,
-    Enum,
-    Float,
-    FloatRange,
-    Str,
-    Tuple,
-    Typed,
-    Value,
-)
+from atom.api import (Atom, Bool, Coerced, Enum, Float, FloatRange, Str, Tuple,
+                      Typed, Value)
 from enaml.colors import Color, ColorMember
 
 

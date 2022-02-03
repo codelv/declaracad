@@ -14,26 +14,18 @@ from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
 from OCCT.GC import GC_MakePlane
 from OCCT.gp import gp_Dir, gp_Pnt
-from OCCT.PrsDim import (
-    PrsDim_AngleDimension,
-    PrsDim_DiameterDimension,
-    PrsDim_Dimension,
-    PrsDim_LengthDimension,
-    PrsDim_RadiusDimension,
-)
+from OCCT.PrsDim import (PrsDim_AngleDimension, PrsDim_DiameterDimension,
+                         PrsDim_Dimension, PrsDim_LengthDimension,
+                         PrsDim_RadiusDimension)
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TopAbs import TopAbs_ShapeEnum
 from OCCT.TopoDS import TopoDS, TopoDS_Edge, TopoDS_Shape, TopoDS_Vertex
 
 from declaracad.core.utils import log
 
-from ..dimension import (
-    ProxyAngleDimension,
-    ProxyDiameterDimension,
-    ProxyDimension,
-    ProxyLengthDimension,
-    ProxyRadiusDimension,
-)
+from ..dimension import (ProxyAngleDimension, ProxyDiameterDimension,
+                         ProxyDimension, ProxyLengthDimension,
+                         ProxyRadiusDimension)
 from ..shape import Point
 from .occ_shape import Topology
 from .utils import color_to_quantity_color

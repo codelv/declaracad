@@ -7,24 +7,22 @@ The full license is in the file LICENSE, distributed with this software.
 
 Created on Jan 27, 2022
 """
+from typing import Optional
+
 from atom.api import Typed, set_default
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeEdge,
-    BRepBuilderAPI_MakePolygon,
-    BRepBuilderAPI_MakeWire,
-)
+from OCCT.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
+                                 BRepBuilderAPI_MakePolygon,
+                                 BRepBuilderAPI_MakeWire)
 from OCCT.GccAna import GccAna_Lin2d2Tan
 from OCCT.GccEnt import GccEnt
 from OCCT.gce import gce_MakePln
 from OCCT.Geom import Geom_Circle
 from OCCT.Geom2d import Geom2d_Circle, Geom2d_Line, Geom2d_TrimmedCurve
 from OCCT.GeomAPI import GeomAPI
-from OCCT.gp import gp_Pln, gp_Ax2, gp_Circ, gp_Pnt2d
+from OCCT.gp import gp_Ax2, gp_Circ, gp_Pln, gp_Pnt2d
 
 from declaracad.occ.draw import ProxyCircuit
-
-from typing import Optional
 
 from .occ_wire import OccWire
 from .topology import Topology
