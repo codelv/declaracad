@@ -22,6 +22,7 @@ from enaml.qt.qt_application import QtApplication
 
 from declaracad.core.utils import log
 from declaracad.fea.impl import fea_factories
+
 # Import factories
 from declaracad.occ.impl import occ_factories
 from declaracad.viewer.qt import qt_factories

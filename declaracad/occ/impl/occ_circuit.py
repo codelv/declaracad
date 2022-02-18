@@ -11,9 +11,11 @@ from typing import Optional
 
 from atom.api import Typed, set_default
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
-from OCCT.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
-                                 BRepBuilderAPI_MakePolygon,
-                                 BRepBuilderAPI_MakeWire)
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakePolygon,
+    BRepBuilderAPI_MakeWire,
+)
 from OCCT.GccAna import GccAna_Lin2d2Tan
 from OCCT.GccEnt import GccEnt
 from OCCT.gce import gce_MakePln

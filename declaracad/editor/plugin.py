@@ -21,8 +21,19 @@ from typing import Union
 
 import enaml
 import jedi
-from atom.api import (Bool, ContainerList, Dict, Enum, ForwardTyped, Instance,
-                      Int, List, Str, Tuple, observe)
+from atom.api import (
+    Bool,
+    ContainerList,
+    Dict,
+    Enum,
+    ForwardTyped,
+    Instance,
+    Int,
+    List,
+    Str,
+    Tuple,
+    observe,
+)
 from enaml.application import timed_call
 from enaml.core.enaml_compiler import EnamlCompiler
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem

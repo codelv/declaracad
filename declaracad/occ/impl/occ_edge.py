@@ -7,11 +7,14 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import Typed, set_default
-from OCCT.Aspect import (Aspect_TOL_DASH, Aspect_TOL_DOT, Aspect_TOL_DOTDASH,
-                         Aspect_TOL_SOLID)
+from OCCT.Aspect import (
+    Aspect_TOL_DASH,
+    Aspect_TOL_DOT,
+    Aspect_TOL_DOTDASH,
+    Aspect_TOL_SOLID,
+)
 from OCCT.BRep import BRep_Tool
-from OCCT.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
-                                 BRepBuilderAPI_MakeWire)
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
 from OCCT.Geom import Geom_TrimmedCurve
 from OCCT.GeomAPI import GeomAPI
 from OCCT.gp import gp_Pln

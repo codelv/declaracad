@@ -11,8 +11,21 @@ Created on Sept 1, 2021
 """
 import warnings
 
-from atom.api import (Atom, Bool, Coerced, Dict, Enum, Float, ForwardTyped,
-                      Int, Property, Str, Typed, Value, observe)
+from atom.api import (
+    Atom,
+    Bool,
+    Coerced,
+    Dict,
+    Enum,
+    Float,
+    ForwardTyped,
+    Int,
+    Property,
+    Str,
+    Typed,
+    Value,
+    observe,
+)
 from enaml.colors import ColorMember
 from enaml.core.declarative import d_, d_func
 

@@ -7,9 +7,14 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from OCCT import Graphic3d
-from OCCT.Graphic3d import (Graphic3d_BSDF, Graphic3d_Fresnel,
-                            Graphic3d_MaterialAspect, Graphic3d_PBRMaterial,
-                            Graphic3d_Vec3, Graphic3d_Vec4)
+from OCCT.Graphic3d import (
+    Graphic3d_BSDF,
+    Graphic3d_Fresnel,
+    Graphic3d_MaterialAspect,
+    Graphic3d_PBRMaterial,
+    Graphic3d_Vec3,
+    Graphic3d_Vec4,
+)
 from OCCT.Quantity import Quantity_Color, Quantity_TOC_RGB
 
 OCC_COLOR_CACHE = {}

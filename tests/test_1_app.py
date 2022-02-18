@@ -7,14 +7,16 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 import os
+import signal
+import subprocess
 import sys
 import time
-import signal
+
 import pytest
-import subprocess
 
 try:
     from OCCT import OpenGl
+
     opengl_unavailable = False
 except ImportError as e:
     opengl_unavailable = True
@@ -42,7 +44,9 @@ def test_app():
 
 @pytest.mark.skipif(opengl_unavailable, reason="OpenGL not available")
 def test_render():
-    r = subprocess.check_output("declaracad render examples/fillets.enaml --view_mode top".split())
+    r = subprocess.check_output(
+        "declaracad render examples/fillets.enaml --view_mode top".split()
+    )
     assert os.path.exists("fillets.png")
     with open("fillets.png", "rb") as f:
         assert b"PNG" in f.read(10)

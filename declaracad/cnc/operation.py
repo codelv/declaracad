@@ -22,10 +22,24 @@ from atom.api import Atom, Bool, Coerced, Enum, Float, Instance, Str
 
 from declaracad.cnc.interpolate import group_connected_faces
 from declaracad.cnc.optimize import optimize_points
-from declaracad.occ.api import (Arc, Conditional, Cylinder, Direction,
-                                DisplayArrow, HalfSpace, Include, Looper,
-                                Offset, Part, Point, Polyline, Timer, Topology,
-                                Vertex, Wire)
+from declaracad.occ.api import (
+    Arc,
+    Conditional,
+    Cylinder,
+    Direction,
+    DisplayArrow,
+    HalfSpace,
+    Include,
+    Looper,
+    Offset,
+    Part,
+    Point,
+    Polyline,
+    Timer,
+    Topology,
+    Vertex,
+    Wire,
+)
 from declaracad.occ.geom import coerce_point
 
 with enaml.imports():

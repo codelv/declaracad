@@ -11,9 +11,24 @@ Created on Sept 27, 2016
 """
 from math import cos, pi, sin, tan
 
-from atom.api import (Atom, Bool, Coerced, Dict, Enum, Float, ForwardTyped,
-                      Instance, Int, List, Property, Range, Str, Typed,
-                      observe, set_default)
+from atom.api import (
+    Atom,
+    Bool,
+    Coerced,
+    Dict,
+    Enum,
+    Float,
+    ForwardTyped,
+    Instance,
+    Int,
+    List,
+    Property,
+    Range,
+    Str,
+    Typed,
+    observe,
+    set_default,
+)
 from enaml.core.declarative import d_
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
 

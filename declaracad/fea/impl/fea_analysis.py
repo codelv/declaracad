@@ -15,19 +15,42 @@ from atom.api import Atom, Instance, Typed
 
 try:
     from pychrono import fea
-    from pychrono.core import (ChSolver, ChSolverADMM, ChSolverAPGD,
-                               ChSolverBB, ChSolverBiCGSTAB, ChSolverGMRES,
-                               ChSolverLS, ChSolverMINRES, ChSolverPJacobi,
-                               ChSolverPSOR, ChSolverSparseLU,
-                               ChSolverSparseQR, ChSolverVI, ChSystem,
-                               ChSystemNSC, ChSystemSMC, ChVectorD)
-    from pychrono.fea import (ChContinuumElastic, ChElementBase,
-                              ChElementHexaANCF_3813_9, ChElementHexaCorot_8,
-                              ChElementHexaCorot_20, ChElementSpring,
-                              ChElementTetraCorot_4, ChElementTetraCorot_10,
-                              ChMesh, ChNodeFEAbase, ChNodeFEAxyz,
-                              ChNodeFEAxyzD, ChNodeFEAxyzDD, ChNodeFEAxyzP,
-                              ChNodeFEAxyzrot)
+    from pychrono.core import (
+        ChSolver,
+        ChSolverADMM,
+        ChSolverAPGD,
+        ChSolverBB,
+        ChSolverBiCGSTAB,
+        ChSolverGMRES,
+        ChSolverLS,
+        ChSolverMINRES,
+        ChSolverPJacobi,
+        ChSolverPSOR,
+        ChSolverSparseLU,
+        ChSolverSparseQR,
+        ChSolverVI,
+        ChSystem,
+        ChSystemNSC,
+        ChSystemSMC,
+        ChVectorD,
+    )
+    from pychrono.fea import (
+        ChContinuumElastic,
+        ChElementBase,
+        ChElementHexaANCF_3813_9,
+        ChElementHexaCorot_8,
+        ChElementHexaCorot_20,
+        ChElementSpring,
+        ChElementTetraCorot_4,
+        ChElementTetraCorot_10,
+        ChMesh,
+        ChNodeFEAbase,
+        ChNodeFEAxyz,
+        ChNodeFEAxyzD,
+        ChNodeFEAxyzDD,
+        ChNodeFEAxyzP,
+        ChNodeFEAxyzrot,
+    )
 except ImportError as e:
     warnings.warn(f"{e}")
     fea = None

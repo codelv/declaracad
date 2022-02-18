@@ -15,8 +15,16 @@ import enaml
 
 from declaracad.cnc import gcode
 from declaracad.core.utils import log
-from declaracad.occ.api import (Arc, Bezier, Circle, Direction, Point,
-                                Polyline, Vertex, Wire)
+from declaracad.occ.api import (
+    Arc,
+    Bezier,
+    Circle,
+    Direction,
+    Point,
+    Polyline,
+    Vertex,
+    Wire,
+)
 
 with enaml.imports():
     from declaracad.parts.display import Axis, BoundingBox

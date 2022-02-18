@@ -7,6 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 import pytest
+
 from declaracad.occ.impl.occ_factories import OCC_FACTORIES
 
 

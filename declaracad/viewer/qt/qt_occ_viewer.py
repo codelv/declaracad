@@ -25,30 +25,40 @@ from enaml.qt.QtGui import QPainter, QPalette
 from enaml.qt.QtWidgets import QOpenGLWidget
 from OCCT import Aspect, Graphic3d, TopAbs, V3d
 from OCCT import __version__ as OCCT_VERSION
-from OCCT.AIS import (AIS_InteractiveContext, AIS_Shaded, AIS_Shape,
-                      AIS_WireFrame)
-from OCCT.Aspect import (Aspect_DisplayConnection, Aspect_GFM_VER,
-                         Aspect_GridDrawMode, Aspect_GridType,
-                         Aspect_TOTP_LEFT_LOWER)
+from OCCT.AIS import AIS_InteractiveContext, AIS_Shaded, AIS_Shape, AIS_WireFrame
+from OCCT.Aspect import (
+    Aspect_DisplayConnection,
+    Aspect_GFM_VER,
+    Aspect_GridDrawMode,
+    Aspect_GridType,
+    Aspect_TOTP_LEFT_LOWER,
+)
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRepBndLib import BRepBndLib
 from OCCT.Geom import Geom_Curve, Geom_Surface
 from OCCT.gp import gp_Ax3, gp_Dir, gp_Pnt
-from OCCT.Graphic3d import (Graphic3d_Camera, Graphic3d_MaterialAspect,
-                            Graphic3d_RenderingParams,
-                            Graphic3d_RM_RASTERIZATION,
-                            Graphic3d_RM_RAYTRACING,
-                            Graphic3d_StereoMode_QuadBuffer,
-                            Graphic3d_Structure, Graphic3d_StructureManager,
-                            Graphic3d_TypeOfShadingModel)
-from OCCT.MeshVS import (MeshVS_DA_DisplayNodes, MeshVS_DA_EdgeColor,
-                         MeshVS_Mesh, MeshVS_MeshEntityOwner,
-                         MeshVS_MeshPrsBuilder)
+from OCCT.Graphic3d import (
+    Graphic3d_Camera,
+    Graphic3d_MaterialAspect,
+    Graphic3d_RenderingParams,
+    Graphic3d_RM_RASTERIZATION,
+    Graphic3d_RM_RAYTRACING,
+    Graphic3d_StereoMode_QuadBuffer,
+    Graphic3d_Structure,
+    Graphic3d_StructureManager,
+    Graphic3d_TypeOfShadingModel,
+)
+from OCCT.MeshVS import (
+    MeshVS_DA_DisplayNodes,
+    MeshVS_DA_EdgeColor,
+    MeshVS_Mesh,
+    MeshVS_MeshEntityOwner,
+    MeshVS_MeshPrsBuilder,
+)
 from OCCT.OpenGl import OpenGl_GraphicDriver
 from OCCT.Prs3d import Prs3d_Drawer
 from OCCT.PrsMgr import PrsMgr_PresentationManager
-from OCCT.Quantity import (Quantity_Color, Quantity_NOC_BLACK,
-                           Quantity_NOC_WHITE)
+from OCCT.Quantity import Quantity_Color, Quantity_NOC_BLACK, Quantity_NOC_WHITE
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TopAbs import TopAbs_EDGE, TopAbs_FACE, TopAbs_WIRE
 from OCCT.TopLoc import TopLoc_Location
@@ -60,10 +70,11 @@ from declaracad.occ.api import BBox, Topology
 from declaracad.occ.impl.occ_dimension import OccDimension
 from declaracad.occ.impl.occ_display import OccDisplayItem
 from declaracad.occ.impl.occ_shape import OccPart, OccShape
-from declaracad.occ.impl.utils import (color_to_quantity_color,
-                                       material_to_material_aspect)
-from declaracad.viewer.widgets.occ_viewer import (ProxyOccViewer,
-                                                  ViewerSelection)
+from declaracad.occ.impl.utils import (
+    color_to_quantity_color,
+    material_to_material_aspect,
+)
+from declaracad.viewer.widgets.occ_viewer import ProxyOccViewer, ViewerSelection
 
 if sys.platform == "win32":
     from OCCT.WNT import WNT_Window

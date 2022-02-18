@@ -7,8 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 import os
+
 import pytest
 from OCCT.TopoDS import TopoDS_Shape
+
 from declaracad.occ.api import load_model
 from declaracad.occ.impl.occ_factories import OCC_FACTORIES  # Make sure it installs
 

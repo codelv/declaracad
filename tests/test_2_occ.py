@@ -6,14 +6,26 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-import pytest
-from textwrap import dedent
 from math import pi, sqrt
+from textwrap import dedent
 
+import pytest
 from OCCT.TopoDS import TopoDS_Shape
+
 from declaracad.occ.api import (
-    load_model, Point, Shape, Segment, Box, Cylinder, Cone, Topology,
-    Ellipse, Rectangle, Face, Wire, Direction
+    Box,
+    Cone,
+    Cylinder,
+    Direction,
+    Ellipse,
+    Face,
+    Point,
+    Rectangle,
+    Segment,
+    Shape,
+    Topology,
+    Wire,
+    load_model,
 )
 
 
@@ -24,7 +36,7 @@ def test_shape():
         changes.append(change)
 
     s = Shape()
-    s.observe('x', on_change)
+    s.observe("x", on_change)
     s.position.x = 2
     s.x = 3
     assert s.position.x == 3
@@ -68,7 +80,7 @@ def test_point_offset():
 def test_direction():
     d = Direction(1, 0, 0)
     assert d.reversed() == Direction(-1, 0, 0)
-    assert d.rotated(pi/2) == Direction(0, 1, 0)
+    assert d.rotated(pi / 2) == Direction(0, 1, 0)
 
 
 def test_topo_cast_shape(qt_app):

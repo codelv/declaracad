@@ -18,16 +18,31 @@ from atom.api import Atom, Dict, ForwardTyped, Instance, List, Str, set_default
 from lxml import etree
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
-from OCCT.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
-                                 BRepBuilderAPI_MakeFace,
-                                 BRepBuilderAPI_MakePolygon,
-                                 BRepBuilderAPI_MakeWire,
-                                 BRepBuilderAPI_Transform)
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakePolygon,
+    BRepBuilderAPI_MakeWire,
+    BRepBuilderAPI_Transform,
+)
+
 # from OCCT.BRepLib import breplib_BuildCurves3d
 from OCCT.GC import GC_MakeArcOfEllipse
 from OCCT.Geom import Geom_BezierCurve, Geom_BSplineCurve
-from OCCT.gp import (gp_Ax1, gp_Ax2, gp_Ax3, gp_Circ, gp_Dir, gp_Dir2d,
-                     gp_Elips, gp_Pnt, gp_Pnt2d, gp_Trsf, gp_Trsf2d, gp_Vec)
+from OCCT.gp import (
+    gp_Ax1,
+    gp_Ax2,
+    gp_Ax3,
+    gp_Circ,
+    gp_Dir,
+    gp_Dir2d,
+    gp_Elips,
+    gp_Pnt,
+    gp_Pnt2d,
+    gp_Trsf,
+    gp_Trsf2d,
+    gp_Vec,
+)
 from OCCT.TColgp import TColgp_Array1OfPnt
 from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape, TopoDS_Wire
 

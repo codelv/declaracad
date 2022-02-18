@@ -6,11 +6,13 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-import pytest
 import faulthandler
+
+import pytest
 
 faulthandler.enable()
 from enaml.qt.qt_application import QtApplication
+
 from declaracad.occ.impl import occ_factories  # Make sure it installs
 
 

@@ -15,8 +15,20 @@ import uuid
 from typing import Union
 
 import serial
-from atom.api import (Atom, Bool, Bytes, ContainerList, Enum, Float, Instance,
-                      Int, List, Str, Subclass, observe)
+from atom.api import (
+    Atom,
+    Bool,
+    Bytes,
+    ContainerList,
+    Enum,
+    Float,
+    Instance,
+    Int,
+    List,
+    Str,
+    Subclass,
+    observe,
+)
 from enaml.application import Application, deferred_call
 from serial.tools.list_ports import comports
 

@@ -14,29 +14,56 @@ from math import pi
 from typing import Tuple as TupleType
 from typing import Union
 
-from atom.api import (Atom, Bool, Instance, List, Property, Str, Typed,
-                      observe, set_default)
-from OCCT.AIS import (AIS_MultipleConnectedInteractive, AIS_Shape,
-                      AIS_TexturedShape)
+from atom.api import (
+    Atom,
+    Bool,
+    Instance,
+    List,
+    Property,
+    Str,
+    Typed,
+    observe,
+    set_default,
+)
+from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.gp import (gp, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pln, gp_Pnt,
-                     gp_Trsf, gp_Vec)
+from OCCT.gp import gp, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pln, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TDF import TDF_Label
 from OCCT.TopLoc import TopLoc_Location
-from OCCT.TopoDS import (TopoDS, TopoDS_Compound, TopoDS_CompSolid,
-                         TopoDS_Edge, TopoDS_Face, TopoDS_Iterator,
-                         TopoDS_Shape, TopoDS_Shell, TopoDS_Solid,
-                         TopoDS_Vertex, TopoDS_Wire)
+from OCCT.TopoDS import (
+    TopoDS,
+    TopoDS_Compound,
+    TopoDS_CompSolid,
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Iterator,
+    TopoDS_Shape,
+    TopoDS_Shell,
+    TopoDS_Solid,
+    TopoDS_Vertex,
+    TopoDS_Wire,
+)
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import Mirror, Rotate, Scale, Translate
-from declaracad.occ.shape import (BBox, Direction, Point, ProxyBox, ProxyFace,
-                                  ProxyLoadShape, ProxyPart, ProxyRawPart,
-                                  ProxyRawShape, ProxyShape, Shape,
-                                  coerce_direction, coerce_point)
+from declaracad.occ.shape import (
+    BBox,
+    Direction,
+    Point,
+    ProxyBox,
+    ProxyFace,
+    ProxyLoadShape,
+    ProxyPart,
+    ProxyRawPart,
+    ProxyRawShape,
+    ProxyShape,
+    Shape,
+    coerce_direction,
+    coerce_point,
+)
 
 from .topology import Topology
 from .utils import color_to_quantity_color, material_to_material_aspect

@@ -16,8 +16,7 @@ from enaml.qt.qt_window import QtWindow
 from enaml.qt.QtCore import Qt
 from enaml.qt.QtGui import QWindow
 from enaml.qt.QtWidgets import QPlainTextEdit, QWidget
-from enaml.widgets.api import (Container, DockArea, DockItem, Label, RawWidget,
-                               Window)
+from enaml.widgets.api import Container, DockArea, DockItem, Label, RawWidget, Window
 from enaml.workbench.api import Plugin
 
 

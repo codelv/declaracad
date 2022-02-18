@@ -9,9 +9,21 @@ Created on Sep 28, 2016
 
 @author: jrm
 """
-from atom.api import (Atom, Bool, Coerced, Enum, Float, ForwardInstance,
-                      ForwardTyped, Instance, List, Tuple, Typed, Value,
-                      observe)
+from atom.api import (
+    Atom,
+    Bool,
+    Coerced,
+    Enum,
+    Float,
+    ForwardInstance,
+    ForwardTyped,
+    Instance,
+    List,
+    Tuple,
+    Typed,
+    Value,
+    observe,
+)
 from enaml.core.declarative import d_
 
 from .geom import Direction, Point, coerce_direction

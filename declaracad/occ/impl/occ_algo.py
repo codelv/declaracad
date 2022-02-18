@@ -11,22 +11,38 @@ Created on Sep 27, 2016
 """
 from atom.api import Dict, Instance, Int, Subclass, set_default
 from OCCT.BRep import BRep_Builder
-from OCCT.BRepAlgoAPI import (BRepAlgoAPI_BooleanOperation, BRepAlgoAPI_Common,
-                              BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse)
+from OCCT.BRepAlgoAPI import (
+    BRepAlgoAPI_BooleanOperation,
+    BRepAlgoAPI_Common,
+    BRepAlgoAPI_Cut,
+    BRepAlgoAPI_Fuse,
+)
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing
 from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
-from OCCT.TopoDS import (TopoDS, TopoDS_Compound, TopoDS_Edge, TopoDS_Face,
-                         TopoDS_Shape, TopoDS_Vertex, TopoDS_Wire)
+from OCCT.TopoDS import (
+    TopoDS,
+    TopoDS_Compound,
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Shape,
+    TopoDS_Vertex,
+    TopoDS_Wire,
+)
 from OCCT.TopTools import TopTools_ListOfShape
 
 from declaracad.core.utils import log
-from declaracad.occ.algo import (ProxyBooleanOperation, ProxyCommon, ProxyCut,
-                                 ProxyFuse, ProxyGlue, ProxyOperation,
-                                 ProxySew)
+from declaracad.occ.algo import (
+    ProxyBooleanOperation,
+    ProxyCommon,
+    ProxyCut,
+    ProxyFuse,
+    ProxyGlue,
+    ProxyOperation,
+    ProxySew,
+)
 
-from .occ_shape import (OccDependentShape, OccShape, Topology, coerce_axis,
-                        coerce_shape)
+from .occ_shape import OccDependentShape, OccShape, Topology, coerce_axis, coerce_shape
 
 
 class OccOperation(OccDependentShape, ProxyOperation):

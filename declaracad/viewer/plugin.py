@@ -23,16 +23,34 @@ from typing import Optional
 
 import enaml
 import jsonpickle
-from atom.api import (Atom, Bool, Callable, ContainerList, Dict, Enum, Float,
-                      ForwardInstance, ForwardTyped, Instance, Int, Property,
-                      Str, Typed, observe, set_default)
+from atom.api import (
+    Atom,
+    Bool,
+    Callable,
+    ContainerList,
+    Dict,
+    Enum,
+    Float,
+    ForwardInstance,
+    ForwardTyped,
+    Instance,
+    Int,
+    Property,
+    Str,
+    Typed,
+    observe,
+    set_default,
+)
 from enaml.application import deferred_call, timed_call
 from enaml.colors import ColorMember
 from enaml.layout.api import InsertItem
 
 from declaracad.core.api import Model, Plugin, log
-from declaracad.core.utils import (JsonRpcProtocol, ProcessLineReceiver,
-                                   get_bootstrap_cmd)
+from declaracad.core.utils import (
+    JsonRpcProtocol,
+    ProcessLineReceiver,
+    get_bootstrap_cmd,
+)
 from declaracad.occ.shape import Part
 
 if TYPE_CHECKING:

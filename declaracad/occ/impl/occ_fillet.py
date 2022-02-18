@@ -11,11 +11,14 @@ Created on Dec 23, 2021
 """
 from atom.api import Dict, set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
-from OCCT.BRepFilletAPI import (BRepFilletAPI_MakeFillet,
-                                BRepFilletAPI_MakeFillet2d)
+from OCCT.BRepFilletAPI import BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeFillet2d
 from OCCT.BRepTools import BRepTools
-from OCCT.ChFi3d import (ChFi3d_FilBuilder, ChFi3d_Polynomial,
-                         ChFi3d_QuasiAngular, ChFi3d_Rational)
+from OCCT.ChFi3d import (
+    ChFi3d_FilBuilder,
+    ChFi3d_Polynomial,
+    ChFi3d_QuasiAngular,
+    ChFi3d_Rational,
+)
 from OCCT.gp import gp_Pnt2d
 from OCCT.TColgp import TColgp_Array1OfPnt2d
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Vertex, TopoDS_Wire

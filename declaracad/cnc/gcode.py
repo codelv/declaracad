@@ -13,8 +13,19 @@ import os
 import re
 from collections import OrderedDict
 
-from atom.api import (Atom, Bool, Dict, Enum, Float, Instance, Int, List,
-                      Property, Str, observe)
+from atom.api import (
+    Atom,
+    Bool,
+    Dict,
+    Enum,
+    Float,
+    Instance,
+    Int,
+    List,
+    Property,
+    Str,
+    observe,
+)
 from OCCT.BRep import BRep_Builder
 from OCCT.TopoDS import TopoDS_Compound
 
