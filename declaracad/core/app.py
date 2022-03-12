@@ -16,7 +16,7 @@ import sys
 from functools import partial, wraps
 from queue import Empty, Queue
 
-from asyncqt import QEventLoop
+from asyncqt import QEventLoop, _SimpleTimer
 from atom.api import Atom, Bool, Instance
 from enaml.qt.qt_application import QtApplication
 
@@ -26,6 +26,18 @@ from declaracad.fea.impl import fea_factories
 # Import factories
 from declaracad.occ.impl import occ_factories
 from declaracad.viewer.qt import qt_factories
+
+
+def patch_timer():
+    """ Patch call to starTimer to force being an int
+
+    """
+    defaultStart = _SimpleTimer.startTimer
+
+    def startTimer(self, delay):
+        # Force int for newer Qt
+        return defaultStart(self, int(delay))
+    _SimpleTimer.startTimer = startTimer
 
 
 class Application(QtApplication):
@@ -40,6 +52,7 @@ class Application(QtApplication):
 
     def __init__(self):
         super().__init__()
+        patch_timer()
         self.loop = QEventLoop(self._qapp)
         asyncio.set_event_loop(self.loop)
         for name in (
