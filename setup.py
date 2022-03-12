@@ -61,5 +61,6 @@ setup(
     package_data={
         'declaracad': ['*/*.enaml', '*/*.png', '*/*.svg'],
     },
+    python_requires='>=3.9',
     install_requires=requirements,
 )
