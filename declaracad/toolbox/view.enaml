@@ -51,7 +51,7 @@ def format_docs(src):
 def get_source(obj):
     try:
         return inspect.getsource(obj)
-    except OSError:
+    except Exception:
         pass # Cant find if defined in enaml
 
 

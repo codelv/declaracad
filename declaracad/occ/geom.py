@@ -88,7 +88,7 @@ class BBox(Atom):
     center = Property(_get_center, cached=True)
 
     def _get_diagonal(self):
-        return math.sqrt(self.dx ** 2 + self.dy ** 2 + self.dz ** 2)
+        return math.sqrt(self.dx**2 + self.dy**2 + self.dz**2)
 
     diagonal = Property(_get_diagonal, cached=True)
 

@@ -12,6 +12,7 @@ Created on Aug 18, 2020
 import os
 import re
 from collections import OrderedDict
+from typing import Optional
 
 from atom.api import (
     Atom,
@@ -32,12 +33,12 @@ from OCCT.TopoDS import TopoDS_Compound
 from declaracad.occ.api import Point
 
 
-def normalize(k, v):
+def normalize(k: str, v: str) -> str:
     """Normalize an ID command"""
     vi = int(v)
     if v == vi:
         v = vi  # Clip off .0
-    return "{}{}".format(k, v)
+    return f"{k}{v}"
 
 
 class Command(Atom):
@@ -67,7 +68,7 @@ class Command(Atom):
 
     waypoint = Property(_get_waypoint, cached=True)
 
-    def position(self, last, scale: float = 1):
+    def position(self, last: Point, scale: float = 1) -> Point:
         """Get the 3D-position of this cmd's XYZ coordinates.
 
         Parameters
@@ -160,7 +161,7 @@ class Movement(Atom):
         return Movement(rapid=self.rapid, points=points)
 
 
-def convert(v, scale=1, precision=None):
+def convert(v: float, scale: float = 1, precision: Optional[int] = None):
     """Convert a value for writing to gcode
 
     Parameters

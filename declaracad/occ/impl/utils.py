@@ -17,8 +17,8 @@ from OCCT.Graphic3d import (
 )
 from OCCT.Quantity import Quantity_Color, Quantity_TOC_RGB
 
-OCC_COLOR_CACHE = {}
-OCC_MATERIAL_CACHE = {}
+OCC_COLOR_CACHE: dict[int, Quantity_Color] = {}
+OCC_MATERIAL_CACHE: dict[str, Graphic3d_MaterialAspect] = {}
 
 
 def color_to_quantity_color(color):
@@ -186,7 +186,7 @@ def material_to_material_aspect(material):
         return a
     ma = OCC_MATERIAL_CACHE.get(name)
     if ma is None:
-        material_type = "Graphic3d_NOM_%s" % name
+        material_type = f"Graphic3d_NOM_{name}"
         ma = Graphic3d_MaterialAspect(getattr(Graphic3d, material_type))
         OCC_MATERIAL_CACHE[name] = ma
     return ma

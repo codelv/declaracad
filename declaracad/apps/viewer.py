@@ -112,6 +112,7 @@ async def run_remote(
 
     """
     try:
+        assert app.loop is not None
         transport, protocol = await app.loop.create_connection(
             lambda: ViewerProtocol(app=app, view=view, ref=ref), "127.0.0.1", port
         )

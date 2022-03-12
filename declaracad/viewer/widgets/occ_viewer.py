@@ -402,7 +402,6 @@ class OccViewer(Control):
         "trihedron_mode",
         "selection_mode",
         "background_gradient",
-        "double_buffer",
         "shadows",
         "reflections",
         "antialiasing",

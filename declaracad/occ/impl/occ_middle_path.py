@@ -24,7 +24,14 @@ from OCCT.BRepOffsetAPI import BRepOffsetAPI_MiddlePath
 from OCCT.Geom2dAdaptor import Geom2dAdaptor_Curve
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
 from OCCT.MAT import MAT_Arc, MAT_Left
-from OCCT.TopoDS import TopoDS, TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+from OCCT.TopoDS import (
+    TopoDS,
+    TopoDS_Compound,
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Shape,
+    TopoDS_Wire,
+)
 
 from declaracad.occ.draw import ProxyMiddlePath
 
@@ -34,7 +41,7 @@ from .topology import Topology
 
 
 class OccMiddlePath(OccWire, ProxyMiddlePath):
-    reference = set_default(
+    reference = set_default(  # type: ignore
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_offset_a_p_i___middle_path.html"
     )
@@ -84,7 +91,7 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         curve = self.curve = BRepAdaptor_CompCurve(shape)
         self.shape = shape
 
-    def middle_path_2d(self, shape):
+    def middle_path_2d(self, shape: TopoDS_Shape):
         d = self.declaration
         if isinstance(shape, TopoDS_Wire):
             face = BRepBuilderAPI_MakeFace(shape).Face()

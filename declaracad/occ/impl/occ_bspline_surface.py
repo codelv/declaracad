@@ -16,6 +16,7 @@ from OCCT.GeomAPI import GeomAPI_PointsToBSplineSurface
 from OCCT.TColgp import TColgp_Array2OfPnt
 
 from declaracad.occ.draw import ProxyBSplineSurface
+from declaracad.occ.geom import Point
 
 from .occ_bspline import CONTINUITY
 from .occ_shape import OccShape
@@ -23,14 +24,14 @@ from .topology import Topology
 
 
 class OccBSplineSurface(OccShape, ProxyBSplineSurface):
-    reference = set_default(
+    reference = set_default(  # type: ignore
         "https://dev.opencascade.org/doc/refman/html/"
         "class_geom_a_p_i___points_to_b_spline_surface.html"
     )
 
     surface = Typed(Geom_BSplineSurface)
 
-    def create_points(self, grid):
+    def create_points(self, grid: list[list[Point]]):
         nrows = len(grid)
         ncols = len(grid[0])
         points = TColgp_Array2OfPnt(1, nrows, 1, ncols)

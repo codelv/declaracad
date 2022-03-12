@@ -163,7 +163,7 @@ def load_gcode(filename, **options):
                 if q == 0:
                     raise ValueError(f"Invalid command {cmd} (d=0)")
 
-                u = cmath.sqrt(r ** 2 - (q / 2) ** 2)
+                u = cmath.sqrt(r**2 - (q / 2) ** 2)
                 if clockwise:
                     u = -u
                 x = (midpoint.x - u * delta.y / q).real
@@ -224,7 +224,7 @@ def load_gcode(filename, **options):
                     # Recompute direction, center, and radius
                     pitch = helix * 4
                     b = helix / 2
-                    r = cmath.sqrt(r ** 2 + helix ** 2).real
+                    r = cmath.sqrt(r**2 + helix**2).real
                     if plane == "xy":
                         rot = 1 if i > 0 else -1
                         center = center + (0, 0, b)
