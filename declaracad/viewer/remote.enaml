@@ -11,8 +11,9 @@ from enaml.core.api import Looper, Conditional
 from enaml.widgets.api import Container, ScrollArea, Menu, Action
 
 from declaracad.core.api import DockItem, EmbeddedWindow
-from declaracad.core.utils import log, load_icon, format_title
+from declaracad.core.utils import log, load_icon
 
+from declaracad.editor.plugin import format_title
 from .plugin import ViewerPlugin, ViewerProcess
 
 

@@ -17,7 +17,7 @@ from enaml.widgets.api import (
 )
 
 
-from declaracad.core.utils import log, load_icon, format_title
+from declaracad.core.utils import log, load_icon
 from declaracad.occ.api import (
     Topology, Point, Part, Shape, AngleDimension, LengthDimension,
     RadiusDimension, DiameterDimension, load_model

@@ -28,10 +28,10 @@ from enaml.widgets.api import (
 from enamlx.widgets.api import KeyEvent
 
 from declaracad.core.api import DockItem
-from declaracad.core.utils import load_icon, load_image, log, format_title
+from declaracad.core.utils import load_icon, load_image, log
 from declaracad.core.widgets import PlainTextEdit
 from .themes import THEMES
-from .plugin import Document
+from .plugin import Document, format_title
 
 
 

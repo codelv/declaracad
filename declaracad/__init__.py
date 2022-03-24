@@ -180,9 +180,20 @@ def main():
 
     args = parser.parse_args()
 
+    # If DECLARACAD_CPROFILE is defined run the profiler
+    profile = os.environ.get("DECLARACAD_CPROFILE")
+    if profile:
+        import cProfile
+        pr = cProfile.Profile()
+        pr.enable()
+
     # Start the app
     launcher = getattr(args, "func", launch_workbench)
     launcher(args)
+
+    if profile:
+        pr.disable()
+        pr.dump_stats(f"stats-{launcher.__name__}.prof")
 
 
 if __name__ == "__main__":

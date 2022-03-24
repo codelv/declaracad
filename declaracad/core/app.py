@@ -16,7 +16,14 @@ import sys
 from functools import partial, wraps
 from queue import Empty, Queue
 
-from asyncqt import QEventLoop, _SimpleTimer
+try:
+    import nest_asyncio
+
+    nest_asyncio.apply()
+except ImportError as e:
+    warnings.warn(f"Nest asyncio not found: {e}")
+
+from asyncqtpy import QEventLoop, QEventLoopPolicy
 from atom.api import Atom, Bool, Instance
 from enaml.qt.qt_application import QtApplication
 
@@ -28,16 +35,7 @@ from declaracad.occ.impl import occ_factories
 from declaracad.viewer.qt import qt_factories
 
 
-def patch_timer():
-    """ Patch call to starTimer to force being an int
-
-    """
-    defaultStart = _SimpleTimer.startTimer
-
-    def startTimer(self, delay):
-        # Force int for newer Qt
-        return defaultStart(self, int(delay))
-    _SimpleTimer.startTimer = startTimer
+asyncio.set_event_loop_policy(QEventLoopPolicy())
 
 
 class Application(QtApplication):
@@ -46,34 +44,34 @@ class Application(QtApplication):
 
     """
 
-    loop = Instance(QEventLoop)
+    loop = Instance(QEventLoop, factory=asyncio.get_event_loop)
     queue = Instance(Queue, ())
     running = Bool()
 
     def __init__(self):
         super().__init__()
-        patch_timer()
-        self.loop = QEventLoop(self._qapp)
-        asyncio.set_event_loop(self.loop)
-        for name in (
-            "asyncqt._unix._Selector",
-            "asyncqt._QEventLoop",
-            "asyncqt._SimpleTimer",
-        ):
-            log = logging.getLogger(name)
-            log.setLevel(logging.WARN)
+        assert self.loop is not None
+
+        # Set logger level
+        for name in logging.root.manager.loggerDict:
+            if name.startswith("asyncqt"):
+                log = logging.getLogger(name)
+                log.setLevel(logging.WARN)
 
     def start(self):
         """Run using the event loop"""
         log.info("Application starting")
         self.running = True
-        self.loop.set_exception_handler(self.on_async_exception)
-        with self.loop:
-            try:
-                self.loop.run_until_complete(self.main())
-            except RuntimeError as e:
-                if "loop stopped" not in str(e):
-                    raise
+        loop = self.loop
+        loop.set_exception_handler(self.on_async_exception)
+        try:
+            with loop:
+                loop.run_until_complete(self.main())
+        except RuntimeError as e:
+            if "loop stopped" not in f"{e}":
+                raise
+        finally:
+            self.running = False
 
     def stop(self):
         """Stop the application"""
@@ -88,15 +86,15 @@ class Application(QtApplication):
                 await task
             except Empty:
                 await asyncio.sleep(0.1)
-            except Exception as e:
-                log.exception(e)
+            #except Exception as e:
+            #    log.exception(e)
 
     def on_async_exception(self, loop, context):
         """Exception handler that ignores"""
         # HACK: Ignore this error, Qt works, shut up
-        msg = context.get("exception")
-        if "cannot enter context" in str(msg):
-            return
+        #msg = context.get("exception")
+        #if "cannot enter context" in str(msg):
+        #    return
         return loop.default_exception_handler(context)
 
     def process_events(self):
@@ -120,7 +118,7 @@ class Application(QtApplication):
             the callback.
 
         """
-        if asyncio.iscoroutinefunction(callback) or kwargs.pop("async_", None):
+        if inspect.iscoroutinefunction(callback) or kwargs.pop("async_", None):
             task = asyncio.create_task(callback(*args, **kwargs))
             return self.add_task(task)
         return super().deferred_call(callback, *args, **kwargs)
@@ -143,7 +141,7 @@ class Application(QtApplication):
             the callback.
 
         """
-        if asyncio.iscoroutinefunction(callback) or kwargs.pop("async_", None):
+        if inspect.iscoroutinefunction(callback) or kwargs.pop("async_", None):
             task = asyncio.create_task(callback(*args, **kwargs))
             return super().timed_call(ms, self.add_task, task)
         return super().timed_call(ms, callback, *args, **kwargs)

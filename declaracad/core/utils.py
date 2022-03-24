@@ -17,6 +17,7 @@ import sys
 import time
 import traceback
 from contextlib import contextmanager
+from typing import Any, Optional
 
 import jsonpickle
 from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
@@ -30,7 +31,7 @@ from enaml.image import Image
 log = logging.getLogger("declaracad")
 
 
-def clip(s, n=1000):
+def clip(s: Any, n: int = 1000) -> str:
     """Shorten the name of a large value when logging"""
     v = str(s)
     if len(v) > n:
@@ -45,7 +46,7 @@ def clip(s, n=1000):
 _IMAGE_CACHE = {}
 
 
-def icon_path(name):
+def icon_path(name: str) -> str:
     """Load an icon from the res/icons folder using the name
     without the .png
 
@@ -54,7 +55,7 @@ def icon_path(name):
     return os.path.join(path, "res", "icons", "%s.png" % name)
 
 
-def load_image(name):
+def load_image(name: str) -> Image:
     """Get and cache an enaml Image for the given icon name."""
     path = icon_path(name)
     global _IMAGE_CACHE
@@ -65,57 +66,17 @@ def load_image(name):
     return _IMAGE_CACHE[path]
 
 
-def load_icon(name):
+def load_icon(name: str) -> Icon:
     img = load_image(name)
     icg = IconImage(image=img)
     return Icon(images=[icg])
 
 
-def menu_icon(name):
+def menu_icon(name: str) -> Optional[Icon]:
     """Icons don't look good on Linux/osx menu's"""
     if sys.platform == "win32":
         return load_icon(name)
     return None
-
-
-def format_title(docs, doc, path, unsaved):
-    """Attempt to format the title using the shortest unique name that
-    does not conflict with any other opened documents.
-
-    Based on Intellij's naming styles
-    """
-    if not path:
-        unamed = [d for d in docs if not d.name]
-        if doc in unamed:
-            return "Untitled-%s*" % (unamed.index(doc) + 1)
-        return "Untitled*"
-    path, name = os.path.split(path)
-
-    #: Find any others with the same name
-    duplicates = [
-        d.name for d in docs if d != doc and os.path.split(d.name)[-1] == name
-    ]
-
-    #: Add folders until it becomes unique we run out of folders
-    if duplicates:
-        sep = os.path.sep
-        parts = path.split(sep)
-        for i in reversed(range(len(parts))):
-            tmp_name = sep.join(parts[i:])
-
-            #: See if there's still duplicates
-            duplicates = [d for d in duplicates if d.endswith(tmp_name)]
-            if not duplicates:
-                name = os.path.join(tmp_name, name)
-                break
-
-        #: Give up
-        if duplicates:
-            name += "({})".format(len(duplicates))
-
-    if unsaved:
-        name += "*"
-    return name
 
 
 def process_events():
@@ -159,7 +120,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
     #: Set when the protocol is ready
     connected = Bool(False)
 
-    def invoke_method(self, method, *args, **kwargs) -> asyncio.Future:
+    def invoke_method(self, method: str, *args, **kwargs) -> asyncio.Future:
         """Invoke the method with the attribute "on_{method}" on the remote
         connection.
 
@@ -172,11 +133,11 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         self.send_message({"method": method, "params": args or kwargs, "id": self._id})
         return f
 
-    def send_message(self, message: dict, attempts: int = 10):
+    def send_message(self, message: dict[str, Any], attempts: int = 10):
         if not self.connected:
             if attempts <= 0:
                 log.error(
-                    f"Could not send message: {message} " f"after several attempts"
+                    f"Could not send message: {message} after several attempts"
                 )
                 return
             log.debug(f"Note: Message delayed {self}: {message}")
@@ -210,7 +171,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         """
         if not line:
             return
-        log.debug(f"Received message '{line}'")
+        log.info(f"Received message '{line}'")
         try:
             request = jsonpickle.loads(line)
         except Exception as e:
@@ -230,7 +191,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
                 self.result_received(request_id, request["result"])
             return
 
-        handler = getattr(self, "on_{}".format(method), None)
+        handler = getattr(self, f"on_{method}", None)
         if handler is None:
             msg = f"Method '{method}' not found"
             return self.send_message(

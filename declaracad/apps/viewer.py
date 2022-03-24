@@ -34,14 +34,6 @@ with enaml.imports():
     from declaracad.viewer.standalone import ViewerWindow
 
 
-try:
-    import nest_asyncio
-
-    nest_asyncio.apply()
-except ImportError as e:
-    warnings.warn(f"Nest asyncio not found: {e}")
-
-
 class ViewerProtocol(JsonRpcProtocol):
     """Use stdio as a json-rpc interface to communicate with external
     processes.
@@ -123,7 +115,6 @@ async def run_remote(
         return
     view.protocol = protocol
     view.filename = filename
-    protocol.start_logger()
 
 
 async def run_local(app: Application, view: ViewerWindow, filename: str, watch: bool):
@@ -158,12 +149,14 @@ def main(
         If True automatically reload when the file changes. This is only
         applicable if the port argument is not given.
     ref: str, optional
-        Viewer reference ID from the application.
+        Viewer reference ID from the application. Can be any str if testing.
 
     """
     app = Application()
     if not port and not os.path.exists(filename):
-        raise ValueError("File %s does not exist!" % filename)
+        raise ValueError(f"File {filename} does not exist!")
+    if port and not ref:
+        raise ValueError(f"A ref is required when port is given")
 
     view = ViewerWindow(filename="-", frameless=bool(port))
     view.show()

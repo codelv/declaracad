@@ -144,7 +144,7 @@ class ScreenshotOptions(Atom):
         path, filename = os.path.split(self.filename)
         default_dir = self.default_dir or path
         filename, ext = os.path.splitext(filename)
-        return os.path.join(default_dir, "{}.png".format(filename))
+        return os.path.join(default_dir, f"{filename}.png")
 
     def format(self):
         """Return formatted option values for the exporter app to parse"""
@@ -274,9 +274,11 @@ class ViewerProcess(ProcessLineReceiver):
         log.warning("renderer | stdout closed")
 
     def terminate(self):
-        if self.protocol:
-            self.protocol.transport.close()
         self.terminated = True
+        protocol = self.protocol
+        if protocol:
+            protocol.transport.close()
+            time.sleep(0.3)
         super().terminate()
 
 

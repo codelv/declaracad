@@ -18,7 +18,7 @@ requirements = [
     'numpydoc',
     'markdown',
     'enamlx',
-    'asyncqt',  # asyncio + qt
+    'asyncqtpy',  # asyncio + qt
     'nest_asyncio',  # avoid some issues with qtconsole in remote viewer
     'pyserial>=3.5',
     'lxml',
