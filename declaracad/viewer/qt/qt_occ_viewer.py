@@ -252,7 +252,7 @@ class QtViewer3d(QOpenGLWidget):
         if self._fire_event("mouse_moved", event):
             return
         pt = event.pos()
-        buttons = int(event.buttons())
+        buttons = event.buttons()
         modifiers = event.modifiers()
         view = self.proxy.v3d_view
         # ROTATE
@@ -274,7 +274,7 @@ class QtViewer3d(QOpenGLWidget):
             self.dragStartPos = pt
             self._drawbox = None
         # PAN
-        elif buttons == Qt.MidButton:
+        elif buttons == Qt.MouseButton.MiddleButton:
             dx = pt.x() - self.dragStartPos.x()
             dy = pt.y() - self.dragStartPos.y()
             self.dragStartPos = pt

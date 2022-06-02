@@ -13,7 +13,7 @@ import ply.lex as lex
 
 # import ply.yacc as yacc
 # parser = yacc.yacc()
-from PyQt5.Qsci import QsciLexerCustom
+from enaml.qt.Qsci import QsciLexerCustom
 
 
 class GCodeLexer:

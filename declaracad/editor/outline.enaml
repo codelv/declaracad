@@ -57,7 +57,7 @@ def format_node(node):
         return "bricks", node.typename, node.base
     elif isinstance(node, Exception):
         return "exclamation", str(node), str(node.__class__.__name__)
-    elif isinstance(node, Atom):
+    elif isinstance(node, Atom) and hasattr(node, 'commands'):
         return format_gcode(node)
     return "tag_blue", "", str(node), ""
 

@@ -315,10 +315,10 @@ enamldef Editor(Scintilla): editor:
 
     func set_code_folding():
         w = self.proxy.widget
-        style = w.NoFoldStyle
+        style = w.FoldStyle.NoFoldStyle
         if plugin.code_folding:
             name = plugin.code_fold_style.title().replace('-', '')
-            style = getattr(w, f'{name}FoldStyle')
+            style = getattr(w.FoldStyle, f'{name}FoldStyle')
         w.setFolding(style)
 
     func set_margin_colors():
