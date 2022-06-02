@@ -105,7 +105,7 @@ enamldef Toolpath(Part): toolpath:
         cmds = []
         lift = (0, 0, self.clearance)
         for i, wire in enumerate(wires):
-            points = Topology.discretize(wire, self.deflection)
+            points = list(Topology.discretize(wire, self.deflection))
             if reverse:
                 points = [p for p in reversed(points)]
             next_point = points[0]

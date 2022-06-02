@@ -1,0 +1,113 @@
+"""
+Copyright (c) 2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on May 28, 2022
+
+@author: jrm
+"""
+import math
+import traceback
+from math import sin, cos, pi
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.interpolate import group_connected_faces
+from declaracad.cnc.optimize import optimize_points
+from declaracad.cnc.operation import Operation, generate_part_gcode
+from declaracad.occ.api import (
+    Arc, Offset, Part, Point, Polyline, TopoShape, Topology, Wire
+)
+
+
+enamldef ContourOperation(Operation): operation:
+    """ Operation which follows a contour provided
+
+    """
+    operation_type = "Contour operation"
+
+    #: List of contour wires to cut
+    attr wires: list
+
+    attr clearance_height = start_point.z
+
+    #: Use climb milling
+    attr climb: bool = True
+
+    # --------------------------------------------------------------------------
+    # Speed and feed
+    # --------------------------------------------------------------------------
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    # --------------------------------------------------------------------------
+    # Internal data
+    # --------------------------------------------------------------------------
+    #: Generated toolpath data
+    attr toolpath = generate_toolpath()
+
+    func generate_toolpath():
+        tool_radius = tool.diameter/2
+        data = []
+        for w in self.wires:
+            topo = Topology(shape=w)
+            start = topo.start_point
+            end = topo.end_point
+            data.append({
+                'wire': w,
+                'enter': start,
+                'exit': end,
+                'drop': Point(start.x, start.y, clearance_height),
+                'lift': Point(end.x, end.y, clearance_height),
+            })
+        ordered_data = []
+        lift_points = [d['lift'] for d in data]
+        for lift_point in optimize_points(lift_points[:], start_point):
+            i = lift_points.index(lift_point)
+            ordered_data.append(data[i])
+        return ordered_data
+
+    Looper:
+        iterable << [] if disabled else toolpath
+        Part: path:
+
+            func generate_gcode(fmt):
+                cmds = [f"(Contour {loop.index + 1})"]
+                job = operation.parent
+                cmds.extend(generate_part_gcode(self, job.format_value))
+                return cmds
+
+            Polyline:
+                attr last_point = start_point if loop.index == 0 else toolpath[loop.index-1]['lift']
+                name = 'Rapid move'
+                line_style = 'dashed'
+                color = 'lime'
+                points = [
+                    last_point,
+                    loop.item['drop'],
+                    loop.item['enter']
+                ]
+            Wire:
+                color = 'magenta'
+                edges = [loop.item['wire']]
+
+            Polyline:
+                name = 'Rapid move'
+                line_style = 'dashed'
+                color = 'lime'
+                func get_points():
+                    pts = [loop.item['exit'], loop.item['lift']]
+                    if loop.index + 1 == len(toolpath):
+                        pts.append(end_point)
+                    return pts
+                points = get_points()
+
