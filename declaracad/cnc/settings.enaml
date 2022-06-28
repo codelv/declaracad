@@ -103,6 +103,11 @@ enamldef DeviceConfigView(Container):
     attr config: DeviceConfig
     Form:
         Label:
+            text = "Units"
+        ObjectCombo:
+            items = list(DeviceConfig.units.items)
+            selected := config.units
+        Label:
             text = "Swap XY"
         CheckBox:
             checked := config.swap_xy

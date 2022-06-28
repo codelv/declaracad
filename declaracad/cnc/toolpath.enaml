@@ -36,7 +36,7 @@ def get_device():
         plugin = workbench.get_plugin('declaracad.cnc')
     else:
         plugin = workbench.get_plugin('declaracad.cnc')
-        plugin.restore() # Force reload
+        plugin.restore()  # Force reload
     return plugin.device
 
 

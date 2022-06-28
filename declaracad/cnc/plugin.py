@@ -143,6 +143,9 @@ class DeviceConfig(Model):
     #: Send rate
     send_rate = Float(strict=False).tag(config=True)
 
+    #: Units
+    units = Enum("", "mm", "in").tag(config=True)
+
     #: Output scale
     scale_x = Float(1.0, strict=False).tag(config=True)
     scale_y = Float(1.0, strict=False).tag(config=True)
@@ -348,9 +351,9 @@ class Device(Model, asyncio.Protocol):
         x = o.x - point.x if config.mirror_x else point.x - o.x
         y = o.y - point.y if config.mirror_y else point.y - o.y
         z = o.z - point.z if config.mirror_z else point.z - o.z
-        x = gcode.convert(x, config.scale_x, precision)
-        y = gcode.convert(y, config.scale_y, precision)
-        z = gcode.convert(z, config.scale_z, precision)
+        x = gcode.convert(x, config.scale_x, precision, config.units)
+        y = gcode.convert(y, config.scale_y, precision, config.units)
+        z = gcode.convert(z, config.scale_z, precision, config.units)
         if config.swap_xy:
             x, y = y, x
         return (x, y, z)
