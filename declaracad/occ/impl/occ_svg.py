@@ -608,7 +608,8 @@ class OccSvgPath(OccSvgNode):
                 start_pnt = last_pnt
             elif cmd in ["L", "H", "V"]:
                 pnt = gp_Pnt(params[0], params[1], 0)
-                path.Add(BRepBuilderAPI_MakeEdge(last_pnt, pnt).Edge())
+                if not last_pnt.IsEqual(pnt, tol):
+                    path.Add(BRepBuilderAPI_MakeEdge(last_pnt, pnt).Edge())
                 last_pnt = pnt
             elif cmd == "Q":
                 # Quadratic Bezier
