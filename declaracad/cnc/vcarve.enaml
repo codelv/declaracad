@@ -1,0 +1,143 @@
+"""
+Copyright (c) 2020, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+@author: jrm
+"""
+from declaracad.occ.api import Part
+
+from OCCT.BRepMAT2d import (
+    BRepMAT2d_BisectingLocus, BRepMAT2d_Explorer,
+    BRepMAT2d_LinkTopoBilo
+)
+from OCCT.Geom2dAdaptor import Geom2dAdaptor_Curve
+from OCCT.GCPnts import GCPnts_UniformDeflection
+from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
+from OCCT.TopTools import TopTools_HSequenceOfShape
+
+
+enamldef VCarve(Part): part:
+    #: List of faces to carve out
+    attr faces: list
+
+    # High tolerance is used to filter out unwantd lines
+    attr deflection = 0.0001
+
+    # bbox is expanded by this much
+    attr gap = 0
+
+    func generate_toolpath(faces):
+        toolpaths = []
+        for i, item in enumerate(faces):
+            if isinstance(item, tuple):
+                excluded_indexes, face = item
+            else:
+                excluded_indexes = []
+                face = item
+            bbox = Topology.bbox(face)
+            offset = [bbox.xmin, bbox.ymin]
+
+            # Compute graph
+            explorer = BRepMAT2d_Explorer(face)
+            bilo = BRepMAT2d_BisectingLocus()
+            bilo.Compute(explorer)
+            graph = bilo.Graph()
+
+            paths = []
+            sx, sy = None, None
+            for j in range(1, graph.NumberOfArcs() + 1):
+                arc = graph.Arc(j)
+                first_node = arc.FirstNode()
+                second_node = arc.SecondNode()
+                z = (first_node.Distance(), second_node.Distance())
+                bisector = bilo.GeomBis(arc, False)[0]
+                curve = Geom2dAdaptor_Curve(bisector.Value())
+
+                #: TODO: Use curve directly
+                a = GCPnts_UniformDeflection(curve, deflection)
+                points = [coerce_point(a.Value(p))
+                   for p in range(1, a.NbPoints()+1)]
+
+                s = min([p.x for p in points])
+                sx = s if sx is None else min(sx, s)
+                s = min([p.y for p in points])
+                sy = s if sy is None else min(sy, s)
+
+                n = len(points)
+                points = [p + offset for p in points]
+
+                points[0].z = -z[0]
+                points[1].z = -z[1]
+
+                # Filter nodes
+                if n == 2:
+                    if 0 in z: # Internal nodes
+                        continue
+                else:
+                    # Determine z value
+                    dz = z[1]-z[0]
+                    dt = 0 # Distance
+                    last = points[0]
+
+                    # Determine total distance
+                    last = points[0]
+                    for p in points[1:]:
+                        dt += last.distance2d(p)
+                        last = p
+
+                    # Determine distance at each point
+                    # to calculate t
+                    d = 0
+                    last = points[0]
+                    for p in points[1:]:
+                        d += last.distance2d(p)
+                        t = d/dt
+                        assert 0 <= t <= 1
+                        p.z = -(z[0] + dz*t)
+                        last = p
+
+                if not points:
+                    continue
+                paths.append(points)
+
+            # Apply offset correction
+            if sx and sy:
+                tol = gap
+                for points in paths:
+                    for p in points:
+                        p.x -= sx - tol
+                        p.y -= sy - tol
+
+            # Post process.. create bsplines from each then merge them
+            edges = TopTools_HSequenceOfShape()
+            for points in paths:
+                # Create a BSpline curve
+                edge = BSpline(points=points).render()
+                edges.Append(edge)
+
+            wires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires_(edges, 1e-6, False)
+
+            # Workaround for weird splines
+            if excluded_indexes:
+                wires = [
+                    w for i, w in enumerate(wires)
+                    if i not in excluded_indexes
+                ]
+
+            toolpaths.append(wires)
+
+        return toolpaths
+
+    Looper:
+        iterable << generate_toolpath(faces)
+        Looper: looper:
+            attr i = loop.index
+            attr letters = loop.item
+            iterable << letters
+            TopoShape:
+               color = 'orange'
+               description = f"Face {looper.i} Wire {loop.index}"
+               shape = loop.item
