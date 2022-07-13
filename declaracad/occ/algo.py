@@ -39,6 +39,9 @@ class ProxyBooleanOperation(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: BooleanOperation)
 
+    def set_disabled(self, disabled):
+        raise NotImplementedError
+
     def set_shape1(self, shape):
         raise NotImplementedError
 
@@ -317,6 +320,9 @@ class BooleanOperation(Operation):
 
     shape2 = d_(Instance(object))
 
+    #: Disable the operation (the result will be the first shape or child)
+    disabled = d_(Bool(False))
+
     #: Unify using ShapeUpgrade_UnifySameDomain
     unify = d_(Bool(False))
 
@@ -327,7 +333,7 @@ class BooleanOperation(Operation):
     #: perform a boolean operation with each child one at a time
     parallel = d_(Bool(False))
 
-    @observe("shape1", "shape2", "unify", "fix", "parallel")
+    @observe("shape1", "shape2", "unify", "fix", "parallel", "disabled")
     def _update_proxy(self, change):
         super(BooleanOperation, self)._update_proxy(change)
 

@@ -72,6 +72,11 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
         shapes.extend(list(self.child_shapes()))
 
         shape, *other_shapes = shapes
+
+        if d.disabled:
+            self.shape = Topology.cast_shape(shape)
+            return
+
         if d.parallel and other_shapes:
             builder = self.op()
             builder.SetFuzzyValue(d.tolerance)
@@ -108,6 +113,8 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
     def set_parallel(self, parallel):
         self.update_shape()
 
+    def set_disabled(self, disabled):
+        self.update_shape()
 
 class OccCommon(OccBooleanOperation, ProxyCommon):
     """Common of all the child shapes together."""
