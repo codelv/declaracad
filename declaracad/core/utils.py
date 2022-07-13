@@ -52,7 +52,7 @@ def icon_path(name: str) -> str:
 
     """
     path = os.path.dirname(os.path.dirname(__file__))
-    return os.path.join(path, "res", "icons", "%s.png" % name)
+    return os.path.join(path, "res", "icons", f"{name}.png")
 
 
 def load_image(name: str) -> Image:
@@ -214,7 +214,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
                 }
             )
 
-    def error_received(self, request_id, error):
+    def error_received(self, request_id: Optional[int], error: dict[str, Any]):
         """Standard error handler."""
         f = self._responses.pop(request_id, None)
         msg = str(error.get("message", ""))
@@ -224,7 +224,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         if f is not None:
             f.set_exception(RuntimeError(error))
 
-    def result_received(self, request_id, result):
+    def result_received(self, request_id: Optional[int], result: Any):
         """Standard response handler."""
         f = self._responses.pop(request_id, None)
         if f is not None:
@@ -247,7 +247,7 @@ class RemoteLogger(Atom):
         sys.stdout = self.stdout
         sys.stderr = self.stderr
 
-    def write(self, message):
+    def write(self, message: str):
         self.protocol.invoke_method("print", message)
 
     def flush(self):
