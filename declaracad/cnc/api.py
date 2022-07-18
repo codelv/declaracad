@@ -3,7 +3,10 @@ import enaml
 from declaracad.cnc.operation import Operation
 
 with enaml.imports():
-    from declaracad.cnc.cutters import ChamferMill, EndMill, FaceMill, Tool, TwistDrill
+    from declaracad.cnc.cutters import (
+        ChamferMill, EndMill, FaceMill, Tool,
+        TwistDrill, ThreadMill
+    )
     from declaracad.cnc.operations.chamfer import ChamferOperation
     from declaracad.cnc.operations.contour import ContourOperation
     from declaracad.cnc.operations.drilling import DrillingCycle

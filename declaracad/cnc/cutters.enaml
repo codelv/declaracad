@@ -11,7 +11,11 @@ Created on Nov 10, 2021
 """
 from math import sin, cos, radians, pi
 from atom.api import Int, Float
-from declaracad.occ.api import Part, Chamfer, Cylinder
+from declaracad.parts.display import Axis
+from declaracad.occ.api import (
+    Looper, Transform, Part, Chamfer, Cylinder, Cut,
+    Revol, Polyline, Wedge, Rotate, Face
+)
 from enaml.core.declarative import d_, d_func
 from typing import List as ListType
 
@@ -107,7 +111,7 @@ enamldef ChamferMill(Tool): drill:
     #: Used to check clearances for maximum cut depth
     attr length = 30
 
-    #: Tip angle
+    #: Tip angle (degrees)
     attr angle = 90
 
     #: Used to calculate feed and speed
@@ -170,9 +174,94 @@ enamldef FaceMill(Tool): cutter:
         height = length
 
 
+enamldef ThreadMill(Tool): cutter:
+    """ Single form thread milling cutter."""
+    #: Tool diameter
+    #: Diamter of cutting tooth 
+    attr diameter = 3
+    
+    #: Diameter of shank
+    attr shank_diameter = 4
+    
+    #: Diameter of neck
+    attr neck_diameter = diameter*2/3
+
+    #: Tool length from bottom of tool holder to tip of mill
+    #: Used to check clearances for maximum cut depth
+    attr length = 8
+    
+    #: Total tool length including shank
+    attr total_length = 50
+    
+    #: Tooth pitch (P/mm)
+    attr pitch = 0.8
+    
+    #: Tooth angle (degrees)
+    attr angle = 60
+
+    #: Radial thread depth
+    attr thread_depth = pitch*cos(radians(90-cutter.angle))
+
+    #: Used to calculate feed and speed
+    attr flutes: int = 6
+    
+    #: Tool profile
+    alias profile
+
+    #: Feed per tooth
+    #: Adjust this as needed based on the job and cutter material
+    #: https://sct-usa.com/technical-data/thread-mill-feed-and-speed-chart/
+    attr feed_per_tooth = 0.0003
+
+    #: Feed per rev is feed per tooth * number of flutes
+    feed_per_rev = feed_per_tooth * flutes
+
+    description = f"T{self.number} - {self.flutes} flute " \
+                  f"thread mill {round(self.diameter, 3)} dia x {self.pitch} pitch"
+    Cut:
+        material = 'steel'
+        Revol:
+            Face:
+                Polyline: profile:
+                    attr r1 = diameter/2
+                    attr r2 = diameter/2 - thread_depth
+                    attr r3 = neck_diameter/2
+                    attr r4 = shank_diameter/2
+                    closed = True
+                    points = [
+                        (0, 0, 0),
+                        (r2, 0),
+                        (r1, 0, pitch/2),
+                        (r2, 0, pitch),
+                        (r3, 0, 3/2*pitch),
+                        (r3, 0, length),
+                        (r3, 0, length),
+                        (r4, 0, length+(r4-r3)),
+                        (r4, 0, total_length),
+                        (0, 0, total_length),
+                    ]
+        Looper:
+            iterable = range(flutes)
+            Transform:
+                operations = [Rotate(angle=loop.index*2*pi/flutes)]
+                Wedge:
+                    direction = (0, -0.25, 1)
+                    position = (0, -dx-profile.r2/2, -1)
+                    dy = diameter
+                    dx = diameter/2
+                    itx = diameter/4
+                    dz = diameter
+
 
 enamldef Assembly(Part):
+    Axis:
+        pass
+    ThreadMill:
+        flutes = 6
+        angle = 60
+    
     TwistDrill:
+        position = (-20, 0)
         angle = 60
 
     ChamferMill:
