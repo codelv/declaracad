@@ -41,6 +41,51 @@ def expand_dict(p):
             yield p
 
 
+enamldef AnimationControl(Container):
+    """ Simulation must implement the following:
+
+    Parameters
+    ----------
+    play: method
+        Start the animation
+    pause: method
+        Stop the animation
+    goto: method(int, bool)
+        Goto the given frame. If the second variable is true interpret frame
+        as relative.
+    paused: bool
+        Whether the animation is running
+
+    """
+    background = 'white'
+    Label:
+        text = "Animation"
+    PushButton:
+        text = "Rewind"
+        clicked ::
+            sim = viewer.animation
+            if sim:
+                sim.goto(0)
+    PushButton:
+        text << "Resume" if viewer.animation and viewer.animation.paused else "Pause"
+        clicked :: toggle_animation_state()
+    PushButton:
+        text = "Back"
+        clicked ::
+            sim = viewer.animation
+            if sim:
+                sim.goto(-100, relative=True)
+    PushButton:
+        text = "Forward"
+        clicked ::
+            sim = viewer.animation
+            if sim:
+                sim.goto(100, relative=True)
+    PushButton:
+        text = "Hide"
+        clicked :: viewer.show_animation_controls = False
+
+
 enamldef ActionPopup(PopupView): popup:
     #foreground = 'white'
     #background = 'rgba(30, 30, 30, 0.85)'
@@ -93,13 +138,14 @@ enamldef NotificationPopup(PopupView):
             align = 'left'
 
 
-
 enamldef ModelViewer(OccViewer): viewer:
     attr p0 = None
     attr clipped_planes: dict = {} # Map axis to tuple of (lower, upper)
+    attr animation = None
     attr dimensions: list = []
     attr shapes: list = []
     attr show_console: bool = False
+    attr show_animation_controls: bool = False
     attr notification = None
     attr action_search: str = ""
     attr default_actions: list = [
@@ -132,7 +178,8 @@ enamldef ModelViewer(OccViewer): viewer:
         ViewerAction(name="Display radius dimension (dr)", action=keymap['d']['r']),
         ViewerAction(name="Display diameter dimension (dd)", action=keymap['d']['d']),
         ViewerAction(name="Display angle dimension (da)", action=keymap['d']['a']),
-        ViewerAction(name="Toggle consle", action=lambda: viewer.toggle_console()),
+        ViewerAction(name="Toggle console", action=lambda: viewer.toggle_console()),
+        ViewerAction(name="Toggle animation controls", action=lambda: viewer.toggle_animation()),
         ViewerAction(name="Units inch (ui)", action=lambda: setattr(viewer, 'display_units', 'in')),
         ViewerAction(name="Units mm (um)", action=lambda: setattr(viewer, 'display_units', 'mm')),
         ViewerAction(name="Units cm (uc)", action=lambda: setattr(viewer, 'display_units', 'cm')),
@@ -165,6 +212,11 @@ enamldef ModelViewer(OccViewer): viewer:
             'y': lambda: viewer.rotate_view(y=radians(90)),
             'z': lambda: viewer.rotate_view(z=radians(90)),
         },
+        't': {
+            's': lambda: viewer.toggle_animation(),
+            'p': lambda: viewer.toggle_animation_state(),
+            'c': lambda: viewer.toggle_console(),
+        }
     }
 
     func get_keymap():
@@ -235,6 +287,12 @@ enamldef ModelViewer(OccViewer): viewer:
         objects :: after_render(change)
     Include:
         objects << viewer.dimensions
+
+    Conditional:
+        condition << show_animation_controls
+        AnimationControl:
+            pass
+
     key_pressed ::
         key = change['value'][1].text()
         last_key = self.last_key
@@ -512,6 +570,17 @@ enamldef ModelViewer(OccViewer): viewer:
     func toggle_console():
         self.show_console = not self.show_console
 
+    func toggle_animation():
+        self.show_animation_controls = not self.show_animation_controls
+
+    func toggle_animation_state():
+        if not animation:
+            return
+        if animation.paused:
+            animation.resume()
+        else:
+            animation.pause()
+
     selection ::
         if selection and selection.selection:
             self.show_notification(message=describe_selection(selection))
@@ -787,3 +856,10 @@ enamldef ModelViewer(OccViewer): viewer:
             Action:
                 text = 'Clear display'
                 triggered :: viewer.clear_display()
+        Menu:
+            title = 'Animation'
+            Action:
+                text = 'Show animation controls'
+                checkable = True
+                checked := viewer.show_animation_controls
+

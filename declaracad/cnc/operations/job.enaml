@@ -121,6 +121,7 @@ enamldef Job(Part):
 enamldef JobSimulation(Part): simulation:
     attr job: Job
     attr rate = 0.2
+    attr paused: bool = False
     attr autostart: bool = True
     attr disabled: bool = False
     attr index: int = 0
@@ -128,6 +129,11 @@ enamldef JobSimulation(Part): simulation:
     attr current_tool: Part
 
     rendered ::
+        try:
+            # Attempt to assign the simulation
+            viewer.animation = self
+        except NameError:
+            pass
         if self.autostart:
             self.start()
 
@@ -143,6 +149,23 @@ enamldef JobSimulation(Part): simulation:
                     path = Topology.discretize(w, rate, method='abscissa')
                     frames.extend(path)
         self.frames = frames
+        timer.start()
+
+    func goto(frame: int, relative: bool = False):
+        if relative:
+            i = self.index + frame
+        else:
+            i = frame
+        self.index = max(0, min(len(frames), i))
+        if self.paused:
+            self.animate()
+
+    func pause():
+        self.paused = True
+        timer.stop()
+
+    func resume():
+        self.paused = False
         timer.start()
 
     func animate():
