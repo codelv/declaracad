@@ -10,7 +10,7 @@ Created on Nov 11, 2021
 @author: jrm
 """
 from math import pi, atan2
-from atom.api import Atom, Float, Instance, List
+from atom.api import Atom, Float, Instance, List, Value
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import Operation
 from declaracad.cnc.optimize import optimize_points
@@ -329,6 +329,7 @@ class PocketData(Atom):
     spiral_radius = Float(strict=False)
     end = Instance(Point)
     steps = List()
+    face = Value()
 
 
 enamldef PocketOperation(Operation): operation:
@@ -394,7 +395,7 @@ enamldef PocketOperation(Operation): operation:
         return (arc.FirstNode().Distance(), arc.SecondNode().Distance())
 
     func generate_pocket(face) -> PocketData:
-        data = PocketData()
+        data = PocketData(face=face)
 
         if bottom_clearance:
             transform = Transform(shape=face, position=(0, 0, bottom_clearance))
@@ -412,23 +413,35 @@ enamldef PocketOperation(Operation): operation:
             d1, d2 = get_distances(middle_path, edge)
             topo = Topology(shape=edge)
             umin, umax = topo.curve_bounds
-            slope = abs((d2 - d1)/(umax-umin))
+            du = umax - umin
+            slope = (d2 - d1)/du
             # Order is reversed??
             data.helix_start = topo.end_point + (0, 0, data.depth)
             data.spiral_start = topo.end_point
-            data.spiral_radius = max(d1, d2) - tool.diameter/2 - radial_clearance
+            dmin = min(d1, d2)
+            dmax = max(d1, d2)
+            data.spiral_radius = dmax - tool.diameter/2 - radial_clearance/2
             data.end = topo.start_point
+            tzero = None
             for curve, t in Topology.parametrize_by_length(edge, step_over):
+                if tzero is None:
+                    tzero = t
+                dt = t - tzero
+
                 pos, tangent = Topology.curve_value_at(curve, t, 1)
-                w = 2 * (d1 + slope * t)
-                d = w - tool.diameter - radial_clearance
+
+                w = 2 * (d1 + slope * dt)  - step_over*3/4
+                d = w - tool.diameter - 2*radial_clearance
                 if d <= 0:
                     continue
                 data.steps.insert(0, (pos, -tangent, d))
-            data.steps.pop(0) # Remove last
+            #if data.steps:
+            #    data.steps.pop(0) # Remove last
+
         return data
 
     func get_toolpath():
+
         results = []
         for face in self.pockets:
             results.append(generate_pocket(face))
@@ -505,27 +518,32 @@ enamldef PocketOperation(Operation): operation:
                 feedrate = plunge_feedrate
                 spindle_speed = plunge_spindle_speed
 
-            ArcSpiral: spiral:
-                color = 'purple'
-                position = data.spiral_start
-                start_angle = pi if climb else 0
-                clockwise = not climb
-                start_radius = helix_radius*3/4
-                end_radius = data.spiral_radius
-                max_step_over = operation.step_over/2
-                spindle_speed = operation.spindle_speed
-                feedrate = operation.feedrate
-                activated :: pocket_toolpath.last_point = position.offset(end_radius, (-1, 0, 0))
+            Conditional:
+                condition = data.spiral_radius > helix.radius
+                ArcSpiral: spiral:
+                    color = 'purple'
+                    position = data.spiral_start
+                    start_angle = pi if climb else 0
+                    clockwise = not climb
+                    start_radius = helix.radius
+                    end_radius = data.spiral_radius
+                    max_step_over = operation.step_over/2
+                    spindle_speed = operation.spindle_speed
+                    feedrate = operation.feedrate
+                    activated :: pocket_toolpath.last_point = position.offset(end_radius, (-1, 0, 0))
             Looper: looper:
                 iterable = loop.item.steps
                 attr is_last = loop.index + 1 == len(toolpath)
                 Polyline:
                     color = 'lime'
-                    line_style = 'dashed' if loop.index > 0 else 'solid'
+                    line_style = 'dashed'
                     points = [
                         last_point,
                         trochoid.start_point if loop.index > 0 else trochoid.wave_in.points[0]
                     ]
+                #Vertex:
+                #    color = 'pink'
+                #    position = loop.item[0]
                 Trochoid: trochoid:
                     width = loop_item[2]
                     tangent = loop.item[1]
@@ -537,6 +555,17 @@ enamldef PocketOperation(Operation): operation:
                     center_point = loop.item[0]
                     constructed :: pocket_toolpath.last_point = self.end_point
 
+            Polyline:
+                points = [
+                    last_point,
+                    offset_path.topology.start_point
+                ]
+
+            Offset: offset_path:
+                color = 'orange'
+                shape = loop.item.face
+                offset = -tool.diameter/2-radial_clearance/2
+                constructed :: pocket_toolpath.last_point = self.topology.end_point
 
             DisplayArrow: lift_arrow:
                 color = 'green'
@@ -552,4 +581,5 @@ enamldef PocketOperation(Operation): operation:
                 points = [
                     last_point,
                     lift_point,
-                ] + [start_point] if looper.is_last else []
+                ] + ([start_point] if looper.is_last else [])
+
