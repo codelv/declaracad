@@ -179,11 +179,14 @@ enamldef JobSimulation(Part): simulation:
                 self.current_tool.position = frame
         except IndexError:
             print("Simulation complete")
-            self.index = 0
             timer.stop()
+            self.index = 0
+            self.paused = True
         except Exception as e:
             print(f"Simulation error: {e}")
             timer.stop()
+            self.index = 0
+            self.paused = True
 
     Include:
         #destroy_old = False
