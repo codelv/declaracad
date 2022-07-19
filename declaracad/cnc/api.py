@@ -20,3 +20,6 @@ with enaml.imports():
     )
     from declaracad.cnc.operations.sidecut import SideCutOperation
     from declaracad.cnc.operations.slotting import SlottingOperation
+    from declaracad.cnc.operations.threading import (
+        ThreadingOperation, ThreadingData
+    )
