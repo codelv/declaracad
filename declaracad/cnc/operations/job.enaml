@@ -30,7 +30,7 @@ enamldef Job(Part):
     attr inches: bool = True
 
     #: Filename to write to
-    attr filename: str = f"{self.name}.nc"
+    attr filename: str = generate_filename()
 
     #: Mapping of tool to tool number
     attr tools: dict = {}
@@ -56,6 +56,11 @@ enamldef Job(Part):
         if self.inches:
             v = v / 25.4
         return round(v, self.precision)
+
+    func generate_filename():
+        if '.' not in self.name:
+            return f"{self.name}.nc"
+        return self.name
 
     func generate_job():
         """ Generate gcode """
