@@ -15,7 +15,8 @@ from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import Operation
 from declaracad.cnc.optimize import optimize_points
 from declaracad.occ.api import (
-    Arc, DisplayArrow, Point, Polyline, Part, MiddlePath, Topology, Vertex
+    Arc, DisplayArrow, Point, Polyline, Part, MiddlePath, Offset, Topology,
+    Wire, Vertex
 )
 from declaracad.occ.geom import coerce_point
 from .helix import ArcHelix
@@ -408,6 +409,7 @@ enamldef PocketOperation(Operation): operation:
         middle_path = MiddlePath(shapes=[face])
         middle_path.render()
 
+
         # TODO: Start with largest first
         for i, edge in enumerate(middle_path.topology.edges):
             d1, d2 = get_distances(middle_path, edge)
@@ -420,18 +422,19 @@ enamldef PocketOperation(Operation): operation:
             data.spiral_start = topo.end_point
             dmin = min(d1, d2)
             dmax = max(d1, d2)
-            data.spiral_radius = dmax - tool.diameter/2 - radial_clearance/2
+            data.spiral_radius = dmax - tool.diameter/2 - radial_clearance/2 - step_over/4
             data.end = topo.start_point
             tzero = None
+
             for curve, t in Topology.parametrize_by_length(edge, step_over):
                 if tzero is None:
                     tzero = t
+
                 dt = t - tzero
+                w = 2 * (d1 + slope * dt) - step_over
+                d = w - tool.diameter - 2* radial_clearance
 
                 pos, tangent = Topology.curve_value_at(curve, t, 1)
-
-                w = 2 * (d1 + slope * dt)  - step_over*3/4
-                d = w - tool.diameter - 2*radial_clearance
                 if d <= 0:
                     continue
                 data.steps.insert(0, (pos, -tangent, d))
@@ -556,16 +559,18 @@ enamldef PocketOperation(Operation): operation:
                     constructed :: pocket_toolpath.last_point = self.end_point
 
             Polyline:
+                color = 'lime'
                 points = [
                     last_point,
                     offset_path.topology.start_point
                 ]
 
-            Offset: offset_path:
+            Wire:
                 color = 'orange'
-                shape = loop.item.face
-                offset = -tool.diameter/2-radial_clearance/2
-                constructed :: pocket_toolpath.last_point = self.topology.end_point
+                Offset: offset_path:
+                    shape = loop.item.face
+                    offset = -tool.diameter/2-radial_clearance/2
+                    constructed :: pocket_toolpath.last_point = self.topology.end_point
 
             DisplayArrow: lift_arrow:
                 color = 'green'
@@ -582,4 +587,5 @@ enamldef PocketOperation(Operation): operation:
                     last_point,
                     lift_point,
                 ] + ([start_point] if looper.is_last else [])
+
 
