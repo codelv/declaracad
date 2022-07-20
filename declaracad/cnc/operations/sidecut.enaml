@@ -33,7 +33,6 @@ enamldef SideCutOperation(Operation): operation:
     #: Amount
     attr step_over = tool.diameter * 0.10
 
-
     #: Clearance added to the offset.
     #: A positive number will leave extra stock between any walls
     #: A negative number will make take more stock away from the walls
