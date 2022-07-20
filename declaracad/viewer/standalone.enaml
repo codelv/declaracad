@@ -10,10 +10,10 @@ import os
 import traceback
 from datetime import datetime
 from enaml.core.api import Looper, Conditional
-from enaml.layout.api import align, hbox
+from enaml.layout.api import align, vbox, hbox
 from enaml.widgets.api import (
     Container, Splitter, SplitItem, IPythonConsole, ProgressBar,
-    Label, CheckBox, DualSlider
+    Label, CheckBox, Slider, DualSlider, PushButton, PopupView
 )
 
 from declaracad.occ.api import load_model
@@ -58,6 +58,74 @@ enamldef ClippedPlaneRow(Container):
         high_value << int(high_plane.position[axis]*bounds[2])
         high_value :: set_position(high_plane, change['value']/bounds[2])
 
+
+enamldef AnimationControl(PopupView):
+    """ Simulation must implement the following:
+
+    Parameters
+    ----------
+    play: method
+        Start the animation
+    pause: method
+        Stop the animation
+    goto: method(int, bool)
+        Goto the given frame. If the second variable is true interpret frame
+        as relative.
+    paused: bool
+        Whether the animation is running
+
+    """
+    background = 'rgba(255, 255, 255, 0.5)'
+    window_type = 'tool_tip'
+    parent_anchor = (0.5, 0.9)
+    offset = (0, -30)
+    fade_in_duration = 200
+    fade_out_duration = 200
+    visible = True
+    Container:
+        constraints = [
+            vbox(
+                hbox(pb_rp, pb_rw, pb_play, pb_ff, pb_hide),
+                slider,
+            )
+        ]
+        PushButton: pb_rp:
+            tool_tip = "Go to start"
+            icon = load_icon('control_repeat')
+            clicked ::
+                sim = viewer.animation
+                if sim:
+                    sim.goto(0)
+        PushButton: pb_play:
+            attr paused << viewer.animation and viewer.animation.paused
+            tool_tip << "Play" if paused else "Pause"
+            icon << load_icon('control_play' if paused else 'control_pause')
+            clicked :: viewer.toggle_animation_state()
+        PushButton: pb_rw:
+            icon = load_icon('control_rewind')
+            tool_tip = "Rewind"
+            clicked ::
+                sim = viewer.animation
+                if sim:
+                    sim.goto(-100, relative=True)
+        PushButton: pb_ff:
+            icon = load_icon('control_fastforward')
+            tool_tip = "Fast forward"
+            clicked ::
+                sim = viewer.animation
+                if sim:
+                    sim.goto(100, relative=True)
+        PushButton: pb_hide:
+            tool_tip = "Hide animation controls"
+            icon = load_icon('control_stop')
+            clicked :: viewer.show_animation_controls = False
+        Slider: slider:
+            tick_position = 'no_ticks'
+            value << viewer.animation.index if viewer.animation else 0
+            value ::
+                if viewer.animation:
+                    viewer.animation.goto(value)
+            maximum << len(viewer.animation.frames) if viewer.animation else 100
 
 enamldef ViewerWindow(FramelessWindow): window:
     #: Window title
@@ -183,6 +251,10 @@ enamldef ViewerWindow(FramelessWindow): window:
                                 }
                             })
                             return km
+                        Conditional:
+                            condition << viewer.show_animation_controls
+                            AnimationControl:
+                                pass
 
             Conditional:
                 condition << viewer.show_console

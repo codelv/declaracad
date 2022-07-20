@@ -41,51 +41,6 @@ def expand_dict(p):
             yield p
 
 
-enamldef AnimationControl(Container):
-    """ Simulation must implement the following:
-
-    Parameters
-    ----------
-    play: method
-        Start the animation
-    pause: method
-        Stop the animation
-    goto: method(int, bool)
-        Goto the given frame. If the second variable is true interpret frame
-        as relative.
-    paused: bool
-        Whether the animation is running
-
-    """
-    background = 'white'
-    Label:
-        text = "Animation"
-    PushButton:
-        text = "Rewind"
-        clicked ::
-            sim = viewer.animation
-            if sim:
-                sim.goto(0)
-    PushButton:
-        text << "Resume" if viewer.animation and viewer.animation.paused else "Pause"
-        clicked :: toggle_animation_state()
-    PushButton:
-        text = "Back"
-        clicked ::
-            sim = viewer.animation
-            if sim:
-                sim.goto(-100, relative=True)
-    PushButton:
-        text = "Forward"
-        clicked ::
-            sim = viewer.animation
-            if sim:
-                sim.goto(100, relative=True)
-    PushButton:
-        text = "Hide"
-        clicked :: viewer.show_animation_controls = False
-
-
 enamldef ActionPopup(PopupView): popup:
     #foreground = 'white'
     #background = 'rgba(30, 30, 30, 0.85)'
@@ -213,8 +168,8 @@ enamldef ModelViewer(OccViewer): viewer:
             'z': lambda: viewer.rotate_view(z=radians(90)),
         },
         't': {
-            's': lambda: viewer.toggle_animation(),
-            'p': lambda: viewer.toggle_animation_state(),
+            'a': lambda: viewer.toggle_animation(),
+            's': lambda: viewer.toggle_animation_state(),
             'c': lambda: viewer.toggle_console(),
         }
     }
@@ -288,10 +243,6 @@ enamldef ModelViewer(OccViewer): viewer:
     Include:
         objects << viewer.dimensions
 
-    Conditional:
-        condition << show_animation_controls
-        AnimationControl:
-            pass
 
     key_pressed ::
         key = change['value'][1].text()
