@@ -14,7 +14,7 @@ from atom.api import Int, Float
 from declaracad.parts.display import Axis
 from declaracad.occ.api import (
     Looper, Transform, Part, Chamfer, Cylinder, Cut,
-    Revol, Polyline, Wedge, Rotate, Face
+    Revol, Polyline, Wedge, Rotate, Face, Fuse
 )
 from enaml.core.declarative import d_, d_func
 from typing import List as ListType
@@ -59,8 +59,10 @@ enamldef TwistDrill(Tool): drill:
 
     description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
                   f"twist drill {round(self.diameter, 3)} dia by {self.length} len"
+    material = 'steel'
     Chamfer:
-        material = 'steel'
+        material = parent.material
+        transparency = parent.transparency
         attr r = diameter/2*0.99
         attr d1 = r
         attr d2 = r*(pi/2-sin(radians(angle)))
@@ -97,8 +99,11 @@ enamldef EndMill(Tool): drill:
 
     description = f"T{self.number} - {self.flutes} flute " \
                   f"end mill {round(self.diameter, 3)} dia x {self.cut} cut"
+
+    material = 'steel'
     Cylinder:
-        material = 'steel'
+        material = parent.material
+        transparency = parent.transparency
         radius = diameter/2
         height = length
 
@@ -126,8 +131,10 @@ enamldef ChamferMill(Tool): drill:
 
     description = f"T{self.number} - {self.angle}° {self.flutes} flute " \
                   f"chamfer mill {round(self.diameter, 3)} dia by {self.length} len"
+    material = 'steel'
     Chamfer:
-        material = 'steel'
+        material = parent.material
+        transparency = parent.transparency
         attr r = diameter/2*0.99
         attr d1 = r
         attr d2 = r*(pi/2-sin(radians(angle/2)))
@@ -162,16 +169,17 @@ enamldef FaceMill(Tool): cutter:
 
     description = f"T{self.number} - {self.angle}° {self.inserts} cutter " \
                   f"face mill {round(self.diameter, 3)} dia"
-    Cylinder:
-        material = 'steel'
+    material = 'steel'
+    Fuse:
+        material = parent.material
         transparency = parent.transparency
-        radius = diameter/2
-        height = length
-    Cylinder:
-        material = 'steel'
-        radius = 6
-        position = (0, 0, length)
-        height = length
+        Cylinder:
+            radius = diameter/2
+            height = length
+        Cylinder:
+            radius = 6
+            position = (0, 0, length)
+            height = length
 
 
 enamldef ThreadMill(Tool): cutter:
@@ -218,8 +226,10 @@ enamldef ThreadMill(Tool): cutter:
 
     description = f"T{self.number} - {self.flutes} flute " \
                   f"thread mill {round(self.diameter, 3)} dia x {self.pitch} pitch"
+    material = 'steel'
     Cut:
-        material = 'steel'
+        material = parent.material
+        transparency = parent.transparency
         Revol:
             Face:
                 Polyline: profile:
