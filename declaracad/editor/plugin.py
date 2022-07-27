@@ -59,10 +59,7 @@ def create_editor_item(*args, **kwargs):
 
 
 def format_title(
-    docs: list["Document"],
-    doc: "Document",
-    path: str,
-    unsaved: bool
+    docs: list["Document"], doc: "Document", path: str, unsaved: bool
 ) -> str:
     """Attempt to format the title using the shortest unique name that
     does not conflict with any other opened documents.

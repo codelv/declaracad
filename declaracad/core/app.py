@@ -34,7 +34,6 @@ from declaracad.fea.impl import fea_factories
 from declaracad.occ.impl import occ_factories
 from declaracad.viewer.qt import qt_factories
 
-
 asyncio.set_event_loop_policy(QEventLoopPolicy())
 
 
@@ -86,14 +85,14 @@ class Application(QtApplication):
                 await task
             except Empty:
                 await asyncio.sleep(0.1)
-            #except Exception as e:
+            # except Exception as e:
             #    log.exception(e)
 
     def on_async_exception(self, loop, context):
         """Exception handler that ignores"""
         # HACK: Ignore this error, Qt works, shut up
-        #msg = context.get("exception")
-        #if "cannot enter context" in str(msg):
+        # msg = context.get("exception")
+        # if "cannot enter context" in str(msg):
         #    return
         return loop.default_exception_handler(context)
 

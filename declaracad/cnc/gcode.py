@@ -162,10 +162,7 @@ class Movement(Atom):
 
 
 def convert(
-    v: float,
-    scale: float = 1,
-    precision: Optional[int] = None,
-    units: str = "mm"
+    v: float, scale: float = 1, precision: Optional[int] = None, units: str = "mm"
 ):
     """Convert a value for writing to gcode
 
@@ -186,7 +183,7 @@ def convert(
 
     """
     if units == "in":
-        scale = scale * 1/25.4
+        scale = scale * 1 / 25.4
     if precision == 0:
         return int(v * scale)
     elif precision is None:
@@ -194,11 +191,7 @@ def convert(
     return round(v * scale, precision)
 
 
-def save_to_file(
-    filename: str,
-    movements: list[Movement],
-    device
-):
+def save_to_file(filename: str, movements: list[Movement], device):
     """Write to a file
 
     Parameters
