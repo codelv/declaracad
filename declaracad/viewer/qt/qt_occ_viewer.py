@@ -85,10 +85,8 @@ elif sys.platform == "darwin":
 
     V3d_Window = Cocoa_Window
 else:
-    if "7.2" in OCCT_VERSION or OCCT_VERSION.startswith("0"):
-        from OCCT.XwWindow import Xw_Window
-    else:
-        from OCCT.Xw import Xw_Window
+    from OCCT.Xw import Xw_Window
+
     V3d_Window = Xw_Window
 
 
