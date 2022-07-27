@@ -9,7 +9,9 @@ Created on Sep 27, 2016
 
 @author: jrm
 """
-from atom.api import Dict, Instance, Int, Subclass, set_default
+import warnings
+
+from atom.api import Dict, Instance, Int, Str, Subclass, set_default
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepAlgoAPI import (
     BRepAlgoAPI_BooleanOperation,
@@ -31,6 +33,12 @@ from OCCT.TopoDS import (
 )
 from OCCT.TopTools import TopTools_ListOfShape
 
+try:
+    from OCCT.Voxel import Voxel_BooleanOperation
+except ImportError as e:
+    warnings.warn(f"{e}")
+    Voxel_BooleanOperation = None
+
 from declaracad.core.utils import log
 from declaracad.occ.algo import (
     ProxyBooleanOperation,
@@ -41,6 +49,7 @@ from declaracad.occ.algo import (
     ProxyOperation,
     ProxySew,
 )
+from declaracad.occ.voxel import Voxel
 
 from .occ_shape import OccDependentShape, OccShape, Topology, coerce_axis, coerce_shape
 
@@ -57,11 +66,15 @@ class OccOperation(OccDependentShape, ProxyOperation):
 class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
     """Base class for a boolean shape operation."""
 
+    shape = Instance(TopoDS_Shape)
     op = Subclass(BRepAlgoAPI_BooleanOperation)
+    op_name = Str()
 
     def update_shape(self, change=None):
-        op = self.op()
         d = self.declaration
+
+        if isinstance(d.parent, Voxel):
+            return self.update_voxel()
 
         shapes = []
         unify = d.unify
@@ -110,11 +123,56 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
 
         self.shape = Topology.cast_shape(shape)
 
+    def update_voxel(self):
+        if not self.op_name:
+            raise RuntimeError(f"Cannot use {self} on voxels")
+        f = getattr(Voxel_BooleanOperation(), self.op_name)
+        d = self.declaration.parent
+        voxel = d.proxy.voxel
+        if voxel is None:
+            d.proxy.update_shape()
+            voxel = d.proxy.voxel
+        shape = d.proxy.shape  # Triggers voxel creation
+
+        for other_shape in self.child_shapes():
+            other_voxel = Voxel(
+                source=other_shape,
+                splits=d.splits,
+                mode=d.mode,
+                bounds=d.bounds,
+                deflection=d.deflection,
+            )
+            other_voxel.render()
+            if not f(voxel, other_voxel.proxy.voxel):
+                raise RuntimeError("Could not perform operation. Size mismatch?")
+        self.shape = shape
+
     def set_parallel(self, parallel):
         self.update_shape()
 
     def set_disabled(self, disabled):
         self.update_shape()
+
+    def child_added(self, child):
+        d = self.declaration.parent
+        viewer = self.viewer
+        if isinstance(d, Voxel) and viewer:
+            f = getattr(Voxel_BooleanOperation(), self.op_name)
+            voxel = d.proxy.voxel
+            other_voxel = Voxel(
+                source=child.shape,
+                splits=d.splits,
+                mode=d.mode,
+                bounds=d.bounds,
+                deflection=d.deflection,
+            )
+            other_voxel.render()
+            if not f(voxel, other_voxel.proxy.voxel):
+                raise RuntimeError("Could not perform operation. Size mismatch?")
+            d.proxy.ais_shape.Redisplay()
+        else:
+            super().child_added(child)
+
 
 class OccCommon(OccBooleanOperation, ProxyCommon):
     """Common of all the child shapes together."""
@@ -133,6 +191,7 @@ class OccCut(OccBooleanOperation, ProxyCut):
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_algo_a_p_i___cut.html"
     )
+    op_name = "Cut"
     op = set_default(BRepAlgoAPI_Cut)
 
 
@@ -143,6 +202,7 @@ class OccFuse(OccBooleanOperation, ProxyFuse):
         "https://dev.opencascade.org/doc/overview/html/"
         "occt_user_guides__boolean_operations.html#occt_algorithms_7"
     )
+    op_name = "Fuse"
     op = set_default(BRepAlgoAPI_Fuse)
 
 

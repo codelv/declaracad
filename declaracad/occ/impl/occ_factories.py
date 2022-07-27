@@ -306,6 +306,12 @@ def occ_vertex_factory():
     return OccVertex
 
 
+def occ_voxel_factory():
+    from .occ_voxel import OccVoxel
+
+    return OccVoxel
+
+
 def occ_wedge_factory():
     from .occ_wedge import OccWedge
 
@@ -441,6 +447,8 @@ OCC_FACTORIES = {
     "DisplayPlane": occ_display_plane_factory,
     #: Mesh
     "Mesh": occ_mesh_factory,
+    #: Voxel
+    "Voxel": occ_voxel_factory,
 }
 
 #: Install it

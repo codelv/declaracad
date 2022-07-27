@@ -95,6 +95,7 @@ from .shape import (
     Wedge,
 )
 from .solver import Solver
+from .voxel import Voxel
 
 Loft = ThruSections
 Sweep = Pipe

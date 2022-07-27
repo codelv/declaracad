@@ -1,0 +1,49 @@
+# Created in DeclaraCAD
+from declaracad.parts.display import Axis
+from declaracad.occ.api import *
+from declaracad.cnc.api import ChamferMill
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    ChamferMill: cutter:
+        pass
+    Voxel:
+        color = 'grey'
+        mode = 'bool'
+        deflection = 0.1
+        splits = (100, 100, 10)
+        bounds = [(0, 0, 0), splits]
+        #Box: s1:
+        #    position = (0, 0, 250)
+        #    radius = 250
+        Cut: cut:
+            #display = False
+            Looper: 
+                iterable << [cutter.position]
+                Transform:
+                    position = cutter.position
+                    shape = cutter
+                
+
+           #ChamferMill:
+           #    pass
+    Timer: timer:
+        interval = 16
+        activated :: timer.start()
+        timeout :: move()
+            
+    func move():
+        if cutter.x > 100:
+            timer.stop()
+        print(cutter.position)
+        cutter.position += (1, 1, 0)
+        
+        
+    #Transform:
+        #transparency = 0.8
+        #shape = s1
+    #Transform:
+        #transparency = 0.8
+        #shape = b1
+        
