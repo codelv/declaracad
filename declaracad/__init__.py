@@ -184,6 +184,7 @@ def main():
     profile = os.environ.get("DECLARACAD_CPROFILE")
     if profile:
         import cProfile
+
         pr = cProfile.Profile()
         pr.enable()
 

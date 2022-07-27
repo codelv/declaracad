@@ -4,8 +4,12 @@ from declaracad.cnc.operation import Operation
 
 with enaml.imports():
     from declaracad.cnc.cutters import (
-        ChamferMill, EndMill, FaceMill, Tool,
-        TwistDrill, ThreadMill
+        ChamferMill,
+        EndMill,
+        FaceMill,
+        ThreadMill,
+        Tool,
+        TwistDrill,
     )
     from declaracad.cnc.operations.chamfer import ChamferOperation
     from declaracad.cnc.operations.contour import ContourOperation
@@ -20,6 +24,4 @@ with enaml.imports():
     )
     from declaracad.cnc.operations.sidecut import SideCutOperation
     from declaracad.cnc.operations.slotting import SlottingOperation
-    from declaracad.cnc.operations.threading import (
-        ThreadingOperation, ThreadingData
-    )
+    from declaracad.cnc.operations.threading import ThreadingData, ThreadingOperation
