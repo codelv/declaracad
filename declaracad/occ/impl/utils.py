@@ -6,6 +6,7 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+from enaml.colors import Color
 from OCCT import Graphic3d
 from OCCT.Graphic3d import (
     Graphic3d_BSDF,
@@ -17,11 +18,13 @@ from OCCT.Graphic3d import (
 )
 from OCCT.Quantity import Quantity_Color, Quantity_TOC_RGB
 
+from declaracad.occ.materials import Fresnel, Material
+
 OCC_COLOR_CACHE: dict[int, Quantity_Color] = {}
 OCC_MATERIAL_CACHE: dict[str, Graphic3d_MaterialAspect] = {}
 
 
-def color_to_quantity_color(color):
+def color_to_quantity_color(color: Color) -> Quantity_Color:
     """Convert an enaml color to an Quantity_Color. The result is cached.
 
     Parameters
@@ -45,7 +48,7 @@ def color_to_quantity_color(color):
     return result
 
 
-def fresnel_to_g3d_fresnel(fresnel):
+def fresnel_to_g3d_fresnel(fresnel: Fresnel) -> Graphic3d_Fresnel:
     """Create a Graphic3d_Fresnel from the declaracad Fresnel definition
 
     Parameters
@@ -72,7 +75,7 @@ def fresnel_to_g3d_fresnel(fresnel):
     return CreateFresnel(*args)
 
 
-def create_pbr_material(material):
+def create_pbr_material(material: Material) -> Graphic3d_PBRMaterial:
     """Create a Graphic3d_PBRMaterial from the declaracad Material definition
 
     Parameters
@@ -131,7 +134,7 @@ def create_pbr_material(material):
     return mat
 
 
-def material_to_material_aspect(material):
+def material_to_material_aspect(material: Material) -> Graphic3d_MaterialAspect:
     """Convert a material name to a Graphic3d material
 
     Parameters
@@ -141,7 +144,7 @@ def material_to_material_aspect(material):
 
     Returns
     -------
-    result: Graphic3d_MaterialAspect or None
+    result: Graphic3d_MaterialAspect
         The material
 
     """
