@@ -29,6 +29,7 @@ requirements = [
     #'PyQtWebEngine',
     'service_identity',
     'ezdxf',
+    'pdf4py',
 ]
 
 
