@@ -77,6 +77,6 @@ class Voxel(Shape):
     #: Fill value
     fill = d_(Int(1))
 
-    @observe("source", "deflection", "domain", "splits", "threads", "mode")
+    @observe("source", "deflection", "splits", "threads", "mode")
     def _update_proxy(self, change):
         super()._update_proxy(change)

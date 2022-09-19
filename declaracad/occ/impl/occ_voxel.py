@@ -100,7 +100,7 @@ class OccVoxel(OccDependentShape, ProxyVoxel):
 
         if shape is None:
             shape = BRepPrimAPI_MakeBox(start.proxy, end.proxy).Shape()
-        elif d.fill:
+        if d.fill:
             # Must clip or fill does not work
             bbox = BRepPrimAPI_MakeBox(start.proxy, end.proxy).Shape()
             shape = BRepAlgoAPI_Common(bbox, shape).Shape()

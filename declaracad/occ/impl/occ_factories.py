@@ -174,6 +174,12 @@ def occ_part_factory():
     return OccPart
 
 
+def occ_pdf_factory():
+    from .occ_pdf import OccPdf
+
+    return OccPdf
+
+
 def occ_pipe_factory():
     from .occ_pipe import OccPipe
 
@@ -425,6 +431,7 @@ OCC_FACTORIES = {
     "MiddlePath": occ_middle_path_factory,
     "Offset": occ_offset_factory,
     "Parabola": occ_parabola_factory,
+    "Pdf": occ_pdf_factory,
     "Plane": occ_plane_factory,
     "Polyline": occ_polyline_factory,
     "Circuit": occ_circuit_factory,

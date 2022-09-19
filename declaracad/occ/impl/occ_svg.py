@@ -771,8 +771,7 @@ class OccSvg(OccShape, ProxySvg):
         builder = BRep_Builder()
         shape = TopoDS_Compound()
         builder.MakeCompound(shape)
-        shapes = root.create_shape()
-        for s in shapes:
+        for s in root.create_shape():
             builder.Add(shape, s)
 
         # Apply viewport scale

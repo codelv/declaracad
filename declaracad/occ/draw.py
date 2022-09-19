@@ -256,6 +256,26 @@ class ProxySvg(ProxyWire):
         raise NotImplementedError
 
 
+class ProxyPdf(ProxyWire):
+    #: A reference to the shape declaration.
+    declaration = ForwardTyped(lambda: Pdf)
+
+    def set_source(self, source):
+        raise NotImplementedError
+
+    def set_mirror(self, mirror):
+        raise NotImplementedError
+
+    def set_fill_mode(self, mode):
+        raise NotImplementedError
+
+    def set_center(self, center):
+        raise NotImplementedError
+
+    def set_scale(self, scale):
+        raise NotImplementedError
+
+
 class ProxyMiddlePath(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: MiddlePath)
@@ -1088,7 +1108,7 @@ class Text(Shape):
 
 
 class Svg(Wire):
-    """Creates a wire from an SVG document.
+    """Creates a wire from a SVG document.
 
     Attributes
     ----------
@@ -1119,6 +1139,47 @@ class Svg(Wire):
 
     #: Scale. Use this to convert units
     scale = d_(Float(1, strict=False))
+
+    #: Whether to create faces from nodes
+    fill_mode = d_(Enum("auto", "always", "never"))
+
+    @observe("source", "fill_mode", "mirror", "center", "scale")
+    def _update_proxy(self, change):
+        super()._update_proxy(change)
+
+
+class Pdf(Wire):
+    """Creates a wire from a PDF document.
+
+    Attributes
+    ----------
+
+    source: String
+        Path or pdf to parse
+
+    Examples
+    --------
+
+    Svg:
+        source = "path/to/file.pdf"
+        position = (10, 100, 0)
+
+    """
+
+    #: Proxy shape
+    proxy = Typed(ProxyPdf)
+
+    #: Source file or text
+    source = d_(Str())
+
+    #: Mirror y-axis
+    mirror = d_(Bool(False))
+
+    #: Automatically shift to center
+    center = d_(Bool(False))
+
+    #: Scale. Use this to convert units
+    scale = d_(Float(25.4 / 72.0, strict=False))
 
     #: Whether to create faces from nodes
     fill_mode = d_(Enum("auto", "always", "never"))

@@ -57,6 +57,7 @@ from .draw import (
     Line,
     MiddlePath,
     Parabola,
+    Pdf,
     Plane,
     Polygon,
     Polyline,

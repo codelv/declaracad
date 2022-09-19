@@ -1,0 +1,13 @@
+import os
+from enaml.core.api import Looper
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+
+STENCIL_PDF = os.path.join(os.path.dirname(__file__), "stencil.pdf")
+
+enamldef Assembly(Part):
+    Axis:
+        color = 'black' # Show axis
+    Pdf:
+        source = STENCIL_PDF
+
