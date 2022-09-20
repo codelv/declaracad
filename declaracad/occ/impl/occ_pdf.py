@@ -12,17 +12,21 @@ Created on Sep 19, 2022
 import io
 import os
 import warnings
+from math import pi
 from typing import Optional
 
 from atom.api import Instance, Value, set_default
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakeFace,
     BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_Transform,
 )
-from OCCT.Geom import Geom_BezierCurve
-from OCCT.gp import gp_Ax2, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
+from OCCT.Geom import Geom_BezierCurve, Geom_TrimmedCurve, Geom_Line
+from OCCT.GeomAPI import GeomAPI_ExtremaCurveCurve
+from OCCT.GC import GC_MakeArcOfCircle
+from OCCT.gp import gp_Ax2, gp_Dir, gp_Circ, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.TColgp import TColgp_Array1OfPnt
 from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape, TopoDS_Wire
 
@@ -69,7 +73,18 @@ CLOSE_CMDS = ("h", "s", "b", "b*")
 ENDPATH_CMDS = ("h", "s", "S", "f", "b", "b*")
 
 
-def make_rect(x, y, w, h) -> BRepBuilderAPI_MakeWire:
+def is_valid_bezier(pts: TColgp_Array1OfPnt, tol=1e-6) -> bool:
+    """ Check if the bezier control points are all valid the same
+
+    """
+    return not all(
+        pts.Value(i).IsEqual(pts.Value(i+1), tol)
+        for i in range(1, pts.Size())
+    )
+
+
+def make_rect(x, y, w, h) -> tuple[gp_Pnt, BRepBuilderAPI_MakeWire]:
+    """ Create a wire rectangle. """
     c0 = gp_Pnt(x, y)
     c1 = gp_Pnt(x + w, y)
     c2 = gp_Pnt(x + w, y + h)
@@ -81,6 +96,47 @@ def make_rect(x, y, w, h) -> BRepBuilderAPI_MakeWire:
         BRepBuilderAPI_MakeEdge(c3, c0).Edge(),
     )
     return c0, path
+
+
+def make_arc(pts: TColgp_Array1OfPnt, tol=1e-6) -> Optional[Geom_TrimmedCurve]:
+    """ Check if the given bezier params form a circular arc.
+
+    Returns
+    ------
+    curve: Arc or None
+
+    """
+    if pts.Size() != 4:
+        return None
+    A = pts.Value(1)
+    B = pts.Value(2)
+    C = pts.Value(3)
+    D = pts.Value(4)
+    AB = gp_Vec(A, B)
+    DC = gp_Vec(D, C)
+    # Check that control point distances are equal
+    if abs(AB.Magnitude() - DC.Magnitude()) > tol:
+        return None  # Not an arc
+
+    # Control point angles must be same
+    AD = gp_Vec(A, D)
+    if abs(AD.Angle(AB) - AD.Angle(DC)) > tol:
+        return None  # Not an arc
+
+    # Control point angle must be from 180 to 90 deg
+    if AB.Angle(DC) - pi/2 < pi/2:
+        return None  # Not an arc
+
+    # Intersect lines perpendicular to control points to find center
+    AZ = gp_Vec(A, gp_Pnt(A.X(), A.Y(), 1))
+    AO = Geom_Line(A, AZ.Crossed(AB))
+
+    DZ = gp_Vec(D, gp_Pnt(D.X(), D.Y(), 1))
+    DO = Geom_Line(D, DZ.Crossed())
+    O, _ = GeomAPI_ExtremaCurveCurve(AO, DO).Points(1)
+    radius = O.Distance(A)
+    circle = gp_Circ(gp_Ax2(O, gp_Pnt(0, 0, 1)), radius)
+    return GC_MakeArcOfCircle(circle, A, B).Value()
 
 
 class OccPdf(OccShape, ProxyPdf):
@@ -109,7 +165,7 @@ class OccPdf(OccShape, ProxyPdf):
             self.f = None
 
         if os.path.exists(os.path.expanduser(d.source)):
-            f = self.f = open(d.source, "rb")
+            f = self.f = open(os.path.expanduser(d.source), "rb")
         else:
             f = self.f = io.BytesIO()
             f.write(d.source)
@@ -164,11 +220,16 @@ class OccPdf(OccShape, ProxyPdf):
     def set_center(self, center):
         self.create_shape()
 
+    def fill_shape(self, wire):
+        fill_mode = self.declaration.fill_mode
+        if fill_mode == "always" or (fill_mode == "auto" and wire.Closed()):
+            return BRepBuilderAPI_MakeFace(wire).Face()
+        return wire
+
     def extract_shapes(self, doc, page):
         """Parse shapes from the pdf page"""
         assert page.get("Type", "Type") == "Page"
         media_box = page["MediaBox"]
-        log.debug(f"pdf media box: {media_box}")
         contents = doc.parse_reference(page["Contents"])
         data = contents.stream()
         path: Optional[BRepBuilderAPI_MakeWire] = None
@@ -185,6 +246,7 @@ class OccPdf(OccShape, ProxyPdf):
                 params.append(token)
                 continue
             cmd = token.value
+            #log.debug(f"pdf command: {cmd} {params}")
             if cmd == "q":
                 stack.append(ctm)
                 ctm = gp_Trsf().Multiplied(ctm)
@@ -219,7 +281,8 @@ class OccPdf(OccShape, ProxyPdf):
             elif cmd == "re":
                 assert path is None
                 last_pnt, path = make_rect(*params)
-                yield BRepBuilderAPI_Transform(path.Wire(), ctm).Shape()
+                shape = self.fill_shape(path.Wire())
+                yield BRepBuilderAPI_Transform(shape, ctm).Shape()
                 path = None
             elif cmd in "l":
                 # Line to
@@ -236,8 +299,13 @@ class OccPdf(OccShape, ProxyPdf):
                 pts.SetValue(3, gp_Pnt(params[2], params[3], 0))
                 last_pnt = gp_Pnt(params[4], params[5], 0)
                 pts.SetValue(4, last_pnt)
-                curve = Geom_BezierCurve(pts)
-                path.Add(BRepBuilderAPI_MakeEdge(curve).Edge())
+                if is_valid_bezier(pts):
+                    #curve = make_arc(pts)
+                    #if curve is None:
+                    curve = Geom_BezierCurve(pts)
+                    path.Add(BRepBuilderAPI_MakeEdge(curve).Edge())
+                else:
+                    log.warning(f"pdf command: {cmd} {params} is invalid")
             elif cmd in ("v", "y"):
                 # Quad to
                 pts = TColgp_Array1OfPnt(1, 3)
@@ -245,15 +313,19 @@ class OccPdf(OccShape, ProxyPdf):
                 pts.SetValue(2, gp_Pnt(params[0], params[1], 0))
                 last_pnt = gp_Pnt(params[2], params[3], 0)
                 pts.SetValue(3, last_pnt)
-                curve = Geom_BezierCurve(pts)
-                path.Add(BRepBuilderAPI_MakeEdge(curve).Edge())
+                if is_valid_bezier(pts):
+                    curve = Geom_BezierCurve(pts)
+                    path.Add(BRepBuilderAPI_MakeEdge(curve).Edge())
+                else:
+                    log.warning(f"pdf command: {cmd} {params} is invalid")
             elif cmd == "n":
                 path = None
             elif cmd in ENDPATH_CMDS:
                 if path is not None:
                     if cmd in CLOSE_CMDS and not last_pnt.IsEqual(start_pnt, tol):
                         path.Add(BRepBuilderAPI_MakeEdge(last_pnt, start_pnt).Edge())
-                    yield BRepBuilderAPI_Transform(path.Wire(), ctm).Shape()
+                    shape = self.fill_shape(path.Wire())
+                    yield BRepBuilderAPI_Transform(shape, ctm).Shape()
                     path = None
                     start_pnt = None
             else:
