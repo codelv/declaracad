@@ -78,6 +78,7 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
 
         shapes = []
         unify = d.unify
+        fix = d.fix
         if d.shape1 and d.shape2:
             shapes = [coerce_shape(d.shape1), coerce_shape(d.shape2)]
         else:
@@ -98,6 +99,10 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
 
             tool_list = TopTools_ListOfShape()
             for s in other_shapes:
+                if fix:
+                    fixer = ShapeFix_Shape(s)
+                    if fixer.Perform():
+                        s = fixer.Shape()
                 tool_list.Append(s)
 
             builder.SetArguments(shape_list)
@@ -115,8 +120,12 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
                 if unify:
                     builder.SimplifyResult()
                 shape = builder.Shape()
+                if fix:
+                    fixer = ShapeFix_Shape(shape)
+                    if fixer.Perform():
+                        shape = fixer.Shape()
 
-        if d.fix:
+        if fix:
             fixer = ShapeFix_Shape(shape)
             if fixer.Perform():
                 shape = fixer.Shape()
