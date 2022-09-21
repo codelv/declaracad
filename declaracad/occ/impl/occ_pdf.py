@@ -98,47 +98,6 @@ def make_rect(x, y, w, h) -> tuple[gp_Pnt, BRepBuilderAPI_MakeWire]:
     return c0, path
 
 
-def make_arc(pts: TColgp_Array1OfPnt, tol=1e-6) -> Optional[Geom_TrimmedCurve]:
-    """ Check if the given bezier params form a circular arc.
-
-    Returns
-    ------
-    curve: Arc or None
-
-    """
-    if pts.Size() != 4:
-        return None
-    A = pts.Value(1)
-    B = pts.Value(2)
-    C = pts.Value(3)
-    D = pts.Value(4)
-    AB = gp_Vec(A, B)
-    DC = gp_Vec(D, C)
-    # Check that control point distances are equal
-    if abs(AB.Magnitude() - DC.Magnitude()) > tol:
-        return None  # Not an arc
-
-    # Control point angles must be same
-    AD = gp_Vec(A, D)
-    if abs(AD.Angle(AB) - AD.Angle(DC)) > tol:
-        return None  # Not an arc
-
-    # Control point angle must be from 180 to 90 deg
-    if AB.Angle(DC) - pi/2 < pi/2:
-        return None  # Not an arc
-
-    # Intersect lines perpendicular to control points to find center
-    AZ = gp_Vec(A, gp_Pnt(A.X(), A.Y(), 1))
-    AO = Geom_Line(A, AZ.Crossed(AB))
-
-    DZ = gp_Vec(D, gp_Pnt(D.X(), D.Y(), 1))
-    DO = Geom_Line(D, DZ.Crossed())
-    O, _ = GeomAPI_ExtremaCurveCurve(AO, DO).Points(1)
-    radius = O.Distance(A)
-    circle = gp_Circ(gp_Ax2(O, gp_Pnt(0, 0, 1)), radius)
-    return GC_MakeArcOfCircle(circle, A, B).Value()
-
-
 class OccPdf(OccShape, ProxyPdf):
     #: Update the class reference
     reference = set_default(
@@ -246,7 +205,7 @@ class OccPdf(OccShape, ProxyPdf):
                 params.append(token)
                 continue
             cmd = token.value
-            #log.debug(f"pdf command: {cmd} {params}")
+            # log.debug(f"pdf command: {cmd} {params}")
             if cmd == "q":
                 stack.append(ctm)
                 ctm = gp_Trsf().Multiplied(ctm)
@@ -278,6 +237,7 @@ class OccPdf(OccShape, ProxyPdf):
                 path = BRepBuilderAPI_MakeWire()
                 x, y = params
                 last_pnt = start_pnt = gp_Pnt(x, y, 0)
+                n = 0
             elif cmd == "re":
                 assert path is None
                 last_pnt, path = make_rect(*params)
@@ -291,8 +251,10 @@ class OccPdf(OccShape, ProxyPdf):
                 if not last_pnt.IsEqual(pnt, tol):
                     path.Add(BRepBuilderAPI_MakeEdge(last_pnt, pnt).Edge())
                 last_pnt = pnt
+
             elif cmd == "c":
                 # Cubic to
+                n += 1
                 pts = TColgp_Array1OfPnt(1, 4)
                 pts.SetValue(1, last_pnt)
                 pts.SetValue(2, gp_Pnt(params[0], params[1], 0))
@@ -300,8 +262,6 @@ class OccPdf(OccShape, ProxyPdf):
                 last_pnt = gp_Pnt(params[4], params[5], 0)
                 pts.SetValue(4, last_pnt)
                 if is_valid_bezier(pts):
-                    #curve = make_arc(pts)
-                    #if curve is None:
                     curve = Geom_BezierCurve(pts)
                     path.Add(BRepBuilderAPI_MakeEdge(curve).Edge())
                 else:
