@@ -12,7 +12,7 @@ tests:
     # Activate env
     - source activate declaracad
     - conda info
-    - conda install -y mesa-libgl-devel-cos6-x86_64
+    - conda install -y mesa-libgl-devel-cos6-x86_64 libxkbcommon
 
     # Install declaracad
     - pip install -e .
