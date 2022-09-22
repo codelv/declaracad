@@ -1,0 +1,56 @@
+"""
+Copyright (c) 2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Created on Sept 20, 2022
+
+@author: jrm
+"""
+from declaracad.occ.api import Cylinder, Transform, Loft, TrimmedCurve, Line, Wire
+
+
+def make_cylinder_surface(radius):
+    cylinder = Cylinder(radius=radius)
+    cylinder.render()
+    return cylinder.topology.faces[0]
+
+
+enamldef Threads(Transform):
+    # Height of the threads
+    attr height: float = 10.0
+
+    #: Thread radius
+    attr inner_radius: float = 12.0
+    attr outer_radius: float = inner_radius+2*pitch
+
+    attr pitch = 0.5
+    attr num_threads = 10
+
+    Loft:
+        ruled = True
+        Wire: w1:
+            # Note: When a surface is given on a curve  the shape is converted to 2d
+            # the wire automatically converts it back to 3d
+            TrimmedCurve: c1:
+                surface = make_cylinder_surface(inner_radius)
+                v = num_threads*2*pi
+                Line: e1:
+                    position = (0, pitch/2, 0)
+                    direction = (2*pi, pitch, 0)
+        Wire:
+            TrimmedCurve: c2:
+                surface = make_cylinder_surface(outer_radius)
+                v = c1.v
+                Line: e2:
+                    position = (e1.x, 0, e1.z)
+                    direction = e1.direction
+        Wire:
+            TrimmedCurve: c3:
+                surface = c1.surface
+                v = c1.v
+                Line: e3:
+                    position = (e1.x, -pitch/2, e1.z)
+                    direction = e1.direction

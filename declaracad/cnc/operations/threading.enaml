@@ -1,0 +1,255 @@
+"""
+Copyright (c) 2022, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+from math import pi, radians, ceil
+from atom.api import Atom, Instance, Float, Bool
+from enaml.core.api import Looper
+from declaracad.occ.api import (
+    Arc, DisplayArrow, Part, Point, Polyline, Topology, Vertex
+)
+from declaracad.cnc.operation import Tool, Operation
+from .helix import ArcHelix
+
+
+class ThreadingData(Atom):
+    bottom_point = Instance(Point)
+    radius = Float()
+    angle = Float()
+    depth = Float()
+    reverse = Bool()
+    outside = Bool()
+
+
+enamldef ThreadingOperation(Operation): operation:
+    """ Generates a thread milling operation for the given set of holes.
+
+    The helix is determined using the bottom of the hole and a provided depth.
+
+    """
+    #: G-Code Heading
+    operation_type = f"Thread milling {' ' + name if name else ''}"
+
+    #: List of cylinder faces
+    attr holes: list = []
+
+    #: Clearance added to the offset.
+    #: A positive number will leave extra stock between any walls
+    #: A negative number will make take more stock away from the walls
+    attr radial_clearance = 0
+
+    #: Clearance added to the bottom of the hole
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom
+    attr bottom_clearance = tool.pitch/2
+
+    # --------------------------------------------------------------------------
+    # Speed and feed
+    # --------------------------------------------------------------------------
+    #: Slowdown factor
+    attr slowdown_factor = 0.6
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute
+    spindle_speed = round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+
+    #: Feedrate calculation
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+    attr last_point = start_point
+    attr data = generate_data()
+
+    func get_center(hole):
+        """ Find center position of a hole
+        """
+        if isinstance(hole, Point):
+            return hole
+        elif Topology.is_cylinder(hole):
+            s = Topology.cast_surface(hole)
+            d = 2 * s.Radius()
+        elif Topology.is_circle(hole):
+            s = Topology.cast_curve(hole)
+            d = 2 * s.Radius()
+        else:
+            raise ValueError(f"Cannot get center of {hole}")
+        # Check tool diameter
+        if tool.diameter > d:
+            raise ValueError(
+                f"Tool {tool.description} is too large for "
+                f"hole of diameter {round(d, 3)}. Change the tool diameter "
+                f"or just use the hole position to ignore this error.")
+        return Point(s.Location())
+
+    func generate_data():
+        tool_radius = tool.diameter/2
+
+
+        threading_data = []
+        for hole in self.holes:
+            if isinstance(hole, ThreadingData):
+                threading_data.append(hole)
+                continue
+            elif isinstance(hole, (list, tuple)):
+                depth, diameter, hole = hole
+                center = get_center(hole)
+            elif Topology.is_cylinder(hole):
+                s = Topology.cast_surface(hole)
+                center = Point(s.Location())
+                umin, umax, vmin, vmax = Topology(shape=hole).surface_bounds
+                depth = vmax - vmin
+                diameter = 2 * s.Radius()
+            else:
+                raise ValueError("Thread must be a cylinder, threading data instance or tuple of (depth, diameter, center)")
+
+            if depth > tool.length:
+                raise ValueError(f"Tool {tool} is not long enough to cut a {round(depth)} thread.")
+
+            data = ThreadingData(
+                bottom_point=center + (0, 0,  bottom_clearance),
+                depth=depth,
+                radius=diameter/2 - 3/2*tool.thread_depth - radial_clearance
+            )
+            threading_data.append(data)
+
+        return threading_data
+
+    func calculate_height(depth):
+        # Adjust the start height so the helix
+        # does a full arc and always an extra loop
+        n = ceil(depth/tool.pitch) + 1
+        return n * tool.pitch
+
+    Looper:
+        iterable = data
+
+        Part:
+            name = 'Threading Operation'
+            attr center = loop.item.bottom_point
+            attr top_point = helix.position
+            attr bottom_point = center
+            attr drop_point = Point(center.x, center.y, last_point.z)
+            attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
+            attr depth = top_point.z - bottom_point.z
+            attr arc_start = top_point + (0, 0, helix.radius/4)
+            attr d = -1 if loop.item.reverse else 1
+
+            DisplayArrow: drop_arrow:
+                color = 'red'
+                cone_size = (0.6, 1.5)
+                tube_size = (0.3, 3)
+                description = 'Drop'
+                direction = (0, 0, -1)
+                position = drop_point + (0, 0, 3)
+
+            # Heliz down to bottom of hole or max step
+            Vertex:
+                color = 'lime'
+                description = 'Top of circular pocket'
+                position = top_point
+            Vertex:
+                description = 'Bottom of circular pocket'
+                color = 'blue'
+                position = bottom_point
+            Polyline: move_to_point:
+                line_style = 'dashed'
+                color = 'lime'
+                points = [last_point, drop_point, arc_start]
+
+            Arc: arc_in:
+                # Arc into center
+                color = 'purple'
+                name = 'Arc in'
+                direction = (1, 0, 0)
+                radius = helix.radius/3
+                position = top_point + (0, radius, radius)
+                points = [
+                    top_point+(0, 0, radius),
+                    top_point+(0, radius, 0)
+                ]
+
+            Arc: arc_merge:
+                color = 'teal'
+                name = 'Arc merge'
+                attr p = arc_in.points[-1]
+                attr r = arc_in.radius
+                position = p + (d*r, 0)
+                clockwise = not loop.item.reverse
+                radius = r
+                points = [
+                    p,
+                    p + (d*r, r)
+                ]
+
+            Arc: arc_union:
+                color = 'teal'
+                name = 'Arc union'
+                attr p = arc_merge.points[-1]
+                clockwise = not loop.item.reverse
+
+                position = top_point + (d*arc_merge.radius, 0)
+                radius = arc_merge.radius*2
+                points = [
+                    p,
+                    top_point + (d*arc_merge.radius * 2, 0)
+                ]
+
+            ArcHelix: helix:
+                color = 'maroon'
+                position = loop.item.bottom_point + (0, 0, height)
+                radius = loop.item.radius
+                height = calculate_height(loop.item.depth)
+                pitch = tool.pitch
+
+            Arc: arc_out:
+                color = 'blue'
+                name = 'Arc out'
+                radius = helix.radius/3
+                clockwise = not loop.item.reverse
+                # Spiral end point
+                attr p = bottom_point + (d*helix.radius, 0)
+                position = p + (-d*radius, 0)
+                points = [
+                    p,
+                    p + (-d*radius, -radius)
+                ]
+
+            Arc: arc_up:
+                color = 'orange'
+                name = 'Arc up'
+                direction = (0, -1, 0)
+                radius = arc_out.radius
+                clockwise = not loop.item.reverse
+                # Spiral end point
+                attr p = arc_out.points[-1]
+                position = p + (0, 0, radius)
+                points = [p, position + (-d*radius, 0)]
+
+            Polyline:
+                name = 'Return path'
+                line_style = 'dashed'
+                color = 'lime'
+                attr p = arc_up.points[-1]
+                func get_points():
+                    pts = [p, lift_point]
+                    operation.last_point = lift_point
+                    if loop.index + 1 == len(operation.data):
+                        pts.append(end_point)
+                    return pts
+
+                points = get_points()
+
+            DisplayArrow: lift_arrow:
+                color = 'green'
+                cone_size = drop_arrow.cone_size
+                tube_size = drop_arrow.tube_size
+                description = 'Lift'
+                direction = (0, 0, 1)
+                position = lift_point
