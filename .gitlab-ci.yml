@@ -25,7 +25,7 @@ tests:
 
     # Make Qt Happy
     # - export QT_DEBUG_PLUGINS=1
-    - export QT_QPA_PLATFORM=offscreen
+    - export QT_QPA_PLATFORM=xcb
 
     # Run
     - pytest tests -v --cov declaracad
