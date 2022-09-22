@@ -30,7 +30,6 @@ requirements = [
     'service_identity',
     'ezdxf',
     'pdf4py',
-    'pybind11',
 ]
 
 

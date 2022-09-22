@@ -8,6 +8,7 @@ channels:
 dependencies:
  - python >=3.10
  - cxx-compiler
+ - pybind11
  - pysmesh >=9.6
  - pyocct >=7.6
  - pychrono >=7.0
