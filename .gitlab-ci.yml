@@ -4,7 +4,7 @@ tests:
   script:
     - export
     - apt-get update -q -y
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y libglu1-mesa-dev libgl1-mesa-dev libxi-dev libglfw3-dev libgles2-mesa-dev xserver-xorg xvfb gdb
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1-mesa-glx xserver-xorg xvfb gdb
 
     # Create env
     - conda env create -f environment.yml
