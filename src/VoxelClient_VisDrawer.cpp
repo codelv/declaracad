@@ -2429,16 +2429,16 @@ void VoxelClient_VisDrawer::DisplayVoxels(const Standard_Boolean theHighlight) {
     // Handle(Graphic3d_ArrayOfPoints) outsidePoints = new
     // Graphic3d_ArrayOfPoints (nbx * nby * nbz);
     Standard_Integer i = 0;
-    //std::cout << "DisplayVoxels" << std::endl;
+    // std::cout << "DisplayVoxels" << std::endl;
     for (iy = 0; iy < nby; iy++) {
       for (iz = 0; iz < nbz; iz++) {
         for (ix = 0; ix < nbx; ix++) {
           i += 1;
           voxels->GetCenter(ix, iy, iz, xc, yc, zc);
           if (voxels->Get(ix, iy, iz)) {
-            //m_insidePoints->AddVertex(xc, yc, zc);
+            // m_insidePoints->AddVertex(xc, yc, zc);
           } else {
-            //m_insidePoints->SetVertice(i, 0, 0, 0);
+            // m_insidePoints->SetVertice(i, 0, 0, 0);
           }
         }
       }
