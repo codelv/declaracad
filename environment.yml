@@ -8,7 +8,6 @@ channels:
 dependencies:
  - python >=3.10
  - cxx-compiler
- - {{ cdt('mesa-libgl-devel') }}  # [linux]
  - pybind11
  - pysmesh >=9.6
  - pyocct >=7.6
