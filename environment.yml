@@ -6,8 +6,8 @@ channels:
  - defaults
 
 dependencies:
- - python >=3.9
- - gcc
+ - python >=3.10
+ - cxx-compiler
  - pysmesh >=9.6
  - pyocct >=7.6
  - pychrono >=7.0

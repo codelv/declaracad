@@ -30,6 +30,7 @@ requirements = [
     'service_identity',
     'ezdxf',
     'pdf4py',
+    'pybind11',
 ]
 
 
@@ -92,6 +93,6 @@ setup(
         ext_module
     ],
     cmdclass={"build_ext": build_ext},
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     install_requires=requirements,
 )
