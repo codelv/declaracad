@@ -307,7 +307,7 @@ class OccShape(ProxyShape):
 
     def parent_shape(self):
         p = self.parent()
-        if p is not None:
+        if isinstance(p, OccShape):
             return p.shape
 
     def get_bounding_box(self, shape=None):
