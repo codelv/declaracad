@@ -462,10 +462,10 @@ enamldef PocketOperation(Operation): operation:
         return results
 
     attr toolpath = get_toolpath()
+    attr last_point = start_point
     Looper:
         iterable = toolpath
-        Part: pocket_toolpath:
-            attr last_point = start_point
+        Part:
             attr data = loop.item
             attr drop_point = Point(data.helix_start.x, data.helix_start.y, start_point.z)
             DisplayArrow: drop_arrow:
@@ -544,7 +544,7 @@ enamldef PocketOperation(Operation): operation:
                     max_step_over = operation.step_over/2
                     spindle_speed = operation.spindle_speed
                     feedrate = operation.feedrate
-                    activated :: pocket_toolpath.last_point = position.offset(end_radius, (-1, 0, 0))
+                    activated :: operation.last_point = position.offset(end_radius, (-1, 0, 0))
             Looper: looper:
                 iterable = loop.item.steps
                 attr is_last = loop.index + 1 == len(toolpath)
@@ -567,21 +567,22 @@ enamldef PocketOperation(Operation): operation:
                     enter_tangent = tangent.rotated(-pi/2+a) if loop.index > 0 else default_enter_tangent
                     exit_tangent = tangent.rotated(pi/2+a)
                     center_point = loop.item[0]
-                    constructed :: pocket_toolpath.last_point = self.end_point
+                    constructed :: operation.last_point = self.end_point
 
             Polyline:
-                color = 'lime'
+                color = 'red'
                 points = [
                     last_point,
                     offset_path.topology.start_point
                 ]
 
-            Wire:
+            Wire: offset_path:
                 color = 'orange'
-                Offset: offset_path:
+                reverse = climb
+                Offset:
                     shape = loop.item.face
                     offset = -tool.diameter/2-radial_clearance/2
-                    constructed :: pocket_toolpath.last_point = self.topology.end_point
+                constructed :: operation.last_point = self.topology.end_point
 
             DisplayArrow: lift_arrow:
                 color = 'green'
@@ -598,5 +599,6 @@ enamldef PocketOperation(Operation): operation:
                     last_point,
                     lift_point,
                 ] + ([start_point] if looper.is_last else [])
+                constructed :: operation.last_point = lift_point
 
 
