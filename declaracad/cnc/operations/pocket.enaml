@@ -16,7 +16,7 @@ from declaracad.cnc.operation import Operation
 from declaracad.cnc.optimize import optimize_points
 from declaracad.occ.api import (
     Arc, DisplayArrow, Point, Polyline, Part, MiddlePath, Offset, Topology,
-    Wire, Vertex
+    Face, Wire, Vertex
 )
 from declaracad.occ.geom import coerce_point
 from .helix import ArcHelix
@@ -346,6 +346,9 @@ enamldef PocketOperation(Operation): operation:
     #: List of faces to pocket
     attr pockets: list = []
 
+    #: Trim off edge paths. This is helpful for large slots
+    attr trim: bool = False
+
     # ------------------------------------------------------------------------
     # Speed and feed
     # ------------------------------------------------------------------------
@@ -409,7 +412,6 @@ enamldef PocketOperation(Operation): operation:
         middle_path = MiddlePath(shapes=[face])
         middle_path.render()
 
-
         # TODO: Start with largest first
         for i, edge in enumerate(middle_path.topology.edges):
             d1, d2 = get_distances(middle_path, edge)
@@ -425,6 +427,9 @@ enamldef PocketOperation(Operation): operation:
             data.spiral_radius = dmax - tool.diameter/2 - radial_clearance/2 - step_over/4
             data.end = topo.start_point
             tzero = None
+
+            if trim and d1 == 0 or d2 == 0:
+                continue
 
             for curve, t in Topology.parametrize_by_length(edge, step_over):
                 if tzero is None:
@@ -444,9 +449,15 @@ enamldef PocketOperation(Operation): operation:
         return data
 
     func get_toolpath():
-
         results = []
-        for face in self.pockets:
+        for shape in self.pockets:
+            shape = Topology.cast_shape(shape)
+            if Topology.is_face(shape):
+                face = shape
+            elif Topology.is_wire(shape):
+                face = Face(wires=[shape]).render()
+            else:
+                raise ValueError(f"Cannot pocket {shape}")
             results.append(generate_pocket(face))
         return results
 
