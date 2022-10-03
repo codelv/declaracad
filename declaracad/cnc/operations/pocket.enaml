@@ -16,7 +16,7 @@ from declaracad.cnc.operation import Operation
 from declaracad.cnc.optimize import optimize_points
 from declaracad.occ.api import (
     Arc, DisplayArrow, Point, Polyline, Part, MiddlePath, Offset, Topology,
-    Face, Wire, Vertex
+    Transform, Face, Wire, Vertex
 )
 from declaracad.occ.geom import coerce_point
 from .helix import ArcHelix
@@ -405,7 +405,7 @@ enamldef PocketOperation(Operation): operation:
 
         if bottom_clearance:
             transform = Transform(shape=face, position=(0, 0, bottom_clearance))
-            face = transform.render()
+            face = data.face = transform.render()
 
         bbox = Topology.bbox(part)
         # TODO: Determine proper depth...
