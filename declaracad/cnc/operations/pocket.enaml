@@ -31,7 +31,7 @@ class CircularPocketData(Atom):
     bottom = Instance(Point)
 
 
-enamldef CircularPocket(Operation): operation:
+enamldef CircularPocketOperation(Operation): operation:
     """ Circular pocket does a helix down to the bottom of the hole
     or step limit, then performs an archimedean spiral out to the
     cylinder radius - tool.radius. Repeating for each step as needed based on
