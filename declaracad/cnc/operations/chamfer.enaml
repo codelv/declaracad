@@ -22,7 +22,6 @@ from declaracad.occ.api import (
 
 
 enamldef ArcEaseIn(Wire):
-    attr enter_point
     attr path_start
     attr start_angle
     attr arc_radius
@@ -38,9 +37,9 @@ enamldef ArcEaseIn(Wire):
         color = 'orange'
         attr arc_start = arc_center.points[0]
         radius = arc_center.radius
-        position = (arc_start.x, arc_start.y, enter_point.z)
+        position = arc_start + (0, 0, radius)
         points = [
-            enter_point,
+            position + (radius*acos, -radius*asin),
             arc_start
         ]
     Arc: arc_center:
@@ -71,7 +70,7 @@ enamldef ArcEaseIn(Wire):
         attr asinr = sin(a2)
         attr acos = cos(a1)
         attr asin = sin(a1)
-        radius = min(arc_radius/2, tool.diameter/2)
+        radius = arc_radius
         position = path_start + (radius*acosr, radius*asinr)
         points = [
             position + (radius*acos, radius*asin),
@@ -81,12 +80,11 @@ enamldef ArcEaseIn(Wire):
 enamldef ArcEaseOut(Wire):
     attr start_angle
     attr path_end
-    attr exit_point
     attr arc_radius
     attr climb: bool
     Arc: arc_exit:
         clockwise = not climb
-        radius = min(arc_radius/2, tool.diameter/2)
+        radius = arc_radius
         name = 'Arc exit'
         as_wire = True
         # Position is at reverse angle
@@ -124,10 +122,10 @@ enamldef ArcEaseOut(Wire):
         as_wire = True
         attr arc_start = arc_center.points[-1]
         radius = arc_center.radius
-        position = (arc_start.x, arc_start.y, exit_point.z)
+        position = arc_start + (0, 0, radius)
         points = [
             arc_start,
-            exit_point
+            position + (radius*acos, -radius*asin)
         ]
 
 
@@ -262,17 +260,20 @@ enamldef ChamferOperation(Operation): operation:
         end = curve_topo.end_point
 
         if path_type == 'hole':
-            r = min(radius/2, tool.diameter/2)/2
+            # Make arc smaller of the two
+            arc_radius = min(radius/4, tool.diameter/2)
             v1 = start-center
-            v2 = Point(r, 0)
+            v2 = Point(arc_radius, 0)
             a = v2.angle2d(v1)
             if v1.y < 0:
                 a = -a
             #print(f"angle = {math.degrees(a)}")
+
             kwargs['start_angle'] = a
-            x, y = start.x-r*cos(a), start.y-r*sin(a)
+            x, y = start.x-arc_radius/2*cos(a), start.y+arc_radius/2*sin(a)
             drop = lift = Point(x, y, clearance_height)
-            enter = exit = Point(x, y, start.z+r)
+            enter = exit = Point(x, y, start.z+arc_radius/2)
+            kwargs['arc_radius'] = arc_radius
         else:
             exit = end
             enter = start
@@ -345,8 +346,8 @@ enamldef ChamferOperation(Operation): operation:
                     start_angle = loop.item['start_angle']
                     climb = operation.climb
                     path_start = loop.item['start']
-                    enter_point = loop.item['enter']
-                    arc_radius = loop.item['radius']
+                    #enter_point = loop.item['enter']
+                    arc_radius = loop.item['arc_radius']
 
             Wire:
                 color = 'magenta'
@@ -359,8 +360,8 @@ enamldef ChamferOperation(Operation): operation:
                     climb = operation.climb
                     start_angle = loop.item['start_angle']
                     path_end = loop.item['end']
-                    exit_point = loop.item['exit']
-                    arc_radius = loop.item['radius']
+                    #exit_point = loop.item['exit']
+                    arc_radius = loop.item['arc_radius']
 
             Polyline:
                 name = 'Rapid move'
