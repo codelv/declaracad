@@ -84,8 +84,9 @@ enamldef CircularPocketOperation(Operation): operation:
 
     #: Spindle speed calculation
     #: Assumes surface speed is in feet per minute
-    spindle_speed = round(
-        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+    #: Note: Max spindle speed is assumed to be available in the parent scope
+    spindle_speed = min(max_spindle_speed, round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor))
 
     #: Feedrate calculation
     feedrate = round(spindle_speed * tool.feed_per_rev, 2)
@@ -358,8 +359,9 @@ enamldef PocketOperation(Operation): operation:
 
     #: Spindle speed calculation
     #: Assumes surface speed is in feet per minute
-    spindle_speed = round(
-        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+    #: Note: Max spindle speed is assumed to be available in the parent scope
+    spindle_speed = min(max_spindle_speed, round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor))
 
     #: Feedrate calculation
     feedrate = round(spindle_speed * tool.feed_per_rev, 2)

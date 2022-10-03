@@ -282,6 +282,12 @@ class Operation(Part):
                     f"to automatically calculate it."
                 )
 
+            if self.spindle_speed > job.max_spindle_speed:
+                raise ValueError(
+                    f"Spindle speed {self.spindle_speed} is above the "
+                    f"machine limit {job.max_spindle_speed}"
+                )
+
             if self.feedrate:
                 cmds.append(f"F{self.feedrate}")
 

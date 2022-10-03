@@ -53,9 +53,10 @@ enamldef SideCutOperation(Operation): operation:
     attr slowdown_factor = 0.6
 
     #: Spindle speed calculation
-    #: Assumes surface speed is in feet per minute
-    spindle_speed = round(
-        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor)
+    #: Assumes surface speed is in feet per minute.
+    #: Note: Max spindle speed is assumed to be available in the parent scope
+    spindle_speed = min(max_spindle_speed, round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor))
 
     #: Feedrate calculation
     feedrate = round(spindle_speed * tool.feed_per_rev, 2)

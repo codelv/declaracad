@@ -44,6 +44,10 @@ enamldef Job(Part):
     #: Default starting point
     attr start_point = Point(0, 0, 50)
 
+    #: Maximum spindle speed. If the calculated spindle rpm is over this
+    #: back clamp the speed and back down the feed rate
+    attr max_spindle_speed = 50000
+
     activated ::
         if self.disabled:
             # Propagate disabled to all operations
