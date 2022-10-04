@@ -278,7 +278,9 @@ class OccShape(ProxyShape):
         # Move to position and align along direction axis
         t = gp_Trsf()
         if d.direction.is_parallel(DZ):
-            t.SetRotation(AZ, d.direction.angle(DZ) + d.rotation)
+            if d.direction.is_opposite(DZ):
+                t.SetRotation(AX, pi)
+            angle = d.rotation
         else:
             d1 = d.direction.cross(DZ)
             axis = gp_Ax1(gp_Pnt(0, 0, 0), d1.proxy)
@@ -288,10 +290,10 @@ class OccShape(ProxyShape):
             sign = 1 if d1.y >= 0 else -1
             angle = d.rotation + sign * d1.angle(DX)
 
-            if angle:
-                rot = gp_Trsf()
-                rot.SetRotation(AZ, angle)
-                t.Multiply(rot)
+        if angle:
+            rot = gp_Trsf()
+            rot.SetRotation(AZ, angle)
+            t.Multiply(rot)
 
         t.SetTranslationPart(gp_Vec(*d.position))
         return t
