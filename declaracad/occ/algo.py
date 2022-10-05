@@ -137,6 +137,9 @@ class ProxyOffset(ProxyOperation):
     def set_join_type(self, mode):
         raise NotImplementedError
 
+    def set_as_face(self, enabled: bool):
+        raise NotImplementedError
+
 
 class ProxyOffsetShape(ProxyOffset):
     #: A reference to the Shape declaration.
@@ -539,7 +542,7 @@ class Chamfer(Operation):
 
 
 class Offset(Operation):
-    """An operation that create an Offset wire of the first child shape.
+    """An operation that create an Offset wire or face of the first child shape.
 
     Attributes
     ----------
@@ -587,6 +590,9 @@ class Offset(Operation):
         view=True, group="Offset"
     )
 
+    #: If True, convert the wire into a face
+    as_face = d_(Bool())
+
     #: The shape to offset if given
     shape = d_(Instance((Shape, TopoDS_Shape)))
 
@@ -598,6 +604,7 @@ class Offset(Operation):
         "closed",
         "normal_distance",
         "shape",
+        "as_face",
     )
     def _update_proxy(self, change):
         super(Offset, self)._update_proxy(change)

@@ -10,7 +10,7 @@ Created on Sep 27, 2016
 @author: jrm
 """
 from atom.api import set_default
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.BRepOffset import BRepOffset_Pipe, BRepOffset_RectoVerso, BRepOffset_Skin
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
@@ -60,7 +60,12 @@ class OccOffset(OccOperation, ProxyOffset):
         if not offset_shape.IsDone():
             # Note: Lines cannot be offset as they have no plane of reference
             raise ValueError("Could not perform offset: %s" % d)
-        self.shape = Topology.cast_shape(offset_shape.Shape())
+
+        result = Topology.cast_shape(offset_shape.Shape())
+        if d.as_face:
+            self.shape = BRepBuilderAPI_MakeFace(result).Face()
+        else:
+            self.shape = result
 
     def set_shape(self, shape):
         self.update_shape()
@@ -75,6 +80,9 @@ class OccOffset(OccOperation, ProxyOffset):
         self.update_shape()
 
     def set_intersection(self, enabled):
+        self.update_shape()
+
+    def set_as_face(self, enabled: bool):
         self.update_shape()
 
 
