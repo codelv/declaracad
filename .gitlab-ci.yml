@@ -8,7 +8,7 @@ tests:
     - micromamba install -y -n base -f environment.yml
 
     # Activate env
-    - micromamba install -y -n base -c conda-forge mesa-libgl-devel-cos6-x86_64 libxi-devel-cos6-x86_64 libxext-devel-cos6-x86_64 pyqt6
+    - micromamba install -y -n base -c conda-forge mesa-libgl-devel-cos6-x86_64 libxi-devel-cos6-x86_64 libxext-devel-cos6-x86_64
 
     # Install declaracad
     - pip install -e .
