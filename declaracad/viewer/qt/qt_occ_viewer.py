@@ -350,6 +350,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
     _qt_app = Property(lambda self: Application.instance()._qapp, cached=True)
 
+    #: Max msaa samples
+    msaa_samples = Int(0)
+
     def get_shapes(self):
         return [c for c in self.children() if not isinstance(c, QtControl)]
 
@@ -410,6 +413,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         gfx_mgr = self.gfx_structure_manager = prs_mgr.StructureManager()
         self.gfx_structure = Graphic3d_Structure(gfx_mgr)
 
+        # Dump gl info and grab msaa
+        self.dump_gl_info()
+
         # Lights camera
         self.camera = view.Camera()
 
@@ -440,9 +446,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             self._update_rendering_params()
             self.set_grid_mode(d.grid_mode)
             self.set_grid_colors(d.grid_colors)
-
             self.init_signals()
-            self.dump_gl_info()
 
         self.redraw()
 
@@ -462,7 +466,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             log.info("OpenGL version: {}.{}".format(v1, v2))
             log.info("GPU memory: {}".format(ctx.AvailableMemory()))
             log.info("GPU memory info: {}".format(ctx.MemoryInfo().ToCString()))
-            log.info("Max MSAA samples: {}".format(ctx.MaxMsaaSamples()))
+
+            msaa = self.msaa_samples = ctx.MaxMsaaSamples()
+            log.info("Max MSAA samples: {}".format(msaa))
 
             supports_raytracing = ctx.HasRayTracing()
             log.info("Supports ray tracing: {}".format(supports_raytracing))
@@ -768,7 +774,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             IsReflectionEnabled=d.reflections,
             IsAntialiasingEnabled=d.antialiasing,
             IsTransparentShadowEnabled=d.shadows,
-            NbMsaaSamples=4,
+            NbMsaaSamples=self.msaa_samples,
             NbRayTracingTiles=128,
             StereoMode=Graphic3d_StereoMode_QuadBuffer,
             AnaglyphFilter=Graphic3d_RenderingParams.Anaglyph_RedCyan_Optimized,
