@@ -109,7 +109,15 @@ from OCCT.TopTools import (
     TopTools_ListOfShape,
 )
 
-from ..shape import BBox, Direction, Point, coerce_direction, coerce_point
+from ..shape import (
+    BBox,
+    Direction,
+    Point,
+    Shape,
+    coerce_direction,
+    coerce_point,
+)
+
 
 T = TypeVar("T")
 
@@ -1507,14 +1515,14 @@ class Topology(Atom):
     # Intersection
     # -------------------------------------------------------------------------
     def intersection(
-        self, shape: TopoDS_Shape, tol=1e-6
+        self, shape: Union[Shape, TopoDS_Shape], tol=1e-6
     ) -> Optional[ListType[TopoDS_Shape]]:
         """Returns the resulting intersection of this and the given shape
-        or None if an error or there are no intersections.
+        or None if an error or an empty list there are no intersections.
 
         Parameters
         ----------
-        shape: TopoDS_Shape
+        shape: Union[Shape, TopoDS_Shape]
             The shape to intersect with
 
         Returns
@@ -1523,17 +1531,17 @@ class Topology(Atom):
             The list of intersections.
 
         """
-        op = BRepAlgoAPI_Section(self.shape, shape, False)
+        from .occ_shape import coerce_shape
+        other_shape = coerce_shape(shape)
+        if not other_shape:
+            return None
+        op = BRepAlgoAPI_Section(self.shape, other_shape, False)
         op.SetFuzzyValue(tol)
         op.Build()
         if op.HasErrors():
-            return
-        r = op.SectionEdges()
-        n = r.Size()
-        if n == 0:
-            return
+            return None
         cast = Topology.cast_shape
-        return [cast(r.Value(i)) for i in range(1, n + 1)]
+        return [cast(s) for s in op.SectionEdges()]
 
     # -------------------------------------------------------------------------
     # Distances
