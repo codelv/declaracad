@@ -23,10 +23,10 @@ from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_Transform,
 )
-from OCCT.Geom import Geom_BezierCurve, Geom_TrimmedCurve, Geom_Line
-from OCCT.GeomAPI import GeomAPI_ExtremaCurveCurve
 from OCCT.GC import GC_MakeArcOfCircle
-from OCCT.gp import gp_Ax2, gp_Dir, gp_Circ, gp_Pnt, gp_Trsf, gp_Vec
+from OCCT.Geom import Geom_BezierCurve, Geom_Line, Geom_TrimmedCurve
+from OCCT.GeomAPI import GeomAPI_ExtremaCurveCurve
+from OCCT.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.TColgp import TColgp_Array1OfPnt
 from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape, TopoDS_Wire
 
@@ -74,17 +74,14 @@ ENDPATH_CMDS = ("h", "s", "S", "f", "b", "b*")
 
 
 def is_valid_bezier(pts: TColgp_Array1OfPnt, tol=1e-6) -> bool:
-    """ Check if the bezier control points are all valid the same
-
-    """
+    """Check if the bezier control points are all valid the same"""
     return not all(
-        pts.Value(i).IsEqual(pts.Value(i+1), tol)
-        for i in range(1, pts.Size())
+        pts.Value(i).IsEqual(pts.Value(i + 1), tol) for i in range(1, pts.Size())
     )
 
 
 def make_rect(x, y, w, h) -> tuple[gp_Pnt, BRepBuilderAPI_MakeWire]:
-    """ Create a wire rectangle. """
+    """Create a wire rectangle."""
     c0 = gp_Pnt(x, y)
     c1 = gp_Pnt(x + w, y)
     c2 = gp_Pnt(x + w, y + h)

@@ -17,8 +17,8 @@ with enaml.imports():
     from declaracad.cnc.operations.facing import FacingOperation
     from declaracad.cnc.operations.job import Job, JobSimulation
     from declaracad.cnc.operations.pocket import (
-        CircularPocketOperation,
         CircularPocketData,
+        CircularPocketOperation,
         PocketData,
         PocketOperation,
     )
