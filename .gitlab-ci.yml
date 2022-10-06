@@ -20,6 +20,7 @@ tests:
     - pip install black flake8 isort mypy
 
     # Make Qt Happy
+    - export FORCE_QT_API=pyqt6
     - export QT_DEBUG_PLUGINS=1
     - export QT_QPA_PLATFORM=xcb
     - python -c "from qtpy import QT_VERSION; print(QT_VERSION)"
