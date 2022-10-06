@@ -204,7 +204,10 @@ class ProxyPolyline(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Polyline)
 
-    def set_closed(self, closed):
+    def set_closed(self, closed: bool):
+        raise NotImplementedError
+
+    def set_as_wire(self, as_wire: bool):
         raise NotImplementedError
 
 
@@ -223,16 +226,19 @@ class ProxyRectangle(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Rectangle)
 
-    def set_rx(self, rx):
+    def set_rx(self, rx: float):
         raise NotImplementedError
 
-    def set_ry(self, ry):
+    def set_ry(self, ry: float):
         raise NotImplementedError
 
-    def set_width(self, w):
+    def set_width(self, w: float):
         raise NotImplementedError
 
-    def set_height(self, h):
+    def set_height(self, h: float):
+        raise NotImplementedError
+
+    def set_as_face(self, as_face: bool):
         raise NotImplementedError
 
 
@@ -869,7 +875,8 @@ class Polyline(Wire):
         The points of the polygon.
     closed: Bool
         Automatically close the polygon
-
+    as_face: Bool
+        Convert to face if forms a closed wire.
     Examples
     ---------
 
@@ -888,6 +895,9 @@ class Polyline(Wire):
     #: List of points
     points = d_(List(Coerced(Point, coercer=coerce_point)))
 
+    #: Convert into a face
+    as_face = d_(Bool())
+
     @property
     def start(self):
         return coerce_point(self.proxy.curve.StartPoint())
@@ -896,7 +906,7 @@ class Polyline(Wire):
     def end(self):
         return coerce_point(self.proxy.curve.EndPoint())
 
-    @observe("closed", "points")
+    @observe("closed", "points", "as_face")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 
@@ -1039,7 +1049,10 @@ class Rectangle(Wire):
     rx = d_(Float(0, strict=False)).tag(view=True)
     ry = d_(Float(0, strict=False)).tag(view=True)
 
-    @observe("width", "height", "rx", "ry")
+    #: Convert into a face
+    as_face = d_(Bool())
+
+    @observe("width", "height", "rx", "ry", "as_face")
     def _update_proxy(self, change):
         super()._update_proxy(change)
 

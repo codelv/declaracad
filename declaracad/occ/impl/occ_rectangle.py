@@ -13,6 +13,7 @@ from atom.api import Typed
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakeFace,
     BRepBuilderAPI_MakePolygon,
     BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_Transform,
@@ -121,7 +122,10 @@ class OccRectangle(OccWire, ProxyRectangle):
             ).Wire()
         wire = TopoDS.Wire_(BRepBuilderAPI_Transform(shape, t, False).Shape())
         self.curve = BRepAdaptor_CompCurve(wire)
-        self.shape = wire
+        if d.as_face:
+            self.shape = BRepBuilderAPI_MakeFace(wire).Face()
+        else:
+            self.shape = wire
 
     def update_shape(self, change=None):
         self.create_shape()
@@ -129,3 +133,18 @@ class OccRectangle(OccWire, ProxyRectangle):
     def init_layout(self):
         # This does not depened on children
         pass
+
+    def set_rx(self, rx: float):
+        self.create_shape()
+
+    def set_ry(self, ry: float):
+        self.create_shape()
+
+    def set_width(self, w: float):
+        self.create_shape()
+
+    def set_height(self, h: float):
+        self.create_shape()
+
+    def set_as_face(self, as_face: bool):
+        self.create_shape()

@@ -11,7 +11,7 @@ Created on Sep 30, 2016
 """
 from atom.api import Typed, set_default
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakePolygon
 
 from declaracad.occ.draw import ProxyPolyline
 
@@ -36,7 +36,11 @@ class OccPolyline(OccWire, ProxyPolyline):
         if d.closed:
             shape.Close()
         curve = self.curve = BRepAdaptor_CompCurve(shape.Wire())
-        self.shape = curve.Wire()
+        wire = curve.Wire()
+        if d.as_face:
+            self.shape = BRepBuilderAPI_MakeFace(wire).Face()
+        else:
+            self.shape = wire
 
     def init_layout(self):
         # This does not depened on children
@@ -45,5 +49,8 @@ class OccPolyline(OccWire, ProxyPolyline):
     def update_shape(self, change=None):
         self.create_shape()
 
-    def set_closed(self, closed):
+    def set_closed(self, closed: bool):
+        self.create_shape()
+
+    def set_as_wire(self, as_wire: bool):
         self.create_shape()
