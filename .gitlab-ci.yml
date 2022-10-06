@@ -1,4 +1,4 @@
-image: continuumio/miniconda3:master
+image: mambaorg/micromamba:0.27.0
 
 tests:
   script:
@@ -7,12 +7,10 @@ tests:
     - DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1-mesa-glx xserver-xorg xvfb gdb libxkbcommon-x11-dev
 
     # Create env
-    - conda env create -f environment.yml
+    - mamba install -y -n base -f environment.yml
 
     # Activate env
-    - source activate declaracad
-    - conda info
-    - conda install -y mesa-libgl-devel-cos6-x86_64 libxi-devel-cos6-x86_64 libxext-devel-cos6-x86_64
+    - mamba install -y -n base mesa-libgl-devel-cos6-x86_64 libxi-devel-cos6-x86_64 libxext-devel-cos6-x86_64
 
     # Install declaracad
     - pip install -e .
