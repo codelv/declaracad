@@ -3,7 +3,7 @@ image: mambaorg/micromamba:0.27.0
 tests:
   script:
     - export
-    - DEBIAN_FRONTEND=noninteractive apt install -y libgl1-mesa-glx xserver-xorg xvfb gdb libxkbcommon-x11-dev
+    - DEBIAN_FRONTEND=noninteractive sudo apt install -y libgl1-mesa-glx xserver-xorg xvfb gdb libxkbcommon-x11-dev
 
     # Create env
     - micromamba install -y -n base -f environment.yml
