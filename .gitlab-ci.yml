@@ -5,10 +5,10 @@ tests:
     - export
 
     # Create env
-    - mamba install -y -n base -f environment.yml
+    - micromamba install -y -n base -f environment.yml
 
     # Activate env
-    - mamba install -y -n base mesa-libgl-devel-cos6-x86_64 libxi-devel-cos6-x86_64 libxext-devel-cos6-x86_64
+    - micromamba install -y -n base mesa-libgl-devel-cos6-x86_64 libxi-devel-cos6-x86_64 libxext-devel-cos6-x86_64
 
     # Install declaracad
     - pip install -e .
