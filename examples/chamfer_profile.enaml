@@ -75,12 +75,12 @@ enamldef CylinderEdge(Part):
         attr profile = [
             (0, 0.5),
             (0.2, 1),
-            (0.5, 1.2),
+            (0.5, 2),
             (0.8, 1),
             (1, 0.5),
         ]
         operations = [
-            (profile if i == 58 else 0.5, edges[i])
+            (profile if i in special else 0.5, edges[i])
             for i in top_edges
         ]
         #
@@ -104,9 +104,8 @@ enamldef CylinderEdge(Part):
                                 radius = 30
                                 count = 3
             Cylinder:
-                radius = 10
+                radius = 14
                 height = h
-
             Looper:
                 iterable = [0, 120, -120]
                 Cylinder:
