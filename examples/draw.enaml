@@ -69,6 +69,28 @@ enamldef Assembly(Part):
             width = 5
             height = width
             rx = 2
+    Arc:
+        radius = 2
+        reverse = True
+        points = [(0, 1), (0, -1)]
+    
+    BSpline:
+        color = 'magenta'
+        tangents = [(1, 0, 0), (0, 1, 0)]
+        points = [
+            (15, 0, 0),
+            (16, -0.5, 0),
+            (17, 1, 0),
+        ]
+    Line:
+        color = 'magenta'
+        position = (0, 1, 0)
+        direction = (0, 1, 1)
+    Line:
+        color = 'lime'
+        position = (0, 1, 0)
+        direction = (0, 1, 1)
+        points = [(1, 1, 0)] # Line offset by one 
     #Wire:
     #    color = 'black'
     #    Text:
