@@ -92,7 +92,7 @@ def coerce_axis(value: TupleType[Point, Direction, float]) -> gp_Ax2:
 def coerce_shape(shape: Union[TopoDS_Shape, Shape]) -> TopoDS_Shape:
     """Coerce a declaration into a TopoDS_Shape"""
     if isinstance(shape, Shape):
-        return shape.proxy.shape
+        return shape.render()
     return shape
 
 
