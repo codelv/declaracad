@@ -36,6 +36,9 @@ before_script:
     # Wayland
     - micromamba install -y -n base -c dtk-forge6 -c conda-forge wayland
 
+    # GDB
+    - micromamba install -y -n base -c conda-forge gdb
+
     # Create env
     - micromamba install -y -n base -f environment.yml
     - pip install -e ./
@@ -53,13 +56,14 @@ before_script:
 
 tests:
   script:
-    # Run
-    - pytest tests -v --cov declaracad
-
     # Run checks
     - isort --check --diff declaracad
     - black --check --diff declaracad
     - flake8 --ignore=E203,E266,E501,W503,E731 declaracad
     #- yes | mypy declaracad --install-types || true
     #- mypy declaracad --ignore-missing-imports
+
+    # Run tests
+    - gdb -ex run -ex bt -ex quit --args pytest tests -v --cov declaracad
+    #- pytest tests -v --cov declaracad
 
