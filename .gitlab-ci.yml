@@ -3,10 +3,9 @@ cache:
     # Cache pip/conda downloads
     paths:
         - /opt/conda/pkgs/
-        - .cache/pip
+        - /home/mambauser/.cache/pip
 
-tests:
-  script:
+before_script:
     # Create env
     - micromamba install -y -n base -f environment.yml
 
@@ -52,13 +51,15 @@ tests:
     # Install qa tools
     - pip install black flake8 isort mypy
 
+tests:
+  script:
     # Run
     - pytest tests -v --cov declaracad
-    #- xvfb-run -s "-screen 0 1920x1080x24 +extension GLX +extension RENDER" gdb -ex run -ex bt -ex quit --args python -m pytest tests -v -s
 
     # Run checks
     - isort --check --diff declaracad
     - black --check --diff declaracad
-    - yes | mypy declaracad --install-types || true
-    - mypy declaracad --ignore-missing-imports
     - flake8 --ignore=E203,E266,E501,W503,E731 declaracad
+    #- yes | mypy declaracad --install-types || true
+    #- mypy declaracad --ignore-missing-imports
+

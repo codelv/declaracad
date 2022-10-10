@@ -9,13 +9,12 @@ The full license is in the file LICENSE, distributed with this software.
 import os
 
 import pytest
-from OCCT.TopoDS import TopoDS_Shape
 
 from declaracad.occ.api import load_model
 
 
 @pytest.mark.parametrize("name", os.listdir("examples/cnc/"))
-def test_cnc_examples(qt_app, name):
+def test_cnc_examples(qt_app, name: str):
     path = f"examples/cnc/{name}"
     example = os.path.splitext(name)[0]
 

@@ -6,8 +6,7 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-from math import pi, sqrt
-from textwrap import dedent
+from math import pi
 
 import pytest
 from OCCT.TopoDS import TopoDS_Shape
@@ -24,7 +23,6 @@ from declaracad.occ.api import (
     Segment,
     Shape,
     Topology,
-    Wire,
     load_model,
 )
 

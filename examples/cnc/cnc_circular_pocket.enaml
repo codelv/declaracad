@@ -1,6 +1,6 @@
 # Created in DeclaraCAD
 from declaracad.occ.api import *
-from declaracad.cnc.api import Job, EndMill, JobSimulation, CircularPocket
+from declaracad.cnc.api import Job, EndMill, JobSimulation, CircularPocketOperation
 
 
 enamldef SimplePart(Part):
@@ -22,7 +22,7 @@ enamldef Assembly(Part):
         pass
     Job: j:
         filename = 'cnc_circular_pocket.nc'
-        CircularPocket:
+        CircularPocketOperation:
             surface_speed = 100
             tool = EndMill(diameter=8, cut=30)
             pockets = [part.topology.faces[6]]

@@ -4,10 +4,10 @@ from declaracad.occ.api import *
 from declaracad.parts.display import Axis
 from declaracad.cnc.api import Job, ChamferMill, JobSimulation, ChamferOperation
 
-
 enamldef SimplePart(Part):
     alias stock
     Chamfer:
+        #disabled = True
         operations = [
             self.children[0].topology.faces[1],
             self.children[0].topology.faces[4]
@@ -15,9 +15,10 @@ enamldef SimplePart(Part):
         transparency = 0.8
         Fillet:
             radius = 10
+            #disabled = True
             operations = [
                 self.children[0].topology.edges[2],
-                self.children[0].topology.edges[14],
+                self.children[0].topology.edges[15],
             ]
             Cut:
                 Box: stock:
@@ -26,9 +27,14 @@ enamldef SimplePart(Part):
                     dy = 70
                     dz = 10
                 Cylinder:
-                    radius = 12
+                    radius = 2.5/2
                     position = (50, 50, -height)
                     height = 10
+                Cylinder:
+                    radius = 16
+                    position = (25, 25, -height)
+                    height = 10
+
 
 
 enamldef TopChamfer(Part):
@@ -41,8 +47,8 @@ enamldef TopChamfer(Part):
         ChamferOperation: top_chamfer:
             #disabled = True
             surface_speed = 100
-            tool = ChamferMill(diameter=8)
-            edges = [part.topology.faces[i] for i in (3, 6, 10, 14, 19, 20, 21)]
+            tool = ChamferMill(diameter=6.35)
+            edges = [part.topology.faces[i] for i in (3, 6, 10, 14, 20, 21, 22, 23)]
 
 
 enamldef BottomChamfer(Part):

@@ -6,13 +6,13 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-import os
-
 import pytest
 from OCCT.TopoDS import TopoDS_Shape
 
 from declaracad.occ.api import load_model
-from declaracad.occ.impl.occ_factories import OCC_FACTORIES  # Make sure it installs
+
+# Make sure it installs
+from declaracad.occ.impl.occ_factories import OCC_FACTORIES  # noqa: F401
 
 EXAMPLES = (
     "arcs",
@@ -33,7 +33,7 @@ EXAMPLES = (
     "fillets",
     "gcode",
     "half_space",
-    #'house',
+    # 'house',
     "intersection",
     "load",
     "middlepath",
@@ -43,7 +43,7 @@ EXAMPLES = (
     "operations",
     "pipes",
     "raw_shape",
-    #'rib',
+    # 'rib',
     "shapes",
     "split",
     "spring",

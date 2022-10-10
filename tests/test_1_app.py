@@ -15,10 +15,10 @@ import time
 import pytest
 
 try:
-    from OCCT import OpenGl
+    from OCCT import OpenGl  # noqa: F401
 
     opengl_unavailable = False
-except ImportError as e:
+except ImportError:
     opengl_unavailable = True
 
 
@@ -44,7 +44,7 @@ def test_app():
 
 @pytest.mark.skipif(opengl_unavailable, reason="OpenGL not available")
 def test_render():
-    r = subprocess.check_output(
+    subprocess.check_output(
         "declaracad render examples/fillets.enaml --view_mode top".split()
     )
     assert os.path.exists("fillets.png")

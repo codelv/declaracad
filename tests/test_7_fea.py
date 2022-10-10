@@ -9,19 +9,18 @@ The full license is in the file LICENSE, distributed with this software.
 import os
 
 import pytest
-from OCCT.TopoDS import TopoDS_Shape
 
 # Make sure it installs
-from declaracad.fea.impl import fea_factories
+from declaracad.fea.impl import fea_factories  # noqa: F401
 from declaracad.occ.api import load_model
-from declaracad.occ.impl import occ_factories
+from declaracad.occ.impl import occ_factories  # noqa: F401
 
 try:
-    import pychrono.fea
-    from SMESH import SMESH
+    import pychrono.fea  # noqa: F401
+    from SMESH import SMESH  # noqa: F401
 
     fea_unavailable = False
-except ImportError as e:
+except ImportError:
     fea_unavailable = True
 
 
@@ -29,7 +28,6 @@ except ImportError as e:
 @pytest.mark.parametrize("name", os.listdir("examples/fea/"))
 def test_fea_examples(qt_app, name):
     path = f"examples/fea/{name}"
-    example = os.path.splitext(name)[0]
     assembly = load_model(path)
     for shape in assembly:
         shape.render()
