@@ -4,14 +4,20 @@ cache:
     paths:
         - /opt/conda/pkgs/
         - .cache/pip
+
 tests:
   script:
     # Create env
     - micromamba install -y -n base -f environment.yml
 
     # Install pyqt (to pull gl depends) and add path to load conda libs
-    - micromamba install -y -n base -c conda-forge mesa-libegl-cos6-x86_64 mesa-libgl-cos6-x86_64
+    - micromamba install -y -n base -c conda-forge mesa-libegl-cos7-x86_64 mesa-libgl-cos7-x86_64 freetype-cos7-x86_64 libxkbcommon-cos7-x86_64
     - export LD_LIBRARY_PATH=/opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib
+
+    # Test Qt
+    - export QT_QPA_PLATFORM=xcb
+    - export FORCE_QT_API=pyqt6
+    - python -c "from PyQt6 import QtWidgets"
 
     # Install declaracad
     - pip install -e .
@@ -21,11 +27,6 @@ tests:
 
     # Install qa tools
     - pip install black flake8 isort mypy
-
-    # Make Qt Happy
-    - export QT_QPA_PLATFORM=xcb
-    - export FORCE_QT_API=pyqt6
-    - python -c "from PyQt6 import QtWidgets"
 
     # Run
     - pytest tests -v --cov declaracad
