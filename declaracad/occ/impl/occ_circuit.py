@@ -9,7 +9,7 @@ Created on Jan 27, 2022
 """
 from typing import Optional
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
@@ -20,7 +20,7 @@ from OCCT.GccAna import GccAna_Lin2d2Tan
 from OCCT.GccEnt import GccEnt
 from OCCT.gce import gce_MakePln
 from OCCT.Geom import Geom_Circle
-from OCCT.Geom2d import Geom2d_Circle, Geom2d_Line, Geom2d_TrimmedCurve
+from OCCT.Geom2d import Geom2d_Line
 from OCCT.GeomAPI import GeomAPI
 from OCCT.gp import gp_Ax2, gp_Circ, gp_Pln, gp_Pnt2d
 
@@ -97,7 +97,6 @@ class OccCircuit(OccWire, ProxyCircuit):
 
         tol = d.tolerance
         shape = BRepBuilderAPI_MakeWire()
-        edges = []
 
         #: List of parameters
         parameters = list(self.calculate_parameters(circles, pln, clockwise, d.offset))
@@ -142,7 +141,7 @@ class OccCircuit(OccWire, ProxyCircuit):
         shape.Add(edge)
 
         wire = shape.Wire()
-        curve = self.curve = BRepAdaptor_CompCurve(wire)
+        self.curve = BRepAdaptor_CompCurve(wire)
         self.shape = wire
 
     def init_layout(self):

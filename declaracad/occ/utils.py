@@ -1,4 +1,4 @@
-from .api import Wire
+from .api import Topology, Wire
 
 
 def discontinous_points(wire, tol=0.5):

@@ -10,19 +10,7 @@ Created on Dec 27, 2020
 @author: jrm
 """
 
-import math
-
-from atom.api import (
-    Bool,
-    Coerced,
-    Float,
-    ForwardTyped,
-    List,
-    Str,
-    Tuple,
-    Typed,
-    observe,
-)
+from atom.api import Bool, Coerced, Float, ForwardTyped, Str, Tuple, Typed, observe
 from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl

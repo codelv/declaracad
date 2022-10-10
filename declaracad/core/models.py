@@ -57,8 +57,8 @@ class Model(Atom):
             except Exception as e:
                 #: Shorten any long values
                 log.warning(
-                    "Failed to restore state '{}.{} = {}'".format(
-                        self, key, clip(value)
+                    "Failed to restore state '{}.{} = {}' (reason: {})".format(
+                        self, key, clip(value), e
                     )
                 )
 
@@ -126,7 +126,7 @@ class Plugin(EnamlPlugin):
                 self.__setstate__(state)
                 # log.debug("Plugin {} state restored from: {}".format(
                 #    self.manifest.id, self._state_file))
-        except Exception as e:
+        except Exception:
             log.warning(
                 "Plugin {} failed to load state: {}".format(
                     self.manifest.id, traceback.format_exc()
@@ -168,7 +168,7 @@ class Plugin(EnamlPlugin):
             with open(self._state_file, "w") as f:
                 f.write(state)
 
-        except Exception as e:
+        except Exception:
             log.warning("Failed to save state: {}".format(traceback.format_exc()))
 
     def _unbind_observers(self):

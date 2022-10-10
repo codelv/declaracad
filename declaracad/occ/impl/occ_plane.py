@@ -31,7 +31,7 @@ class OccPlane(OccShape, ProxyPlane):
         d = self.declaration
         pln = gp_Pln(d.position.proxy, d.direction.proxy)
 
-        curve = self.curve = Geom_Plane(pln)
+        self.curve = Geom_Plane(pln)
         if d.bounds:
             u, v = d.bounds
             face = BRepBuilderAPI_MakeFace(pln, u.x, v.x, u.y, v.y)

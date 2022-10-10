@@ -13,7 +13,6 @@ import faulthandler
 import sys
 import time
 
-import enaml
 import jsonpickle
 
 from declaracad.core.app import Application
@@ -33,7 +32,7 @@ def main(**kwargs):
     exporter = jsonpickle.loads(options)
     assert exporter, "Failed to load exporter from: {}".format(options)
     # An Application is required
-    app = Application()
+    Application()
     t0 = time.time()
     print("Exporting {e.filename} to {e.path}...".format(e=exporter))
     sys.stdout.flush()

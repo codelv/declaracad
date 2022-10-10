@@ -9,10 +9,9 @@ Created on Sept 27, 2016
 
 @author: jrm
 """
-from math import cos, pi, sin, tan
+from math import cos, pi, sin
 
 from atom.api import (
-    Atom,
     Bool,
     Coerced,
     Dict,
@@ -22,15 +21,13 @@ from atom.api import (
     Instance,
     Int,
     List,
-    Property,
     Range,
     Str,
     Typed,
     observe,
-    set_default,
 )
 from enaml.core.declarative import d_
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape
 
 from .geom import Direction, Point, coerce_direction, coerce_point
 from .shape import ProxyShape, Shape
@@ -142,7 +139,7 @@ class ProxyParabola(ProxyEdge):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Parabola)
 
-    def set_focal_length(self, l):
+    def set_focal_length(self, length: float):
         raise NotImplementedError
 
 
@@ -967,7 +964,6 @@ def coerce_circle(value):
     from declaracad.occ.api import Topology
 
     if isinstance(value, (tuple, list)):
-        n = len(value)
         radius = None
         reverse = False
         position = None

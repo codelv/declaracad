@@ -65,7 +65,7 @@ class ToolboxPlugin(Plugin):
                 try:
                     if not issubclass(d, Atom):
                         continue
-                except TypeError as e:
+                except TypeError:
                     continue  # Not a class
                 tool = Tool(name=name, module=module, declaration=d)
                 tools.append(tool)

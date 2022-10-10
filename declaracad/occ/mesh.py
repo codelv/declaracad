@@ -9,8 +9,6 @@ Created on Aug 3, 2021
 
 @author: jrm
 """
-from typing import Optional
-
 from atom.api import (
     Atom,
     Bool,
@@ -27,7 +25,7 @@ from atom.api import (
     Value,
     observe,
 )
-from enaml.colors import Color, ColorMember
+from enaml.colors import ColorMember
 from enaml.core.declarative import d_, d_func
 
 from .shape import Direction, Point, ProxyShape, Shape, coerce_direction, coerce_point
@@ -76,9 +74,6 @@ class ProxyMesh(ProxyShape):
     declaration = ForwardTyped(lambda: Mesh)
 
     def find_node(self, id) -> "Node":
-        raise NotImplementedError
-
-    def find_element(self, id) -> "Element":
         raise NotImplementedError
 
     def find_element(self, id) -> "Element":

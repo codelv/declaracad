@@ -9,10 +9,10 @@ Created on Dec 13, 2017
 
 @author: jrm
 """
-from enaml.core.api import Conditional, Include, Looper
-from enaml.widgets.api import Timer
+from enaml.core.api import Conditional, Include, Looper  # noqa: F401
+from enaml.widgets.api import Timer  # noqa: F401
 
-from .algo import (
+from .algo import (  # noqa: F401
     Chamfer,
     Common,
     Cut,
@@ -37,14 +37,14 @@ from .algo import (
     Transform,
     Translate,
 )
-from .dimension import (
+from .dimension import (  # noqa: F401
     AngleDimension,
     DiameterDimension,
     LengthDimension,
     RadiusDimension,
 )
-from .display import DisplayArrow, DisplayLine, DisplayPlane, DisplayText
-from .draw import (
+from .display import DisplayArrow, DisplayLine, DisplayPlane, DisplayText  # noqa: F401
+from .draw import (  # noqa: F401
     Arc,
     Bezier,
     BSpline,
@@ -69,20 +69,18 @@ from .draw import (
     Vertex,
     Wire,
 )
-from .impl.topology import Topology
-from .loaders import load_model
-from .mesh import Mesh
-from .shape import (
-    BBox,
+from .geom import BBox, Direction, Point  # noqa: F401
+from .impl.topology import Topology  # noqa: F401
+from .loaders import load_model  # noqa: F401
+from .mesh import Mesh  # noqa: F401
+from .shape import (  # noqa: F401
     Box,
     Cone,
     Cylinder,
-    Direction,
     Face,
     HalfSpace,
     Material,
     Part,
-    Point,
     Prism,
     RawPart,
     RawShape,
@@ -95,9 +93,9 @@ from .shape import (
     Tube,
     Wedge,
 )
-from .solver import Solver
-from .voxel import Voxel
+from .solver import Solver  # noqa: F401
+from .voxel import Voxel  # noqa: F401
 
-Loft = ThruSections
-Sweep = Pipe
-Extrude = Prism
+Loft = ThruSections  # noqa: F401
+Sweep = Pipe  # noqa: F401
+Extrude = Prism  # noqa: F401

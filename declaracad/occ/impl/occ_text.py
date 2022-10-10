@@ -75,7 +75,6 @@ class OccText(OccShape, ProxyText):
     def create_shape(self):
         """Create the shape by loading it from the given path."""
         d = self.declaration
-        font = self.font
         axis = gp_Ax3(coerce_axis(d.axis))
         attr = "Graphic3d_HTA_{}".format(d.horizontal_alignment.upper())
         halign = getattr(Graphic3d, attr)

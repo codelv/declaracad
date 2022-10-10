@@ -10,22 +10,11 @@ Created on July 28, 2018
 @author: jrm
 """
 import asyncio
-import faulthandler
-import json
 import os
 import sys
-import traceback
-import warnings
 
 import enaml
-
-faulthandler.enable()
-
-from atom.api import Atom, Bool, Dict, Float, Instance, Str, Typed
-
-# FIXME: The frozen app won't start without this before importing atom
-from enaml import qt
-from enaml.application import deferred_call, timed_call
+from atom.api import Instance, Str, Typed
 
 from declaracad.core.app import Application
 from declaracad.core.utils import JsonRpcProtocol, RemoteLogger, log
@@ -156,7 +145,7 @@ def main(
     if not port and not os.path.exists(filename):
         raise ValueError(f"File {filename} does not exist!")
     if port and not ref:
-        raise ValueError(f"A ref is required when port is given")
+        raise ValueError("A ref is required when port is given")
 
     view = ViewerWindow(filename="-", frameless=bool(port))
     view.show()

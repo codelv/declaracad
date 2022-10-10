@@ -28,7 +28,8 @@ from OCCT.TopoDS import TopoDS_Edge
 
 from declaracad.occ.algo import ProxyPipe
 
-from .occ_algo import OccOperation, OccShape, coerce_shape
+from .occ_algo import OccOperation, coerce_shape
+from .occ_shape import OccShape
 
 
 class OccPipe(OccOperation, ProxyPipe):

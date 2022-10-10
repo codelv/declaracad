@@ -12,7 +12,7 @@ from OCCT.gp import gp_Vec
 
 from declaracad.occ.shape import ProxyPrism
 
-from .occ_shape import OccDependentShape, OccShape, coerce_shape
+from .occ_shape import OccDependentShape, coerce_shape
 
 
 class OccPrism(OccDependentShape, ProxyPrism):

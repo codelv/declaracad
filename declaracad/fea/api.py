@@ -9,4 +9,4 @@ Created on Sept 8, 2021
 
 @author: jrm
 """
-from .analysis import Analysis
+from .analysis import Analysis  # noqa: F401

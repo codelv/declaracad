@@ -14,21 +14,7 @@ import re
 from collections import OrderedDict
 from typing import Optional
 
-from atom.api import (
-    Atom,
-    Bool,
-    Dict,
-    Enum,
-    Float,
-    Instance,
-    Int,
-    List,
-    Property,
-    Str,
-    observe,
-)
-from OCCT.BRep import BRep_Builder
-from OCCT.TopoDS import TopoDS_Compound
+from atom.api import Atom, Bool, Float, Instance, Int, List, Property, Str
 
 from declaracad.occ.api import Point
 
@@ -288,8 +274,6 @@ def parse(path):
             args = []
             for c in re.findall(r"[A-z] *-?[\d.]+ *", data):
                 args.append((c[0].upper(), float(c[1:])))
-
-            keys = set((it[0] for it in args))
 
             # Since some files put mode changes on the same line
             # split them into separate commands

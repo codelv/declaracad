@@ -14,18 +14,15 @@ from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeFace,
     BRepBuilderAPI_MakeWire,
 )
-from OCCT.BRepLib import BRepLib
 from OCCT.BRepMAT2d import (
     BRepMAT2d_BisectingLocus,
     BRepMAT2d_Explorer,
     BRepMAT2d_LinkTopoBilo,
 )
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MiddlePath
-from OCCT.Geom2dAdaptor import Geom2dAdaptor_Curve
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
 from OCCT.MAT import MAT_Arc, MAT_Left
 from OCCT.TopoDS import (
-    TopoDS,
     TopoDS_Compound,
     TopoDS_Edge,
     TopoDS_Face,
@@ -88,7 +85,7 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
                 args[i] = BRepBuilderAPI_MakeWire(s).Wire()
         builder = BRepOffsetAPI_MiddlePath(*args)
         shape = Topology.cast_shape(builder.Shape())
-        curve = self.curve = BRepAdaptor_CompCurve(shape)
+        self.curve = BRepAdaptor_CompCurve(shape)
         self.shape = shape
 
     def middle_path_2d(self, shape: TopoDS_Shape):

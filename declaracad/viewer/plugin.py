@@ -14,12 +14,9 @@ import asyncio
 import functools
 import json
 import os
-import sys
 import time
 from asyncio.base_events import Server
-from typing import TYPE_CHECKING, Iterator
-from typing import List as ListType
-from typing import Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
 import enaml
 import jsonpickle
@@ -28,16 +25,13 @@ from atom.api import (
     Bool,
     Callable,
     ContainerList,
-    Dict,
     Enum,
     Float,
-    ForwardInstance,
     ForwardTyped,
     Instance,
     Int,
     Property,
     Str,
-    Typed,
     observe,
     set_default,
 )
@@ -45,13 +39,12 @@ from enaml.application import deferred_call, timed_call
 from enaml.colors import ColorMember
 from enaml.layout.api import InsertItem
 
-from declaracad.core.api import Model, Plugin, log
+from declaracad.core.api import Plugin, log
 from declaracad.core.utils import (
     JsonRpcProtocol,
     ProcessLineReceiver,
     get_bootstrap_cmd,
 )
-from declaracad.occ.shape import Part
 
 if TYPE_CHECKING:
     from declaracad.editor.plugin import Document
@@ -461,13 +454,12 @@ class ViewerPlugin(Plugin):
         viewer.proxy.display.FitAll()
 
     def run(self, event=None):
-        viewer = self.get_viewer()
         editor = self.workbench.get_plugin("declaracad.editor").get_editor()
         doc = editor.doc
         # viewer.set_source(editor.get_text())
         doc.version += 1
 
-    def _default_exporters(self) -> ListType["ModelExporter"]:
+    def _default_exporters(self) -> list["ModelExporter"]:
         """TODO: push to an ExtensionPoint"""
         from declaracad.occ.exporters.iges.exporter import IgesExporter
         from declaracad.occ.exporters.step.exporter import StepExporter

@@ -9,15 +9,13 @@ Created on Dec 27, 2020
 
 @author: jrm
 """
-from atom.api import Instance, Typed
+from atom.api import Typed
 from OCCT.AIS import AIS_InteractiveObject, AIS_Line, AIS_Plane, AIS_TextLabel
-from OCCT.Geom import Geom_Axis2Placement, Geom_Line, Geom_Plane
-from OCCT.gp import gp_Ax2
+from OCCT.Geom import Geom_Line, Geom_Plane
 from OCCT.Graphic3d import (
     Graphic3d_Group,
     Graphic3d_MaterialAspect,
     Graphic3d_NOM_BRASS,
-    Graphic3d_Text,
 )
 from OCCT.Prs3d import Prs3d_Arrow
 from OCCT.TCollection import TCollection_ExtendedString
@@ -31,7 +29,6 @@ from ..display import (
     ProxyDisplayPlane,
     ProxyDisplayText,
 )
-from ..shape import Point
 from .occ_shape import coerce_axis
 from .utils import color_to_quantity_color
 

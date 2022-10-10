@@ -23,5 +23,5 @@ def load_iges(filename):
         raise ValueError("Failed to load: {}".format(filename))
     reader.PrintCheckLoad(False, IFSelect_ItemsByEntity)
     reader.PrintCheckTransfer(False, IFSelect_ItemsByEntity)
-    ok = reader.TransferRoots()
+    # ok = reader.TransferRoots()
     return [TopoShape(shape=reader.Shape(1))]

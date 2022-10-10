@@ -10,14 +10,11 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
-import math
 from math import pi
 
 from atom.api import (
-    Atom,
     Bool,
     Coerced,
-    Enum,
     Event,
     Float,
     FloatRange,
@@ -27,16 +24,12 @@ from atom.api import (
     List,
     Property,
     Str,
-    Subclass,
     Tuple,
     Typed,
-    Value,
     observe,
-    set_default,
 )
 from enaml.colors import ColorMember
-from enaml.core.api import Include
-from enaml.core.declarative import d_, d_func
+from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject
 
@@ -46,7 +39,6 @@ from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape, TopoDS_Shell
 from declaracad.core.utils import log, process_events
 
 from .geom import (
-    BBox,
     Direction,
     Point,
     coerce_direction,
@@ -270,17 +262,6 @@ class ProxyRawPart(ProxyPart):
         raise NotImplementedError
 
 
-class ProxyLoadShape(ProxyShape):
-    #: A reference to the shape declaration.
-    declaration = ForwardTyped(lambda: LoadShape)
-
-    def set_path(self, path):
-        raise NotImplementedError
-
-    def set_loader(self, loader):
-        raise NotImplementedError
-
-
 class Shape(ToolkitObject):
     """Abstract shape component that can be displayed on the screen
     and represented by the framework.
@@ -400,7 +381,7 @@ class Shape(ToolkitObject):
             try:
                 return self.proxy.get_bounding_box()
             except Exception as e:
-                pass
+                log.warning(e)
 
     #: Bounding box of this shape
     bbox = Property(_get_bounding_box, cached=True)

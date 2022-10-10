@@ -10,13 +10,9 @@ Created on Dec 10, 2015
 @author: jrm
 """
 import os
-import re
 import subprocess
 import sys
-import traceback
-from glob import glob
 from textwrap import dedent
-from types import ModuleType
 from typing import Union
 
 import enaml
@@ -35,7 +31,6 @@ from atom.api import (
     observe,
 )
 from enaml.application import timed_call
-from enaml.core.enaml_compiler import EnamlCompiler
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
 from enaml.scintilla.api import Scintilla
 from enaml.scintilla.mono_font import MONO_FONT
@@ -163,7 +158,7 @@ class Document(Model):
                 with open(self.name) as f:
                     self.unsaved = f.read() != self.source
             except Exception as e:
-                pass
+                log.debug(e)
 
     def _update_suggestions(self, change):
         """Determine code completion suggestions for the current cursor

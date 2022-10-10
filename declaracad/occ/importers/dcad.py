@@ -1,13 +1,12 @@
 import os
 from types import ModuleType
-from typing import Optional
 
 import enaml
 from enaml.core.import_hooks import EnamlCompiler
 from enaml.core.parser import parse
 
 with enaml.imports():
-    from declaracad.occ.loader import LoadedPart
+    from declaracad.occ.loader import LoadedPart  # noqa: F401
 
 
 def load_model(filename: str, from_string: bool = False):

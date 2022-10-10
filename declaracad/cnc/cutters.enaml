@@ -17,7 +17,6 @@ from declaracad.occ.api import (
     Revol, Polyline, Wedge, Rotate, Face, Fuse
 )
 from enaml.core.declarative import d_, d_func
-from typing import List as ListType
 
 
 class Tool(Part):
@@ -28,7 +27,7 @@ class Tool(Part):
     feed_per_rev = d_(Float(strict=False))
 
     @d_func
-    def generate_gcode(self) -> ListType[str]:
+    def generate_gcode(self) -> list[str]:
         """ Tool change gcode """
         cmds = [
             f'T{self.number} M6'

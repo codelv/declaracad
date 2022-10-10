@@ -12,12 +12,11 @@ Created on Sep 20, 2018
 import os
 import re
 import warnings
-from math import acos, atan, atan2, cos, pi, radians, sin, sqrt, tan
+from math import cos, pi, radians, sin, sqrt, tan
 
-from atom.api import Atom, Dict, ForwardTyped, Instance, List, Str, set_default
+from atom.api import Atom, Dict, ForwardTyped, Instance, Str, set_default
 from lxml import etree
 from OCCT.BRep import BRep_Builder
-from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
     BRepBuilderAPI_MakeFace,
@@ -28,14 +27,12 @@ from OCCT.BRepBuilderAPI import (
 
 # from OCCT.BRepLib import breplib_BuildCurves3d
 from OCCT.GC import GC_MakeArcOfEllipse
-from OCCT.Geom import Geom_BezierCurve, Geom_BSplineCurve
+from OCCT.Geom import Geom_BezierCurve
 from OCCT.gp import (
     gp_Ax1,
     gp_Ax2,
-    gp_Ax3,
     gp_Circ,
     gp_Dir,
-    gp_Dir2d,
     gp_Elips,
     gp_Pnt,
     gp_Pnt2d,
@@ -44,7 +41,7 @@ from OCCT.gp import (
     gp_Vec,
 )
 from OCCT.TColgp import TColgp_Array1OfPnt
-from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape
 
 from declaracad.core.utils import log
 

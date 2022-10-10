@@ -11,58 +11,28 @@ Created on Sep 30, 2016
 """
 import os
 from math import pi
-from typing import Tuple as TupleType
 from typing import Union
 
-from atom.api import (
-    Atom,
-    Bool,
-    Instance,
-    List,
-    Property,
-    Str,
-    Typed,
-    observe,
-    set_default,
-)
+from atom.api import Bool, Instance, List, Property, Str, Typed, observe, set_default
 from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.gp import gp, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pln, gp_Pnt, gp_Trsf, gp_Vec
+from OCCT.gp import gp, gp_Ax1, gp_Ax2, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TDF import TDF_Label
 from OCCT.TopLoc import TopLoc_Location
-from OCCT.TopoDS import (
-    TopoDS,
-    TopoDS_Compound,
-    TopoDS_CompSolid,
-    TopoDS_Edge,
-    TopoDS_Face,
-    TopoDS_Iterator,
-    TopoDS_Shape,
-    TopoDS_Shell,
-    TopoDS_Solid,
-    TopoDS_Vertex,
-    TopoDS_Wire,
-)
+from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import Mirror, Rotate, Scale, Translate
+from declaracad.occ.geom import BBox, Direction, Point
 from declaracad.occ.shape import (
-    BBox,
-    Direction,
-    Point,
-    ProxyBox,
-    ProxyFace,
-    ProxyLoadShape,
     ProxyPart,
     ProxyRawPart,
     ProxyRawShape,
     ProxyShape,
     Shape,
-    coerce_direction,
-    coerce_point,
 )
 
 from .topology import Topology
@@ -82,7 +52,7 @@ AZ = gp_Ax1()
 AZ.SetDirection(gp.DZ_())
 
 
-def coerce_axis(value: TupleType[Point, Direction, float]) -> gp_Ax2:
+def coerce_axis(value: tuple[Point, Direction, float]) -> gp_Ax2:
     pos, dir, rotation = value
     axis = gp_Ax2(pos.proxy, dir.proxy)
     axis.Rotate(axis.Axis(), rotation)
@@ -439,7 +409,6 @@ class OccPart(OccDependentShape, ProxyPart):
 
     def update_shape(self, change=None):
         """Create the toolkit shape for the proxy object."""
-        d = self.declaration
         builder = self.builder
         shape = TopoDS_Compound()
         builder.MakeCompound(shape)
@@ -460,8 +429,7 @@ class OccPart(OccDependentShape, ProxyPart):
         This only updates the viewer.
 
         """
-        new_location = self.location = self._default_location()
-        ais_shape = self.ais_shape
+        self.location = self._default_location()
         viewer = self.viewer
 
         # Recompute locations

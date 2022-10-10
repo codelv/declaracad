@@ -9,21 +9,16 @@ Created on Dec 27, 2020
 
 @author: jrm
 """
-from typing import Any
-from typing import Dict as DictType
-from typing import Iterable
-from typing import List as ListType
-from typing import Optional
-from typing import Set as SetType
+from typing import Any, Iterable, Optional
 
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape
+from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape
 
 from declaracad.occ.api import Point, Topology, Wire
 
 
 def distance(
-    points: ListType[Point], start: float, end: float, scale: float = -1
-) -> Optional[ListType[Point]]:
+    points: list[Point], start: float, end: float, scale: float = -1
+) -> Optional[list[Point]]:
     """Set the z-value of the points by interpolating the
     distance from start and end points. If the first two points are equal
     None is returned.
@@ -76,7 +71,7 @@ def distance(
     return points
 
 
-def lookup_vertex(graph: DictType[Point, Any], v: Point):
+def lookup_vertex(graph: dict[Point, Any], v: Point):
     """Lookup the vertex in the graph using the hash, if that fails,
     fallback to using equals to find points that are equal within
     the tolerance.
@@ -103,7 +98,7 @@ def lookup_vertex(graph: DictType[Point, Any], v: Point):
 
 def build_edge_graph(
     shapes: Iterable[TopoDS_Shape],
-) -> DictType[Point, ListType[TopoDS_Shape]]:
+) -> dict[Point, list[TopoDS_Shape]]:
     """Build a graph of vertices and edges that connect them. This assumes
     that all edges are unique.
 
@@ -156,7 +151,7 @@ def walk_edges(graph, vertex, edge):
         the edge is None.
 
     """
-    used = set()  # TODO: Detect loops
+    # used = set()  # TODO: Detect loops
     vertex, topos = lookup_vertex(graph, vertex)
     topo = None
     for t in topos:
@@ -219,7 +214,7 @@ def split_wires(graph):
 
 def group_connected_wires(
     wires: Iterable[TopoDS_Shape],
-) -> ListType[ListType[TopoDS_Shape]]:
+) -> list[list[TopoDS_Shape]]:
     """Put the list of wires into a group if they are connected in the same
     graph.
 
@@ -249,7 +244,7 @@ def group_connected_wires(
 
 def group_connected_faces(
     faces: Iterable[TopoDS_Face], merge: bool = True
-) -> DictType[TopoDS_Face, SetType[TopoDS_Face]]:
+) -> dict[TopoDS_Face, set[TopoDS_Face]]:
     """Create a mapping of each face and the faces which connect to it.
 
     Parameters

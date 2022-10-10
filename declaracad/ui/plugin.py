@@ -10,7 +10,7 @@ Created on Jul 12, 2015
 @author: jrm
 """
 import enaml
-from atom.api import Atom, Dict, Enum, Instance, List, Str
+from atom.api import Atom, Enum, Instance, List, Str
 from enaml.layout.api import (
     AreaLayout,
     DockBarLayout,
@@ -50,7 +50,6 @@ class DeclaracadPlugin(Plugin):
 
     def start(self):
         """Load all the plugins declaracad is dependent on"""
-        w = self.workbench
         super(DeclaracadPlugin, self).start()
         self._refresh_dock_items()
         self._refresh_settings_pages()

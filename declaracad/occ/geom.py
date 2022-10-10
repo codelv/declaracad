@@ -12,8 +12,7 @@ Created on Dec 26, 2020
 import math
 import warnings
 from contextlib import contextmanager
-from typing import Optional
-from typing import Tuple as TupleType
+from typing import Any, Optional, Union
 
 from atom.api import Atom, Float, Property, Typed
 from OCCT.BRep import BRep_Tool
@@ -55,30 +54,38 @@ class BBox(Atom):
     ymax = Float()
     zmax = Float()
 
-    def _get_dx(self):
+    def _get_dx(self) -> float:
         return self.xmax - self.xmin
 
     dx = Property(_get_dx, cached=True)
 
-    def _get_dy(self):
+    def _get_dy(self) -> float:
         return self.ymax - self.ymin
 
     dy = Property(_get_dy, cached=True)
 
-    def _get_dz(self):
+    def _get_dz(self) -> float:
         return self.zmax - self.zmin
 
     dz = Property(_get_dz, cached=True)
 
-    def __init__(self, xmin=0, ymin=0, zmin=0, xmax=0, ymax=0, zmax=0):
+    def __init__(
+        self,
+        xmin: float = 0,
+        ymin: float = 0,
+        zmin: float = 0,
+        xmax: float = 0,
+        ymax: float = 0,
+        zmax: float = 0,
+    ):
         super(BBox, self).__init__(
             xmin=xmin, ymin=ymin, zmin=zmin, xmax=xmax, ymax=ymax, zmax=zmax
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> Union[tuple, float]:
         return (self.xmin, self.ymin, self.zmin, self.xmax, self.ymax, self.zmax)[key]
 
-    def _get_center(self):
+    def _get_center(self) -> "Point":
         return Point(
             (self.xmin + self.xmax) / 2,
             (self.ymin + self.ymax) / 2,
@@ -87,21 +94,21 @@ class BBox(Atom):
 
     center = Property(_get_center, cached=True)
 
-    def _get_diagonal(self):
+    def _get_diagonal(self) -> float:
         return math.sqrt(self.dx**2 + self.dy**2 + self.dz**2)
 
     diagonal = Property(_get_diagonal, cached=True)
 
-    def _get_min(self):
+    def _get_min(self) -> "Point":
         return Point(self.xmin, self.ymin, self.zmin)
 
-    def _get_max(self):
+    def _get_max(self) -> "Point":
         return Point(self.xmax, self.ymax, self.zmax)
 
     min = Property(_get_min)
     max = Property(_get_max)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<BBox: x=%s y=%s z=%s w=%s h=%s d=%s>" % (
             self.xmin,
             self.ymin,
@@ -127,7 +134,7 @@ class Point(Atom):
             x, y, z = x.X(), x.Y(), x.Z()
         super().__init__(x=x, y=y, z=z, **kwargs)
 
-    def _default_proxy(self):
+    def _default_proxy(self) -> gp_Pnt:
         return gp_Pnt(self.x, self.y, self.z)
 
     # ========================================================================
@@ -180,30 +187,30 @@ class Point(Atom):
     def __truediv__(self, other):
         return self.__class__(self.x / other, self.y / other, self.z / other)
 
-    def cross(self, other):
+    def cross(self, other) -> "Point":
         p = self.__coerce__(other)
         return self.__coerce__(self.proxy.Crossed(p.proxy))
 
-    def dot(self, other):
+    def dot(self, other) -> float:
         p = self.__coerce__(other)
         return self.proxy.Dot(p.proxy)
 
-    def midpoint(self, other):
+    def midpoint(self, other) -> "Point":
         p = self.__coerce__(other)
         return self.__class__(
             (self.x + p.x) / 2, (self.y + p.y) / 2, (self.z + p.z) / 2
         )
 
-    def distance(self, other):
+    def distance(self, other) -> float:
         p = self.__coerce__(other)
         return self.proxy.Distance(p.proxy)
 
-    def angle(self, other):
+    def angle(self, other) -> float:
         """Returns the angle value between 0 and pi in radians"""
         v = gp_Vec(self.__coerce__(other).proxy.XYZ())
         return gp_Vec(self.proxy.XYZ()).Angle(v)
 
-    def angle_with_ref(self, other, ref):
+    def angle_with_ref(self, other, ref) -> float:
         """Computes the angle, in radians, between this vector and vector ref.
         The result is a value between -pi and pi.
         """
@@ -211,7 +218,7 @@ class Point(Atom):
         v = gp_Vec(self.__coerce__(other).proxy.XYZ())
         return gp_Vec(self.proxy.XYZ()).AngleWithRef(v, ref)
 
-    def angle2d(self, other):
+    def angle2d(self, other) -> float:
         """Angle between the x and y components
         Returns the angle value between 0 and pi in radians
         """
@@ -219,14 +226,14 @@ class Point(Atom):
         v = gp_Vec(p.x, p.y, 0)
         return gp_Vec(self.x, self.y, 0).Angle(v)
 
-    def magnitude(self):
+    def magnitude(self) -> float:
         return self.proxy.Distance(gp_Pnt())
 
-    def distance2d(self, other):
+    def distance2d(self, other) -> float:
         p = self.__coerce__(other)
         return math.sqrt((self.x - p.x) ** 2 + (self.y - p.y) ** 2)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> "Point":
         """Create a copy with the value replaced with the given parameters."""
         p = Point(*self[:])
         for k, v in kwargs:
@@ -274,13 +281,13 @@ class Direction(Point):
         return gp_Dir(self.x, self.y, self.z)
 
     @classmethod
-    def __coerce__(self, other):
+    def __coerce__(self, other) -> "Direction":
         return coerce_direction(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Direction: x=%s y=%s z=%s>" % self[:]
 
-    def __neg__(self):
+    def __neg__(self) -> "Direction":
         return self.reversed()
 
     def reversed(self) -> "Direction":
@@ -289,7 +296,7 @@ class Direction(Point):
         return Direction(v.X(), v.Y(), v.Z())
 
     def rotated(
-        self, angle: float, axis: Optional[TupleType[Point, "Direction"]] = None
+        self, angle: float, axis: Optional[tuple[Point, "Direction"]] = None
     ) -> "Direction":
         """Rotate by angle radians about the given axis. The axis defaults
         to the origin and z direction.
@@ -300,40 +307,40 @@ class Direction(Point):
         return Direction(v.X(), v.Y(), v.Z())
 
     @classmethod
-    def XY(cls, x, y):
+    def XY(cls, x: float, y: float) -> "Direction":
         # Create a direction in the 2d XY plane with Z normal
         v = gp.DZ_().Rotated(gp.OZ_(), math.atan2(y, x))
         return Direction(v.X(), v.Y(), v.Z())
 
     @classmethod
-    def XZ(cls, x, y):
+    def XZ(cls, x: float, y: float) -> "Direction":
         # Create a direction in the XY plane
         v = gp_Dir()
         v.Rotate(gp.OY_(), math.atan2(y, x))
         return Direction(v.X(), v.Y(), v.Z())
 
     @classmethod
-    def YZ(cls, x, y):
+    def YZ(cls, x: float, y: float) -> "Direction":
         # Create a direction in the XY plane
         v = gp_Dir()
         v.Rotate(gp.OX_(), math.atan2(y, x))
         return Direction(v.X(), v.Y(), v.Z())
 
-    def is_parallel(self, other, tol=None):
+    def is_parallel(self, other, tol: Optional[float] = None) -> bool:
         p = self.__coerce__(other)
         return self.proxy.IsParallel(p.proxy, tol or settings.tolerance)
 
-    def is_opposite(self, other, tol=None):
+    def is_opposite(self, other, tol: Optional[float] = None) -> bool:
         p = self.__coerce__(other)
         return self.proxy.IsOpposite(p.proxy, tol or settings.tolerance)
 
-    def is_normal(self, other, tol=None):
+    def is_normal(self, other, tol: Optional[float] = None) -> bool:
         """Check if perpendicular"""
         p = self.__coerce__(other)
         return self.proxy.IsNormal(p.proxy, tol or settings.tolerance)
 
 
-def coerce_point(arg):
+def coerce_point(arg: Any) -> Point:
     if isinstance(arg, TopoDS_Shape):
         arg = BRep_Tool.Pnt_(arg)
     if hasattr(arg, "XYZ"):  # copy from gp_Pnt, gp_Vec, gp_Dir, etc..
@@ -345,7 +352,7 @@ def coerce_point(arg):
     return Point(*arg)
 
 
-def coerce_direction(arg):
+def coerce_direction(arg: Any) -> Direction:
     if isinstance(arg, TopoDS_Shape):
         arg = BRep_Tool.Pnt_(arg)
     if hasattr(arg, "XYZ"):  # copy from gp_Pnt2d, gp_Vec2d, gp_Dir2d, etc..
@@ -357,7 +364,7 @@ def coerce_direction(arg):
     return Direction(*arg)
 
 
-def coerce_rotation(arg):
+def coerce_rotation(arg: Union[float, tuple[float]]) -> float:
     if isinstance(arg, (int, float)):
         return float(arg)
     return float(math.atan2(*arg))

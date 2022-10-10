@@ -18,18 +18,14 @@ from OCCT.Voxel import (
     Voxel_ColorDS,
     Voxel_DS,
     Voxel_FastConverter,
-    Voxel_Prs,
     Voxel_ROctBoolDS,
-    Voxel_VDM_BOXES,
-    Voxel_VDM_NEARESTBOXES,
-    Voxel_VDM_NEARESTPOINTS,
     Voxel_VDM_POINTS,
 )
 
 from declaracad.extensions import VoxelClient_PrsGl
 from declaracad.occ.voxel import ProxyVoxel, ProxyVoxelTopology
 
-from .occ_shape import OccDependentShape, Shape, coerce_axis
+from .occ_shape import OccDependentShape, Shape
 from .utils import color_to_quantity_color
 
 

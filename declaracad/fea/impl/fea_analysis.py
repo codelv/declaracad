@@ -58,7 +58,7 @@ except ImportError as e:
 from OCCT.MeshVS import MeshVS_Mesh
 
 from declaracad.core.utils import log, log_time
-from declaracad.fea.analysis import Analysis, ProxyAnalysis
+from declaracad.fea.analysis import ProxyAnalysis
 from declaracad.occ.api import Mesh, Point
 from declaracad.occ.impl.occ_mesh import OccElement, OccMeshTopology, OccNode
 from declaracad.occ.impl.occ_shape import OccDependentShape

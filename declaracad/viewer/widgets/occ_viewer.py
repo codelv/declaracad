@@ -25,7 +25,6 @@ from atom.api import (
     Int,
     List,
     Str,
-    Tuple,
     Typed,
     observe,
     set_default,
@@ -34,7 +33,7 @@ from enaml.colors import Color, ColorMember, parse_color
 from enaml.core.declarative import d_
 from enaml.widgets.control import Control, ProxyControl
 
-from declaracad.occ.shape import BBox, Direction, Point
+from declaracad.occ.geom import BBox, Direction, Point
 
 
 def color_pair_coercer(arg):

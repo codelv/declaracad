@@ -9,8 +9,8 @@ Created on Dec 6, 2015
 
 @author: jrm
 """
-from .models import Model, Plugin
-from .utils import log
-from .widgets import EmbeddedWindow, FramelessWindow
-from .widgets import PickableDockArea as DockArea
-from .widgets import PickableDockItem as DockItem
+from .models import Model, Plugin  # noqa: F401
+from .utils import log  # noqa: F401
+from .widgets import EmbeddedWindow, FramelessWindow  # noqa: F401
+from .widgets import PickableDockArea as DockArea  # noqa: F401
+from .widgets import PickableDockItem as DockItem  # noqa: F401

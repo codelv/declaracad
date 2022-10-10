@@ -12,8 +12,6 @@ Created on Aug 31, 2020
 import os
 from typing import Optional
 
-import enaml
-
 
 def load_model(
     filename: str, options: Optional[dict] = None, loader: Optional[str] = None

@@ -13,7 +13,7 @@ from OCCT.gp import gp_Pln
 
 from declaracad.occ.shape import ProxyHalfSpace
 
-from .occ_shape import OccDependentShape, coerce_axis
+from .occ_shape import OccDependentShape
 
 
 class OccHalfSpace(OccDependentShape, ProxyHalfSpace):

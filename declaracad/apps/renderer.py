@@ -12,8 +12,8 @@ import re
 import enaml
 from enaml.qt.qt_application import QtApplication
 
-from declaracad.occ.impl import occ_factories
-from declaracad.viewer.qt import qt_factories
+from declaracad.occ.impl import occ_factories  # noqa: F401
+from declaracad.viewer.qt import qt_factories  # noqa: F401
 
 with enaml.imports():
     from declaracad.viewer.offscreen import OccViewer, OffscreenRenderer

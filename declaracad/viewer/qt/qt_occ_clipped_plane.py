@@ -9,9 +9,8 @@ The full license is in the file LICENSE, distributed with this software.
 from atom.api import Bool, Typed
 from enaml.qt.qt_control import QtControl
 from OCCT.gp import gp_Ax3, gp_Dir, gp_Pnt
-from OCCT.Graphic3d import Graphic3d_ClipPlane, Graphic3d_MaterialAspect
+from OCCT.Graphic3d import Graphic3d_ClipPlane
 
-from declaracad.core.utils import log
 from declaracad.occ.impl.utils import color_to_quantity_color
 from declaracad.viewer.widgets.occ_clipped_plane import ProxyOccViewerClippedPlane
 
@@ -30,7 +29,6 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
     def init_widget(self):
         # super(QtOccViewerClippedPlane, self).init_widget()
         d = self.declaration
-        clip_plane = self.clip_plane
         self.set_enabled(d.enabled)
         self.set_capping(d.capping)
         self.set_capping_hatched(d.capping_hatched)

@@ -27,7 +27,6 @@ class OccSegment(OccLine, ProxySegment):
     curve = Typed(Geom_TrimmedCurve)
 
     def create_shape(self):
-        d = self.declaration
         points = self.get_transformed_points()
         if len(points) != 2:
             raise ValueError("A segment requires exactly two points")

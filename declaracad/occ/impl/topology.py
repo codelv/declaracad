@@ -9,14 +9,7 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
-from typing import Any
-from typing import Dict as DictType
-from typing import Iterable
-from typing import List as ListType
-from typing import Optional
-from typing import Set as SetType
-from typing import Tuple as TupleType
-from typing import TypeVar, Union
+from typing import Any, Iterable, Optional, TypeVar, Union
 
 from atom.api import Atom, Bool, Instance, List, Property, Typed
 from OCCT import GeomAbs
@@ -28,11 +21,7 @@ from OCCT.BRepAdaptor import (
 )
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.BRepBuilderAPI import (
-    BRepBuilderAPI_MakeFace,
-    BRepBuilderAPI_MakeVertex,
-    BRepBuilderAPI_MakeWire,
-)
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeVertex
 from OCCT.BRepExtrema import BRepExtrema_DistShapeShape
 from OCCT.BRepGProp import BRepGProp
 from OCCT.BRepTools import BRepTools, BRepTools_WireExplorer
@@ -49,11 +38,9 @@ from OCCT.Geom import (
     Geom_Curve,
     Geom_Ellipse,
     Geom_Hyperbola,
-    Geom_Line,
     Geom_OffsetCurve,
     Geom_Parabola,
     Geom_Surface,
-    Geom_TrimmedCurve,
 )
 from OCCT.GeomAbs import (
     GeomAbs_BezierCurve,
@@ -95,7 +82,6 @@ from OCCT.TopoDS import (
     TopoDS_CompSolid,
     TopoDS_Edge,
     TopoDS_Face,
-    TopoDS_Iterator,
     TopoDS_Shape,
     TopoDS_Shell,
     TopoDS_Solid,
@@ -109,15 +95,8 @@ from OCCT.TopTools import (
     TopTools_ListOfShape,
 )
 
-from ..shape import (
-    BBox,
-    Direction,
-    Point,
-    Shape,
-    coerce_direction,
-    coerce_point,
-)
-
+from declaracad.occ.geom import BBox
+from declaracad.occ.shape import Direction, Point, Shape, coerce_direction, coerce_point
 
 T = TypeVar("T")
 
@@ -160,10 +139,10 @@ class WireExplorer(Atom):
             occ_iterator.Next()
         return seq
 
-    def ordered_edges(self) -> ListType[TopoDS_Edge]:
+    def ordered_edges(self) -> list[TopoDS_Edge]:
         return self._loop_topo(edges=True)
 
-    def ordered_vertices(self) -> ListType[TopoDS_Vertex]:
+    def ordered_vertices(self) -> list[TopoDS_Vertex]:
         return self._loop_topo(edges=False)
 
 
@@ -295,7 +274,7 @@ class Topology(Atom):
         return Topology.unique_shapes(seq)
 
     @classmethod
-    def unique_shapes(cls, shapes: Iterable[TopoDS_Shape]) -> ListType[TopoDS_Shape]:
+    def unique_shapes(cls, shapes: Iterable[TopoDS_Shape]) -> list[TopoDS_Shape]:
         """Filter out those entities that share the same TShape
         but do *not* share the same orientation. For example if two
         overlapping edges with different directions exist only one will be
@@ -367,7 +346,7 @@ class Topology(Atom):
         return self._loop_topo(TopAbs_COMPOUND)
 
     @classmethod
-    def ordered_vertices_from_wire(cls, wire: TopoDS_Wire) -> ListType[TopoDS_Vertex]:
+    def ordered_vertices_from_wire(cls, wire: TopoDS_Wire) -> list[TopoDS_Vertex]:
         """Get vertices from a wire.
 
         Parameters
@@ -377,7 +356,7 @@ class Topology(Atom):
         return WireExplorer(wire=wire).ordered_vertices()
 
     @classmethod
-    def ordered_edges_from_wire(cls, wire: TopoDS_Wire) -> ListType[TopoDS_Edge]:
+    def ordered_edges_from_wire(cls, wire: TopoDS_Wire) -> list[TopoDS_Edge]:
         """Get edges from a wire.
 
         Parameters
@@ -391,7 +370,7 @@ class Topology(Atom):
         topo_type_a: TopAbs_ShapeEnum,
         topo_type_b: TopAbs_ShapeEnum,
         topo_entity: TopoDS_Shape,
-    ) -> ListType[TopoDS_Shape]:
+    ) -> list[TopoDS_Shape]:
         """
         using the same method
         @param topoTypeA:
@@ -433,13 +412,13 @@ class Topology(Atom):
     # ----------------------------------------------------------------------
     # EDGE <-> FACE
     # ----------------------------------------------------------------------
-    def faces_from_edge(self, edge: TopoDS_Edge) -> ListType[TopoDS_Face]:
+    def faces_from_edge(self, edge: TopoDS_Edge) -> list[TopoDS_Face]:
         return self._map_shapes_and_ancestors(TopAbs_EDGE, TopAbs_FACE, edge)
 
-    def edges_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Edge]:
+    def edges_from_face(self, face: TopoDS_Face) -> list[TopoDS_Edge]:
         return self._loop_topo(TopAbs_EDGE, face)
 
-    def find_common_edges(self, shape: TopoDS_Shape) -> SetType[TopoDS_Edge]:
+    def find_common_edges(self, shape: TopoDS_Shape) -> set[TopoDS_Edge]:
         """Find edges common to this shape and the given shape
 
         Parameters
@@ -462,7 +441,7 @@ class Topology(Atom):
         return common
 
     @classmethod
-    def find_unique_edges(cls, shapes: Iterable[TopoDS_Shape]) -> SetType[TopoDS_Edge]:
+    def find_unique_edges(cls, shapes: Iterable[TopoDS_Shape]) -> set[TopoDS_Edge]:
         """Find edges unique to only one shape in the set of shapes.
 
         Parameters
@@ -491,7 +470,7 @@ class Topology(Atom):
     @classmethod
     def join_edges(
         cls, edges: Iterable[TopoDS_Edge], tolerance=1e-6
-    ) -> ListType[TopoDS_Wire]:
+    ) -> list[TopoDS_Wire]:
         """Join a set of edges into a set of wires.
 
         Parameters
@@ -514,13 +493,13 @@ class Topology(Atom):
     # ----------------------------------------------------------------------
     # VERTEX <-> EDGE
     # ----------------------------------------------------------------------
-    def vertices_from_edge(self, edge: TopoDS_Edge) -> ListType[TopoDS_Vertex]:
+    def vertices_from_edge(self, edge: TopoDS_Edge) -> list[TopoDS_Vertex]:
         return self._loop_topo(TopAbs_VERTEX, edge)
 
-    def edges_from_vertex(self, vertex: TopoDS_Vertex) -> ListType[TopoDS_Edge]:
+    def edges_from_vertex(self, vertex: TopoDS_Vertex) -> list[TopoDS_Edge]:
         return self._map_shapes_and_ancestors(TopAbs_VERTEX, TopAbs_EDGE, vertex)
 
-    def find_common_vertices(self, shape: TopoDS_Shape) -> SetType[TopoDS_Vertex]:
+    def find_common_vertices(self, shape: TopoDS_Shape) -> set[TopoDS_Vertex]:
         """Find edges common to this shape and the given shape
 
         Parameters
@@ -545,40 +524,40 @@ class Topology(Atom):
     # ----------------------------------------------------------------------
     # WIRE <-> EDGE
     # ----------------------------------------------------------------------
-    def edges_from_wire(self, wire: TopoDS_Wire) -> ListType[TopoDS_Edge]:
+    def edges_from_wire(self, wire: TopoDS_Wire) -> list[TopoDS_Edge]:
         return self._loop_topo(TopAbs_EDGE, wire)
 
-    def wires_from_edge(self, edge: TopoDS_Edge) -> ListType[TopoDS_Wire]:
+    def wires_from_edge(self, edge: TopoDS_Edge) -> list[TopoDS_Wire]:
         return self._map_shapes_and_ancestors(TopAbs_EDGE, TopAbs_WIRE, edge)
 
-    def wires_from_vertex(self, vertex: TopoDS_Vertex) -> ListType[TopoDS_Vertex]:
+    def wires_from_vertex(self, vertex: TopoDS_Vertex) -> list[TopoDS_Vertex]:
         return self._map_shapes_and_ancestors(TopAbs_VERTEX, TopAbs_WIRE, vertex)
 
     # ----------------------------------------------------------------------
     # WIRE <-> FACE
     # ----------------------------------------------------------------------
-    def wires_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Wire]:
+    def wires_from_face(self, face: TopoDS_Face) -> list[TopoDS_Wire]:
         return self._loop_topo(TopAbs_WIRE, face)
 
-    def faces_from_wire(self, wire: TopoDS_Wire) -> ListType[TopoDS_Face]:
+    def faces_from_wire(self, wire: TopoDS_Wire) -> list[TopoDS_Face]:
         return self._map_shapes_and_ancestors(TopAbs_WIRE, TopAbs_FACE, wire)
 
     # ----------------------------------------------------------------------
     # VERTEX <-> FACE
     # ----------------------------------------------------------------------
-    def faces_from_vertex(self, vertex: TopoDS_Vertex) -> ListType[TopoDS_Face]:
+    def faces_from_vertex(self, vertex: TopoDS_Vertex) -> list[TopoDS_Face]:
         return self._map_shapes_and_ancestors(TopAbs_VERTEX, TopAbs_FACE, vertex)
 
-    def vertices_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Vertex]:
+    def vertices_from_face(self, face: TopoDS_Face) -> list[TopoDS_Vertex]:
         return self._loop_topo(TopAbs_VERTEX, face)
 
     # ----------------------------------------------------------------------
     # FACE <-> SOLID
     # ----------------------------------------------------------------------
-    def solids_from_face(self, face: TopoDS_Face) -> ListType[TopoDS_Solid]:
+    def solids_from_face(self, face: TopoDS_Face) -> list[TopoDS_Solid]:
         return self._map_shapes_and_ancestors(TopAbs_FACE, TopAbs_SOLID, face)
 
-    def faces_from_solids(self, solid: TopoDS_Solid) -> ListType[TopoDS_Face]:
+    def faces_from_solids(self, solid: TopoDS_Solid) -> list[TopoDS_Face]:
         return self._loop_topo(TopAbs_FACE, solid)
 
     # -------------------------------------------------------------------------
@@ -586,10 +565,9 @@ class Topology(Atom):
     # -------------------------------------------------------------------------
     def extract_surfaces(
         self, surface_type: GeomAbs_SurfaceType
-    ) -> ListType[DictType[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Returns a list of dicts containing the face and surface"""
         surfaces = []
-        attr = str(surface_type).split("_")[-1]
         for f in self.faces:
             surface = self.cast_surface(f, surface_type)
             if surface is not None:
@@ -777,7 +755,7 @@ class Topology(Atom):
         """
         try:
             face = TopoDS.Face_(shape)
-        except RuntimeError as e:
+        except RuntimeError:
             return None
         surface = BRepAdaptor_Surface(face, True)
         t = surface.GetType()
@@ -1064,7 +1042,7 @@ class Topology(Atom):
     @classmethod
     def faces_sharing_edges(
         cls, face: TopoDS_Face, faces: Iterable[TopoDS_Face]
-    ) -> SetType[TopoDS_Face]:
+    ) -> set[TopoDS_Face]:
         """Return list of faces which have at least one shared
         edge with face. The face itself is always excluded.
 
@@ -1195,7 +1173,7 @@ class Topology(Atom):
 
     curve_bounds = Property(cached=True)
 
-    def _get_curve_bounds(self) -> TupleType[float, float]:
+    def _get_curve_bounds(self) -> tuple[float, float]:
         """Get the U bounds of an edge or wire.
 
         Returns
@@ -1211,7 +1189,7 @@ class Topology(Atom):
 
     surface_bounds = Property(cached=True)
 
-    def _get_surface_bounds(self) -> TupleType[float, float, float, float]:
+    def _get_surface_bounds(self) -> tuple[float, float, float, float]:
         """Get the UV bounds of a surface.
 
         Returns
@@ -1300,7 +1278,7 @@ class Topology(Atom):
     @classmethod
     def parametrize_by_length(
         cls, shape: Union[TopoDS_Wire, TopoDS_Edge], length: float
-    ) -> Iterable[TupleType[Union[BRepAdaptor_CompCurve, BRepAdaptor_Curve], float]]:
+    ) -> Iterable[tuple[Union[BRepAdaptor_CompCurve, BRepAdaptor_Curve], float]]:
         """Parametrize an edge or wire.
 
         Parameters
@@ -1327,7 +1305,7 @@ class Topology(Atom):
     @classmethod
     def parametrize_curve_by_length(
         cls, curve: Union[BRepAdaptor_CompCurve, BRepAdaptor_Curve], length: float
-    ) -> Iterable[TupleType[float]]:
+    ) -> Iterable[tuple[float]]:
         """Parametrize a curve
 
         Yields
@@ -1412,7 +1390,7 @@ class Topology(Atom):
 
     start_tangent = Property(cached=True)
 
-    def _get_start_tangent(self) -> TupleType[Point, Direction]:
+    def _get_start_tangent(self) -> tuple[Point, Direction]:
         """Get the start tangent point and direction"""
         shape = Topology.cast_shape(self.shape)
         if isinstance(shape, TopoDS_Edge):
@@ -1429,7 +1407,7 @@ class Topology(Atom):
 
     end_tangent = Property(cached=True)
 
-    def _get_end_tangent(self) -> TupleType[Point, Direction]:
+    def _get_end_tangent(self) -> tuple[Point, Direction]:
         """Get the end tangent point and direction"""
         shape = Topology.cast_shape(self.shape)
         if isinstance(shape, TopoDS_Edge):
@@ -1516,7 +1494,7 @@ class Topology(Atom):
     # -------------------------------------------------------------------------
     def intersection(
         self, shape: Union[Shape, TopoDS_Shape], tol=1e-6
-    ) -> Optional[ListType[TopoDS_Shape]]:
+    ) -> Optional[list[TopoDS_Shape]]:
         """Returns the resulting intersection of this and the given shape
         or None if an error or an empty list there are no intersections.
 
@@ -1532,6 +1510,7 @@ class Topology(Atom):
 
         """
         from .occ_shape import coerce_shape
+
         other_shape = coerce_shape(shape)
         if not other_shape:
             return None

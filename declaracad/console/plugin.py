@@ -10,8 +10,6 @@ Created on Dec 10, 2015
 
 @author: jrm
 """
-import logging
-
 from declaracad.core.api import Plugin
 
 

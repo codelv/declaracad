@@ -94,7 +94,6 @@ class OccArc(OccLine, ProxyArc):
 
     def create_arc_from_solver(self, **params):
         """Create an arc by solving the given parameters."""
-        d = self.declaration
         raise NotImplementedError("TODO")
 
     def set_radius(self, r):

@@ -14,8 +14,7 @@ from OCCT.BRepAlgoAPI import BRepAlgoAPI_Section
 
 from declaracad.occ.algo import ProxyIntersection
 
-from .occ_algo import OccBooleanOperation, coerce_shape
-from .topology import Topology
+from .occ_algo import OccBooleanOperation
 
 
 class OccIntersection(OccBooleanOperation, ProxyIntersection):

@@ -10,7 +10,7 @@ from typing import Tuple as TupleType
 
 from atom.api import Atom
 from OCCT.GccAna import GccAna_Circ2d3Tan
-from OCCT.GccEnt import GccEnt_QualifiedCirc, GccEnt_QualifiedLin
+from OCCT.GccEnt import GccEnt_QualifiedLin
 from OCCT.gp import gp_Lin2d
 
 from declaracad.occ.geom import Direction, Point
@@ -33,6 +33,6 @@ class Solver(Atom):
 
         """
         start_point, start_direction = start_tangent
-        line = gc_Lin2d(start_point.proxy, start_direction.proxy)
-        gca_lin = GccAna_QualifiedLin(line)
+        line = gp_Lin2d(start_point.proxy, start_direction.proxy)
+        gca_lin = GccEnt_QualifiedLin(line)
         GccAna_Circ2d3Tan(gca_lin, 1e-6)

@@ -28,5 +28,5 @@ class OccParabola(OccEdge, ProxyParabola):
         curve = self.curve = Geom_Parabola(coerce_axis(d.axis), d.focal_length)
         self.shape = self.make_edge(curve)
 
-    def set_focal_length(self, l):
+    def set_focal_length(self, length: float):
         self.create_shape()

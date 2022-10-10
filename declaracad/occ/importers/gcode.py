@@ -15,19 +15,10 @@ import enaml
 
 from declaracad.cnc import gcode
 from declaracad.core.utils import log
-from declaracad.occ.api import (
-    Arc,
-    Bezier,
-    Circle,
-    Direction,
-    Point,
-    Polyline,
-    Vertex,
-    Wire,
-)
+from declaracad.occ.api import Arc, Bezier, Direction, Point, Polyline, Vertex
 
 with enaml.imports():
-    from declaracad.parts.display import Axis, BoundingBox
+    from declaracad.parts.display import Axis
 
 
 COLORMAP = {
@@ -94,7 +85,7 @@ def load_gcode(filename, **options):
     log.debug(doc)
     plane = "xy"
     units = options.get("units", "mm")
-    feedrate = options.get("feedrate", 0)
+    # feedrate = options.get("feedrate", 0)
     scale = 25.4 if units == "in" else 1
     for cmd in doc.commands:
         data = cmd.data
@@ -214,7 +205,7 @@ def load_gcode(filename, **options):
                 else:
                     raise RuntimeError("Unreachable code. This is likely a bug")
                 r = center.distance(last)
-                r2 = center.distance(pos)
+                # r2 = center.distance(pos)
                 # if abs(r2-r) > 1e-3:
                 #      print(f"Warning: Arc start and end do not match {r} != {r2}")
 
@@ -222,7 +213,7 @@ def load_gcode(filename, **options):
                 helical = abs(helix) > 1e-6
                 if helical:
                     # Recompute direction, center, and radius
-                    pitch = helix * 4
+                    # pitch = helix * 4
                     b = helix / 2
                     r = cmath.sqrt(r**2 + helix**2).real
                     if plane == "xy":

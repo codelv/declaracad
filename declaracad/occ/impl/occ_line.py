@@ -16,7 +16,7 @@ from OCCT.gp import gp_Lin
 
 from declaracad.occ.draw import ProxyLine
 
-from .occ_edge import LINE_TYPES, OccEdge
+from .occ_edge import OccEdge
 from .occ_shape import coerce_axis
 
 

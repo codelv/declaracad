@@ -12,7 +12,6 @@ Created on Sep 19, 2022
 import io
 import os
 import warnings
-from math import pi
 from typing import Optional
 
 from atom.api import Instance, Value, set_default
@@ -23,16 +22,14 @@ from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_Transform,
 )
-from OCCT.GC import GC_MakeArcOfCircle
-from OCCT.Geom import Geom_BezierCurve, Geom_Line, Geom_TrimmedCurve
-from OCCT.GeomAPI import GeomAPI_ExtremaCurveCurve
-from OCCT.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
+from OCCT.Geom import Geom_BezierCurve
+from OCCT.gp import gp_Ax2, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.TColgp import TColgp_Array1OfPnt
-from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Compound, TopoDS_Shape
 
 from declaracad.core.utils import log
+from declaracad.occ.draw import ProxyPdf
 
-from ..draw import ProxyPdf
 from .occ_shape import OccShape
 
 try:
@@ -185,7 +182,7 @@ class OccPdf(OccShape, ProxyPdf):
     def extract_shapes(self, doc, page):
         """Parse shapes from the pdf page"""
         assert page.get("Type", "Type") == "Page"
-        media_box = page["MediaBox"]
+        # media_box = page["MediaBox"]
         contents = doc.parse_reference(page["Contents"])
         data = contents.stream()
         path: Optional[BRepBuilderAPI_MakeWire] = None

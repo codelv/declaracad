@@ -11,14 +11,9 @@ from OCCT.TCollection import TCollection_ExtendedString, TCollection_HAsciiStrin
 from OCCT.TDataStd import TDataStd_Name
 from OCCT.TDocStd import TDocStd_Document
 from OCCT.XCAFApp import XCAFApp_Application
-from OCCT.XCAFDoc import (
-    XCAFDoc_Color,
-    XCAFDoc_ColorGen,
-    XCAFDoc_DocumentTool,
-    XCAFDoc_Material,
-)
+from OCCT.XCAFDoc import XCAFDoc_ColorGen, XCAFDoc_DocumentTool
 
-from declaracad.occ.api import Part, load_model
+from declaracad.occ.api import load_model
 from declaracad.occ.impl.utils import color_to_quantity_color
 
 
@@ -43,8 +38,8 @@ def create_xcaf_document(filename: str) -> TDocStd_Document:
 
     shape_tool = XCAFDoc_DocumentTool.ShapeTool_(doc.Main())
     color_tool = XCAFDoc_DocumentTool.ColorTool_(doc.Main())
-    material_tool = XCAFDoc_DocumentTool.MaterialTool_(doc.Main())
-    notes_tool = XCAFDoc_DocumentTool.NotesTool_(doc.Main())
+    # material_tool = XCAFDoc_DocumentTool.MaterialTool_(doc.Main())
+    # notes_tool = XCAFDoc_DocumentTool.NotesTool_(doc.Main())
 
     # Load the enaml model file
     parts = load_model(filename)
@@ -55,7 +50,6 @@ def create_xcaf_document(filename: str) -> TDocStd_Document:
         for s in part.proxy.walk_shapes():
             d = s.declaration
             ais_shape = s.ais_shape
-            is_part = isinstance(d, Part)
 
             label = s.tdf_label = shape_tool.NewShape()
             shape = ais_shape.Shape().Located(s.location)

@@ -8,38 +8,29 @@ The full license is in the file LICENSE, distributed with this software.
 Created on Sep 26, 2016
 
 """
-import logging
 import os
 import sys
-import traceback
 from contextlib import contextmanager
-from datetime import datetime
 
-from atom.api import Bool, Dict, Int, List, Property, Typed, Value
-from enaml.application import Application, deferred_call, timed_call
-from enaml.qt import QtCore, QtGui
+from atom.api import Bool, Dict, Int, List, Property, Typed
+from enaml.application import Application
+from enaml.qt import QtGui
 from enaml.qt.qt_control import QtControl
-from enaml.qt.qt_toolkit_object import QtToolkitObject
-from enaml.qt.QtCore import QRect, Qt, QTimer
-from enaml.qt.QtGui import QPainter, QPalette
+from enaml.qt.QtCore import Qt, QTimer
+from enaml.qt.QtGui import QPalette
 from enaml.qt.QtWidgets import QOpenGLWidget
-from OCCT import Aspect, Graphic3d, TopAbs, V3d
-from OCCT import __version__ as OCCT_VERSION
+from OCCT import Aspect, TopAbs, V3d
 from OCCT.AIS import AIS_InteractiveContext, AIS_Shaded, AIS_Shape, AIS_WireFrame
 from OCCT.Aspect import (
     Aspect_DisplayConnection,
     Aspect_GFM_VER,
     Aspect_GridDrawMode,
     Aspect_GridType,
-    Aspect_TOTP_LEFT_LOWER,
 )
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.Geom import Geom_Curve, Geom_Surface
-from OCCT.gp import gp_Ax3, gp_Dir, gp_Pnt
 from OCCT.Graphic3d import (
     Graphic3d_Camera,
-    Graphic3d_MaterialAspect,
     Graphic3d_RenderingParams,
     Graphic3d_RM_RASTERIZATION,
     Graphic3d_RM_RAYTRACING,
@@ -48,32 +39,28 @@ from OCCT.Graphic3d import (
     Graphic3d_StructureManager,
     Graphic3d_TypeOfShadingModel,
 )
-from OCCT.MeshVS import (
-    MeshVS_DA_DisplayNodes,
-    MeshVS_DA_EdgeColor,
-    MeshVS_Mesh,
-    MeshVS_MeshEntityOwner,
-    MeshVS_MeshPrsBuilder,
-)
+from OCCT.MeshVS import MeshVS_Mesh, MeshVS_MeshEntityOwner
 from OCCT.OpenGl import OpenGl_GraphicDriver
 from OCCT.Prs3d import Prs3d_Drawer
 from OCCT.PrsMgr import PrsMgr_PresentationManager
 from OCCT.Quantity import Quantity_Color, Quantity_NOC_BLACK, Quantity_NOC_WHITE
 from OCCT.TCollection import TCollection_AsciiString
-from OCCT.TopAbs import TopAbs_EDGE, TopAbs_FACE, TopAbs_WIRE
-from OCCT.TopLoc import TopLoc_Location
 from OCCT.TopoDS import TopoDS_Shape
-from OCCT.V3d import V3d_TypeOfOrientation, V3d_View, V3d_Viewer
+from OCCT.V3d import (
+    V3d_AmbientLight,
+    V3d_DirectionalLight,
+    V3d_SpotLight,
+    V3d_TypeOfOrientation,
+    V3d_View,
+    V3d_Viewer,
+)
 
 from declaracad.core.utils import log
-from declaracad.occ.api import BBox, Topology
+from declaracad.occ.api import BBox
 from declaracad.occ.impl.occ_dimension import OccDimension
 from declaracad.occ.impl.occ_display import OccDisplayItem
 from declaracad.occ.impl.occ_shape import OccPart, OccShape
-from declaracad.occ.impl.utils import (
-    color_to_quantity_color,
-    material_to_material_aspect,
-)
+from declaracad.occ.impl.utils import color_to_quantity_color
 from declaracad.viewer.widgets.occ_viewer import ProxyOccViewer, ViewerSelection
 
 if sys.platform == "win32":
@@ -406,7 +393,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
         # Setup viewer
         ais_context = self.ais_context = AIS_InteractiveContext(viewer)
-        drawer = self.prs3d_drawer = ais_context.DefaultDrawer()
+        self.prs3d_drawer = ais_context.DefaultDrawer()
 
         # Needed for displaying graphics
         prs_mgr = self.prs_mgr = ais_context.MainPrsMgr()
@@ -597,8 +584,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         if change["type"] != "update":
             return
         occ_shape = change["owner"]
-        ais_context = self.ais_context
-        displayed_shapes = self._displayed_shapes
         old_ais_shape = change["oldvalue"]
         if old_ais_shape is not None:
             self.remove_shape_from_display(occ_shape)
@@ -702,13 +687,13 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                     attr = "V3d_TypeOfOrientation_{}".format(d.orientation)
                 else:
                     attr = "V3d_{}".format(d.orientation)
-                orientation = getattr(V3d.V3d_TypeOfOrientation, attr, V3d.V3d_Zneg)
-                light = V3d.V3d_DirectionalLight(orientation, color, d.headlight)
+                orientation = getattr(V3d_TypeOfOrientation, attr, V3d.V3d_Zneg)
+                light = V3d_DirectionalLight(orientation, color, d.headlight)
             elif d.type == "spot":
-                light = V3d.V3d_SpotLight(d.position, d.direction, color)
+                light = V3d_SpotLight(d.position, d.direction, color)
                 light.SetAngle(d.angle)
             else:
-                light = V3d.V3d_AmbientLight(color)
+                light = V3d_AmbientLight(color)
             light.SetIntensity(d.intensity)
 
             if d.range:
@@ -957,7 +942,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
     def update_selection(self, pos, area, shift):
         """Update the selection state"""
-        widget = self.widget
         view = self.v3d_view
         ais_context = self.ais_context
 

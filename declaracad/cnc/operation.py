@@ -9,37 +9,13 @@ Created on Nov 9, 2021
 
 @author: jrm
 """
-import math
 import traceback
-from datetime import datetime
-from math import ceil, cos, sin, sqrt
-from typing import Callable
-from typing import List as ListType
-from typing import Optional
+from typing import Callable, Optional
 
 import enaml
-from atom.api import Atom, Bool, Coerced, Enum, Float, Instance, Str
+from atom.api import Bool, Coerced, Enum, Float, Instance, Str
 
-from declaracad.cnc.interpolate import group_connected_faces
-from declaracad.cnc.optimize import optimize_points
-from declaracad.occ.api import (
-    Arc,
-    Conditional,
-    Cylinder,
-    Direction,
-    DisplayArrow,
-    HalfSpace,
-    Include,
-    Looper,
-    Offset,
-    Part,
-    Point,
-    Polyline,
-    Timer,
-    Topology,
-    Vertex,
-    Wire,
-)
+from declaracad.occ.api import Arc, Direction, Part, Point, Polyline, Topology, Wire
 from declaracad.occ.geom import coerce_point
 
 with enaml.imports():
@@ -50,7 +26,7 @@ from enaml.core.declarative import d_, d_func
 
 def generate_arc_gcode(
     arc: Arc, format_value: Callable[[float], float], incremental: bool = True
-) -> ListType[str]:
+) -> list[str]:
     """Generate gcodee for an Arc"""
 
     cmds = []
@@ -102,7 +78,7 @@ def generate_arc_gcode(
 
 def generate_polyline_gcode(
     polyline: Polyline, format_value: Callable[[float], float], rapid: bool = False
-) -> ListType[str]:
+) -> list[str]:
     """Generate gcodee for a Polyline"""
     cmds = []
     code = "G0" if rapid else "G1"
@@ -114,7 +90,7 @@ def generate_polyline_gcode(
 
 def generate_wire_gcode(
     wire: Wire, format_value: Callable[[float], float]
-) -> ListType[str]:
+) -> list[str]:
     """Generate code for a Wire"""
     cmds = []
     last_point = wire.topology.start_point
@@ -151,9 +127,9 @@ def generate_wire_gcode(
 
 def generate_part_gcode(
     part: Part, format_value: Callable[[float], float]
-) -> ListType[str]:
+) -> list[str]:
     """Generate code for a Part"""
-    cmds: ListType[str] = []
+    cmds: list[str] = []
     for child in part.children:
         if not getattr(child, "display", True):
             continue  # Do not render hidden items
@@ -216,7 +192,7 @@ class Operation(Part):
     @d_func
     def generate_spindle_start_gcode(
         self, format_value: Optional[Callable[[float], float]] = None
-    ) -> ListType[str]:
+    ) -> list[str]:
         cmds = []
 
         # Turn on spindle and coolant from base operation
@@ -229,13 +205,13 @@ class Operation(Part):
         elif self.coolant == "flood":
             cmds.append("M8")
         else:
-            cmds.append(f"M9")
+            cmds.append("M9")
         return cmds
 
     @d_func
     def generate_toolpath_gcode(
         self, format_value: Optional[Callable[[float], float]] = None
-    ) -> ListType[str]:
+    ) -> list[str]:
         """Generate gcode output for this operation"""
         cmds = self.generate_spindle_start_gcode()
         cmds.extend(generate_part_gcode(self, format_value))
@@ -246,7 +222,7 @@ class Operation(Part):
     @d_func
     def generate_spindle_stop_gcode(
         self, format_value: Optional[Callable[[float], float]] = None
-    ) -> ListType[str]:
+    ) -> list[str]:
         cmds = []
         if self.coolant:
             # Turn off coolant
@@ -259,7 +235,7 @@ class Operation(Part):
     @d_func
     def generate_gcode(
         self, format_value: Optional[Callable[[float], float]] = None
-    ) -> ListType[str]:
+    ) -> list[str]:
         """Generate gcode output for this operation. If the disabled flag
         is set this just returns a comment.
 

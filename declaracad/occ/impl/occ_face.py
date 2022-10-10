@@ -28,6 +28,11 @@ def shape_to_face(shape):
 
 
 class OccFace(OccDependentShape, ProxyFace):
+    reference = set_default(
+        "https://dev.opencascade.org/doc/refman/html/"
+        "class_b_rep_builder_a_p_i___make_face.html"
+    )
+
     def update_shape(self, change=None):
         d = self.declaration
         if d.wires:

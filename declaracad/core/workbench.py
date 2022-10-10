@@ -9,7 +9,6 @@ Created on Jul 12, 2015
 
 @author: jrm
 """
-import enaml
 from atom.api import Str
 from enaml.qt.QtWidgets import QMessageBox
 from enaml.workbench.ui.api import UIWorkbench

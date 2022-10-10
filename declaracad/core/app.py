@@ -12,8 +12,7 @@ Created on Aug 24, 2020
 import asyncio
 import inspect
 import logging
-import sys
-from functools import partial, wraps
+import warnings
 from queue import Empty, Queue
 
 try:
@@ -24,15 +23,13 @@ except ImportError as e:
     warnings.warn(f"Nest asyncio not found: {e}")
 
 from asyncqtpy import QEventLoop, QEventLoopPolicy
-from atom.api import Atom, Bool, Instance
+from atom.api import Bool, Instance
 from enaml.qt.qt_application import QtApplication
 
 from declaracad.core.utils import log
-from declaracad.fea.impl import fea_factories
-
-# Import factories
-from declaracad.occ.impl import occ_factories
-from declaracad.viewer.qt import qt_factories
+from declaracad.fea.impl import fea_factories  # noqa: F401
+from declaracad.occ.impl import occ_factories  # noqa: F401
+from declaracad.viewer.qt import qt_factories  # noqa: F401
 
 asyncio.set_event_loop_policy(QEventLoopPolicy())
 

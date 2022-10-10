@@ -11,7 +11,6 @@ Created on June, 24 2021
 """
 from atom.api import Validate
 from enaml.qt import scintilla_lexers, scintilla_tokens
-from enaml.qt.QtGui import QColor, QFont
 from enaml.scintilla.api import Scintilla
 
 from declaracad.editor.themes import THEMES

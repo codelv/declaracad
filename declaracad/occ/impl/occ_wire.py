@@ -19,7 +19,7 @@ from OCCT.TopTools import TopTools_ListOfShape
 from declaracad.core.utils import log
 from declaracad.occ.draw import ProxyWire
 
-from .occ_line import LINE_TYPES
+from .occ_edge import LINE_TYPES
 from .occ_shape import OccDependentShape, OccShape
 from .topology import Topology
 

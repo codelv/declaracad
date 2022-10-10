@@ -7,16 +7,16 @@ The full license is in the file LICENSE, distributed with this software.
 
 Created on Jan, 15 2022
 """
-from atom.api import set_default
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve, BRepAdaptor_Curve
 from OCCT.GeomLib import GeomLib
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
+from declaracad.occ.algo import ProxyExtend
+
 from .occ_algo import OccOperation, coerce_shape
-from .topology import Topology
 
 
-class OccExtend(OccOperation, ProxyTrimmedCurve):
+class OccExtend(OccOperation, ProxyExtend):
     def update_shape(self, change=None):
         d = self.declaration
         shape = d.shape
@@ -38,9 +38,11 @@ class OccExtend(OccOperation, ProxyTrimmedCurve):
         else:
             curve = BRepAdaptor_Curve(shape)
 
-        t = (curve.FirstParameter(), curve.LastParameter())
-
+        # t = (curve.FirstParameter(), curve.LastParameter())
+        # curve.Value(t)
+        pnt = op  # TODO: ???
         GeomLib.ExtendCurveToPoint(curve, pnt, 1, True)
 
     def extend_surface(self, shape, op):
-        surface = Topology.cast_surface(shape)
+        # surface = Topology.cast_surface(shape)
+        raise NotImplementedError("TODO")

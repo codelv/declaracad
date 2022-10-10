@@ -10,7 +10,6 @@ Created on Jul 12, 2015
 @author: jrm
 """
 import asyncio
-import functools
 import logging
 import os
 import sys
@@ -176,7 +175,11 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
             return self.send_message(
                 {
                     "id": None,
-                    "error": {"code": -32700, "message": f'Parse error: "{line}"'},
+                    "error": {
+                        "code": -32700,
+                        "message": f'Parse error: "{line}"',
+                        "error": f"{e}",
+                    },
                 }
             )
 
@@ -330,5 +333,5 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
         if self.process_transport:
             try:
                 self.process_transport.terminate()
-            except ProcessLookupError as e:
+            except ProcessLookupError:
                 pass

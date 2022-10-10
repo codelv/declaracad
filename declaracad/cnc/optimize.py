@@ -15,34 +15,7 @@ import time
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 
 from declaracad.core.utils import log
-from declaracad.occ.api import Topology
 from declaracad.occ.geom import coerce_point
-
-from . import interpolate
-
-
-def optimize_graph(wires, optimizer_timeout=30):
-    """Try to reduce the number of head lifts by retracing common paths.
-
-    Parameters
-    ----------
-    wires: List[TopoDS_Wire]
-        Unordered set of wires
-    Returns
-    -------
-    wires: List[TopoDS_Wires]
-        Wires in the optimal move order
-
-    """
-    if len(wires) < 2:
-        return wires
-
-    graph = interpolate.build_edge_graph(wires)
-    standalone = []
-    # for vertex, edges in graph.items():
-    #    if len(edges)
-
-    return standalone
 
 
 def optimize_moves(wires, start_point, reverse=False, optimizer_timeout=30):
@@ -68,7 +41,6 @@ def optimize_moves(wires, start_point, reverse=False, optimizer_timeout=30):
     now = time.time()
     time_limit = now + optimizer_timeout
 
-    original = wires[:]
     subpaths = [BRepAdaptor_CompCurve(w) for w in wires]
     result = []
     sp = subpaths[0]

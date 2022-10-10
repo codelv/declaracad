@@ -11,8 +11,7 @@ Created on Sep 27, 2016
 """
 import warnings
 
-from atom.api import Dict, Instance, Int, Str, Subclass, set_default
-from OCCT.BRep import BRep_Builder
+from atom.api import Instance, Str, Subclass, set_default
 from OCCT.BRepAlgoAPI import (
     BRepAlgoAPI_BooleanOperation,
     BRepAlgoAPI_Common,
@@ -21,16 +20,7 @@ from OCCT.BRepAlgoAPI import (
 )
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing
 from OCCT.ShapeFix import ShapeFix_Shape
-from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
-from OCCT.TopoDS import (
-    TopoDS,
-    TopoDS_Compound,
-    TopoDS_Edge,
-    TopoDS_Face,
-    TopoDS_Shape,
-    TopoDS_Vertex,
-    TopoDS_Wire,
-)
+from OCCT.TopoDS import TopoDS_Shape
 from OCCT.TopTools import TopTools_ListOfShape
 
 try:
@@ -39,7 +29,6 @@ except ImportError as e:
     warnings.warn(f"{e}")
     Voxel_BooleanOperation = None
 
-from declaracad.core.utils import log
 from declaracad.occ.algo import (
     ProxyBooleanOperation,
     ProxyCommon,
@@ -51,7 +40,7 @@ from declaracad.occ.algo import (
 )
 from declaracad.occ.voxel import Voxel
 
-from .occ_shape import OccDependentShape, OccShape, Topology, coerce_axis, coerce_shape
+from .occ_shape import OccDependentShape, Topology, coerce_shape
 
 
 class OccOperation(OccDependentShape, ProxyOperation):
@@ -217,7 +206,6 @@ class OccFuse(OccBooleanOperation, ProxyFuse):
 
 class OccSew(OccOperation, ProxySew):
     def update_shape(self, change=None):
-        d = self.declaration
         builder = BRepBuilderAPI_Sewing()
         for s in self.child_shapes():
             builder.Add(Topology.cast_shape(s))
@@ -227,5 +215,4 @@ class OccSew(OccOperation, ProxySew):
 
 class OccGlue(OccOperation, ProxyGlue):
     def update_shape(self, change=None):
-        d = self.declaration
         raise NotImplementedError  # TODO: This

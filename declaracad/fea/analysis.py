@@ -9,27 +9,9 @@ Created on Sept 1, 2021
 
 @author: jrm
 """
-import warnings
-
-from atom.api import (
-    Atom,
-    Bool,
-    Coerced,
-    Dict,
-    Enum,
-    Float,
-    ForwardTyped,
-    Int,
-    Property,
-    Str,
-    Typed,
-    Value,
-    observe,
-)
-from enaml.colors import ColorMember
+from atom.api import Bool, Coerced, Enum, ForwardTyped, Value, observe
 from enaml.core.declarative import d_, d_func
 
-from declaracad.occ.mesh import Node as MeshNode
 from declaracad.occ.shape import Direction, ProxyShape, Shape, coerce_direction
 
 

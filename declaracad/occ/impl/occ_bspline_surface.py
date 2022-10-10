@@ -20,7 +20,6 @@ from declaracad.occ.geom import Point
 
 from .occ_bspline import CONTINUITY
 from .occ_shape import OccShape
-from .topology import Topology
 
 
 class OccBSplineSurface(OccShape, ProxyBSplineSurface):

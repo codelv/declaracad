@@ -10,10 +10,9 @@ Created on Oct 10, 2018
 @author: jrm
 """
 import os
-import time
 
 import enaml
-from atom.api import Bool, Constant, Enum, Float, Str
+from atom.api import Bool, Float
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepMesh import BRepMesh_IncrementalMesh
 from OCCT.StlAPI import StlAPI_Writer

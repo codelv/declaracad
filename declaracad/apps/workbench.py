@@ -9,23 +9,18 @@ Created on Dec 6, 2015
 
 @author: jrm
 """
-import faulthandler
 import signal
-import sys
 
 import enaml
-
-faulthandler.enable()
-
 import enamlx
-
-enamlx.install()
 
 from declaracad.core.utils import log
 from declaracad.core.workbench import DeclaracadWorkbench
 
+enamlx.install()
+
+
 with enaml.imports():
-    #: TODO autodiscover these
     from declaracad.cnc.manifest import CncManifest
     from declaracad.console.manifest import ConsoleManifest
     from declaracad.core.manifest import DeclaracadManifest
@@ -34,12 +29,6 @@ with enaml.imports():
     from declaracad.toolbox.manifest import ToolboxManifest
     from declaracad.ui.manifest import UIManifest
     from declaracad.viewer.manifest import ViewerManifest
-
-try:
-    # Required on Qt 5.10+
-    from enaml.qt import QtWebEngineWidgets
-except Exception as e:
-    log.warning(e)
 
 
 def main(**kwargs):

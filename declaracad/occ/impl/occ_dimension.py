@@ -13,7 +13,7 @@ from atom.api import Typed
 from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
 from OCCT.GC import GC_MakePlane
-from OCCT.gp import gp_Dir, gp_Pnt
+from OCCT.gp import gp_Dir
 from OCCT.PrsDim import (
     PrsDim_AngleDimension,
     PrsDim_DiameterDimension,
@@ -22,8 +22,7 @@ from OCCT.PrsDim import (
     PrsDim_RadiusDimension,
 )
 from OCCT.TCollection import TCollection_AsciiString
-from OCCT.TopAbs import TopAbs_ShapeEnum
-from OCCT.TopoDS import TopoDS, TopoDS_Edge, TopoDS_Shape, TopoDS_Vertex
+from OCCT.TopoDS import TopoDS_Vertex
 
 from declaracad.core.utils import log
 
@@ -146,7 +145,6 @@ class OccAngleDimension(OccDimension, ProxyAngleDimension):
     dimension = Typed(PrsDim_AngleDimension)
 
     def create_dimension(self):
-        d = self.declaration
         self.dimension = PrsDim_AngleDimension(*self.get_shapes())
 
 
@@ -180,7 +178,6 @@ class OccRadiusDimension(OccDimension, ProxyRadiusDimension):
     dimension = Typed(PrsDim_RadiusDimension)
 
     def create_dimension(self):
-        d = self.declaration
         self.dimension = PrsDim_RadiusDimension(*self.get_shapes())
 
 
@@ -189,5 +186,4 @@ class OccDiameterDimension(OccDimension, ProxyDiameterDimension):
     dimension = Typed(PrsDim_DiameterDimension)
 
     def create_dimension(self):
-        d = self.declaration
         self.dimension = PrsDim_DiameterDimension(*self.get_shapes())

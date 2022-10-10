@@ -15,21 +15,8 @@ import uuid
 from typing import Union
 
 import serial
-from atom.api import (
-    Atom,
-    Bool,
-    Bytes,
-    ContainerList,
-    Enum,
-    Float,
-    Instance,
-    Int,
-    List,
-    Str,
-    Subclass,
-    observe,
-)
-from enaml.application import Application, deferred_call
+from atom.api import Bool, Bytes, ContainerList, Enum, Float, Instance, Int, List, Str
+from enaml.application import Application
 from serial.tools.list_ports import comports
 
 from declaracad.core.api import Model, Plugin, log

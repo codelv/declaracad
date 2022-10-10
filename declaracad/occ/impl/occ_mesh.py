@@ -11,21 +11,12 @@ Created on Aug 3, 2021
 """
 import os
 import warnings
-from typing import Iterator, Optional, Union
+from typing import Optional, Union
 
 from atom.api import Dict, ForwardTyped, Typed
 from enaml.colors import Color
-from OCCT.BRepCheck import BRepCheck_Analyzer
-from OCCT.BRepMesh import (
-    BRepMesh_Context,
-    BRepMesh_DelabellaMeshAlgoFactory,
-    BRepMesh_FaceDiscret,
-    BRepMesh_IncrementalMesh,
-)
 from OCCT.MeshVS import (
-    MeshVS_DA_BackInteriorColor,
     MeshVS_DA_BeamColor,
-    MeshVS_DA_BeamType,
     MeshVS_DA_BeamWidth,
     MeshVS_DA_ColorReflection,
     MeshVS_DA_DisplayNodes,
@@ -41,12 +32,8 @@ from OCCT.MeshVS import (
     MeshVS_MeshPrsBuilder,
     MeshVS_NodalColorPrsBuilder,
 )
-from OCCT.ShapeBuild import ShapeBuild_ReShape
-from OCCT.ShapeFix import ShapeFix_Shape, ShapeFix_ShapeTolerance
-from OCCT.TColStd import (
-    TColStd_Array1OfInteger,
-    TColStd_MapIteratorOfPackedMapOfInteger,
-)
+from OCCT.ShapeFix import ShapeFix_Shape
+from OCCT.TColStd import TColStd_Array1OfInteger
 from OCCT.TopoDS import TopoDS_Shape
 
 from declaracad.core.utils import log, log_time
@@ -62,18 +49,13 @@ from declaracad.occ.mesh import (
 )
 from declaracad.occ.shape import Point
 
-from .occ_shape import OccDependentShape, OccShape
+from .occ_shape import OccDependentShape
 from .occ_vertex import MARKERS
 from .utils import color_to_quantity_color
 
 try:
-    from SMESH.NETGENPlugin import (
-        NETGENPlugin_NETGEN_2D3D,
-        NETGENPlugin_SimpleHypothesis_3D,
-    )
     from SMESH.SMDS import SMDS_MeshElement, SMDS_MeshNode
-    from SMESH.SMDSAbs import SMDSAbs_Node
-    from SMESH.SMESH import SMESH_Gen, SMESH_Mesh, SMESH_MeshVSLink, SMESH_subMesh
+    from SMESH.SMESH import SMESH_Gen, SMESH_Mesh, SMESH_MeshVSLink
     from SMESH.SMESHDS import SMESHDS_Mesh
 except ImportError as e:
     warnings.warn(f"{e}")
@@ -314,11 +296,11 @@ class OccMesh(OccDependentShape, ProxyMesh):
 
         gen = self.gen = SMESH_Gen()
         self.mesh = gen.CreateMesh(True)
-        mesh = self.ais_shape = MeshVS_Mesh()
+        self.ais_shape = MeshVS_Mesh()
 
         # Cleanup shape
         fixer = ShapeFix_Shape(source)
-        result = fixer.Perform()
+        fixer.Perform()
         # if not fixer.Perform():
         #    raise RuntimeError(f"Failed to fix {source}")
         fixed_shape = fixer.Shape()
@@ -437,7 +419,6 @@ class OccMesh(OccDependentShape, ProxyMesh):
             The export type. Must map to one of the Export functions
 
         """
-        d = self.declaration
         filename = os.path.abspath(filename)
         filename = f"{filename}.{export_type.lower()}"
         log.info(f"Exporting mesh to '{filename}'")

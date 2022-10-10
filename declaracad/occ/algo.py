@@ -15,13 +15,11 @@ from atom.api import (
     Coerced,
     Enum,
     Float,
-    ForwardInstance,
     ForwardTyped,
     Instance,
     List,
     Tuple,
     Typed,
-    Value,
     observe,
 )
 from enaml.core.declarative import d_

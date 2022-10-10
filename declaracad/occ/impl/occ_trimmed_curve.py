@@ -13,7 +13,7 @@ from OCCT.Geom import Geom_TrimmedCurve
 from declaracad.occ.draw import ProxyTrimmedCurve
 
 from .occ_edge import OccEdge
-from .occ_shape import OccShape, coerce_axis
+from .occ_shape import OccShape
 from .topology import Topology
 
 
