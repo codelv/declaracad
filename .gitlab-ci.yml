@@ -64,6 +64,6 @@ tests:
     #- mypy declaracad --ignore-missing-imports
 
     # Run tests
-    - gdb -ex run -ex bt -ex quit --args pytest tests -v --cov declaracad
+    - gdb -ex run -ex bt -ex quit --args python -m pytest tests -v --cov declaracad
     #- pytest tests -v --cov declaracad
 
