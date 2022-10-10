@@ -10,9 +10,24 @@ tests:
     # Create env
     - micromamba install -y -n base -f environment.yml
 
-    # Install pyqt (to pull gl depends) and add path to load conda libs
-    - micromamba install -y -n base -c conda-forge mesa-libegl-cos7-x86_64 mesa-libgl-cos7-x86_64 freetype-cos7-x86_64 libxkbcommon-cos7-x86_64
-    - export LD_LIBRARY_PATH=/opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib
+    # Install gl depends and add path to load conda libs
+    - micromamba install -y -n base -c conda-forge \
+        mesa-libegl-devel-cos7-x86_64 \
+        mesa-libgl-devel-cos7-x86_64 \
+        mesa-libgbm-devel-cos7-x86_64 \
+        libx11-devel-cos7-x86_64 \
+        libxext-devel-cos7-x86_64 \
+        libxrender-devel-cos7-x86_64 \
+        libxdamage-devel-cos7-x86_64 \
+        libxfixes-devel-cos7-x86_64 \
+        libxxf86vm-devel-cos7-x86_64 \
+        freetype-devel-cos7-x86_64 \
+        fontconfig-devel-cos7-x86_64 \
+        libxshmfence-devel-cos7-x86_64 \
+        libxkbcommon
+    - export LD_LIBRARY_PATH="/opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib:/opt/conda/lib"
+    - ln -s /opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib64/libEGL_mesa.so.0 /opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib/libEGL.so.1
+
 
     # Test Qt
     - export QT_QPA_PLATFORM=xcb
