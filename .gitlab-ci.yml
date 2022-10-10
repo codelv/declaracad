@@ -1,11 +1,17 @@
 image: mambaorg/micromamba:jammy
+cache:
+    # Cache pip/conda downloads
+    paths:
+        - /opt/conda/pkgs/
+        - .cache/pip
 tests:
   script:
     # Create env
     - micromamba install -y -n base -f environment.yml
 
-    # Install pyqt
+    # Install pyqt (to pull gl depends) and add path to load conda libs
     - micromamba install -y -n base -c conda-forge pyqt
+    - export LD_LIBRARY_PATH=/opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib
 
     # Install declaracad
     - pip install -e .
