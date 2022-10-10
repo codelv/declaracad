@@ -10,7 +10,7 @@ tests:
     - micromamba install -y -n base -f environment.yml
 
     # Install pyqt (to pull gl depends) and add path to load conda libs
-    - micromamba install -y -n base -c conda-forge pyqt
+    - micromamba install -y -n base -c conda-forge mesa-libegl-cos6-x86_64 mesa-libgl-cos6-x86_64
     - export LD_LIBRARY_PATH=/opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib
 
     # Install declaracad
