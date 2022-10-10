@@ -57,9 +57,9 @@ before_script:
 tests:
   script:
     # Run checks
-    - isort --check --diff declaracad
-    - black --check --diff declaracad
-    - flake8 --ignore=E203,E266,E501,W503,E731 declaracad
+    - isort --profile=black --check --diff declaracad tests
+    - black --check --diff declaracad tests
+    - flake8 --ignore=E501,E203,W503 declaracad tests
     #- yes | mypy declaracad --install-types || true
     #- mypy declaracad --ignore-missing-imports
 
