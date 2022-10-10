@@ -14,7 +14,7 @@ tests:
     - micromamba install -y -n base -c conda-forge \
         mesa-libegl-devel-cos7-x86_64 \
         mesa-libgl-devel-cos7-x86_64 \
-        mesa-libgbm-devel-cos7-x86_64 \
+        mesa-libgbm-cos7-x86_64 \
         libx11-devel-cos7-x86_64 \
         libxext-devel-cos7-x86_64 \
         libxrender-devel-cos7-x86_64 \
@@ -28,14 +28,14 @@ tests:
     - export LD_LIBRARY_PATH="/opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib:/opt/conda/lib"
     - ln -s /opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib64/libEGL_mesa.so.0 /opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib/libEGL.so.1
 
+    # Create env
+    - micromamba install -y -n base -f environment.yml
+    - pip install -e ./
 
     # Test Qt
     - export QT_QPA_PLATFORM=xcb
     - export FORCE_QT_API=pyqt6
     - python -c "from PyQt6 import QtWidgets"
-
-    # Install declaracad
-    - pip install -e .
 
     # Install testing utils
     - pip install pytest pytest-coverage pytest-qt enaml-coverage-plugin
