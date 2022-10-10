@@ -44,7 +44,7 @@ before_script:
     - pip install -e ./
 
     # Test Qt
-    - export QT_QPA_PLATFORM=xcb
+    - export QT_QPA_PLATFORM=offscreen
     - export FORCE_QT_API=pyqt6
     - python -c "from PyQt6 import QtWidgets"
 
