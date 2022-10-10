@@ -24,9 +24,17 @@ tests:
         freetype-devel-cos7-x86_64 \
         fontconfig-devel-cos7-x86_64 \
         libxshmfence-devel-cos7-x86_64 \
-        libxkbcommon
+        libxcb-devel-cos7-x86_64 \
+        libpng-devel-cos7-x86_64 \
+        libxau-devel-cos7-x86_64 \
+        glib2-devel-cos7-x86_64 \
+        libxkbcommon \
+        dbus
     - export LD_LIBRARY_PATH="/opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib:/opt/conda/lib"
     - ln -s /opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib64/libEGL_mesa.so.0 /opt/conda/x86_64-conda-linux-gnu/sysroot/usr/lib/libEGL.so.1
+
+    # Wayland
+    - micromamba install -y -n base -c dtk-forge6 -c conda-forge wayland
 
     # Create env
     - micromamba install -y -n base -f environment.yml
