@@ -2,8 +2,8 @@ image: mambaorg/micromamba:jammy
 cache:
     # Cache pip/conda downloads
     paths:
-        - /opt/conda/pkgs/*.tar.bz2
-        - /home/mambauser/.cache/pip/*
+        - ../../opt/conda/pkgs
+        - .cache/pip
 
 before_script:
     # Create env
