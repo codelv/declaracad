@@ -61,4 +61,3 @@ def test_themes():
         assert "paper" in theme["settings"]
         assert "enaml" in theme
         assert "keyword" in theme["enaml"] or "class_name" in theme["enaml"]
-
