@@ -98,8 +98,7 @@ class OccArc(OccLine, ProxyArc):
             raise RuntimeError(
                 f"Could not create arc {d}: {e} "
                 f"(center={d.position}, radius={d.radius}, points={d.points},"
-                f" alpha1={d.alpha1}, alpha2={d.alpha2} case={case})"
-                + help_msg
+                f" alpha1={d.alpha1}, alpha2={d.alpha2} case={case})" + help_msg
             )
 
         if d.reverse:
