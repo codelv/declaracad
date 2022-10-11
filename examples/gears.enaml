@@ -1,7 +1,7 @@
 import math
 from enaml.core.api import Looper
 from declaracad.occ.api import ( 
-    Face, Prism, Transform, Cut, Fuse, ThruSections,
+    Face, Prism, Transform, Cut, Fuse, ThruSections, Polyline,
     Segment, Wire, Point, Arc, Circle, Part, Translate, Rotate
 )
 
@@ -34,7 +34,7 @@ enamldef SawBlade(Transform): root:
                         radius = root.radius
                         alpha1 = math.radians(loop_item)
                         alpha2 = math.radians(loop_item+degrees/2.0)
-                    Segment:
+                    Polyline:
                         #: end of last arc
                         points = [(
                             radius*cosd(loop_item+degrees/2.0),
