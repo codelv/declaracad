@@ -145,4 +145,4 @@ enamldef ArcHelix(Part): part:
                     0,
                     helix_start-i*actual_pitch/2
                 )
-                points = [(rot * radius, 0), (rot * -radius, 0)]
+                points = [(rot * radius, 0, position.z), (rot * -radius, 0, position.z)]
