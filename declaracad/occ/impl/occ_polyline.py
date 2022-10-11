@@ -11,7 +11,12 @@ Created on Sep 30, 2016
 """
 from atom.api import Typed, set_default
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakePolygon
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakePolygon,
+    BRepBuilderAPI_Transform,
+)
+from OCCT.TopoDS import TopoDS
 
 from declaracad.occ.draw import ProxyPolyline
 
@@ -32,10 +37,12 @@ class OccPolyline(OccWire, ProxyPolyline):
         t = self.get_transform()
         shape = BRepBuilderAPI_MakePolygon()
         for p in d.points:
-            shape.Add(p.proxy.Transformed(t))
+            shape.Add(p.proxy)
         if d.closed:
             shape.Close()
-        curve = self.curve = BRepAdaptor_CompCurve(shape.Wire())
+        builder = BRepBuilderAPI_Transform(shape.Wire(), t, False)
+        wire = TopoDS.Wire_(builder.Shape())
+        curve = self.curve = BRepAdaptor_CompCurve(wire)
         wire = curve.Wire()
         if d.as_face:
             self.shape = BRepBuilderAPI_MakeFace(wire).Face()
