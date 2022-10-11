@@ -28,6 +28,10 @@ enamldef ArcHelix(Part): part:
     #: If height is given calculate the pitch to reach the given height
     attr max_pitch
 
+    #: Bottom up
+    #: If true, start at the bottom and go up
+    attr bottom_up: bool = False
+
     # ------------------------------------------------------------------------
     # Calculated Inputs
     # ------------------------------------------------------------------------
@@ -120,18 +124,25 @@ enamldef ArcHelix(Part): part:
         attr a = radius
 
         # Step down of quarter of a  revolution
-        attr b = pitch/4
+        attr actual_pitch =  -pitch if bottom_up else pitch
+        attr b = actual_pitch/4
+        attr helix_start = -height+b if bottom_up else -b
         attr arc_radius = sqrt(radius**2+b**2)
         attr cw = 1 if clockwise else -1
+        attr n = int(revolutions*2)
 
         Looper:
-            iterable = range(int(revolutions*2))
+            iterable = range(n)
             Arc:
                 #color = 'blue' if loop.index & 1 else 'red'
                 radius = arc_radius
-                attr dz = loop.index*pitch/2
+                attr i = (n-loop.index) if bottom_up else loop.index
                 attr rot = -cw if loop.index & 1 else cw
                 direction = (rot*-b, 0, a)
                 clockwise = part.clockwise
-                position = (0, 0, -b-dz)
+                position = (
+                    0,
+                    0,
+                    helix_start-i*actual_pitch/2
+                )
                 points = [(rot * radius, 0), (rot * -radius, 0)]

@@ -37,6 +37,12 @@ enamldef ThreadingOperation(Operation): operation:
     #: List of cylinder faces
     attr holes: list = []
 
+    #: Start at bottom and go up
+    attr bottom_up: bool = True
+
+    #: If true, left hand threads, else right hand threads
+    attr left_hand: bool = False
+
     #: Clearance added to the offset.
     #: A positive number will leave extra stock between any walls
     #: A negative number will make take more stock away from the walls
@@ -66,7 +72,7 @@ enamldef ThreadingOperation(Operation): operation:
     # Internal variables
     # ------------------------------------------------------------------------
     attr last_point = start_point
-    attr data = generate_data()
+    attr data = optimize_order(generate_data())
 
     func get_center(hole):
         """ Find center position of a hole
@@ -92,35 +98,47 @@ enamldef ThreadingOperation(Operation): operation:
     func generate_data():
         tool_radius = tool.diameter/2
 
-
         threading_data = []
-        for hole in self.holes:
-            if isinstance(hole, ThreadingData):
-                threading_data.append(hole)
-                continue
-            elif isinstance(hole, (list, tuple)):
-                depth, diameter, hole = hole
-                center = get_center(hole)
-            elif Topology.is_cylinder(hole):
-                s = Topology.cast_surface(hole)
-                center = Point(s.Location())
-                umin, umax, vmin, vmax = Topology(shape=hole).surface_bounds
-                depth = vmax - vmin
-                diameter = 2 * s.Radius()
-            else:
-                raise ValueError("Thread must be a cylinder, threading data instance or tuple of (depth, diameter, center)")
+        try:
+            for hole in self.holes:
+                if isinstance(hole, ThreadingData):
+                    threading_data.append(hole)
+                    continue
+                elif isinstance(hole, (list, tuple)):
+                    depth, diameter, hole = hole
+                    center = get_center(hole)
+                elif Topology.is_cylinder(hole):
+                    s = Topology.cast_surface(hole)
+                    center = Point(s.Location())
+                    umin, umax, vmin, vmax = Topology(shape=hole).surface_bounds
+                    depth = vmax - vmin
+                    diameter = 2 * s.Radius()
+                else:
+                    raise ValueError("Thread must be a cylinder, threading data instance or tuple of (depth, diameter, center)")
 
-            if depth > tool.length:
-                raise ValueError(f"Tool {tool} is not long enough to cut a {round(depth)} thread.")
+                if depth > tool.length:
+                    raise ValueError(f"Tool {tool} is not long enough to cut a {round(depth)} thread.")
 
-            data = ThreadingData(
-                bottom_point=center + (0, 0,  bottom_clearance),
-                depth=depth,
-                radius=diameter/2 - 3/2*tool.thread_depth - radial_clearance
-            )
-            threading_data.append(data)
-
+                data = ThreadingData(
+                    bottom_point=center + (0, 0,  bottom_clearance),
+                    depth=depth,
+                    radius=diameter/2 - 3/2*tool.thread_depth - radial_clearance
+                )
+                threading_data.append(data)
+        except Exception as e:
+            traceback.print_exc()
         return threading_data
+
+    func optimize_order(data):
+        """ Optimize the cutting order if multiple pockets are given."""
+        if len(data) <= 1:
+            return data
+        drop_points = [Point(d.bottom_point.x, d.bottom_point.y, start_point.z) for d in data]
+        reordered_data = []
+        for pt in optimize_points(drop_points, start_point):
+            i = drop_points.index(pt)
+            reordered_data.append(data[i])
+        return reordered_data
 
     func calculate_height(depth):
         # Adjust the start height so the helix
@@ -137,10 +155,13 @@ enamldef ThreadingOperation(Operation): operation:
             attr top_point = helix.position
             attr bottom_point = center
             attr drop_point = Point(center.x, center.y, last_point.z)
-            attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
+            attr lift_point = Point(center.x, center.y, drop_point.z)
             attr depth = top_point.z - bottom_point.z
-            attr arc_start = top_point + (0, 0, helix.radius/4)
-            attr d = -1 if loop.item.reverse else 1
+            attr lh = -1 if left_hand else 1
+            attr bu = 1 if bottom_up else -1
+            attr initial_point = bottom_point if bottom_up else top_point
+            attr final_point = top_point if bottom_up else bottom_point
+            attr arc_start = initial_point + (0, 0, helix.radius/3)
 
             DisplayArrow: drop_arrow:
                 color = 'red'
@@ -165,80 +186,86 @@ enamldef ThreadingOperation(Operation): operation:
                 points = [last_point, drop_point, arc_start]
 
             Arc: arc_in:
-                # Arc into center
+                as_wire = True
                 color = 'purple'
                 name = 'Arc in'
                 direction = (1, 0, 0)
+                clockwise = True#left_hand
                 radius = helix.radius/3
-                position = top_point + (0, radius, radius)
-                points = [
-                    top_point+(0, 0, radius),
-                    top_point+(0, radius, 0)
-                ]
+                position = arc_merge.topology.start_point + (0, 0, radius)
+                alpha1 = 3*pi/2 if bottom_up else 0
+                alpha2 = 0 if bottom_up else pi/2
 
             Arc: arc_merge:
-                color = 'teal'
+                color = 'orange'
                 name = 'Arc merge'
-                attr p = arc_in.points[-1]
-                attr r = arc_in.radius
-                position = p + (d*r, 0)
-                clockwise = not loop.item.reverse
-                radius = r
-                points = [
-                    p,
-                    p + (d*r, r)
-                ]
+                as_wire = True
+                position = arc_union.topology.start_point + (0, radius*bu)
+                clockwise = left_hand
+                radius = helix.radius/3
+                alpha1 = pi if bottom_up else 0
+                alpha2 = 3*pi/2 if bottom_up else pi/2
 
             Arc: arc_union:
                 color = 'teal'
                 name = 'Arc union'
-                attr p = arc_merge.points[-1]
-                clockwise = not loop.item.reverse
-
-                position = top_point + (d*arc_merge.radius, 0)
+                as_wire = True
+                clockwise = left_hand
+                position = initial_point + (arc_merge.radius*bu*lh, 0)
                 radius = arc_merge.radius*2
-                points = [
-                    p,
-                    top_point + (d*arc_merge.radius * 2, 0)
-                ]
+                alpha1 = 3*pi/2 if bottom_up else pi/2
+                alpha2 = 0 if bottom_up else pi
 
             ArcHelix: helix:
-                color = 'maroon'
+                color = 'maroon' if left_hand else 'darkslateblue'
                 position = loop.item.bottom_point + (0, 0, height)
                 radius = loop.item.radius
                 height = calculate_height(loop.item.depth)
                 pitch = tool.pitch
+                bottom_up = operation.bottom_up
+                clockwise = left_hand
 
             Arc: arc_out:
                 color = 'blue'
                 name = 'Arc out'
+                as_wire = True
                 radius = helix.radius/3
-                clockwise = not loop.item.reverse
+                clockwise = left_hand
                 # Spiral end point
-                attr p = bottom_point + (d*helix.radius, 0)
-                position = p + (-d*radius, 0)
-                points = [
-                    p,
-                    p + (-d*radius, -radius)
-                ]
+                position = final_point + (arc_merge.radius*bu*lh, 0)
+                radius = arc_merge_out.radius*2
+                alpha1 = 0 if bottom_up else pi
+                alpha2 = pi/2 if bottom_up else 3*pi/2
+
+            Arc: arc_merge_out:
+                color = 'yellow'
+                name = 'Arc merge out'
+                as_wire = True
+                radius = arc_up.radius
+                clockwise = left_hand
+                # Spiral end point
+                position = arc_out.topology.end_point + (0, -radius*bu)
+                radius = arc_up.radius
+                alpha1 = pi/2 if bottom_up else 3*pi/2
+                alpha2 = pi if bottom_up else 0
 
             Arc: arc_up:
-                color = 'orange'
+                color = 'cyan'
                 name = 'Arc up'
-                direction = (0, -1, 0)
-                radius = arc_out.radius
-                clockwise = not loop.item.reverse
-                # Spiral end point
-                attr p = arc_out.points[-1]
-                position = p + (0, 0, radius)
-                points = [p, position + (-d*radius, 0)]
+                as_wire = True
+                direction = (1, 0, 0)
+                radius = helix.radius/3
+                clockwise = bottom_up
+                position = arc_merge_out.topology.end_point + (0, 0, radius)
+                alpha1 = 0 if bottom_up else pi
+                alpha2 = pi/2 if bottom_up else 3*pi/2
 
             Polyline:
                 name = 'Return path'
                 line_style = 'dashed'
                 color = 'lime'
-                attr p = arc_up.points[-1]
                 func get_points():
+                    p = arc_up.topology.end_point
                     pts = [p, lift_point]
                     operation.last_point = lift_point
                     if loop.index + 1 == len(operation.data):
@@ -253,4 +280,4 @@ enamldef ThreadingOperation(Operation): operation:
                 tube_size = drop_arrow.tube_size
                 description = 'Lift'
                 direction = (0, 0, 1)
-                position = lift_point
+                position = lift_point - (0, 0, 3)

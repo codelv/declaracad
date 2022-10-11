@@ -32,7 +32,7 @@ def generate_arc_gcode(
     cmds = []
     d = arc.direction
     center = arc.position
-    start, end = arc.points
+    start, end = arc.topology.start_point, arc.topology.end_point
     delta = center - start if incremental else center
     x, y, z = map(format_value, end)
     if d == (0, 0, 1) or d == (0, 0, -1):
