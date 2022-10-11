@@ -50,3 +50,15 @@ def test_render():
     assert os.path.exists("fillets.png")
     with open("fillets.png", "rb") as f:
         assert b"PNG" in f.read(10)
+
+
+def test_themes():
+    from declaracad.editor.themes import THEMES
+
+    for name, theme in THEMES.items():
+        print(name)
+        assert "settings" in theme
+        assert "paper" in theme["settings"]
+        assert "enaml" in theme
+        assert "keyword" in theme["enaml"] or "class_name" in theme["enaml"]
+
