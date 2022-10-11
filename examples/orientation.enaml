@@ -1,5 +1,5 @@
 # Created in DeclaraCAD
-from math import pi
+from math import pi, radians
 from declaracad.occ.api import *
 
 
@@ -16,32 +16,44 @@ enamldef Assembly(Part):
         color = 'black'
         direction = (0, 0, 1)
     Polygon:
+        color = 'blue'
+        radius = 1
+        count = 3
+        rotation = radians(5)
+        direction = (0, 0, -1)
+    Polygon:
+        color = 'magenta'
+        radius = 1.1
+        count = 3
+        rotation = radians(5)
+        direction = (0, 0, 1)
+    Polygon:
        color = 'lime'
-       #position = (0, 0, 1)
+       position = (-1, -1, 0)
        rotation = pi
        radius = 1
        count = 3
     Polygon:
        color = 'green'
-       #position = (0, 0, 1)
+       position = (-1, -1, 0)
        radius = 1
        count = 3
     Polygon:
        color = 'red'
        direction = (0, 1, 0)
-       position = (0, 0, 1)
+       position = direction
        radius = 1
        count = 3
     Polygon:
         color = 'yellow'
         direction = (1, 0, 0)
-        #position = (0, 0, 1)
+        position = direction
         radius = 1
         count = 3
     Polygon:
         color = 'blue'
         direction = (1, 1, 0)
-        position = (3, 0, 0)
+        position = direction
         #rotation = pi
         radius = 1
         count = 3

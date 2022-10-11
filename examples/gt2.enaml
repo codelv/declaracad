@@ -1,0 +1,93 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef GT2BeltProfile(Wire):
+    attr i = 0.63
+    attr h = 0.75
+    attr H = 1.38
+    attr R1 = 0.15
+    attr R2 = 1.0
+    attr R3 = 0.555
+    attr b = 0.4
+    attr P = 2.0
+    
+    attr c1 = Circle(radius=R1, position=(-R1-R2+b+0.01, -i-R1))
+    attr c2 = Circle(radius=R2, position=(b, -i))
+    attr c3 = Circle(radius=R3, position=(0, -(H-R3)))
+    
+    func intersect_c2_c3():
+        int = Intersection(
+            shape1=c2,
+            shape2=c3,
+            tolerance=1e-2
+        )
+        int.render()
+        return int.topology.vertices[0]
+        
+    
+    func intersect_c1_c2():
+        int = Intersection(
+            shape1=c1,
+            shape2=c2,
+            tolerance=1e-2
+        )
+        int.render()
+        return int.topology.vertices[0]
+    
+    attr pc2c3 = intersect_c2_c3()
+    attr pc1c2 = intersect_c1_c2()
+    
+    Wire: curve1:
+        Polyline:
+            points = [
+                (-P/2, -i),
+                arc1.points[-1],
+            ]
+        Arc: arc1:
+            color = 'lime'
+            radius = R1
+            position = c1.position
+            points = [
+                pc1c2,
+                (x, y+radius),
+            ]
+        Arc: arc2:
+            radius = R2
+            position = c2.position
+            points = [
+                pc1c2,
+                pc2c3
+            ]
+        Arc: arc3:
+            color = 'blue'
+            radius = R3
+            position = c3.position
+            points = [
+                pc2c3,
+                (0, -H),
+            ]
+    Transform: curve2:
+        operations = [Mirror(y=1)]
+        shape = curve1
+
+
+enamldef GT2BeltSegment(Part):
+    alias profile
+    alias outline
+    
+    Wire:
+        Polyline: outline:
+            points = [
+                (profile.P/2, -profile.i),
+                (profile.P/2, 0),
+                (-profile.P/2, 0),
+                (-profile.P/2, -profile.i),
+            ]
+        
+        GT2BeltProfile: profile:
+            pass
+            
+
+enamldef Assembly(Part):
+    GT2BeltSegment:
+        pass

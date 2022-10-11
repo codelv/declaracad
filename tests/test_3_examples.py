@@ -6,6 +6,8 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+from glob import glob
+
 import pytest
 from OCCT.TopoDS import TopoDS_Shape
 
@@ -14,54 +16,11 @@ from declaracad.occ.api import load_model
 # Make sure it installs
 from declaracad.occ.impl.occ_factories import OCC_FACTORIES  # noqa: F401
 
-EXAMPLES = (
-    "arcs",
-    "bearing",
-    "birdhouse",
-    "bilo",
-    "belt",
-    "bolt",
-    "bottle",
-    "chamfers",
-    "dahlgren300z",
-    "dimensions",
-    "draw",
-    "draft_angle",
-    "endpoints",
-    "exhaust_flange",
-    "faces",
-    "fillets",
-    "gcode",
-    "half_space",
-    # 'house',
-    "intersection",
-    "load",
-    "middlepath",
-    "nemastepper",
-    "normal_projection",
-    "offsets",
-    "operations",
-    "pipes",
-    "raw_shape",
-    # 'rib',
-    "shapes",
-    "split",
-    "spring",
-    "svg",
-    "sweeps",
-    "threads",
-    "tube",
-    "thru_sections",
-    "turners_cube",
-    "trimmed",
-    "vacuum_nozzle",
-    "unify",
-)
+EXAMPLES = glob("examples/*.enaml")
 
 
-@pytest.mark.parametrize("name", EXAMPLES)
-def test_example(qt_app, name):
-    path = "examples/%s.enaml" % name
+@pytest.mark.parametrize("path", EXAMPLES)
+def test_example(qt_app, path):
     assembly = load_model(path)
     for shape in assembly:
         assert isinstance(shape.render(), TopoDS_Shape)
