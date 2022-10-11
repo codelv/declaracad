@@ -32,8 +32,10 @@ class OccArc(OccLine, ProxyArc):
         d = self.declaration
         n = len(d.points)
         try:
+            case = 0
             if d.solve:
                 arc = self.create_arc_from_solver(**d.solve)
+                case = 1
             elif d.radius:
                 points = [p.proxy for p in d.points]  # Do not trasnform these
                 # if d.radius2:
@@ -51,6 +53,7 @@ class OccArc(OccLine, ProxyArc):
                 if n == 2:
                     start, end = points
                     if start.IsEqual(end, d.tolerance):
+                        case = 2
                         # Full circle
                         center = d.position.proxy
                         start_direction = gp_Dir(gp_Vec(center, start))
@@ -58,10 +61,13 @@ class OccArc(OccLine, ProxyArc):
                         angle = start_angle + 2 * pi
                         arc = GC_MakeArcOfCircle(c, start, angle, True).Value()
                     else:
+                        case = 3
                         arc = GC_MakeArcOfCircle(c, start, end, True).Value()
                 elif n == 1:
+                    case = 4
                     arc = GC_MakeArcOfCircle(c, points[0], d.alpha1, True).Value()
                 else:
+                    case = 5
                     arc = GC_MakeArcOfCircle(c, d.alpha1, d.alpha2, True).Value()
             # elif n == 2:
             #    # TODO: This doesn't work
@@ -73,6 +79,7 @@ class OccArc(OccLine, ProxyArc):
                     points.insert(1, gp_Vec(d.points[1].proxy))
                 else:
                     points = self.get_transformed_points()
+                case = 6
                 arc = GC_MakeArcOfCircle(points[0], points[1], points[2]).Value()
             else:
                 raise ValueError(
@@ -85,7 +92,15 @@ class OccArc(OccLine, ProxyArc):
                     f"got radius={d.radius} points={d.points} (n={n})"
                 )
         except RuntimeError as e:
-            raise RuntimeError(f"Could not create arc {d}: {e}")
+            help_msg = ""
+            if d.points:
+                help_msg = "Are points and position on a single plane?"
+            raise RuntimeError(
+                f"Could not create arc {d}: {e} "
+                f"(center={d.position}, radius={d.radius}, points={d.points},"
+                f" alpha1={d.alpha1}, alpha2={d.alpha2} case={case})"
+                + help_msg
+            )
 
         if d.reverse:
             arc.Reverse()
