@@ -134,7 +134,7 @@ enamldef ModelViewer(OccViewer): viewer:
         ViewerAction(name="Display diameter dimension (dd)", action=keymap['d']['d']),
         ViewerAction(name="Display angle dimension (da)", action=keymap['d']['a']),
         ViewerAction(name="Toggle console", action=lambda: viewer.toggle_console()),
-        ViewerAction(name="Toggle animation controls", action=lambda: viewer.toggle_animation()),
+        ViewerAction(name="Toggle animation controls (ac)", action=keymap['a']['c']),
         ViewerAction(name="Units inch (ui)", action=lambda: setattr(viewer, 'display_units', 'in')),
         ViewerAction(name="Units mm (um)", action=lambda: setattr(viewer, 'display_units', 'mm')),
         ViewerAction(name="Units cm (uc)", action=lambda: setattr(viewer, 'display_units', 'cm')),
@@ -171,6 +171,9 @@ enamldef ModelViewer(OccViewer): viewer:
             'a': lambda: viewer.toggle_animation(),
             's': lambda: viewer.toggle_animation_state(),
             'c': lambda: viewer.toggle_console(),
+        },
+        'a': {
+            'c': lambda: viewer.toggle_animation(),
         }
     }
 
