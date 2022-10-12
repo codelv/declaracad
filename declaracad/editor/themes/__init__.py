@@ -5,9 +5,6 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # -----------------------------------------------------------------------------
-
-from typing import Any
-
 from .anotherdark import ANOTHERDARK_THEME
 from .asmanian_blood import ASMANIAN_BLOOD_THEME
 from .autumn import AUTUMN_THEME
@@ -97,9 +94,7 @@ from .vs import VS_THEME
 from .wombat import WOMBAT_THEME
 from .zenesque import ZENESQUE_THEME
 
-ThemeType = dict[str, dict[str, Any]]
-
-THEMES: dict[str, ThemeType] = {
+THEMES: dict[str, dict] = {
     "anotherdark": ANOTHERDARK_THEME,
     "asmanian_blood": ASMANIAN_BLOOD_THEME,
     "autumn": AUTUMN_THEME,

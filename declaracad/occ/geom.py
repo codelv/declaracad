@@ -25,7 +25,7 @@ try:
 except ImportError as e:
     warnings.warn(f"{e}")
 
-    class SMDS_MeshNode:
+    class SMDS_MeshNode:  # type: ignore
         pass
 
 
@@ -39,7 +39,7 @@ settings = Settings()
 
 
 @contextmanager
-def tolerance(tol):
+def tolerance(tol: float):
     _tol = settings.tolerance
     settings.tolerance = tol
     yield tol
@@ -236,8 +236,8 @@ class Point(Atom):
     def replace(self, **kwargs) -> "Point":
         """Create a copy with the value replaced with the given parameters."""
         p = Point(*self[:])
-        for k, v in kwargs:
-            setattr(k, v)
+        for k, v in kwargs.items():
+            setattr(p, k, v)
         return p
 
     def offset(self, distance: float, direction: "Direction") -> "Point":
@@ -364,7 +364,7 @@ def coerce_direction(arg: Any) -> Direction:
     return Direction(*arg)
 
 
-def coerce_rotation(arg: Union[float, tuple[float]]) -> float:
+def coerce_rotation(arg: Union[float, int, tuple[float, float]]) -> float:
     if isinstance(arg, (int, float)):
         return float(arg)
     return float(math.atan2(*arg))
