@@ -36,3 +36,4 @@ class Solver(Atom):
         line = gp_Lin2d(start_point.proxy, start_direction.proxy)
         gca_lin = GccEnt_QualifiedLin(line)
         GccAna_Circ2d3Tan(gca_lin, 1e-6)
+        return (0, Point())  # TODO: This
