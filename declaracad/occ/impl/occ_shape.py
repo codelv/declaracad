@@ -15,7 +15,6 @@ from typing import Union
 
 from atom.api import Bool, Instance, List, Property, Str, Typed, observe, set_default
 from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
-from OCCT.Aspect import Aspect_TOL_DASH
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBndLib import BRepBndLib
