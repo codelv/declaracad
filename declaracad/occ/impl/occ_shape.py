@@ -15,6 +15,7 @@ from typing import Union
 
 from atom.api import Bool, Instance, List, Property, Str, Typed, observe, set_default
 from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
+from OCCT.Aspect import Aspect_TOL_DASH
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBndLib import BRepBndLib
@@ -218,6 +219,16 @@ class OccShape(ProxyShape):
             ais_shape.SetColor(c)
             if a is not None:
                 ais_shape.SetTransparency(a)
+        if d.line_color:
+            c, a = color_to_quantity_color(d.line_color)
+            aspect = ais_shape.Attributes().SeenLineAspect()
+            aspect.SetColor(c)
+            ais_shape.Attributes().SetSeenLineAspect(aspect)
+        if d.wireframe_line_color:
+            c, a = color_to_quantity_color(d.wireframe_line_color)
+            aspect = ais_shape.Attributes().UnFreeBoundaryAspect()
+            aspect.SetColor(c)
+            ais_shape.Attributes().SetUnFreeBoundaryAspect(aspect)
 
         ais_shape.SetLocalTransformation(self.location.Transformation())
         return ais_shape

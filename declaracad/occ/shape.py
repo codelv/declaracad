@@ -297,6 +297,12 @@ class Shape(ToolkitObject):
     #: A string representing the color of the shape.
     color = d_(ColorMember())
 
+    #: A string representing the line color of the shape in HLR mode.
+    line_color = d_(ColorMember())
+
+    #: A string representing the hidden line color of the shape in wireframe mode.
+    wireframe_line_color = d_(ColorMember())
+
     #: The opacity of the shape used for display.
     transparency = d_(FloatRange(0.0, 1.0, 0.0))
 

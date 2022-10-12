@@ -302,6 +302,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
     #: Tuple of (Quantity_Color, transparency)
     shape_color = Typed(tuple)
+    line_color = Typed(tuple)
 
     #: Grid colors
     grid_colors = Dict()
@@ -429,6 +430,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             self.set_lock_rotation(d.lock_rotation)
             self.set_lock_zoom(d.lock_zoom)
             self.set_shape_color(d.shape_color)
+            self.set_line_color(d.line_color)
             self.set_chordial_deviation(d.chordial_deviation)
             self._update_rendering_params()
             self.set_grid_mode(d.grid_mode)
@@ -508,7 +510,22 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         else:
             super().child_removed(child)
 
-    def add_shape_to_display(self, occ_shape):
+    def apply_default_colors(self, ais_object):
+        """ Apply the default viewer colors"""
+        attrs = ais_object.Attributes()
+        if not attrs.HasOwnSeenLineAspect():
+            c, _ = self.line_color
+            aspect = attrs.SeenLineAspect()
+            aspect.SetColor(c)
+            attrs.SetSeenLineAspect(aspect)
+        if not attrs.HasOwnShadingAspect():
+            c, _ = self.shape_color
+            aspect = attrs.ShadingAspect()
+            aspect .SetColor(c)
+            attrs.SetShadingAspect(aspect)
+
+
+    def add_shape_to_display(self, occ_shape: OccShape):
         """Add an OccShape to the display"""
         d = occ_shape.declaration
         if not d.display:
@@ -523,6 +540,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             ais_shape = s.ais_shape
             if ais_shape is not None:
                 try:
+                    self.apply_default_colors(ais_shape)
                     s.displayed = True
                     display(ais_shape, False)
                     displayed_shapes[s.shape] = s
@@ -547,7 +565,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
         self._redisplay_timer.start()
 
-    def remove_shape_from_display(self, occ_shape):
+    def remove_shape_from_display(self, occ_shape: OccShape):
         displayed_shapes = self._displayed_shapes
         remove = self.ais_context.Remove
         occ_shape.displayed = False
@@ -790,6 +808,12 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
     def set_shape_color(self, color):
         self.shape_color = color_to_quantity_color(color)
+
+    def set_line_color(self, color):
+        c, a = self.line_color = color_to_quantity_color(color)
+        aspect = self.prs3d_drawer.LineAspect()
+        aspect.SetColor(c)
+        self.prs3d_drawer.SetLineAspect(aspect)
 
     def set_trihedron_mode(self, mode: str):
         attr = "Aspect_TOTP_{}".format(mode.upper().replace("-", "_"))

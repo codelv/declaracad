@@ -170,7 +170,10 @@ class ProxyOccViewer(ProxyControl):
     def set_background_gradient(self, gradient):
         raise NotImplementedError
 
-    def set_shape_color(self, color):
+    def set_shape_color(self, color: Color):
+        raise NotImplementedError
+
+    def set_line_color(self, color: Color):
         raise NotImplementedError
 
     def set_rotation(self, rotation):
@@ -327,6 +330,9 @@ class OccViewer(Control):
     #: Default shape rendering color if none is defined
     shape_color = d_(ColorMember("steelblue"))
 
+    #: Default line rendering color if none is defined
+    line_color = d_(ColorMember("black"))
+
     #: Display shadows
     shadows = d_(Bool(False))
 
@@ -409,6 +415,7 @@ class OccViewer(Control):
         "draw_boundaries",
         "hidden_line_removal",
         "shape_color",
+        "line_color",
         "raytracing_depth",
         "lights",
         "view_projection",
