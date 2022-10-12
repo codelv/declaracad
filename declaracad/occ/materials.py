@@ -156,7 +156,7 @@ class Material(Atom):
 def get_builtin_materials():
     from OCCT import Graphic3d
 
-    prefix = "Graphic3d_NOM_"
+    prefix = "Graphic3d_NameOfMaterial_"
     n = len(prefix)
     return [
         d[n:].lower()
