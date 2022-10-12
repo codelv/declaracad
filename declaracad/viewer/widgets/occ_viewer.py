@@ -149,6 +149,29 @@ class ViewerLight(Atom):
     angle = FloatRange(0.0, math.pi, math.pi / 2)
 
 
+class LineAspect(Atom):
+    aspect = Enum(
+        # Stuff in shaded mode
+        "Line",
+        "Wire",
+        "Vector",
+        "Section",
+        "FaceBoundary",
+        # Visible lines in HLR  mode
+        "SeenLine",
+        "HiddenLine",
+        # Boundaries in wireframe mode
+        "FreeBoundary",
+        "UnFreeBoundary",
+        # Iso lines in wireframe mode
+        "UIso",
+        "VIso",
+    )
+    color = ColorMember()
+    width = Float(1.0)
+    line_type = Enum("solid", "empty", "dash", "dot", "dotdash")
+
+
 class ProxyOccViewer(ProxyControl):
     """The abstract definition of a proxy Viewer object."""
 
@@ -173,7 +196,7 @@ class ProxyOccViewer(ProxyControl):
     def set_shape_color(self, color: Color):
         raise NotImplementedError
 
-    def set_line_color(self, color: Color):
+    def set_line_aspects(self, aspects: list[LineAspect]):
         raise NotImplementedError
 
     def set_rotation(self, rotation):
@@ -218,10 +241,13 @@ class ProxyOccViewer(ProxyControl):
     def set_raytracing_depth(self, depth):
         raise NotImplementedError
 
-    def set_draw_boundaries(self, enabled):
+    def set_draw_boundaries(self, enabled: bool):
         raise NotImplementedError
 
-    def set_hidden_line_removal(self, enabled):
+    def set_hidden_line_removal(self, enabled: bool):
+        raise NotImplementedError
+
+    def set_show_hidden_lines(self, enabled: bool):
         raise NotImplementedError
 
     def set_grid_mode(self, mode):
@@ -331,7 +357,17 @@ class OccViewer(Control):
     shape_color = d_(ColorMember("steelblue"))
 
     #: Default line rendering color if none is defined
-    line_color = d_(ColorMember("black"))
+    line_aspects = d_(List(LineAspect))
+
+    def _default_line_aspects(self):
+        return [
+            LineAspect(aspect="SeenLine", color="black"),
+            LineAspect(aspect="FaceBoundary", color="black"),
+            LineAspect(aspect="UnFreeBoundary", color="black"),
+            LineAspect(aspect="UIso", color="grey"),
+            LineAspect(aspect="VIso", color="grey"),
+            LineAspect(aspect="HiddenLine", color="grey", line_type="dash"),
+        ]
 
     #: Display shadows
     shadows = d_(Bool(False))
@@ -354,8 +390,11 @@ class OccViewer(Control):
     #: Enable hidden line removal
     hidden_line_removal = d_(Bool(False))
 
+    #: Show removed lines when HLR is enabled
+    show_hidden_lines = d_(Bool(True))
+
     #: Draw face boundaries
-    draw_boundaries = d_(Bool(False))
+    draw_boundaries = d_(Bool(True))
 
     #: View expands freely in width by default.
     hug_width = set_default("ignore")
@@ -414,8 +453,9 @@ class OccViewer(Control):
         "lock_zoom",
         "draw_boundaries",
         "hidden_line_removal",
+        "show_hidden_lines",
         "shape_color",
-        "line_color",
+        "line_aspects",
         "raytracing_depth",
         "lights",
         "view_projection",
@@ -424,7 +464,7 @@ class OccViewer(Control):
         "animations",
         "display_units",
     )
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict):
         """An observer which sends state change to the proxy."""
         # The superclass handler implementation is sufficient.
         super(OccViewer, self)._update_proxy(change)
@@ -444,11 +484,11 @@ class OccViewer(Control):
         """Clear selection"""
         self.proxy.clear_selection()
 
-    def take_screenshot(self, filename):
+    def take_screenshot(self, filename: str):
         """Take a screenshot and save it with the given filename"""
         self.proxy.take_screenshot(filename)
 
-    def zoom_factor(self, factor):
+    def zoom_factor(self, factor: float):
         """Zoom in by a given factor"""
         self.proxy.zoom_factor(factor)
 

@@ -11,9 +11,11 @@ Created on Sep 26, 2016
 import os
 import sys
 from contextlib import contextmanager
+from typing import Any
 
 from atom.api import Bool, Dict, Int, List, Property, Typed
 from enaml.application import Application
+from enaml.colors import Color
 from enaml.qt import QtGui
 from enaml.qt.qt_control import QtControl
 from enaml.qt.QtCore import Qt, QTimer
@@ -61,7 +63,11 @@ from declaracad.occ.impl.occ_dimension import OccDimension
 from declaracad.occ.impl.occ_display import OccDisplayItem
 from declaracad.occ.impl.occ_shape import OccPart, OccShape
 from declaracad.occ.impl.utils import color_to_quantity_color
-from declaracad.viewer.widgets.occ_viewer import ProxyOccViewer, ViewerSelection
+from declaracad.viewer.widgets.occ_viewer import (
+    LineAspect,
+    ProxyOccViewer,
+    ViewerSelection,
+)
 
 if sys.platform == "win32":
     from OCCT.WNT import WNT_Window
@@ -300,10 +306,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     #: Errors
     errors = Dict()
 
-    #: Tuple of (Quantity_Color, transparency)
-    shape_color = Typed(tuple)
-    line_color = Typed(tuple)
-
     #: Grid colors
     grid_colors = Dict()
 
@@ -424,13 +426,14 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             self.set_trihedron_mode(d.trihedron_mode)
             self.set_display_mode(d.display_mode)
             self.set_hidden_line_removal(d.hidden_line_removal)
+            self.set_show_hidden_lines(d.show_hidden_lines)
             self.set_selection_mode(d.selection_mode)
             self.set_view_mode(d.view_mode)
             self.set_view_projection(d.view_projection)
             self.set_lock_rotation(d.lock_rotation)
             self.set_lock_zoom(d.lock_zoom)
             self.set_shape_color(d.shape_color)
-            self.set_line_color(d.line_color)
+            self.set_line_aspects(d.line_aspects)
             self.set_chordial_deviation(d.chordial_deviation)
             self._update_rendering_params()
             self.set_grid_mode(d.grid_mode)
@@ -510,21 +513,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         else:
             super().child_removed(child)
 
-    def apply_default_colors(self, ais_object):
-        """ Apply the default viewer colors"""
-        attrs = ais_object.Attributes()
-        if not attrs.HasOwnSeenLineAspect():
-            c, _ = self.line_color
-            aspect = attrs.SeenLineAspect()
-            aspect.SetColor(c)
-            attrs.SetSeenLineAspect(aspect)
-        if not attrs.HasOwnShadingAspect():
-            c, _ = self.shape_color
-            aspect = attrs.ShadingAspect()
-            aspect .SetColor(c)
-            attrs.SetShadingAspect(aspect)
-
-
     def add_shape_to_display(self, occ_shape: OccShape):
         """Add an OccShape to the display"""
         d = occ_shape.declaration
@@ -540,7 +528,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             ais_shape = s.ais_shape
             if ais_shape is not None:
                 try:
-                    self.apply_default_colors(ais_shape)
                     s.displayed = True
                     display(ais_shape, False)
                     displayed_shapes[s.shape] = s
@@ -594,7 +581,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
         self._redisplay_timer.start()
 
-    def on_ais_shape_changed(self, change):
+    def on_ais_shape_changed(self, change: dict[str, Any]):
         """Handle updates to the shape. This occurs when parts
         add or remove shapes (which may occur during animations).
 
@@ -735,6 +722,13 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         view.SetComputedMode(enabled)
         self.redraw()
 
+    def set_show_hidden_lines(self, enabled: bool):
+        drawer = self.prs3d_drawer
+        if enabled:
+            drawer.EnableDrawHiddenLine()
+        else:
+            drawer.DisableDrawHiddenLine()
+
     def set_antialiasing(self, enabled: bool):
         self._update_rendering_params()
 
@@ -806,14 +800,45 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             fill_method = getattr(Aspect, attr, Aspect_GFM_VER)
         self.v3d_view.SetBgGradientColors(c1, c2, fill_method, True)
 
-    def set_shape_color(self, color):
-        self.shape_color = color_to_quantity_color(color)
-
-    def set_line_color(self, color):
-        c, a = self.line_color = color_to_quantity_color(color)
-        aspect = self.prs3d_drawer.LineAspect()
+    def set_shape_color(self, color: Color):
+        c, a = color_to_quantity_color(color)
+        drawer = self.prs3d_drawer
+        aspect = drawer.ShadingAspect()
+        material = aspect.Material()
+        material.SetColor(c)
+        aspect.SetMaterial(material)
         aspect.SetColor(c)
-        self.prs3d_drawer.SetLineAspect(aspect)
+        drawer.SetShadingAspect(aspect)
+
+    def set_line_aspects(
+        self,
+        line_aspects: list[LineAspect],
+    ):
+        """Set the default line aspect for the drawer with the given name.
+        Parameters
+        ----------
+        name: str
+            The aspect name. Must be one of Line, Wire, SeenLine,
+            HiddenLine, FreeBoundary, UnFreeBoundary, FaceBoundary
+        color: Color
+            The color to set
+        width: float
+            The line width
+        line_type: str
+            Must be one of (EMPTY, SOLID, DASH, DOT, DOTDASH)
+
+        """
+        drawer = self.prs3d_drawer
+        for line_aspect in line_aspects:
+            c, a = color_to_quantity_color(line_aspect.color)
+            aspect_type = f"{line_aspect.aspect}Aspect"
+            aspect = getattr(drawer, aspect_type)()
+            aspect.SetColor(c)
+            aspect.SetWidth(line_aspect.width)
+            type_of_line = f"Aspect_TOL_{line_aspect.line_type.upper()}"
+            aspect.SetTypeOfLine(getattr(Aspect, type_of_line))
+            setter = getattr(drawer, f"Set{aspect_type}")
+            setter(aspect)
 
     def set_trihedron_mode(self, mode: str):
         attr = "Aspect_TOTP_{}".format(mode.upper().replace("-", "_"))
