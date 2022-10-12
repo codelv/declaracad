@@ -12,19 +12,31 @@ Created on Aug 18, 2020
 import os
 import re
 from collections import OrderedDict
-from typing import Optional
+from typing import Optional, Union
 
 from atom.api import Atom, Bool, Float, Instance, Int, List, Property, Str
 
 from declaracad.occ.api import Point
 
 
-def normalize(k: str, v: str) -> str:
+def normalize(k: str, v: Union[int, float, str]) -> str:
     """Normalize an ID command"""
     vi = int(v)
     if v == vi:
         v = vi  # Clip off .0
     return f"{k}{v}"
+
+
+class Waypoint(Atom):
+    X = Float()
+    Y = Float()
+    Z = Float()
+    A = Float()
+    B = Float()
+    C = Float()
+    U = Float()
+    V = Float()
+    W = Float()
 
 
 class Command(Atom):
@@ -34,23 +46,23 @@ class Command(Atom):
     source = Str()
     lineno = Int()
 
-    def _default_id(self):
+    def _default_id(self) -> str:
         if self.data:
             for k, v in self.data.items():
                 if k in GCode.ID_CODES:
                     return normalize(k, v)
         return ""
 
-    def _get_waypoint(self):
+    def _get_waypoint(self) -> Optional[Waypoint]:
         d = self.data
-        if not d:
-            return
-        axis = {}
-        for k in GCode.AXIS_CODES:
-            if k in d:
-                axis[k] = d[k]
-        if axis:
-            return Waypoint(**axis)
+        if d:
+            axis = {}
+            for k in GCode.AXIS_CODES:
+                if k in d:
+                    axis[k] = d[k]
+            if axis:
+                return Waypoint(**axis)
+        return None
 
     waypoint = Property(_get_waypoint, cached=True)
 
@@ -80,19 +92,19 @@ class Command(Atom):
             last.z if z is None else z * scale,
         )
 
-    def _get_feedrate(self):
-        if not self.data:
-            return
-        return self.data.get("F")
+    def _get_feedrate(self) -> Optional[float]:
+        if self.data and "F" in self.data:
+            return float(self.data["F"])
+        return None
 
     feedrate = Property(_get_feedrate, cached=True)
 
-    def _get_is_move(self):
+    def _get_is_move(self) -> bool:
         return self.id in GCode.MOVE_CODES
 
     is_move = Property(_get_is_move, cached=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Command<{} from '{}' at line {}>".format(
             self.id, self.source, self.lineno
         )
@@ -114,12 +126,12 @@ class GCode(Atom):
         "G3": "green",
     }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "GCode<file='{} cmds=[\n    {}\n]>".format(
             self.path, ",\n    ".join(map(str, self.commands[0:100]))
         )
 
-    def max(self):
+    def max(self) -> Point:
         """Return max value of each axis"""
         return Point(
             *(
@@ -128,7 +140,7 @@ class GCode(Atom):
             )
         )
 
-    def min(self):
+    def min(self) -> Point:
         """Return min value of each axis"""
         return Point(
             *(
@@ -142,14 +154,14 @@ class Movement(Atom):
     rapid = Bool()
     points = List()
 
-    def clone(self):
+    def clone(self) -> "Movement":
         points = [Point(*p) for p in self.points]
         return Movement(rapid=self.rapid, points=points)
 
 
 def convert(
     v: float, scale: float = 1, precision: Optional[int] = None, units: str = "mm"
-):
+) -> Union[int, float]:
     """Convert a value for writing to gcode
 
     Parameters
@@ -212,7 +224,7 @@ def save_to_file(filename: str, movements: list[Movement], device):
             f.write(device.config.finalize_commands)
 
 
-def parse(path):
+def parse(path: str) -> GCode:
     """Parse the file at the given path into a list of Commands
 
     Parameters
@@ -230,9 +242,9 @@ def parse(path):
         A GCode instance with the parsed commands
 
     """
-    cmds = []
+    cmds: list[GCode] = []
 
-    def set_id(cmd):
+    def set_id(cmd: Command) -> str:
         if not cmd.id:
             # If command is not specified use the last move
             for c in reversed(cmds):
@@ -241,7 +253,7 @@ def parse(path):
                     break
         return cmd.id
 
-    def finish(cmd):
+    def finish(cmd: Command):
         set_id(cmd)
         cmds.append(cmd)
 
@@ -271,13 +283,14 @@ def parse(path):
 
         try:
             # Parse args
-            args = []
+            args: list[tuple[str, float]] = []
             for c in re.findall(r"[A-z] *-?[\d.]+ *", data):
                 args.append((c[0].upper(), float(c[1:])))
 
             # Since some files put mode changes on the same line
             # split them into separate commands
-            cmd.data = d = OrderedDict()
+            d: dict[str, float] = OrderedDict()
+            cmd.data = d
             for k, v in args:
                 if k in d:
                     # HACK: Split out to a new command
@@ -305,15 +318,3 @@ def parse(path):
             msg = "Failed to parse '%s' at line %s: %s" % (filename, i + 1, e)
             raise ValueError(msg)
     return GCode(path=path, commands=cmds)
-
-
-class Waypoint(Atom):
-    X = Float()
-    Y = Float()
-    Z = Float()
-    A = Float()
-    B = Float()
-    C = Float()
-    U = Float()
-    V = Float()
-    W = Float()

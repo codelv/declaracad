@@ -83,7 +83,7 @@ def process_events():
     Application.instance()._qapp.processEvents()
 
 
-def get_bootstrap_cmd():
+def get_bootstrap_cmd() -> list[str]:
     """Get the command to the main executable depending on how it's run
 
     Returns
@@ -119,14 +119,14 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
     #: Set when the protocol is ready
     connected = Bool(False)
 
-    def invoke_method(self, method: str, *args, **kwargs) -> asyncio.Future:
+    def invoke_method(self, method: str, *args, **kwargs) -> asyncio.Future[Any]:
         """Invoke the method with the attribute "on_{method}" on the remote
         connection.
 
         """
         if args and kwargs:
             raise ValueError("Can only use args or kwargs, not both")
-        f = asyncio.Future()
+        f: asyncio.Future[Any] = asyncio.Future()
         self._id += 1
         self._responses[self._id] = f
         self.send_message({"method": method, "params": args or kwargs, "id": self._id})
@@ -157,7 +157,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         for line in data.split(b"\n"):
             self.line_received(line.decode())
 
-    def line_received(self, line: str):
+    def line_received(self, line: str) -> Optional[asyncio.Future]:
         """Called when a newline is received
 
         Parameters
@@ -167,10 +167,10 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
 
         """
         if not line:
-            return
+            return None
         log.info(f"Received message '{line}'")
         try:
-            request = jsonpickle.loads(line)
+            request: dict[str, Any] = jsonpickle.loads(line)
         except Exception as e:
             return self.send_message(
                 {
@@ -183,14 +183,14 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
                 }
             )
 
-        request_id = request.get("id")
-        method = request.get("method")
+        request_id: Optional[int] = request.get("id")
+        method: Optional[str] = request.get("method")
         if method is None:
             if "error" in request:
                 self.error_received(request_id, request["error"])
             elif "result" in request:
                 self.result_received(request_id, request["result"])
-            return
+            return None
 
         handler = getattr(self, f"on_{method}", None)
         if handler is None:

@@ -30,8 +30,8 @@ from .occ_shape import OccShape, coerce_axis
 
 #: Track registered fonts
 FONT_MANAGER = Font_FontMgr.GetInstance_()
-FONT_REGISTRY = set()
-FONT_CACHE = {}
+FONT_REGISTRY: set[str] = set()
+FONT_CACHE: dict[tuple[str, str, float], Font_BRepFont] = {}
 
 
 class OccText(OccShape, ProxyText):
@@ -83,26 +83,26 @@ class OccText(OccShape, ProxyText):
         text = NCollection_String(d.text.encode("utf-8"))
         self.shape = self.builder.Perform(self.font, text, axis, halign, valign)
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         self.create_shape()
 
-    def set_font(self, font):
+    def set_font(self, font: str):
         self.update_font()
         self.create_shape()
 
-    def set_size(self, size):
+    def set_size(self, size: float):
         self.update_font()
         self.create_shape()
 
-    def set_style(self, style):
+    def set_style(self, style: str):
         self.update_font()
         self.create_shape()
 
-    def set_composite(self, composite):
+    def set_composite(self, composite: bool):
         self.create_shape()
 
-    def set_vertical_alignment(self, alignment):
+    def set_vertical_alignment(self, alignment: str):
         self.create_shape()
 
-    def set_horizontal_alignment(self, alignment):
+    def set_horizontal_alignment(self, alignment: str):
         self.create_shape()

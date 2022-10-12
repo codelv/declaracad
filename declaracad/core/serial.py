@@ -23,7 +23,7 @@ import serial
 try:
     import termios
 except ImportError:
-    termios = None
+    termios = None  # type: ignore
 
 __version__ = "0.4"
 

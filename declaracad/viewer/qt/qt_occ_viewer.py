@@ -11,7 +11,7 @@ Created on Sep 26, 2016
 import os
 import sys
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Optional
 
 from atom.api import Bool, Dict, Int, List, Property, Typed
 from enaml.application import Application
@@ -22,7 +22,13 @@ from enaml.qt.QtCore import Qt, QTimer
 from enaml.qt.QtGui import QPalette
 from enaml.qt.QtWidgets import QOpenGLWidget
 from OCCT import Aspect, TopAbs, V3d
-from OCCT.AIS import AIS_InteractiveContext, AIS_Shaded, AIS_Shape, AIS_WireFrame
+from OCCT.AIS import (
+    AIS_DisplayMode,
+    AIS_InteractiveContext,
+    AIS_Shaded,
+    AIS_Shape,
+    AIS_WireFrame,
+)
 from OCCT.Aspect import (
     Aspect_DisplayConnection,
     Aspect_GFM_VER,
@@ -58,7 +64,7 @@ from OCCT.V3d import (
 )
 
 from declaracad.core.utils import log
-from declaracad.occ.api import BBox
+from declaracad.occ.api import BBox, Shape
 from declaracad.occ.impl.occ_dimension import OccDimension
 from declaracad.occ.impl.occ_display import OccDisplayItem
 from declaracad.occ.impl.occ_shape import OccPart, OccShape
@@ -83,7 +89,7 @@ else:
     V3d_Window = Xw_Window
 
 
-V3D_VIEW_MODES = {
+V3D_VIEW_MODES: dict[str, V3d_TypeOfOrientation] = {
     "top": V3d.V3d_Zpos,
     "bottom": V3d.V3d_Zneg,
     "left": V3d.V3d_Xneg,
@@ -93,10 +99,15 @@ V3D_VIEW_MODES = {
     "iso": V3d.V3d_XposYnegZpos,
 }
 
-V3D_DISPLAY_MODES = {"shaded": AIS_Shaded, "wireframe": AIS_WireFrame}
+V3D_DISPLAY_MODES: dict[str, AIS_DisplayMode] = {
+    "shaded": AIS_Shaded,
+    "wireframe": AIS_WireFrame,
+}
 
 BLACK = Quantity_Color(Quantity_NOC_BLACK)
 WHITE = Quantity_Color(Quantity_NOC_WHITE)
+
+SelectionInfoType = dict[str, dict[int, OccShape]]
 
 
 class QtViewer3d(QOpenGLWidget):
@@ -597,28 +608,28 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             self.add_shape_to_display(occ_shape)
         self._redisplay_timer.start()
 
-    def add_dimension_to_display(self, occ_dim):
+    def add_dimension_to_display(self, occ_dim: OccDimension):
         ais_dimension = occ_dim.dimension
         if ais_dimension is not None:
             self.ais_context.Display(ais_dimension, False)
             self._displayed_dimensions[ais_dimension] = occ_dim
         self._redisplay_timer.start()
 
-    def remove_dimension_from_display(self, occ_dim):
+    def remove_dimension_from_display(self, occ_dim: OccDimension):
         ais_dimension = occ_dim.dimension
         if ais_dimension is not None:
             self.ais_context.Remove(ais_dimension, False)
             self._displayed_dimensions.pop(ais_dimension, None)
         self._redisplay_timer.start()
 
-    def add_item_to_display(self, occ_disp_item):
+    def add_item_to_display(self, occ_disp_item: OccDisplayItem):
         ais_object = occ_disp_item.item
         if ais_object is not None:
             self.ais_context.Display(ais_object, False)
             self._displayed_graphics[ais_object] = occ_disp_item
         self._redisplay_timer.start()
 
-    def remove_item_from_display(self, occ_disp_item):
+    def remove_item_from_display(self, occ_disp_item: OccDisplayItem):
         ais_object = occ_disp_item.item
         if ais_object is not None:
             self.ais_context.Remove(ais_object, False)
@@ -639,7 +650,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     # -------------------------------------------------------------------------
     # Viewer API
     # -------------------------------------------------------------------------
-    def get_bounding_box(self, shapes):
+    def get_bounding_box(
+        self, shapes: list[TopoDS_Shape]
+    ) -> tuple[float, float, float, float, float, float]:
         """Compute the bounding box for the given list of shapes.
         Return values are in 3d coordinate space.
 
@@ -741,7 +754,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     def set_raytracing(self, enabled: bool):
         self._update_rendering_params()
 
-    def set_raytracing_depth(self, depth):
+    def set_raytracing_depth(self, depth: int):
         self._update_rendering_params()
 
     def _update_rendering_params(self, **params):
@@ -855,7 +868,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             grid_mode = getattr(Aspect_GridDrawMode, f"Aspect_GDM_{b}")
             self.v3d_viewer.ActivateGrid(grid_type, grid_mode)
 
-    def set_grid_colors(self, colors):
+    def set_grid_colors(self, colors: tuple[Color, Color]):
         c1, _ = color_to_quantity_color(colors[0])
         c2, _ = color_to_quantity_color(colors[1])
         grid = self.v3d_viewer.Grid()
@@ -895,10 +908,10 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         ais_context.Activate(AIS_Shape.SelectionMode_(mode))
 
     def set_display_mode(self, mode: str):
-        mode = V3D_DISPLAY_MODES.get(mode)
-        if mode is None:
+        v3d_mode = V3D_DISPLAY_MODES.get(mode)
+        if v3d_mode is None:
             return
-        self.ais_context.SetDisplayMode(mode, True)
+        self.ais_context.SetDisplayMode(v3d_mode, True)
         self.redraw()
 
     def set_display_units(self, units):
@@ -913,29 +926,29 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             The mode to or direction to view.
 
         """
-        mode = V3D_VIEW_MODES.get(mode.lower())
-        if mode is None:
+        proj_mode = V3D_VIEW_MODES.get(mode.lower())
+        if proj_mode is None:
             return
-        self.v3d_view.SetProj(mode)
+        self.v3d_view.SetProj(proj_mode)
 
-    def set_view_projection(self, mode):
-        mode = getattr(Graphic3d_Camera, "Projection_%s" % mode.title())
+    def set_view_projection(self, mode: str):
+        mode = getattr(Graphic3d_Camera, f"Projection_{mode.title()}")
         self.camera.SetProjectionType(mode)
         self.redraw()
 
-    def set_lock_rotation(self, locked):
+    def set_lock_rotation(self, locked: bool):
         self.widget._lock_rotation = locked
 
-    def set_lock_zoom(self, locked):
+    def set_lock_zoom(self, locked: bool):
         self.widget._lock_zoom = locked
 
-    def zoom_factor(self, factor):
+    def zoom_factor(self, factor: float):
         self.v3d_view.SetZoom(factor)
 
-    def rotate_view(self, x=0, y=0, z=0):
+    def rotate_view(self, x: float = 0, y: float = 0, z: float = 0):
         self.v3d_view.Rotate(x, y, z, True)
 
-    def turn_view(self, x=0, y=0, z=0):
+    def turn_view(self, x: float = 0, y: float = 0, z: float = 0):
         self.v3d_view.Turn(x, y, z, True)
 
     def fit_all(self):
@@ -958,13 +971,13 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         self.ais_context.MoveTo(cx, cy, view, True)
         view.WindowFit(xmin - pad, ymin - pad, xmax + pad, ymax + pad)
 
-    def take_screenshot(self, filename):
+    def take_screenshot(self, filename: str) -> bool:
         return self.v3d_view.Dump(filename)
 
     # -------------------------------------------------------------------------
     # Display Handling
     # -------------------------------------------------------------------------
-    def view_stats(self):
+    def view_stats(self) -> str:
         """Get view stats information
 
         Returns
@@ -989,7 +1002,12 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         """Clear selection"""
         self.ais_context.ClearSelected(True)
 
-    def update_selection(self, pos, area, shift):
+    def update_selection(
+        self,
+        pos: Optional[tuple[float, float]],
+        area: Optional[tuple[float, float, float, float]],
+        shift: bool,
+    ):
         """Update the selection state"""
         view = self.v3d_view
         ais_context = self.ais_context
@@ -1005,8 +1023,8 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         ais_context.InitSelected()
 
         # Lookup the shape declrations based on the selection context
-        selection = {}
-        shapes = []
+        selection: dict[Shape, SelectionInfoType] = {}
+        shapes: list[TopoDS_Shape] = []
         occ_shapes = {s.ais_shape: s for s in self._displayed_shapes.values()}
         while ais_context.MoreSelected():
             ais_object = ais_context.SelectedInteractive()
@@ -1015,9 +1033,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                 d = occ_shape.declaration
                 topods_shape = ais_context.SelectedShape()
                 if isinstance(ais_object, MeshVS_Mesh):
-                    info = selection.get(d)
-                    if info is None:
-                        info = selection[d] = {}
+                    mesh_info: SelectionInfoType = selection.get(d, {})
+                    if d not in selection:
+                        selection[d] = mesh_info
                     # Mesh selection works differently...
                     ais_selection = ais_context.Selection()
                     owner = ais_selection.Value()
@@ -1026,15 +1044,15 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                         item_type = owner.Type()
                         i = owner.ID()
                         attr = str(item_type).split("_")[-1].lower() + "s"
-                        selection_info = info.get(attr)
+                        selection_info = mesh_info.get(attr)
                         if selection_info is None:
-                            selection_info = info[attr] = {}
+                            selection_info = mesh_info[attr] = {}
                         item_iter = getattr(d.topology, attr, None)
                         if item_iter is not None:
                             selection_info[i] = item_iter[i]
                     else:
-                        info["meshs"] = {0: occ_shape}
-
+                        mesh_info["meshs"] = {0: occ_shape}
+                    del mesh_info
                 elif not topods_shape.IsNull():
                     # Try to lookup index based on topology
                     shape_type = topods_shape.ShapeType()
@@ -1052,13 +1070,14 @@ class QtOccViewer(QtControl, ProxyOccViewer):
                             break
                     shapes.append(topods_shape)
                     # Insert what was selected into the options
-                    info = selection.get(d)
-                    if info is None:
-                        info = selection[d] = {}
-                    selection_info = info.get(attr)
+                    shape_info: SelectionInfoType = selection.get(d, {})
+                    if d not in selection:
+                        selection[d] = shape_info
+                    selection_info = shape_info.get(attr)
                     if selection_info is None:
-                        selection_info = info[attr] = {}
+                        selection_info = shape_info[attr] = {}
                     selection_info[i] = topods_shape
+                    del shape_info
 
                 # Mark it as found we don't know what shape it's from
                 # if not found:

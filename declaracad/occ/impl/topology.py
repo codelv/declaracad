@@ -281,7 +281,7 @@ class Topology(Atom):
         in the result.
 
         """
-        used_shapes = []
+        used_shapes: list[TopoDS_Shape] = []
         for shape in shapes:
             if any(shape.IsSame(s) for s in used_shapes):
                 continue
@@ -377,7 +377,7 @@ class Topology(Atom):
         @param topoTypeB:
         @param topological_entity:
         """
-        topo_set = set()
+        topo_set: set[TopoDS_Shape] = set()
         items = []
         topo_map = TopTools_IndexedDataMapOfShapeListOfShape()
         TopExp.MapShapesAndAncestors_(self.shape, topo_type_a, topo_type_b, topo_map)
@@ -1533,7 +1533,7 @@ class Topology(Atom):
 
     def distance_between(
         self, other_shape: Union[Point, TopoDS_Shape], min_max: str = "min"
-    ) -> float:
+    ) -> BRepExtrema_DistShapeShape:
         """Compute the min and max distance between this and the other shape.
 
         Returns

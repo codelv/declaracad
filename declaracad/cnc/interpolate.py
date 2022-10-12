@@ -51,7 +51,7 @@ def distance(
     if len(points) != 2:
         # Determine z value
         z = p0.z
-        dt = 0  # Distance
+        dt: float = 0  # Distance
         last = points[0]
 
         # Determine total distance
@@ -60,7 +60,7 @@ def distance(
             last = p
 
         # Determine distance at each point to calculate t
-        d = 0
+        d: float = 0
         last = points[0]
         for p in points[1:]:
             d += last.distance2d(p)
@@ -113,7 +113,7 @@ def build_edge_graph(
         A mapping of points to the list of connected edge topologies
 
     """
-    graph = {}
+    graph: dict[Point, list[TopoDS_Shape]] = {}
     for s in shapes:
         for e in Topology(shape=s).edges:
             edge_topo = Topology(shape=e)
@@ -220,18 +220,18 @@ def group_connected_wires(
 
     Parameters
     ----------
-    wires: List[TopoDS_Wire]
+    wires: Iterable[TopoDS_Shape]
 
     Returns
     -------
-    groups: List[Dict]
-        List of groups of connected wires.
+    groups: list[list[TopoDS_Shape]]
+        List of groups of connected shapes.
 
     """
-    groups = []
+    groups: list[list[TopoDS_Shape]] = []
     for w in wires:
         topo = Topology(shape=w)
-        group = None
+        group: Optional[list[TopoDS_Shape]] = None
         for g in groups:
             if any(topo.intersection(w) for w in g):
                 group = g

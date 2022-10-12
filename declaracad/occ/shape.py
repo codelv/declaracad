@@ -11,6 +11,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from math import pi
+from typing import ClassVar
 
 from atom.api import (
     Bool,
@@ -505,7 +506,7 @@ class Part(Shape):
     cached = d_(Bool(False))
 
     #: Static cache to store parts in.
-    cached_parts = {}
+    cached_parts: ClassVar[dict[str, "Part"]] = {}
 
     #: Key use for caching. If you create multiple instances of the same
     #: part use this to distingish between them

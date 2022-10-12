@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Copyright (c) 2017, Jairus Martin.
 
@@ -16,7 +15,7 @@ import json
 import os
 import time
 from asyncio.base_events import Server
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Type
 
 import enaml
 import jsonpickle
@@ -50,11 +49,11 @@ if TYPE_CHECKING:
     from declaracad.editor.plugin import Document
 
     with enaml.imports():
-        from .remote import ViewerDockItem
+        from .remote import RemoteViewer, ViewerDockItem
 
 
 @functools.lru_cache
-def is_remote_attr(name: str):
+def is_remote_attr(name: str) -> bool:
     """Check if the given attr name is valid on the remote viewer."""
     with enaml.imports():
         from .remote import ModelViewer, ViewerWindow
@@ -68,19 +67,19 @@ def is_remote_attr(name: str):
     return False
 
 
-def viewer_factory():
+def viewer_factory() -> Type["ViewerDockItem"]:
     with enaml.imports():
         from .remote import ViewerDockItem
     return ViewerDockItem
 
 
-def remote_viewer():
+def remote_viewer() -> Type["RemoteViewer"]:
     with enaml.imports():
         from .remote import RemoteViewer
     return RemoteViewer
 
 
-def document_type():
+def document_type() -> Type["Document"]:
     from declaracad.editor.plugin import Document
 
     return Document
@@ -99,10 +98,10 @@ class ModelExporter(Atom):
     path = Str()
     filename = Str()
 
-    def _default_path(self):
+    def _default_path(self) -> str:
         ext = self.extension.lower()
         filename = os.path.splitext(self.filename)[0]
-        return "{}.{}".format(filename, ext)
+        return f"{filename}.{ext}"
 
     def export(self):
         """Export a DeclaraCAD model from an enaml file to a 3D model format
@@ -133,13 +132,13 @@ class ScreenshotOptions(Atom):
     #: Only screenshot this view
     target = Str()
 
-    def _default_path(self):
+    def _default_path(self) -> str:
         path, filename = os.path.split(self.filename)
         default_dir = self.default_dir or path
         filename, ext = os.path.splitext(filename)
         return os.path.join(default_dir, f"{filename}.png")
 
-    def format(self):
+    def format(self) -> str:
         """Return formatted option values for the exporter app to parse"""
         return json.dumps(self.__getstate__())
 
@@ -189,7 +188,7 @@ class ViewerProcess(ProcessLineReceiver):
             self.protocol.set("version", self._id)
 
     @observe("document")
-    def _update_document(self, change):
+    def _update_document(self, change: dict[str, Any]):
         protocol = self.protocol
         if protocol is None:
             return
@@ -197,7 +196,7 @@ class ViewerProcess(ProcessLineReceiver):
         protocol.set("filename", name)
 
     @observe("document.version")
-    def _update_version(self, change):
+    def _update_version(self, change: dict[str, Any]):
         protocol = self.protocol
         if protocol is None:
             return
@@ -242,7 +241,7 @@ class ViewerProcess(ProcessLineReceiver):
         super().connection_made(transport)
         self.terminated = False
 
-    def err_received(self, data):
+    def err_received(self, data: bytes):
         """Catch and log error output attempting to decode it"""
         doc = self.document
         for line in data.split(b"\n"):
@@ -251,13 +250,13 @@ class ViewerProcess(ProcessLineReceiver):
             if line.startswith(b"QWidget::") or line.startswith(b"QPainter::"):
                 continue
             try:
-                line = line.decode()
-                log.debug(f"render | err | {line}")
+                text = line.decode()
+                log.debug(f"render | err | {text}")
                 if doc:
-                    doc.append_output(line)
+                    doc.append_output(text)
             except Exception as e:
                 log.exception(e)
-                log.debug(f"render | err | {line}")
+                log.debug(f"render | err | {line!r}")
 
     def process_exited(self, reason=None):
         log.warning(f"renderer | process ended: {reason}")
@@ -303,13 +302,13 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
         self.window_id = 0
         log.debug(f"Remote viewer connection lost {err}")
 
-    def set(self, attr, value):
+    def set(self, attr: str, value: Any):
         return self.invoke_method("set", attr, value)
 
-    def call(self, method, *args, **kwargs):
+    def call(self, method: str, *args, **kwargs):
         return self.invoke_method("call", method, *args, **kwargs)
 
-    def on_welcome(self, viewer_name, window_id):
+    def on_welcome(self, viewer_name: str, window_id: int):
         dock_item = self.plugin.get_viewer(viewer_name)
         if dock_item is not None:
             # Save reference to which viewer this is
@@ -325,18 +324,18 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
             if doc:
                 self.set("filename", doc.name)
 
-    def on_invoke_command(self, response):
+    def on_invoke_command(self, response: dict[str, Any]):
         command_id = response.get("command_id")
         parameters = response.get("parameters", {})
         log.debug(f"viewer | out | {command_id}({parameters})")
         self.plugin.workbench.invoke_command(command_id, parameters)
 
-    def on_render_error(self, response):
+    def on_render_error(self, response: dict[str, Any]):
         if self.document:
             msg = response["error"]["message"].split("\n")
             self.document.errors.extend(msg)
 
-    def on_render_success(self, response):
+    def on_render_success(self, response: dict[str, Any]):
         if self.document:
             self.document.errors = []
 
@@ -448,6 +447,7 @@ class ViewerPlugin(Plugin):
                 return viewer
             elif viewer.name == name:
                 return viewer
+        return None
 
     def fit_all(self, event=None):
         return
@@ -460,7 +460,7 @@ class ViewerPlugin(Plugin):
         # viewer.set_source(editor.get_text())
         doc.version += 1
 
-    def _default_exporters(self) -> list["ModelExporter"]:
+    def _default_exporters(self) -> list[Type["ModelExporter"]]:
         """TODO: push to an ExtensionPoint"""
         from declaracad.occ.exporters.iges.exporter import IgesExporter
         from declaracad.occ.exporters.step.exporter import StepExporter
@@ -472,7 +472,7 @@ class ViewerPlugin(Plugin):
     # -------------------------------------------------------------------------
     # Plugin commands
     # -------------------------------------------------------------------------
-    def export(self, options):
+    def export(self, options: Optional[Any]) -> ProcessLineReceiver:
         """Export the current model to stl"""
         if not options:
             raise ValueError("An export `options` parameter is required")
@@ -488,7 +488,7 @@ class ViewerPlugin(Plugin):
         deferred_call(loop.subprocess_exec, lambda: protocol, *cmd)
         return protocol
 
-    def screenshot(self, options: Optional[ScreenshotOptions] = None):
+    def screenshot(self, options: Optional[ScreenshotOptions] = None) -> list[str]:
         """Export the views as a screenshot"""
         if options is None:
             editor = self.workbench.get_plugin("declaracad.editor")

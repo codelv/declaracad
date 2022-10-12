@@ -8,8 +8,10 @@ from enaml.core.parser import parse
 with enaml.imports():
     from declaracad.occ.loader import LoadedPart  # noqa: F401
 
+from declaracad.occ.api import Shape
 
-def load_model(filename: str, from_string: bool = False):
+
+def load_declaracad(filename: str, **options) -> list[Shape]:
     """Load a DeclaraCAD model from an enaml file, source, or a shape
     supported by the LoadShape node.
 
@@ -26,6 +28,7 @@ def load_model(filename: str, from_string: bool = False):
         A list of shapes that can be passed to the python-occ viewer.
 
     """
+    from_string: bool = options.get("from_string", False)
 
     # Parse the enaml file or load from source code
     _, ext = os.path.splitext(filename.lower())

@@ -10,6 +10,7 @@ Created on Sept 27, 2016
 @author: jrm
 """
 from math import cos, pi, sin
+from typing import Any, Optional
 
 from atom.api import (
     Bool,
@@ -160,10 +161,10 @@ class ProxyTrimmedCurve(ProxyLine):
     def set_shape(self, shape):
         raise NotImplementedError
 
-    def set_u(self, u):
+    def set_u(self, u: float):
         raise NotImplementedError
 
-    def set_v(self, v):
+    def set_v(self, v: float):
         raise NotImplementedError
 
 
@@ -171,25 +172,25 @@ class ProxyText(ProxyShape):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Text)
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         raise NotImplementedError
 
-    def set_font(self, font):
+    def set_font(self, font: str):
         raise NotImplementedError
 
-    def set_size(self, size):
+    def set_size(self, size: float):
         raise NotImplementedError
 
-    def set_style(self, style):
+    def set_style(self, style: str):
         raise NotImplementedError
 
-    def set_composite(self, composite):
+    def set_composite(self, composite: bool):
         raise NotImplementedError
 
-    def set_vertical_alignment(self, alignment):
+    def set_vertical_alignment(self, alignment: str):
         raise NotImplementedError
 
-    def set_horizontal_alignment(self, alignment):
+    def set_horizontal_alignment(self, alignment: str):
         raise NotImplementedError
 
 
@@ -212,10 +213,10 @@ class ProxyCircuit(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Circuit)
 
-    def set_offset(self, offset):
+    def set_offset(self, offset: float):
         raise NotImplementedError
 
-    def set_circles(self, circles):
+    def set_circles(self, circles: list):
         raise NotImplementedError
 
 
@@ -243,19 +244,19 @@ class ProxySvg(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Svg)
 
-    def set_source(self, source):
+    def set_source(self, source: str):
         raise NotImplementedError
 
-    def set_mirror(self, mirror):
+    def set_mirror(self, mirror: bool):
         raise NotImplementedError
 
-    def set_fill_mode(self, mode):
+    def set_fill_mode(self, mode: str):
         raise NotImplementedError
 
-    def set_center(self, center):
+    def set_center(self, center: bool):
         raise NotImplementedError
 
-    def set_scale(self, scale):
+    def set_scale(self, scale: float):
         raise NotImplementedError
 
 
@@ -263,19 +264,19 @@ class ProxyPdf(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Pdf)
 
-    def set_source(self, source):
+    def set_source(self, source: str):
         raise NotImplementedError
 
-    def set_mirror(self, mirror):
+    def set_mirror(self, mirror: bool):
         raise NotImplementedError
 
-    def set_fill_mode(self, mode):
+    def set_fill_mode(self, mode: str):
         raise NotImplementedError
 
-    def set_center(self, center):
+    def set_center(self, center: bool):
         raise NotImplementedError
 
-    def set_scale(self, scale):
+    def set_scale(self, scale: float):
         raise NotImplementedError
 
 
@@ -283,13 +284,13 @@ class ProxyMiddlePath(ProxyWire):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: MiddlePath)
 
-    def set_shapes(self, shapes):
+    def set_shapes(self, shapes: list):
         raise NotImplementedError
 
-    def set_mode(self, mode):
+    def set_mode(self, mode: str):
         raise NotImplementedError
 
-    def set_join_type(self, join_type):
+    def set_join_type(self, join_type: str):
         raise NotImplementedError
 
 
@@ -297,22 +298,22 @@ class ProxyBSplineSurface(ProxyShape):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: BSplineSurface)
 
-    def set_points(self, points):
+    def set_points(self, points: list[Point]):
         raise NotImplementedError
 
-    def set_deg_min(self, deg):
+    def set_deg_min(self, deg: int):
         raise NotImplementedError
 
-    def set_deg_max(self, deg):
+    def set_deg_max(self, deg: int):
         raise NotImplementedError
 
-    def set_continuity(self, continuity):
+    def set_continuity(self, continuity: Optional[int]):
         raise NotImplementedError
 
-    def set_interpolate(self, interpolate):
+    def set_interpolate(self, interpolate: bool):
         raise NotImplementedError
 
-    def set_periodic(self, periodic):
+    def set_periodic(self, periodic: bool):
         raise NotImplementedError
 
 
@@ -812,10 +813,10 @@ class Wire(Edge):
     edges = d_(List())
 
     @observe("edges")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
-    def points_of_discontinuity(self, tolerance=0.5):
+    def points_of_discontinuity(self, tolerance: float = 0.5) -> list[Point]:
         """Find points of discontinuity
 
         Parameters
@@ -829,10 +830,10 @@ class Wire(Edge):
             List of points where there is C1 discontinuity
 
         """
-        points = []
+        points: list[Point] = []
 
         # Map of vertex to map of curve an derivative
-        data = {}
+        data: dict[Point, list[tuple[Any, Point]]] = {}
         if not self.proxy_is_active:
             self.render()
         for d in self.topology.curves:
@@ -896,15 +897,15 @@ class Polyline(Wire):
     as_face = d_(Bool())
 
     @property
-    def start(self):
+    def start(self) -> Point:
         return coerce_point(self.proxy.curve.StartPoint())
 
     @property
-    def end(self):
+    def end(self) -> Point:
         return coerce_point(self.proxy.curve.EndPoint())
 
     @observe("closed", "points", "as_face")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -948,10 +949,10 @@ class Polygon(Polyline):
     count = d_(Range(low=3)).tag(view=True)
 
     @observe("radius", "inscribed", "count")
-    def _update_points(self, change):
+    def _update_points(self, change: dict[str, Any]):
         self.points = self._default_points()
 
-    def _default_points(self):
+    def _default_points(self) -> list[Point]:
         n = self.count
         r = self.radius
         a = 2 * pi / n
@@ -960,7 +961,7 @@ class Polygon(Polyline):
         return [Point(x=cos(i * a) * r, y=sin(i * a) * r) for i in range(n)]
 
 
-def coerce_circle(value):
+def coerce_circle(value: Any) -> Circle:
     from declaracad.occ.api import Topology
 
     if isinstance(value, (tuple, list)):
@@ -984,7 +985,9 @@ def coerce_circle(value):
             radius=value.radius, direction=value.direction, position=value.position
         )
     if Topology.is_circle(value):
-        curve = Topology.cast_curve(value)
+        from OCCT.Geom import Geom_Circle
+
+        curve: Geom_Circle = Topology.cast_curve(value)
         return Circle(radius=curve.Radius(), position=value.Location())
     raise TypeError(f"Cannot coerce {value} to Circle")
 

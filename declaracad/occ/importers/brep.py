@@ -13,10 +13,10 @@ from OCCT.BRep import BRep_Builder
 from OCCT.BRepTools import BRepTools
 from OCCT.TopoDS import TopoDS_Shape
 
-from declaracad.occ.api import TopoShape
+from declaracad.occ.api import Shape, TopoShape
 
 
-def load_brep(filename):
+def load_brep(filename: str, **options) -> list[Shape]:
     """Load a brep model"""
     shape = TopoDS_Shape()
     builder = BRep_Builder()

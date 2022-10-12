@@ -14,6 +14,7 @@ from typing import Callable, Optional
 
 import enaml
 from atom.api import Bool, Coerced, Enum, Float, Instance, Str
+from OCCT.Geom import Geom_Circle
 
 from declaracad.occ.api import Arc, Direction, Part, Point, Polyline, Topology, Wire
 from declaracad.occ.geom import coerce_point
@@ -104,7 +105,7 @@ def generate_wire_gcode(
             assert last_point == points[0]
             last_point = points[-1]
         elif Topology.is_circle(edge):
-            curve = Topology.cast_curve(edge)
+            curve: Geom_Circle = Topology.cast_curve(edge)
             points = [topo.start_point, topo.end_point]
             arc = Arc(
                 direction=Direction(curve.Axis().Direction()),
@@ -210,7 +211,7 @@ class Operation(Part):
 
     @d_func
     def generate_toolpath_gcode(
-        self, format_value: Optional[Callable[[float], float]] = None
+        self, format_value: Callable[[float], float]
     ) -> list[str]:
         """Generate gcode output for this operation"""
         cmds = self.generate_spindle_start_gcode()

@@ -754,6 +754,11 @@ enamldef ModelViewer(OccViewer): viewer:
                 checked :: viewer.update_display()
             Action:
                 checkable = True
+                text = 'Show hidden lines'
+                checked := viewer.show_hidden_lines
+                checked :: viewer.update_display()
+            Action:
+                checkable = True
                 text = 'Shadows'
                 checked := viewer.shadows
                 checked :: viewer.update_display()

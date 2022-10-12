@@ -187,7 +187,7 @@ class ProxyOccViewer(ProxyControl):
     def set_chordial_deviation(self, deviation):
         raise NotImplementedError
 
-    def set_lights(self, lights):
+    def set_lights(self, lights: list[ViewerLight]):
         raise NotImplementedError
 
     def set_background_gradient(self, gradient):
@@ -211,7 +211,7 @@ class ProxyOccViewer(ProxyControl):
     def set_selected_area(self, area):
         raise NotImplementedError
 
-    def set_double_buffer(self, enabled):
+    def set_double_buffer(self, enabled: bool):
         raise NotImplementedError
 
     def set_display_mode(self, mode):
@@ -226,19 +226,19 @@ class ProxyOccViewer(ProxyControl):
     def set_view_projection(self, mode):
         raise NotImplementedError
 
-    def set_shadows(self, enabled):
+    def set_shadows(self, enabled: bool):
         raise NotImplementedError
 
-    def set_reflections(self, enabled):
+    def set_reflections(self, enabled: bool):
         raise NotImplementedError
 
-    def set_antialiasing(self, enabled):
+    def set_antialiasing(self, enabled: bool):
         raise NotImplementedError
 
-    def set_raytracing(self, enabled):
+    def set_raytracing(self, enabled: bool):
         raise NotImplementedError
 
-    def set_raytracing_depth(self, depth):
+    def set_raytracing_depth(self, depth: int):
         raise NotImplementedError
 
     def set_draw_boundaries(self, enabled: bool):
@@ -250,22 +250,22 @@ class ProxyOccViewer(ProxyControl):
     def set_show_hidden_lines(self, enabled: bool):
         raise NotImplementedError
 
-    def set_grid_mode(self, mode):
+    def set_grid_mode(self, mode: str):
         raise NotImplementedError
 
-    def set_grid_colors(self, colors):
+    def set_grid_colors(self, colors: tuple[Color, Color]):
         raise NotImplementedError
 
-    def set_lock_rotation(self, locked):
+    def set_lock_rotation(self, locked: bool):
         raise NotImplementedError
 
-    def set_lock_zoom(self, locked):
+    def set_lock_zoom(self, locked: bool):
         raise NotImplementedError
 
-    def set_display_units(self, units):
+    def set_display_units(self, units: str):
         raise NotImplementedError
 
-    def set_animations(self, enabled):
+    def set_animations(self, enabled: bool):
         raise NotImplementedError
 
     def fit_all(self):
@@ -277,16 +277,16 @@ class ProxyOccViewer(ProxyControl):
     def clear_selection(self):
         raise NotImplementedError
 
-    def take_screenshot(self, filename):
+    def take_screenshot(self, filename: str) -> bool:
         raise NotImplementedError
 
-    def zoom_factor(self, zoom):
+    def zoom_factor(self, zoom: float):
         raise NotImplementedError
 
-    def rotate_view(self, x=0, y=0, z=0):
+    def rotate_view(self, x: float = 0, y: float = 0, z: float = 0):
         raise NotImplementedError
 
-    def turn_view(self, x=0, y=0, z=0):
+    def turn_view(self, x: float = 0, y: float = 0, z: float = 0):
         raise NotImplementedError
 
     def reset_view(self):
@@ -484,9 +484,9 @@ class OccViewer(Control):
         """Clear selection"""
         self.proxy.clear_selection()
 
-    def take_screenshot(self, filename: str):
+    def take_screenshot(self, filename: str) -> bool:
         """Take a screenshot and save it with the given filename"""
-        self.proxy.take_screenshot(filename)
+        return self.proxy.take_screenshot(filename)
 
     def zoom_factor(self, factor: float):
         """Zoom in by a given factor"""

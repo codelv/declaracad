@@ -473,7 +473,7 @@ class EditorPlugin(Plugin):
         if not os.path.exists(folder):
             return
         if "win32" in sys.platform:
-            os.startfile(folder, "explore")
+            os.startfile(folder, "explore")  # type: ignore
         elif sys.platform == "darwin":
             subprocess.call(["open", folder])
         else:

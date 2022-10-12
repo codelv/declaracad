@@ -424,7 +424,7 @@ class OccMesh(OccDependentShape, ProxyMesh):
         log.info(f"Exporting mesh to '{filename}'")
         export = getattr(self.mesh, f"Export{export_type.upper()}")
         if export_type == "stl" and not args:
-            args = [True]  # Use ascii
+            args = (True,)  # Use ascii
         export(filename, *args)
         log.info("Ok!")
 
