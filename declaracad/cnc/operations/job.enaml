@@ -141,22 +141,32 @@ enamldef JobSimulation(Part): simulation:
 
     #: When the operation changes check if the part was re-oriented
     #: update which one is displayed
-    current_operation ::
-        op = change['value']
+    func activate_operation(op: Operation):
+        old_op = self.current_operation
+        if op == old_op:
+            return
+        self.current_operation = op
         new_part = op.part
         new_tool = op.tool
+        op.display = True
         new_part.display = True
-        old_tool = None
-        old_part = None
-        if change['type'] == 'update':
-            old_op = change['oldvalue']
-            if old_op is not None:
-                old_part = old_op.part
-                old_tool = old_op.tool
-        if old_part and old_part != new_part:
-            old_part.display = False
-            print(f"Part changed or reoriented:  {old_part}")
+        new_tool.display = True
+
+        if old_op is None:
+            old_tool = None
+            old_part = None
+        else:
+            old_part = old_op.part
+            old_tool = old_op.tool
+            old_op.display = False
+
+        if old_part != new_part:
+            if old_part:
+                old_part.display = False
+            print(f"Part changed or reoriented: {new_part}")
         if old_tool != new_tool:
+            if old_tool:
+                old_tool.display = False
             print(f"Tool change:  {new_tool.description}")
 
     rendered ::
@@ -176,14 +186,17 @@ enamldef JobSimulation(Part): simulation:
         for c in self.job.children:
             if isinstance(c, Operation) and not c.disabled:
                 op = c
-                op.part.display = False # Hide all
+                # Hide all
+                op.part.display = False
+                op.tool.display = False
+                op.display = False
                 for w in op.topology.wires:
                     path = Topology.discretize(w, rate, method='abscissa')
                     for p in path:
                         frames.append((op, p))
         if frames:
             op, pos = frames[0]
-            op.part.display = True
+            self.activate_operation(op)
         self.frames = frames
         timer.start()
 
@@ -209,8 +222,8 @@ enamldef JobSimulation(Part): simulation:
             i = self.index
             self.index += 1
             op, pos = self.frames[i]
-            self.current_operation = op
             op.tool.position = pos
+            self.activate_operation(op)
         except IndexError:
             print("Simulation complete")
             timer.stop()
