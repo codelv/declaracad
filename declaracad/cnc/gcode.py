@@ -14,7 +14,7 @@ import re
 from collections import OrderedDict
 from typing import Optional, Union
 
-from atom.api import Atom, Bool, Float, Instance, Int, List, Property, Str
+from atom.api import Atom, Bool, Float, Instance, Int, List, Str, Typed
 
 from declaracad.occ.api import Point
 
@@ -53,7 +53,9 @@ class Command(Atom):
                     return normalize(k, v)
         return ""
 
-    def _get_waypoint(self) -> Optional[Waypoint]:
+    waypoint = Typed(Waypoint)
+
+    def _default_waypoint(self) -> Optional[Waypoint]:
         d = self.data
         if d:
             axis = {}
@@ -63,8 +65,6 @@ class Command(Atom):
             if axis:
                 return Waypoint(**axis)
         return None
-
-    waypoint = Property(_get_waypoint, cached=True)
 
     def position(self, last: Point, scale: float = 1) -> Point:
         """Get the 3D-position of this cmd's XYZ coordinates.
@@ -92,17 +92,17 @@ class Command(Atom):
             last.z if z is None else z * scale,
         )
 
-    def _get_feedrate(self) -> Optional[float]:
+    feedrate = Typed(float)
+
+    def _default_freedrate(self) -> Optional[float]:
         if self.data and "F" in self.data:
             return float(self.data["F"])
         return None
 
-    feedrate = Property(_get_feedrate, cached=True)
+    is_move = Bool()
 
-    def _get_is_move(self) -> bool:
+    def _default_is_move(self) -> bool:
         return self.id in GCode.MOVE_CODES
-
-    is_move = Property(_get_is_move, cached=True)
 
     def __repr__(self) -> str:
         return "Command<{} from '{}' at line {}>".format(

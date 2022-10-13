@@ -9,9 +9,9 @@ Created on Dec 27, 2020
 
 @author: jrm
 """
-from typing import Any, Iterable, Optional
+from typing import Any, Generator, Iterable, Optional
 
-from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
 
 from declaracad.occ.api import Point, Topology, Wire
 
@@ -71,7 +71,7 @@ def distance(
     return points
 
 
-def lookup_vertex(graph: dict[Point, Any], v: Point):
+def lookup_vertex(graph: dict[Point, Any], v: Point) -> Optional[tuple[Point, Any]]:
     """Lookup the vertex in the graph using the hash, if that fails,
     fallback to using equals to find points that are equal within
     the tolerance.
@@ -94,6 +94,7 @@ def lookup_vertex(graph: dict[Point, Any], v: Point):
     for vertex, item in graph.items():
         if vertex == v:
             return (vertex, item)
+    return None
 
 
 def build_edge_graph(
@@ -131,7 +132,9 @@ def build_edge_graph(
     return graph
 
 
-def walk_edges(graph, vertex, edge):
+def walk_edges(
+    graph, vertex: Point, edge: TopoDS_Edge
+) -> Generator[tuple[Point, Optional[TopoDS_Edge]], None, None]:
     """Start at the given vertex and walk the edge until a leaf or branch
     is found.
 
@@ -152,8 +155,11 @@ def walk_edges(graph, vertex, edge):
 
     """
     # used = set()  # TODO: Detect loops
-    vertex, topos = lookup_vertex(graph, vertex)
-    topo = None
+    result = lookup_vertex(graph, vertex)
+    if result is None:
+        raise ValueError("Edge is not connected")
+    vertex, topos = result
+    topo: Optional[Topology] = None
     for t in topos:
         if t.shape == edge:
             topo = t
@@ -167,7 +173,10 @@ def walk_edges(graph, vertex, edge):
         assert len(other_vertices) == 1
         next_vertex = other_vertices[0]
         assert vertex != next_vertex
-        vertex, topos = lookup_vertex(graph, next_vertex)
+        result = lookup_vertex(graph, next_vertex)
+        if result is None:
+            raise ValueError("Edge is not connected")
+        vertex, topos
         if len(topos) != 2:
             yield (vertex, None)  # Final vertex, done
             break
@@ -176,11 +185,14 @@ def walk_edges(graph, vertex, edge):
         other_edges = [t for t in topos if not t.shape.IsSame(edge)]
         assert len(other_edges) == 1
         topo = other_edges[0]
+        assert topo is not None
         edge = topo.shape
         yield (vertex, edge)
 
 
-def split_wires(graph):
+def split_wires(
+    graph: dict[Point, list[TopoDS_Wire]]
+) -> Generator[TopoDS_Wire, None, None]:
     """Split the graph into wires at their branch points.
 
     Parameters
@@ -195,7 +207,7 @@ def split_wires(graph):
         Each wire in the graph
 
     """
-    visited_edges = []
+    visited_edges: list[TopoDS_Edge] = []
     for vertex, topos in graph.items():
         if len(topos) == 2:
             continue
