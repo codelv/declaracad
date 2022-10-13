@@ -157,6 +157,9 @@ class Operation(Part):
     #: Cutting tool
     tool = d_(Instance(Tool))
 
+    #: Part being cut
+    part = d_(Instance(Part))
+
     #: Spindle control
     #: If zero off, if positive, CW, if negative CCW
     spindle_speed = d_(Float(strict=False))

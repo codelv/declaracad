@@ -135,7 +135,10 @@ enamldef JobSimulation(Part): simulation:
     attr disabled: bool = False
     attr index: int = 0
     attr frames: list = []
+    #: Cutting tool
     attr current_tool: Part
+    #: Part being cut
+    attr current_part: Part
 
     rendered ::
         try:
@@ -152,11 +155,15 @@ enamldef JobSimulation(Part): simulation:
         self.render() # Force start
         frames = []
         for c in self.job.children:
-            if isinstance(c, Operation):
-                frames.append(c.tool)
+            if isinstance(c, Operation) and not c.disabled:
+                c.part.display = False # Hide all
+                frames.append(c)
                 for w in c.topology.wires:
                     path = Topology.discretize(w, rate, method='abscissa')
                     frames.extend(path)
+
+        if frames:
+            self.activate_operation(frames[0])
         self.frames = frames
         timer.start()
 
@@ -177,13 +184,28 @@ enamldef JobSimulation(Part): simulation:
         self.paused = False
         timer.start()
 
+    func activate_operation(op: Operation):
+        new_part = op.part
+        new_tool = op.tool
+        new_part.display = True
+        old_part = self.current_part
+        if old_part and old_part != new_part:
+            old_part.display = False
+            print(f"Part change:  {old_part}")
+        self.current_part = op.part
+
+        old_tool = self.current_tool
+        if old_tool != new_tool:
+            self.current_tool = new_tool
+            print(f"Tool change:  {op.tool.description}")
+
     func animate():
         try:
             i = self.index
             self.index += 1
             frame = self.frames[i]
-            if isinstance(frame, Part):
-                self.current_tool = frame
+            if isinstance(frame, Operation):
+                self.activate_operation(frame)
             elif isinstance(frame, Point):
                 self.current_tool.position = frame
         except IndexError:

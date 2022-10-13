@@ -11,7 +11,7 @@ Created on Sep 30, 2016
 """
 import os
 from math import pi
-from typing import Union
+from typing import Generator, Union
 
 from atom.api import Bool, Instance, List, Property, Str, Typed, observe, set_default
 from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
@@ -173,9 +173,18 @@ class OccShape(ProxyShape):
                 else:
                     yield child.shape
 
-    def walk_shapes(self):
-        """Iterator of all child shapes"""
-        if not self.declaration.display:
+    def walk_shapes(
+        self, ignore_display: bool = False
+    ) -> Generator["OccShape", None, None]:
+        """Iterator of all child shapes
+
+        Parameters
+        ----------
+        ignore_display: bool
+            Whether the display attribute should be ignored
+
+        """
+        if ignore_display is False and not self.declaration.display:
             return
         if isinstance(self, OccPart):
             for s in self.children():
@@ -286,6 +295,13 @@ class OccShape(ProxyShape):
 
     def set_axis(self, axis):
         self.create_shape()
+
+    def set_display(self, display: bool):
+        viewer = self.viewer
+        if display:
+            viewer.add_shape_to_display(self)
+        else:
+            viewer.remove_shape_from_display(self)
 
     def parent_shape(self):
         p = self.parent()

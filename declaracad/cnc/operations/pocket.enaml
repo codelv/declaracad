@@ -341,9 +341,6 @@ enamldef PocketOperation(Operation): operation:
     #: Step over
     attr step_over = tool.diameter*0.2
 
-    #: Shape being pocketed
-    attr part
-
     #: List of faces to pocket
     attr pockets: list = []
 

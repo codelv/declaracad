@@ -567,7 +567,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         displayed_shapes = self._displayed_shapes
         remove = self.ais_context.Remove
         occ_shape.displayed = False
-        for s in occ_shape.walk_shapes():
+        for s in occ_shape.walk_shapes(ignore_display=True):
             s.displayed = False
             # s.unobserve('ais_shape', self.on_ais_shape_changed)
             if s.get_member("ais_shape").get_slot(s) is None:
