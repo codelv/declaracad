@@ -9,6 +9,8 @@ Created on June, 24 2021
 
 @author: jrm
 """
+from typing import Optional
+
 import ply.lex as lex
 
 # import ply.yacc as yacc
@@ -28,9 +30,11 @@ class GCodeLexer:
         "DIVIDE",
         "LPAREN",
         "RPAREN",
+        "DOT",
         "COMMA",
         "SPACE",
         "TAB",
+        "PERCENT",
         "NEWLINE",
         "CODE",
         "COMMENT",
@@ -47,10 +51,12 @@ class GCodeLexer:
     t_SPACE = r"\ "
     t_TAB = r"\t"
     t_NEWLINE = r"\r?\n"
+    t_DOT = r"\."
+    t_PERCENT = r"%"
 
     # A regular expression rule with some action code
     def t_NUMBER(self, t):
-        r"\d+\.?\d*"
+        r"(\d+\.?\d*|\.\d+)"
         t.lexer.value = float(t.value)
         return t
 
@@ -97,6 +103,7 @@ class QsciLexerGCode(QsciLexerCustom):
     XPos = 11
     YPos = 12
     ZPos = 13
+    Keyword = 14
 
     # Maps to style ID above
     TOKENS = {
@@ -114,6 +121,7 @@ class QsciLexerGCode(QsciLexerCustom):
         "ypos": "YPos",
         "zpos": "ZPos",
         "operator": "Operator",
+        # "keyword": "Keyword",
     }
 
     # Map gcode token to python token to copy themes
@@ -121,13 +129,14 @@ class QsciLexerGCode(QsciLexerCustom):
         "number": "number",
         "gcode": "function_method_name",
         "mcode": "keyword",
-        "line_number": "class_name",
+        "line_number": "keyword",
         # "param": "decorator",
     }
 
     CODES = {
         "G": GCode,
         "M": MCode,
+        "N": Line,
         "P": Pause,
         "F": Feed,
         "S": Speed,
@@ -182,18 +191,20 @@ class QsciLexerGCode(QsciLexerCustom):
         self.lexer = GCodeLexer()
         self.lexer.build()
 
-    def language(self):
+    def language(self) -> str:
         return "gcode"
 
-    def comment(self, i):
+    def comment(self, i: int) -> Optional[list[str]]:
         if i == 1:
             return ["(", ")"]
+        return None
 
-    def code(self, i):
+    def code(self, i: int) -> Optional[list[str]]:
         if i == 4:
             return ["G", "M", "N"]
+        return None
 
-    def description(self, style):
+    def description(self, style: int) -> str:
         if style == 0:
             return "default"
         elif style == 1:
@@ -202,7 +213,7 @@ class QsciLexerGCode(QsciLexerCustom):
             return "code"
         return ""
 
-    def styleText(self, start, end):
+    def styleText(self, start: int, end: int):
         self.startStyling(start)
 
         # Encode and decode to fix unicode issues...
@@ -213,22 +224,23 @@ class QsciLexerGCode(QsciLexerCustom):
         lexer.input(text)
         # print(f"Range: {start} to {end}")
         set_style = self.setStyling
-        state = None
-        code = None
-        style = self.Default
+        state: Optional[str] = None
+        code: Optional[str] = None
+        style: int = self.Default
         CODES = self.CODES
         for token in lexer:
             i = len(token.value.encode("utf-8"))
-            t = token.type
+            t: str = token.type
             # print((token, i))
             if t == "COMMENT":
                 set_style(i, self.Comment)
             elif t == "CODE":
                 code = token.value
+                assert code is not None
                 state = t
                 style = CODES.get(code, self.Param)
                 set_style(i, style)
-            elif t in ("SPACE", "TAB", "NEWLINE"):
+            elif t in ("SPACE", "TAB", "NEWLINE", "PERCENT", "DOT"):
                 state = None
                 set_style(i, self.Default)
             elif t == "NUMBER":

@@ -534,13 +534,13 @@ class EditorPlugin(Plugin):
     def detect_syntax(self, path: str):
         """Attempt to detect the file syntax"""
         p, ext = os.path.splitext(path)
-        file_type = ext[1:] if ext else ""
+        file_type = (ext[1:] if ext else "").lower()
         SYNTAXES = Scintilla.syntax.items
         if file_type in SYNTAXES:
             result = file_type
         else:
             result = self.file_associations.get(file_type, "")
-        # log.info("Using syntax: {}".format(result))
+        log.info(f"Using syntax: {result}")
         return result
 
     def _default_sys_path(self):
