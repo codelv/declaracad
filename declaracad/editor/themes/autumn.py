@@ -10,7 +10,7 @@ AUTUMN_THEME = {
     "python": {
         "class_name": {"color": "#00aa00", "text-decoration": "underline"},
         "comment": {"color": "#aaaaaa", "font-style": "italic"},
-        "comment_bock": {"color": "#aaaaaa", "font-style": "italic"},
+        "comment_block": {"color": "#aaaaaa", "font-style": "italic"},
         "decorator": {"color": "#888888"},
         "double_quoted_fstring": {"color": "#aa5500"},
         "double_quoted_string": {"color": "#aa5500"},

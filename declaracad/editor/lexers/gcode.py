@@ -121,7 +121,7 @@ class QsciLexerGCode(QsciLexerCustom):
         "ypos": "YPos",
         "zpos": "ZPos",
         "operator": "Operator",
-        # "keyword": "Keyword",
+        "keyword": "Keyword",
     }
 
     # Map gcode token to python token to copy themes
@@ -130,7 +130,6 @@ class QsciLexerGCode(QsciLexerCustom):
         "gcode": "function_method_name",
         "mcode": "keyword",
         "line_number": "keyword",
-        # "param": "decorator",
     }
 
     CODES = {

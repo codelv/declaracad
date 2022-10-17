@@ -10,7 +10,7 @@ JUNGLE_THEME = {
     "python": {
         "class_name": {"color": "#dadada"},
         "comment": {"color": "#585858"},
-        "comment_bock": {"color": "#585858"},
+        "comment_block": {"color": "#585858"},
         "decorator": {"color": "#dadada"},
         "default": {"background": "#1c1c1c", "color": "#dadada"},
         "double_quoted_fstring": {"color": "#5fd700"},

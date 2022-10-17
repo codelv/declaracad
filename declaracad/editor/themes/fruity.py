@@ -14,7 +14,7 @@ FRUITY_THEME = {
             "color": "#008800",
             "font-style": "italic",
         },
-        "comment_bock": {
+        "comment_block": {
             "background-color": "#0f140f",
             "color": "#008800",
             "font-style": "italic",

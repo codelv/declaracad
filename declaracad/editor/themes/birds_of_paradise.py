@@ -10,7 +10,7 @@ BIRDS_OF_PARADISE_THEME = {
     "python": {
         "class_name": {"color": "#ffffff"},
         "comment": {"color": "#6b4e32"},
-        "comment_bock": {"color": "#6b4e32"},
+        "comment_block": {"color": "#6b4e32"},
         "decorator": {"color": "#ffffff"},
         "default": {"background": "#372725"},
         "double_quoted_fstring": {"color": "#d9d762"},

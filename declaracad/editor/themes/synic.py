@@ -10,7 +10,7 @@ SYNIC_THEME = {
     "python": {
         "class_name": {"color": "#fffff0"},
         "comment": {"color": "#708090"},
-        "comment_bock": {"color": "#708090"},
+        "comment_block": {"color": "#708090"},
         "decorator": {"color": "#fffff0"},
         "default": {"background": "#000000", "color": "#fffff0"},
         "double_quoted_fstring": {"color": "#9ac0cd"},

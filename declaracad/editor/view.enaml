@@ -139,6 +139,7 @@ enamldef EditorGotoBar(Container): bar:
 enamldef EditorFindBar(Container): bar:
     attr editor
     attr show_replace: bool = False
+    alias search_text: search.text
 
     func make_constraints(show_replace):
         constraints = [
@@ -455,6 +456,9 @@ enamldef Editor(Scintilla): editor:
     func deselect():
         self.proxy.widget.selectAll(False)
 
+    func selected_text() -> str:
+        return self.proxy.widget.selectedText()
+
     text_changed :: timer.start()
     zoom << plugin.zoom if plugin else 0
     indicators << create_indicators(doc.name, doc.errors) if doc else []
@@ -477,10 +481,52 @@ enamldef Editor(Scintilla): editor:
         timeout :: editor.proxy.refresh_style()
 
 
-enamldef EditorDockItem(DockItem): view:
-    attr doc: Document = Document()
+enamldef EditorView(Container): view:
+    padding = 0
     alias editor
-    alias buffer: editor.document
+    Conditional:
+        condition << editor.show_find_bar or editor.show_replace_bar
+        EditorFindBar:
+            editor << view.editor
+            show_replace << editor.show_replace_bar
+            search_text  := editor.search_text
+    Conditional:
+        condition << editor.show_goto_bar
+        EditorGotoBar:
+            editor << view.editor
+
+    func on_editor_key_pressed(change):
+        e = change['value']
+        k = e['key']
+        w = editor.proxy.widget
+        if k == plugin.key_mapping.get('find', '\x06'):
+            editor.show_find_bar = True
+            text = editor.selected_text()
+            if text:
+                editor.search_text = text
+        elif k == plugin.key_mapping.get('replace', '\x12'):
+            editor.show_replace_bar = True
+            text = editor.selected_text()
+            if text:
+                editor.search_text = text
+        elif k == plugin.key_mapping.get('goto', '\x0c'):
+            editor.show_goto_bar = True
+
+
+    Editor: editor:
+        minimum_size = (480, 320)
+        attr show_find_bar: bool << False
+        attr show_replace_bar: bool << False
+        attr show_goto_bar: bool << False
+        attr search_text: str = ""
+        KeyEvent:
+            pressed :: on_editor_key_pressed(change)
+
+
+enamldef EditorDockItem(DockItem): view:
+    alias doc: editor_view.editor.doc
+    alias editor: editor_view.editor
+    alias buffer: editor_view.editor.document
     title << format_title(plugin.documents, doc, doc.name, doc.unsaved)
     closed ::
         core = plugin.workbench.get_plugin("enaml.workbench.core")
@@ -490,35 +536,8 @@ enamldef EditorDockItem(DockItem): view:
     name = 'editor-item-{}'.format(id(self))
 
     stretch = 2
-    Container:
-        padding = 0
-        Conditional:
-            condition << editor.show_find_bar or editor.show_replace_bar
-            EditorFindBar:
-                editor << view.editor
-                show_replace << editor.show_replace_bar
-        Conditional:
-            condition << editor.show_goto_bar
-            EditorGotoBar:
-                editor << view.editor
-        Editor: editor:
-            minimum_size = (480, 320)
-            attr show_find_bar: bool << False
-            attr show_replace_bar: bool << False
-            attr show_goto_bar: bool << False
-            doc := view.doc
-            KeyEvent:
-                pressed ::
-                    e = change['value']
-                    #print(e)
-                    k = e['key']
-                    if k == plugin.key_mapping.get('find', '\x06'):
-                        editor.show_find_bar = not editor.show_find_bar
-                    elif k == plugin.key_mapping.get('replace', '\x12'):
-                        editor.show_replace_bar = not editor.show_replace_bar
-                    elif k == plugin.key_mapping.get('goto', '\x0c'):
-                        editor.show_goto_bar = not editor.show_goto_bar
-
+    EditorView: editor_view:
+        pass
     title_bar_right_clicked :: menu.popup()
     Menu: menu:
         Action:

@@ -10,7 +10,7 @@ BLACKSEA_THEME = {
     "python": {
         "class_name": {"color": "#fff5ee"},
         "comment": {"color": "#add8e6"},
-        "comment_bock": {"color": "#add8e6"},
+        "comment_block": {"color": "#add8e6"},
         "decorator": {"color": "#fff5ee"},
         "default": {"background": "#000000", "color": "#fff5ee"},
         "double_quoted_fstring": {"color": "#fff5ee"},

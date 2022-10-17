@@ -143,14 +143,17 @@ enamldef JobSimulation(Part): simulation:
     #: update which one is displayed
     func activate_operation(op: Operation):
         old_op = self.current_operation
-        if op == old_op:
+        if op == old_op or op is None:
             return
         self.current_operation = op
         new_part = op.part
         new_tool = op.tool
         op.display = True
-        new_part.display = True
-        new_tool.display = True
+
+        if new_part is not None:
+            new_part.display = True
+        if new_tool is not None:
+            new_tool.display = True
 
         if old_op is None:
             old_tool = None
@@ -167,7 +170,8 @@ enamldef JobSimulation(Part): simulation:
         if old_tool != new_tool:
             if old_tool:
                 old_tool.display = False
-            print(f"Tool change:  {new_tool.description}")
+            if new_tool:
+                print(f"Tool change:  {new_tool.description}")
 
     rendered ::
         try:
@@ -187,8 +191,10 @@ enamldef JobSimulation(Part): simulation:
             if isinstance(c, Operation) and not c.disabled:
                 op = c
                 # Hide all
-                op.part.display = False
-                op.tool.display = False
+                if op.part:
+                    op.part.display = False
+                if op.tool:
+                    op.tool.display = False
                 op.display = False
                 for w in op.topology.wires:
                     path = Topology.discretize(w, rate, method='abscissa')

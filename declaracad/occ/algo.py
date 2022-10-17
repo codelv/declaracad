@@ -96,20 +96,28 @@ class ProxyFillet(ProxyOperation):
         raise NotImplementedError
 
 
+class ChamferData(Atom):
+    distance = Float(strict=False)
+    distance2 = Float(strict=False)
+    angle = Float(strict=False)
+    edge = Typed(TopoDS_Shape)
+    face = Typed(TopoDS_Shape)
+
+
 class ProxyChamfer(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Chamfer)
 
-    def set_disabled(self, disabled):
+    def set_disabled(self, disabled: bool):
         raise NotImplementedError
 
-    def set_distance(self, d):
+    def set_distance(self, d: float):
         raise NotImplementedError
 
-    def set_distance2(self, d):
+    def set_distance2(self, d: float):
         raise NotImplementedError
 
-    def set_operations(self, operations):
+    def set_operations(self, operations: list):
         raise NotImplementedError
 
 

@@ -10,7 +10,7 @@ FRIENDLY_THEME = {
     "python": {
         "class_name": {"color": "#0e84b5", "font-weight": "bold"},
         "comment": {"color": "#60a0b0", "font-style": "italic"},
-        "comment_bock": {"color": "#60a0b0", "font-style": "italic"},
+        "comment_block": {"color": "#60a0b0", "font-style": "italic"},
         "decorator": {"color": "#555555", "font-weight": "bold"},
         "double_quoted_fstring": {"color": "#4070a0"},
         "double_quoted_string": {"color": "#4070a0"},

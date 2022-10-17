@@ -14,6 +14,7 @@ from enaml.widgets.api import Timer  # noqa: F401
 
 from .algo import (  # noqa: F401
     Chamfer,
+    ChamferData,
     Common,
     Cut,
     DraftAngle,

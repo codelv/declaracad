@@ -380,7 +380,7 @@ class ViewerPlugin(Plugin):
 
     #: Defaults
     shape_color = ColorMember("steelblue").tag(config=True, viewer=True)
-    line_color = ColorMember("steelblue").tag(config=True, viewer=True)
+    # line_color = ColorMember("steelblue").tag(config=True, viewer=True)
 
     #: Grid options
     grid_mode = Str().tag(config=True, viewer=True)

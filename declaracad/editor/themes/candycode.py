@@ -10,7 +10,7 @@ CANDYCODE_THEME = {
     "python": {
         "class_name": {"color": "#ffffff"},
         "comment": {"color": "#ff9922"},
-        "comment_bock": {"color": "#ff9922"},
+        "comment_block": {"color": "#ff9922"},
         "decorator": {"color": "#ffffff"},
         "default": {"background": "#050505", "color": "#ffffff"},
         "double_quoted_fstring": {"color": "#ff6050"},

@@ -10,7 +10,7 @@ PASTELS_ON_DARK_THEME = {
     "python": {
         "class_name": {"color": "#E6E1DC"},
         "comment": {"color": "#555555"},
-        "comment_bock": {"color": "#555555"},
+        "comment_block": {"color": "#555555"},
         "decorator": {"color": "#E6E1DC"},
         "default": {"background": "#2B2B2B"},
         "double_quoted_fstring": {"color": "#AD9361"},

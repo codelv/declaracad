@@ -10,7 +10,7 @@ RAILSCASTS_THEME = {
     "python": {
         "class_name": {"color": "#E6E1DC"},
         "comment": {"color": "#BC9458", "font-style": "italic"},
-        "comment_bock": {"color": "#BC9458", "font-style": "italic"},
+        "comment_block": {"color": "#BC9458", "font-style": "italic"},
         "decorator": {"color": "#E6E1DC"},
         "default": {"background": "#2B2B2B", "color": "#E6E1DC"},
         "double_quoted_fstring": {"color": "#A5C261"},

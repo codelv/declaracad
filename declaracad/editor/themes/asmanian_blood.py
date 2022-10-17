@@ -10,7 +10,7 @@ ASMANIAN_BLOOD_THEME = {
     "python": {
         "class_name": {"color": "#b4b0b0"},
         "comment": {"color": "#686460"},
-        "comment_bock": {"color": "#686460"},
+        "comment_block": {"color": "#686460"},
         "decorator": {"color": "#b4b0b0"},
         "default": {"background": "#080404", "color": "#b4b0b0"},
         "double_quoted_fstring": {"color": "#a06050", "font-style": "italic"},

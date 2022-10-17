@@ -10,7 +10,7 @@ DARKBURN_THEME = {
     "python": {
         "class_name": {"color": "#dcdccc"},
         "comment": {"color": "#7f9f7f", "font-style": "italic"},
-        "comment_bock": {"color": "#7f9f7f", "font-style": "italic"},
+        "comment_block": {"color": "#7f9f7f", "font-style": "italic"},
         "decorator": {"color": "#dcdccc"},
         "default": {"background": "#3f3f3f", "color": "#dcdccc"},
         "double_quoted_fstring": {"color": "#b75151"},

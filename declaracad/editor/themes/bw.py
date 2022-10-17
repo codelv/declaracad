@@ -10,7 +10,7 @@ BW_THEME = {
     "python": {
         "class_name": {"font-weight": "bold"},
         "comment": {"font-style": "italic"},
-        "comment_bock": {"font-style": "italic"},
+        "comment_block": {"font-style": "italic"},
         "double_quoted_fstring": {"font-style": "italic"},
         "double_quoted_string": {"font-style": "italic"},
         "keyword": {"font-weight": "bold"},

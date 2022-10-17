@@ -10,7 +10,7 @@ DIGERATI_THEME = {
     "python": {
         "class_name": {"color": "#f0f0f0"},
         "comment": {"color": "#808080", "font-style": "italic"},
-        "comment_bock": {"color": "#808080", "font-style": "italic"},
+        "comment_block": {"color": "#808080", "font-style": "italic"},
         "decorator": {"color": "#f0f0f0"},
         "default": {"background": "#444444"},
         "double_quoted_fstring": {"color": "#cdff00", "font-style": "italic"},

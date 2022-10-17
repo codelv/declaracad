@@ -184,10 +184,10 @@ class Operation(Part):
     #: Heading for gcode output
     operation_type = d_(Str())
 
-    def _default_start_point(self):
+    def _default_start_point(self) -> Point:
         return self.parent.start_point
 
-    def _default_end_point(self):
+    def _default_end_point(self) -> Point:
         return self.start_point
 
     #: Generated gcode
@@ -280,8 +280,8 @@ class Operation(Part):
             traceback.print_exc()
             return [msg]
 
-    def _default_gcode(self):
+    def _default_gcode(self) -> str:
         return "\n".join(self.generate_gcode())
 
-    def _default_description(self):
+    def _default_description(self) -> str:
         return "G-Code: \n" + self.gcode[0:100]

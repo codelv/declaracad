@@ -10,7 +10,7 @@ TANGO_THEME = {
     "python": {
         "class_name": {"color": "#ce5c00"},
         "comment": {"color": "#8f5902", "font-style": "italic"},
-        "comment_bock": {"color": "#8f5902", "font-style": "italic"},
+        "comment_block": {"color": "#8f5902", "font-style": "italic"},
         "decorator": {"color": "#5c35cc", "font-weight": "bold"},
         "double_quoted_fstring": {"color": "#4e9a06"},
         "double_quoted_string": {"color": "#4e9a06"},

@@ -10,7 +10,7 @@ ANOTHERDARK_THEME = {
     "python": {
         "class_name": {"color": "#ffffff"},
         "comment": {"color": "#ff4500"},
-        "comment_bock": {"color": "#ff4500"},
+        "comment_block": {"color": "#ff4500"},
         "decorator": {"color": "#ffffff"},
         "default": {"background": "#333333", "color": "#ffffff"},
         "double_quoted_fstring": {"color": "#ffffff"},

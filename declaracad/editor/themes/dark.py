@@ -10,7 +10,7 @@ DARK_THEME = {
     "python": {
         "class_name": {"color": "#f8f8ff"},
         "comment": {"color": "#87ceeb"},
-        "comment_bock": {"color": "#87ceeb"},
+        "comment_block": {"color": "#87ceeb"},
         "decorator": {"color": "#f8f8ff"},
         "default": {"background": "#333333", "color": "#f8f8ff"},
         "double_quoted_fstring": {"color": "#ffa0a0"},

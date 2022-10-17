@@ -96,13 +96,13 @@ class ProxyBox(ProxyShape):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Box)
 
-    def set_dx(self, dx):
+    def set_dx(self, dx: float):
         raise NotImplementedError
 
-    def set_dy(self, dy):
+    def set_dy(self, dy: float):
         raise NotImplementedError
 
-    def set_dz(self, dz):
+    def set_dz(self, dz: float):
         raise NotImplementedError
 
 
@@ -110,16 +110,19 @@ class ProxyCone(ProxyShape):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Cone)
 
-    def set_radius(self, r):
+    def set_radius(self, r: float):
         raise NotImplementedError
 
-    def set_radius2(self, r):
+    def set_radius2(self, r: float):
         raise NotImplementedError
 
-    def set_height(self, height):
+    def set_height(self, height: float):
         raise NotImplementedError
 
-    def set_angle(self, angle):
+    def set_angle(self, angle: float):
+        raise NotImplementedError
+
+    def get_apex(self) -> Point:
         raise NotImplementedError
 
 
@@ -682,6 +685,9 @@ class Cone(Shape):
 
     #: Angle
     angle = d_(Float(0, strict=False)).tag(view=True)
+
+    #: Return the apex
+    apex = Property(lambda self: self.proxy.get_apex())
 
     @observe("radius", "radius2", "height", "angle")
     def _update_proxy(self, change):

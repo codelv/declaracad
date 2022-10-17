@@ -14,7 +14,7 @@ DARCULA_THEME = {
             "color": "#808080",
             "font-style": "italic",
         },
-        "comment_bock": {
+        "comment_block": {
             "background-color": "#2b2b2b",
             "color": "#808080",
             "font-style": "italic",

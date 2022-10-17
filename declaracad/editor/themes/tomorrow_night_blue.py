@@ -10,7 +10,7 @@ TOMORROW_NIGHT_BLUE_THEME = {
     "python": {
         "class_name": {"color": "#ffeead"},
         "comment": {"color": "#7285b7"},
-        "comment_bock": {"color": "#7285b7"},
+        "comment_block": {"color": "#7285b7"},
         "decorator": {"color": "#99ffff"},
         "default": {"background": "#002451", "color": "#ffffff"},
         "double_quoted_fstring": {"color": "#d1f1a9"},

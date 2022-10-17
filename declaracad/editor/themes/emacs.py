@@ -10,7 +10,7 @@ EMACS_THEME = {
     "python": {
         "class_name": {"color": "#0000FF"},
         "comment": {"color": "#008800", "font-style": "italic"},
-        "comment_bock": {"color": "#008800", "font-style": "italic"},
+        "comment_block": {"color": "#008800", "font-style": "italic"},
         "decorator": {"color": "#AA22FF"},
         "double_quoted_fstring": {"color": "#BB4444"},
         "double_quoted_string": {"color": "#BB4444"},

@@ -10,7 +10,7 @@ REFACTOR_THEME = {
     "python": {
         "class_name": {"color": "#e8e8d3"},
         "comment": {"color": "#888888", "font-style": "italic"},
-        "comment_bock": {"color": "#888888", "font-style": "italic"},
+        "comment_block": {"color": "#888888", "font-style": "italic"},
         "decorator": {"color": "#e8e8d3"},
         "default": {"background": "#151515", "color": "#e8e8d3"},
         "double_quoted_fstring": {"color": "#99ad6a"},

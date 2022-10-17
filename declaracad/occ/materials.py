@@ -9,6 +9,8 @@ Created on Aug 24, 2021
 
 @author: jrm
 """
+from typing import Union
+
 from atom.api import (
     Atom,
     Bool,
@@ -32,7 +34,7 @@ class TextureParameters(Atom):
     v = Float(0.0, strict=False)
 
 
-def coerce_texture(arg):
+def coerce_texture(arg: Union[dict, tuple[float, ...]]) -> TextureParameters:
     if isinstance(arg, dict):
         return TextureParameters(**arg)
     enabled = arg[2] if len(arg) > 2 else True
@@ -156,7 +158,7 @@ class Material(Atom):
 def get_builtin_materials():
     from OCCT import Graphic3d
 
-    prefix = "Graphic3d_NameOfMaterial_"
+    prefix = "Graphic3d_NOM_"
     n = len(prefix)
     return [
         d[n:].lower()

@@ -10,14 +10,22 @@ Created on Nov 9, 2021
 @author: jrm
 """
 from math import ceil, pi
+from atom.api import Atom, Float, Instance, List
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import Operation
-from declaracad.cnc.optimize import optimize_points
+from declaracad.cnc.optimize import optimize_order
 from declaracad.occ.api import Point, Topology, Polyline, DisplayArrow, Vertex
 from declaracad.occ.geom import coerce_point
 
 
-enamldef DrillingCycle(Operation): operation:
+class DrillingData(Atom):
+    diameter = Float(strict=False)
+    center = Instance(Point) # Center of hole
+    retract = Instance(Point) # Retract position
+    bottom = Instance(Point) # Bottom of hole
+
+
+enamldef DrillingOperation(Operation): operation:
     """ Perform a peck drilling cycle using a G73, G81, G82, or G83 G-Code.
 
     All values are in mm. Use the job to convert to inches.
@@ -32,18 +40,29 @@ enamldef DrillingCycle(Operation): operation:
     # Operation options
     # ------------------------------------------------------------------------
     #: Retract value R
-    attr retract = 10.0
+    attr retract = 2.5
 
-    #: Depth of hole Z
+    #: Depth of hole. For conical faces this value is computed.
     attr depth = 0.0
 
+    #: Clearance added to the bottom of the hole (added to depth)
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom (if closed)
+    attr bottom_clearance = 0
+
+    #: Spot drilling or countersinking. When true it will set the dwell time
+    #: and adjust the feedrate by 1/4.
+    attr spot: bool = False
+
     #: Dwell time
-    attr dwell = 0
+    attr dwell = 1 if spot else 0
 
     #: Peck amount Q
     #: If non-zero it will use a G73 or G83.
     #: Otherwise it will use a G81 or G82 (based on dwell)
-    attr peck = tool.diameter/2 if depth > 3 * tool.diameter else tool.diameter
+    attr peck = 0 if spot else (
+        tool.diameter/2 if depth > 3 * tool.diameter else tool.diameter
+    )
 
     #: Retract to R after each peck.
     #: If True this uses a G83, otherwise it uses a G73
@@ -55,6 +74,9 @@ enamldef DrillingCycle(Operation): operation:
     #: Slowdown even more for deep holes
     attr depth_factor = 1/3 if depth >  3 * tool.diameter else 1
 
+    #: Spot drilling factor
+    attr spot_factor = 1/4 if spot else 1
+
     #: Spindle speed calculation
     #: Assumes surface speed is in feet per minute
     #: Note: Max spindle speed is assumed to be available in the parent scope
@@ -65,84 +87,99 @@ enamldef DrillingCycle(Operation): operation:
     feedrate = round(spindle_speed * tool.feed_per_rev, 2)
 
     # ------------------------------------------------------------------------
-    # Display options
-    # ------------------------------------------------------------------------
-    attr vertex_color: str = "yellow"
-
-    # ------------------------------------------------------------------------
     # Internal variables
     # ------------------------------------------------------------------------
     attr lift_point = get_lift_point()
     attr drop_point = get_drop_point()
-    attr hole_positions << [get_center(h) for h in holes]
-    attr optimized_positions << optimize_points(hole_positions, start_point)
-    attr path = generate_path()
+    attr drill_data << optimize_order(
+        [find_center(h) for h in holes],
+        start_point,
+        lambda d: d.center
+    )
+    attr path = generate_path(drill_data)
 
-    func get_center(hole):
+    func find_center(hole) -> DrillingData:
         """ Find center position of a hole
         """
+        depth = self.depth
+        retract = self.retract
         if isinstance(hole, Point):
-            return hole
+            # Diameter unkown
+            center = hole
         elif Topology.is_cylinder(hole):
-            s = Topology.cast_surface(hole)
-            d = 2 * s.Radius()
+            cylinder = Topology.cast_surface(hole)
+            diameter = 2 * cylinder.Radius()
+            center = Point(cylinder.Location())
+        elif Topology.is_cone(hole):
+            cone = Topology.cast_surface(hole)
+            diameter = 2 * cone.RefRadius()
+            center = Point(cone.Location())
+            depth = center.distance(Point(cone.Apex()))
         elif Topology.is_circle(hole):
-            s = Topology.cast_curve(hole)
-            d = 2 * s.Radius()
+            circle = Topology.cast_curve(hole)
+            diameter = 2 * circle.Radius()
+            center = Point(circle.Location())
         else:
             raise ValueError(f"Cannot get center of {hole}")
         # Check tool diameter
-        if tool.diameter > d:
+        if tool.diameter > diameter and not spot:
             raise ValueError(
                 f"Tool {tool.description} is too large for "
-                f"hole of diameter {round(d, 3)}. Change the tool diameter "
+                f"hole of diameter {round(diameter, 3)}. Change the tool diameter "
                 f"or just use the hole position to ignore this error.")
-        return Point(s.Location())
+        # TODO: Should spot drill always be larger than hole diameter?
+        # TODO: Compute spot drill max depth?
+        if depth + bottom_clearance > tool.length:
+            raise ValueError(
+                f"Tool {tool.description} is not long enough to cut a "
+                f"{round(depth, 3)} hole. Adjust the tool "
+                f"`length` or use a tool.")
+        return DrillingData(
+            center=center,
+            diameter=diameter,
+            retract=center + (0, 0, retract),
+            bottom=center - (0, 0, depth + bottom_clearance),
+        )
 
     func get_lift_point():
-        last_point = self.optimized_positions[-1]
+        last_point = self.drill_data[-1].center
         return Point(last_point.x, last_point.y, start_point.z)
 
     func get_drop_point():
-        first_point = coerce_point(self.optimized_positions[0])
+        first_point = self.drill_data[0].center
         return Point(first_point.x, first_point.y, start_point.z)
 
-    func generate_path():
+    func generate_path(drill_data: list[DrillingData]) -> list[Point]:
         """ Generate the path to display including the drilling cycle options.
 
         """
-        required_length = retract - depth
-        if required_length > tool.length:
-            raise ValueError(
-                f"Tool {tool.description} is not long enough to cut a "
-                f"{round(required_length, 3)} hole. Adjust the tool "
-                f"`length` or use a tool.")
-
         path = [coerce_point(start_point), drop_point]
-        steps = int(ceil(abs((retract-depth) / peck))) if peck else 0
-        for p in self.optimized_positions:
-            retract_pos = Point(p.x, p.y, retract)
-            bottom_pos = Point(p.x, p.y, depth)
+        for entry in drill_data:
+            p = entry.center
+            drop_pos = Point(p.x, p.y, drop_point.z)
 
             # Go to top of hole
-            path.append(retract_pos)
+            path.append(drop_pos)
 
             # Start pecking
-            z = retract_pos.z - peck
-            for step in range(steps):
-                step_pos = Point(p.x, p.y, max(z, bottom_pos.z))
-                if full_retract:
-                    return_pos = retract_pos
-                else:
-                    return_pos = Point(p.x, p.y, step_pos.z+peck)
-                path.append(step_pos)
-                path.append(return_pos)
-                z -= peck
+            if peck:
+                distance = entry.retract.distance(entry.bottom)
+                steps = int(ceil(abs((distance) / peck)))
+                z = entry.retract.z - peck
+                for step in range(steps):
+                    step_pos = Point(p.x, p.y, max(z, entry.bottom.z))
+                    if full_retract:
+                        return_pos = entry.retract
+                    else:
+                        return_pos = Point(p.x, p.y, step_pos.z+peck)
+                    path.append(step_pos)
+                    path.append(return_pos)
+                    z -= peck
 
             # Go to bottom
-            path.append(bottom_pos)
+            path.append(entry.bottom)
             # Return to top
-            path.append(retract_pos)
+            path.append(drop_pos)
 
         path.append(lift_point)
         path.append(coerce_point(end_point))
@@ -154,9 +191,6 @@ enamldef DrillingCycle(Operation): operation:
         """
         cmds = []
         p = self.path[0]
-        d = format_value(depth)
-        r = format_value(retract)
-
         # Move to top of first hole
         for p in self.path[0:2]:
             x, y, z = map(format_value, p)
@@ -175,14 +209,21 @@ enamldef DrillingCycle(Operation): operation:
         if code == 'G73' and dwell:
             raise ValueError("Cannot use dwell with G73. Disable dwell or use full_peck=True")
 
-        for p in self.optimized_positions:
+        if spot and code != 'G82':
+            raise ValueError("Spot driling (G82) requires a dwell time and no peck drilling.")
+
+
+        for entry in self.drill_data:
+            p = entry.center
+            z = format_value(entry.bottom.z)
+            r = format_value(entry.retract.z)
             cmd = [
                 'G90', # Absolute
                 code,
                 'G98',
                 f'X{format_value(p.x)}',
                 f'Y{format_value(p.y)}',
-                f'Z{d}',
+                f'Z{z}',
                 f'R{r}',
             ]
             if peck:
@@ -201,16 +242,27 @@ enamldef DrillingCycle(Operation): operation:
 
     Conditional:
         condition << not operation.disabled
-        Looper:
-            iterable << optimized_positions
-            Vertex:
-                color = vertex_color
-                position = (loop.item.x, loop.item.y, retract)
         Polyline:
             color = operation.color
             line_style = 'dashed'
             color = 'lime'
             points << path
+        Looper:
+            iterable << drill_data
+            Conditional:
+                condition << bool(peck)
+                Vertex:
+                    color = 'cyan'
+                    name = 'Retract position'
+                    position = loop.item.retract
+            Vertex:
+                color = 'yellow'
+                name = 'Hole center'
+                position = loop.item.center
+            Vertex:
+                color = 'magenta'
+                name = 'Bottom position'
+                position = loop.item.bottom
         DisplayArrow: drop_arrow:
             color = 'red'
             cone_size = (0.6, 1.5)

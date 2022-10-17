@@ -10,7 +10,7 @@ MONOKAI_THEME = {
     "python": {
         "class_name": {"color": "#a6e22e"},
         "comment": {"color": "#75715e"},
-        "comment_bock": {"color": "#75715e"},
+        "comment_block": {"color": "#75715e"},
         "decorator": {"color": "#a6e22e"},
         "default": {"background": "#272822", "color": "#f8f8f2"},
         "double_quoted_fstring": {"color": "#e6db74"},

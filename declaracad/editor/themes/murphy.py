@@ -10,7 +10,7 @@ MURPHY_THEME = {
     "python": {
         "class_name": {"color": "#ee99ee", "font-weight": "bold"},
         "comment": {"color": "#666666", "font-style": "italic"},
-        "comment_bock": {"color": "#666666", "font-style": "italic"},
+        "comment_block": {"color": "#666666", "font-style": "italic"},
         "decorator": {"color": "#555555", "font-weight": "bold"},
         "double_quoted_fstring": {"background-color": "#e0e0ff"},
         "double_quoted_string": {"background-color": "#e0e0ff"},

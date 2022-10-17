@@ -10,7 +10,7 @@ BASE16_MOCHA_DARK_THEME = {
     "python": {
         "class_name": {"color": "#f4bc87"},
         "comment": {"color": "#7e705a"},
-        "comment_bock": {"color": "#7e705a"},
+        "comment_block": {"color": "#7e705a"},
         "decorator": {"color": "#7bbda4"},
         "default": {"background": "#3B3228", "color": "#f5eeeb"},
         "double_quoted_fstring": {"color": "#beb55b"},

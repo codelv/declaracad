@@ -10,7 +10,7 @@ BASE16_APPLEPIPS_DARK_THEME = {
     "python": {
         "class_name": {"color": "#efb554"},
         "comment": {"color": "#7d8182"},
-        "comment_bock": {"color": "#7d8182"},
+        "comment_block": {"color": "#7d8182"},
         "decorator": {"color": "#00b5b0"},
         "default": {"background": "#374546", "color": "#ffffff"},
         "double_quoted_fstring": {"color": "#78bb86"},

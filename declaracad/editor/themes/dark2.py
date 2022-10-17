@@ -10,7 +10,7 @@ DARK2_THEME = {
     "python": {
         "class_name": {"color": "#f8f8ff"},
         "comment": {"color": "#80CC80"},
-        "comment_bock": {"color": "#80CC80"},
+        "comment_block": {"color": "#80CC80"},
         "decorator": {"color": "#f8f8ff"},
         "default": {"background": "#000000", "color": "#f8f8ff"},
         "double_quoted_fstring": {"color": "#ee9a00"},

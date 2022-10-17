@@ -10,7 +10,7 @@ GITHUB_DARK_THEME = {
     "python": {
         "class_name": {"color": "#447fcf"},
         "comment": {"color": "#3677a9"},
-        "comment_bock": {"color": "#3677a9"},
+        "comment_block": {"color": "#3677a9"},
         "decorator": {"color": "#ffa500"},
         "default": {"background": "#111", "color": "#d0d0d0"},
         "double_quoted_fstring": {"color": "#D2691E"},

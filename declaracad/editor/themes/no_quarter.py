@@ -10,7 +10,7 @@ NO_QUARTER_THEME = {
     "python": {
         "class_name": {"color": "#e5e5e5"},
         "comment": {"color": "#647bcf"},
-        "comment_bock": {"color": "#647bcf"},
+        "comment_block": {"color": "#647bcf"},
         "decorator": {"color": "#e5e5e5"},
         "default": {"background": "#303030", "color": "#e5e5e5"},
         "double_quoted_fstring": {"color": "#e5e5e5"},

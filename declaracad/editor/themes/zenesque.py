@@ -10,7 +10,7 @@ ZENESQUE_THEME = {
     "python": {
         "class_name": {"color": "#adadad"},
         "comment": {"color": "#777777", "font-style": "italic"},
-        "comment_bock": {"color": "#777777", "font-style": "italic"},
+        "comment_block": {"color": "#777777", "font-style": "italic"},
         "decorator": {"color": "#adadad"},
         "default": {"background": "#0f1216"},
         "double_quoted_fstring": {"color": "#5d7a64", "font-style": "italic"},

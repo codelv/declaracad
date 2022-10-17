@@ -10,7 +10,7 @@ BASE16_EIGHTIES_DARK_THEME = {
     "python": {
         "class_name": {"color": "#ffcc66"},
         "comment": {"color": "#747369"},
-        "comment_bock": {"color": "#747369"},
+        "comment_block": {"color": "#747369"},
         "decorator": {"color": "#66cccc"},
         "default": {"background": "#2d2d2d", "color": "#f2f0ec"},
         "double_quoted_fstring": {"color": "#99cc99"},

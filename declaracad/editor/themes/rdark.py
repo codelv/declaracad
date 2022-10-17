@@ -10,7 +10,7 @@ RDARK_THEME = {
     "python": {
         "class_name": {"color": "#babdb6"},
         "comment": {"color": "#656763"},
-        "comment_bock": {"color": "#656763"},
+        "comment_block": {"color": "#656763"},
         "decorator": {"color": "#babdb6"},
         "default": {"background": "#1e2426", "color": "#babdb6"},
         "double_quoted_fstring": {"color": "#babdb6"},

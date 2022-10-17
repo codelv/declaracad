@@ -10,7 +10,7 @@ BROOKSTREAM_THEME = {
     "python": {
         "class_name": {"color": "#bbbbbb"},
         "comment": {"color": "#696969"},
-        "comment_bock": {"color": "#696969"},
+        "comment_block": {"color": "#696969"},
         "decorator": {"color": "#bbbbbb"},
         "default": {"background": "#000000", "color": "#bbbbbb"},
         "double_quoted_fstring": {"color": "#4682b4"},

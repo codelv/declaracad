@@ -10,7 +10,7 @@ PEAKSEA_THEME = {
     "python": {
         "class_name": {"color": "#d0d0d0"},
         "comment": {"color": "#d0d090"},
-        "comment_bock": {"color": "#d0d090"},
+        "comment_block": {"color": "#d0d090"},
         "decorator": {"color": "#d0d0d0"},
         "default": {"background": "#202020", "color": "#d0d0d0"},
         "double_quoted_fstring": {"color": "#d0d0d0"},

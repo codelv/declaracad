@@ -10,7 +10,7 @@ BASE16_SOLARIZED_DARK_THEME = {
     "python": {
         "class_name": {"color": "#b58900"},
         "comment": {"color": "#657b83"},
-        "comment_bock": {"color": "#657b83"},
+        "comment_block": {"color": "#657b83"},
         "decorator": {"color": "#2aa198"},
         "default": {"background": "#002b36", "color": "#fdf6e3"},
         "double_quoted_fstring": {"color": "#859900"},

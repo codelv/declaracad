@@ -10,7 +10,7 @@ BASE16_TOMORROW_DARK_THEME = {
     "python": {
         "class_name": {"color": "#f0c674"},
         "comment": {"color": "#969896"},
-        "comment_bock": {"color": "#969896"},
+        "comment_block": {"color": "#969896"},
         "decorator": {"color": "#8abeb7"},
         "default": {"background": "#1d1f21", "color": "#ffffff"},
         "double_quoted_fstring": {"color": "#b5bd68"},

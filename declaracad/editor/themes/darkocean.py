@@ -10,7 +10,7 @@ DARKOCEAN_THEME = {
     "python": {
         "class_name": {"color": "#e0ffff"},
         "comment": {"background-color": "#102520", "color": "#8db6cd"},
-        "comment_bock": {"background-color": "#102520", "color": "#8db6cd"},
+        "comment_block": {"background-color": "#102520", "color": "#8db6cd"},
         "decorator": {"color": "#e0ffff"},
         "default": {"background": "#000000", "color": "#e0ffff"},
         "double_quoted_fstring": {"color": "#c34a2c"},

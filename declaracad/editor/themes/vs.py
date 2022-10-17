@@ -10,7 +10,7 @@ VS_THEME = {
     "python": {
         "class_name": {"color": "#2b91af"},
         "comment": {"color": "#008000"},
-        "comment_bock": {"color": "#008000"},
+        "comment_block": {"color": "#008000"},
         "double_quoted_fstring": {"color": "#a31515"},
         "double_quoted_string": {"color": "#a31515"},
         "keyword": {"color": "#0000ff"},

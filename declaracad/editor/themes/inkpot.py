@@ -10,7 +10,7 @@ INKPOT_THEME = {
     "python": {
         "class_name": {"background-color": "#1E1E27", "color": "#cfbfad"},
         "comment": {"background-color": "#1E1E27", "color": "#cd8b00"},
-        "comment_bock": {"background-color": "#1E1E27", "color": "#cd8b00"},
+        "comment_block": {"background-color": "#1E1E27", "color": "#cd8b00"},
         "decorator": {"background-color": "#1E1E27", "color": "#cfbfad"},
         "default": {"background": "#1E1E27", "color": "#cfbfad"},
         "double_quoted_fstring": {"background-color": "#404040", "color": "#ffcd8b"},

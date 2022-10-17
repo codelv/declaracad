@@ -10,7 +10,7 @@ NIGHT_THEME = {
     "python": {
         "class_name": {"color": "#fded02"},
         "comment": {"color": "#5c5855"},
-        "comment_bock": {"color": "#5c5855"},
+        "comment_block": {"color": "#5c5855"},
         "decorator": {"color": "#b5e4f4"},
         "default": {"background": "#090300", "color": "#f7f7f7"},
         "double_quoted_fstring": {"color": "#01a252"},

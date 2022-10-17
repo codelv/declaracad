@@ -10,7 +10,7 @@ DRACULA_THEME = {
     "python": {
         "class_name": {"background-color": "#282a36", "color": "#f8f8f2"},
         "comment": {"background-color": "#282a36", "color": "#6272a4"},
-        "comment_bock": {"background-color": "#282a36", "color": "#6272a4"},
+        "comment_block": {"background-color": "#282a36", "color": "#6272a4"},
         "decorator": {"background-color": "#282a36", "color": "#f8f8f2"},
         "default": {"background": "#282a36", "color": "#f8f8f2"},
         "double_quoted_fstring": {"background-color": "#282a36", "color": "#f1fa8c"},

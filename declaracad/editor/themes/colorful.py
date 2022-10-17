@@ -10,7 +10,7 @@ COLORFUL_THEME = {
     "python": {
         "class_name": {"color": "#BB0066", "font-weight": "bold"},
         "comment": {"color": "#888888"},
-        "comment_bock": {"color": "#888888"},
+        "comment_block": {"color": "#888888"},
         "decorator": {"color": "#555555", "font-weight": "bold"},
         "double_quoted_fstring": {"background-color": "#fff0f0"},
         "double_quoted_string": {"background-color": "#fff0f0"},

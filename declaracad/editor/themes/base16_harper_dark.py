@@ -10,7 +10,7 @@ BASE16_HARPER_DARK_THEME = {
     "python": {
         "class_name": {"color": "#d6da25"},
         "comment": {"color": "#726e6a"},
-        "comment_bock": {"color": "#726e6a"},
+        "comment_block": {"color": "#726e6a"},
         "decorator": {"color": "#f5bfd7"},
         "default": {"background": "#010101", "color": "#fefbea"},
         "double_quoted_fstring": {"color": "#7fb5e1"},

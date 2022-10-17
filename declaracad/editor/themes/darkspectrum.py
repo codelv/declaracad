@@ -10,7 +10,7 @@ DARKSPECTRUM_THEME = {
     "python": {
         "class_name": {"color": "#efefef"},
         "comment": {"color": "#8a8a8a"},
-        "comment_bock": {"color": "#8a8a8a"},
+        "comment_block": {"color": "#8a8a8a"},
         "decorator": {"color": "#efefef"},
         "default": {"background": "#2A2A2A", "color": "#efefef"},
         "double_quoted_fstring": {"color": "#fce94f"},

@@ -10,7 +10,7 @@ PERLDOC_THEME = {
     "python": {
         "class_name": {"color": "#008b45", "font-weight": "bold"},
         "comment": {"color": "#228B22"},
-        "comment_bock": {"color": "#228B22"},
+        "comment_block": {"color": "#228B22"},
         "decorator": {"color": "#707a7c"},
         "double_quoted_fstring": {"color": "#CD5555"},
         "double_quoted_string": {"color": "#CD5555"},

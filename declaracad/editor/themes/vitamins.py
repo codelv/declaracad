@@ -10,7 +10,7 @@ VITAMINS_THEME = {
     "python": {
         "class_name": {"color": "#f6f3f0"},
         "comment": {"color": "#808080", "font-style": "italic"},
-        "comment_bock": {"color": "#808080", "font-style": "italic"},
+        "comment_block": {"color": "#808080", "font-style": "italic"},
         "decorator": {"color": "#f6f3f0"},
         "default": {"background": "#242424"},
         "double_quoted_fstring": {"color": "#ff5d28", "font-style": "italic"},

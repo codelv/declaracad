@@ -10,7 +10,7 @@ TRAC_THEME = {
     "python": {
         "class_name": {"color": "#445588", "font-weight": "bold"},
         "comment": {"color": "#999988", "font-style": "italic"},
-        "comment_bock": {"color": "#999988", "font-style": "italic"},
+        "comment_block": {"color": "#999988", "font-style": "italic"},
         "double_quoted_fstring": {"color": "#bb8844"},
         "double_quoted_string": {"color": "#bb8844"},
         "function_method_name": {"color": "#990000", "font-weight": "bold"},

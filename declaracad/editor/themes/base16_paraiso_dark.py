@@ -10,7 +10,7 @@ BASE16_PARAISO_DARK_THEME = {
     "python": {
         "class_name": {"color": "#fec418"},
         "comment": {"color": "#776e71"},
-        "comment_bock": {"color": "#776e71"},
+        "comment_block": {"color": "#776e71"},
         "decorator": {"color": "#5bc4bf"},
         "default": {"background": "#2f1e2e", "color": "#e7e9db"},
         "double_quoted_fstring": {"color": "#48b685"},

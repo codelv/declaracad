@@ -10,7 +10,7 @@ BASE16_DEFAULT_DARK_THEME = {
     "python": {
         "class_name": {"color": "#f4bf75"},
         "comment": {"color": "#505050"},
-        "comment_bock": {"color": "#505050"},
+        "comment_block": {"color": "#505050"},
         "decorator": {"color": "#75b5aa"},
         "default": {"background": "#151515", "color": "#f5f5f5"},
         "double_quoted_fstring": {"color": "#90a959"},

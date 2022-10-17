@@ -10,7 +10,7 @@ DARKBONE_THEME = {
     "python": {
         "class_name": {"color": "#a0a0c0"},
         "comment": {"color": "#606080"},
-        "comment_bock": {"color": "#606080"},
+        "comment_block": {"color": "#606080"},
         "decorator": {"color": "#a0a0c0"},
         "default": {"background": "#000000", "color": "#a0a0c0"},
         "double_quoted_fstring": {"color": "#d0e080"},

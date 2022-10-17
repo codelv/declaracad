@@ -10,7 +10,7 @@ MANNI_THEME = {
     "python": {
         "class_name": {"color": "#00AA88", "font-weight": "bold"},
         "comment": {"color": "#0099FF", "font-style": "italic"},
-        "comment_bock": {"color": "#0099FF", "font-style": "italic"},
+        "comment_block": {"color": "#0099FF", "font-style": "italic"},
         "decorator": {"color": "#9999FF"},
         "double_quoted_fstring": {"color": "#CC3300"},
         "double_quoted_string": {"color": "#CC3300"},

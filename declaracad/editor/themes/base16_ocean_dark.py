@@ -10,7 +10,7 @@ BASE16_OCEAN_DARK_THEME = {
     "python": {
         "class_name": {"color": "#ebcb8b"},
         "comment": {"color": "#65737e"},
-        "comment_bock": {"color": "#65737e"},
+        "comment_block": {"color": "#65737e"},
         "decorator": {"color": "#96b5b4"},
         "default": {"background": "#2b303b", "color": "#eff1f5"},
         "double_quoted_fstring": {"color": "#a3be8c"},

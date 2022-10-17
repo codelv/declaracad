@@ -10,7 +10,7 @@ PASTIE_THEME = {
     "python": {
         "class_name": {"color": "#bb0066", "font-weight": "bold"},
         "comment": {"color": "#888888"},
-        "comment_bock": {"color": "#888888"},
+        "comment_block": {"color": "#888888"},
         "decorator": {"color": "#555555"},
         "double_quoted_fstring": {"background-color": "#fff0f0", "color": "#dd2200"},
         "double_quoted_string": {"background-color": "#fff0f0", "color": "#dd2200"},

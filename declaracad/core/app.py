@@ -14,6 +14,7 @@ import inspect
 import logging
 import warnings
 from queue import Empty, Queue
+from typing import Any, Callable
 
 try:
     import nest_asyncio
@@ -87,10 +88,6 @@ class Application(QtApplication):
 
     def on_async_exception(self, loop, context):
         """Exception handler that ignores"""
-        # HACK: Ignore this error, Qt works, shut up
-        # msg = context.get("exception")
-        # if "cannot enter context" in str(msg):
-        #    return
         return loop.default_exception_handler(context)
 
     def process_events(self):
@@ -100,7 +97,7 @@ class Application(QtApplication):
         """
         self._qapp.processEvents()
 
-    def deferred_call(self, callback, *args, **kwargs):
+    def deferred_call(self, callback: Callable, *args: Any, **kwargs: Any):
         """Invoke a callable on the next cycle of the main event loop
         thread.
 
@@ -119,7 +116,7 @@ class Application(QtApplication):
             return self.add_task(task)
         return super().deferred_call(callback, *args, **kwargs)
 
-    def timed_call(self, ms, callback, *args, **kwargs):
+    def timed_call(self, ms: float, callback: Callable, *args: Any, **kwargs: Any):
         """Invoke a callable on the main event loop thread at a
         specified time in the future.
 

@@ -10,7 +10,7 @@ DARKDEVEL_THEME = {
     "python": {
         "class_name": {"color": "#F0F0F0"},
         "comment": {"color": "#646464"},
-        "comment_bock": {"color": "#646464"},
+        "comment_block": {"color": "#646464"},
         "decorator": {"color": "#F0F0F0"},
         "default": {"background": "#000000", "color": "#F0F0F0"},
         "double_quoted_fstring": {"color": "#64C896"},

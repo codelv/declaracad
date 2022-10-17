@@ -10,7 +10,7 @@ MUSTANG_THEME = {
     "python": {
         "class_name": {"color": "#e2e2e5"},
         "comment": {"color": "#808080", "font-style": "italic"},
-        "comment_bock": {"color": "#808080", "font-style": "italic"},
+        "comment_block": {"color": "#808080", "font-style": "italic"},
         "decorator": {"color": "#e2e2e5"},
         "default": {"background": "#202020", "color": "#e2e2e5"},
         "double_quoted_fstring": {"color": "#b1d631", "font-style": "italic"},

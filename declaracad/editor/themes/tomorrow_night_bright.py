@@ -10,7 +10,7 @@ TOMORROW_NIGHT_BRIGHT_THEME = {
     "python": {
         "class_name": {"color": "#e7c547"},
         "comment": {"color": "#969896"},
-        "comment_bock": {"color": "#969896"},
+        "comment_block": {"color": "#969896"},
         "decorator": {"color": "#70c0b1"},
         "default": {"background": "#000000", "color": "#eaeaea"},
         "double_quoted_fstring": {"color": "#b9ca4a"},

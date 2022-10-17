@@ -9,7 +9,7 @@
 BORLAND_THEME = {
     "python": {
         "comment": {"color": "#008800", "font-style": "italic"},
-        "comment_bock": {"color": "#008800", "font-style": "italic"},
+        "comment_block": {"color": "#008800", "font-style": "italic"},
         "double_quoted_fstring": {"color": "#0000FF"},
         "double_quoted_string": {"color": "#0000FF"},
         "highlighted_identifier": {"color": "#FF0000"},

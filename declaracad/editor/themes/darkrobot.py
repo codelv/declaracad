@@ -10,7 +10,7 @@ DARKROBOT_THEME = {
     "python": {
         "class_name": {"color": "#FFFFFF"},
         "comment": {"color": "#B8B8B8"},
-        "comment_bock": {"color": "#B8B8B8"},
+        "comment_block": {"color": "#B8B8B8"},
         "decorator": {"color": "#FFFFFF"},
         "default": {"background": "#1D1D1D", "color": "#FFFFFF"},
         "double_quoted_fstring": {"background-color": "#141414", "color": "#DAC5FF"},

@@ -10,7 +10,7 @@ UP_THEME = {
     "python": {
         "class_name": {"color": "#e2e2e5"},
         "comment": {"color": "#605A4E", "font-style": "italic"},
-        "comment_bock": {"color": "#605A4E", "font-style": "italic"},
+        "comment_block": {"color": "#605A4E", "font-style": "italic"},
         "decorator": {"color": "#e2e2e5"},
         "default": {"background": "#1B1B1B"},
         "double_quoted_fstring": {"color": "#758265"},

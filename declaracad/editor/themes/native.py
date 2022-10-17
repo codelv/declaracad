@@ -10,7 +10,7 @@ NATIVE_THEME = {
     "python": {
         "class_name": {"color": "#447fcf"},
         "comment": {"color": "#999999"},
-        "comment_bock": {"color": "#999999"},
+        "comment_block": {"color": "#999999"},
         "decorator": {"color": "#ffa500"},
         "default": {"background": "#202020", "color": "#d0d0d0"},
         "double_quoted_fstring": {"color": "#ed9d13"},

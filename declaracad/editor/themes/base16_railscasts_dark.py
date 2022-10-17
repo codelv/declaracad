@@ -10,7 +10,7 @@ BASE16_RAILSCASTS_DARK_THEME = {
     "python": {
         "class_name": {"color": "#ffc66d"},
         "comment": {"color": "#5a647e"},
-        "comment_bock": {"color": "#5a647e"},
+        "comment_block": {"color": "#5a647e"},
         "decorator": {"color": "#519f50"},
         "default": {"background": "#2b2b2b", "color": "#f9f7f3"},
         "double_quoted_fstring": {"color": "#a5c261"},

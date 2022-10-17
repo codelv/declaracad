@@ -10,7 +10,7 @@ WOMBAT_THEME = {
     "python": {
         "class_name": {"color": "#f6f3e8"},
         "comment": {"color": "#99968b", "font-style": "italic"},
-        "comment_bock": {"color": "#99968b", "font-style": "italic"},
+        "comment_block": {"color": "#99968b", "font-style": "italic"},
         "decorator": {"color": "#f6f3e8"},
         "default": {"background": "#242424", "color": "#f6f3e8"},
         "double_quoted_fstring": {"color": "#95e454", "font-style": "italic"},

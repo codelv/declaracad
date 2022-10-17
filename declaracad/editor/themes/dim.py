@@ -10,7 +10,7 @@ DIM_THEME = {
     "python": {
         "class_name": {"color": "#bfbfbf"},
         "comment": {"color": "#6ca6cd"},
-        "comment_bock": {"color": "#6ca6cd"},
+        "comment_block": {"color": "#6ca6cd"},
         "decorator": {"color": "#bfbfbf"},
         "default": {"background": "#000000", "color": "#bfbfbf"},
         "double_quoted_fstring": {"color": "#cd6889"},

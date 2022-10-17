@@ -10,7 +10,7 @@ FREYA_THEME = {
     "python": {
         "class_name": {"background-color": "#2a2a2a", "color": "#dcdccc"},
         "comment": {"background-color": "#2a2a2a", "color": "#c2b680"},
-        "comment_bock": {"background-color": "#2a2a2a", "color": "#c2b680"},
+        "comment_block": {"background-color": "#2a2a2a", "color": "#c2b680"},
         "decorator": {"background-color": "#2a2a2a", "color": "#dcdccc"},
         "default": {"background": "#2a2a2a", "color": "#dcdccc"},
         "double_quoted_fstring": {"background-color": "#2a2a2a", "color": "#dcdccc"},

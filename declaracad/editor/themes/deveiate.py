@@ -10,7 +10,7 @@ DEVEIATE_THEME = {
     "python": {
         "class_name": {"color": "#f6dfb2"},
         "comment": {"color": "#a82419"},
-        "comment_bock": {"color": "#a82419"},
+        "comment_block": {"color": "#a82419"},
         "decorator": {"color": "#f6dfb2"},
         "default": {"background": "#00000f", "color": "#f6dfb2"},
         "double_quoted_fstring": {"color": "#da8d53"},

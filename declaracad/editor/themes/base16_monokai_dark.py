@@ -10,7 +10,7 @@ BASE16_MONOKAI_DARK_THEME = {
     "python": {
         "class_name": {"color": "#f4bf75"},
         "comment": {"color": "#75715e"},
-        "comment_bock": {"color": "#75715e"},
+        "comment_block": {"color": "#75715e"},
         "decorator": {"color": "#a1efe4"},
         "default": {"background": "#272822", "color": "#f9f8f5"},
         "double_quoted_fstring": {"color": "#a6e22e"},

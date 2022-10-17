@@ -10,7 +10,7 @@ TWILIGHT_THEME = {
     "python": {
         "class_name": {"color": "#9B859D", "font-weight": "bold"},
         "comment": {"color": "#5F5A60", "font-style": "italic"},
-        "comment_bock": {"color": "#5F5A60", "font-style": "italic"},
+        "comment_block": {"color": "#5F5A60", "font-style": "italic"},
         "decorator": {"color": "#7587A6"},
         "default": {
             "background": "#181818",

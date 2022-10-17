@@ -10,7 +10,7 @@ TOMORROW_NIGHT_EIGHTIES_THEME = {
     "python": {
         "class_name": {"color": "#ffcc66"},
         "comment": {"color": "#999999"},
-        "comment_bock": {"color": "#999999"},
+        "comment_block": {"color": "#999999"},
         "decorator": {"color": "#66cccc"},
         "default": {"background": "#2d2d2d", "color": "#cccccc"},
         "double_quoted_fstring": {"color": "#99cc99"},

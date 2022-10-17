@@ -10,7 +10,7 @@ NEVERLAND_THEME = {
     "python": {
         "class_name": {"color": "#ffd7ff"},
         "comment": {"color": "#af875f"},
-        "comment_bock": {"color": "#af875f"},
+        "comment_block": {"color": "#af875f"},
         "decorator": {"color": "#ffd7ff"},
         "default": {"background": "#121212"},
         "double_quoted_fstring": {"color": "#d7af5f"},

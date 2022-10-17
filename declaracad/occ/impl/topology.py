@@ -938,7 +938,7 @@ class Topology(Atom):
         )
 
     @classmethod
-    def is_reversed(cls, shape) -> bool:
+    def is_reversed(cls, shape: TopoDS_Shape) -> bool:
         """Check if the shape's orentation is reversed.
 
         Returns

@@ -10,7 +10,7 @@ BASE16_CHALK_DARK_THEME = {
     "python": {
         "class_name": {"color": "#ddb26f"},
         "comment": {"color": "#505050"},
-        "comment_bock": {"color": "#505050"},
+        "comment_block": {"color": "#505050"},
         "decorator": {"color": "#12cfc0"},
         "default": {"background": "#151515", "color": "#f5f5f5"},
         "double_quoted_fstring": {"color": "#acc267"},

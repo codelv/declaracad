@@ -10,7 +10,7 @@ DARK_Z_THEME = {
     "python": {
         "class_name": {"color": "#DFD6C1"},
         "comment": {"color": "#8c8c8c", "font-style": "italic"},
-        "comment_bock": {"color": "#8c8c8c", "font-style": "italic"},
+        "comment_block": {"color": "#8c8c8c", "font-style": "italic"},
         "decorator": {"color": "#DFD6C1"},
         "default": {"background": "#292929", "color": "#DFD6C1"},
         "double_quoted_fstring": {"color": "#DFD6C1"},

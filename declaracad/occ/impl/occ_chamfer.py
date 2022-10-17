@@ -22,7 +22,7 @@ from OCCT.TColgp import TColgp_Array1OfPnt2d
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 from declaracad.core.utils import log
-from declaracad.occ.algo import ProxyChamfer
+from declaracad.occ.algo import ProxyChamfer, ChamferData
 
 from .occ_algo import OccOperation
 from .topology import Topology
@@ -103,6 +103,7 @@ class OccChamfer(OccOperation, ProxyChamfer):
         chamfer = BRepFilletAPI_MakeChamfer(shape)
         for item in operations:
             edge = None
+            angle = d.angle
             d1, d2 = d.distance, d.distance2 or d.distance
             if isinstance(item, (tuple, list)):
                 face = item[-1]
@@ -116,6 +117,12 @@ class OccChamfer(OccOperation, ProxyChamfer):
                         d1 = d2 = item[0]
                     elif n == i + 3:
                         d1, d2 = item[0:2]
+            elif isinstance(item, ChamferData):
+                angle = item.angle
+                d1 = item.distance
+                d2 = item.distance or item.distance2
+                face = item.face
+                edge = item.edge
             else:
                 face = item
             if isinstance(face, TopoDS_Edge) and d1 == d2:
@@ -123,7 +130,12 @@ class OccChamfer(OccOperation, ProxyChamfer):
                 chamfer.Add(d1, edge)
             elif edge is None:
                 for edge in child.topology.edges_from_face(face):
-                    chamfer.Add(d1, d2, edge, face)
+                    if angle:
+                        chamfer.AddDA(d1, angle, edge, face)
+                    else:
+                        chamfer.Add(d1, d2, edge, face)
+            elif angle:
+                chamfer.AddDA(d1, angle, edge, face)
             else:
                 chamfer.Add(d1, d2, edge, face)
         self.shape = chamfer.Shape()

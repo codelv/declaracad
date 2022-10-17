@@ -10,7 +10,7 @@ SLATE_THEME = {
     "python": {
         "class_name": {"color": "#ffffff"},
         "comment": {"color": "#666666", "font-weight": "bold"},
-        "comment_bock": {"color": "#666666", "font-weight": "bold"},
+        "comment_block": {"color": "#666666", "font-weight": "bold"},
         "decorator": {"color": "#ffffff"},
         "default": {"background": "#262626", "color": "#ffffff"},
         "double_quoted_fstring": {"color": "#87ceeb"},

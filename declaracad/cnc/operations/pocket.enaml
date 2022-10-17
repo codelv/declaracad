@@ -13,7 +13,7 @@ from math import pi, atan2
 from atom.api import Atom, Float, Instance, List, Value
 from enaml.core.api import Conditional, Looper
 from declaracad.cnc.operation import Operation
-from declaracad.cnc.optimize import optimize_points
+from declaracad.cnc.optimize import optimize_order
 from declaracad.occ.api import (
     Arc, DisplayArrow, Point, Polyline, Part, MiddlePath, Offset, Topology,
     Transform, Face, Wire, Vertex
@@ -102,22 +102,13 @@ enamldef CircularPocketOperation(Operation): operation:
     # ------------------------------------------------------------------------
 
     #: Internal pocket data
-    attr data = optimize_order([validate_data(get_pocket_data(p)) for p in pockets])
+    attr data = optimize_order(
+        [validate_data(get_pocket_data(p)) for p in pockets],
+        start_point,
+        lambda d: Point(d.center.x, d.center.y, start_point.z)
+    )
 
     attr last_point = start_point
-
-    func optimize_order(data):
-        """ Optimize the cutting order if multiple pockets are given.
-
-        """
-        if len(data) <= 1:
-            return data
-        drop_points = [Point(d.center.x, d.center.y, start_point.z) for d in data]
-        reordered_data = []
-        for pt in optimize_points(drop_points, start_point):
-            i = drop_points.index(pt)
-            reordered_data.append(data[i])
-        return reordered_data
 
     func validate_data(pocket_data: CircularPocketData):
         """ Make sure the tool can be used

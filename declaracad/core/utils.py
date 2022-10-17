@@ -16,7 +16,7 @@ import sys
 import time
 import traceback
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import jsonpickle
 from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
@@ -42,7 +42,7 @@ def clip(s: Any, n: int = 1000) -> str:
 # Icon and Image helpers
 # -----------------------------------------------------------------------------
 #: Cache for icons
-_IMAGE_CACHE = {}
+_IMAGE_CACHE: dict[str, Image] = {}
 
 
 def icon_path(name: str) -> str:
@@ -261,7 +261,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
     """
 
     #: Process transport
-    process_transport = Value()
+    process_transport = Instance(asyncio.SubprocessTransport)
     transport = Value()
 
     #: Status code
@@ -276,7 +276,7 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
     #: Split on each line
     delimiter = Bytes(b"\n")
 
-    def connection_made(self, transport):
+    def connection_made(self, transport: asyncio.BaseTransport):
         """Save a reference to the transports
 
         Parameters
@@ -285,8 +285,9 @@ class ProcessLineReceiver(Atom, asyncio.SubprocessProtocol):
             The transport for stdin, stdout, and stderr pipes
 
         """
-        self.process_transport = transport
-        self.transport = transport.get_pipe_transport(0)
+        process_transport = cast(asyncio.SubprocessTransport, transport)
+        self.process_transport = process_transport
+        self.transport = process_transport.get_pipe_transport(0)
 
     def pipe_data_received(self, fd: int, data: bytes):
         """Forward calls to data_received or err_received based one the fd

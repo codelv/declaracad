@@ -10,7 +10,7 @@ IDLE_FINGERS_THEME = {
     "python": {
         "class_name": {"color": "#ffffff"},
         "comment": {"color": "#bc9458", "font-style": "italic"},
-        "comment_bock": {"color": "#bc9458", "font-style": "italic"},
+        "comment_block": {"color": "#bc9458", "font-style": "italic"},
         "decorator": {"color": "#ffffff"},
         "default": {"background": "#323232"},
         "double_quoted_fstring": {"color": "#a5c261"},

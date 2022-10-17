@@ -10,7 +10,7 @@ BASE16_GREENSCREEN_DARK_THEME = {
     "python": {
         "class_name": {"color": "#00ff00"},
         "comment": {"color": "#007700"},
-        "comment_bock": {"color": "#007700"},
+        "comment_block": {"color": "#007700"},
         "decorator": {"color": "#005500"},
         "default": {"background": "#001100", "color": "#00ff00"},
         "double_quoted_fstring": {"color": "#00bb00"},

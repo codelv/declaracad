@@ -10,7 +10,7 @@ BASE16_KIMBIE_DARK_THEME = {
     "python": {
         "class_name": {"color": "#f06431"},
         "comment": {"color": "#a57a4c"},
-        "comment_bock": {"color": "#a57a4c"},
+        "comment_block": {"color": "#a57a4c"},
         "decorator": {"color": "#088649"},
         "default": {"background": "#221a0f", "color": "#fbebd4"},
         "double_quoted_fstring": {"color": "#889b4a"},

@@ -10,7 +10,7 @@ DESERT_THEME = {
     "python": {
         "class_name": {"color": "#ffffff"},
         "comment": {"color": "#87ceeb"},
-        "comment_bock": {"color": "#87ceeb"},
+        "comment_block": {"color": "#87ceeb"},
         "decorator": {"color": "#ffffff"},
         "default": {"background": "#333333", "color": "#ffffff"},
         "double_quoted_fstring": {"color": "#ffffff"},

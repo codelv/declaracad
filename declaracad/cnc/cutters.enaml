@@ -13,7 +13,7 @@ from math import sin, cos, radians, pi
 from atom.api import Int, Float
 from declaracad.parts.display import Axis
 from declaracad.occ.api import (
-    Looper, Transform, Part, Chamfer, Cylinder, Cut,
+    Looper, Transform, Part, Chamfer, ChamferData, Cylinder, Cut,
     Revol, Polyline, Wedge, Rotate, Face, Fuse
 )
 from enaml.core.declarative import d_, d_func
@@ -134,13 +134,15 @@ enamldef ChamferMill(Tool): drill:
     Chamfer:
         material = parent.material
         transparency = parent.transparency
-        attr r = diameter/2*0.99
-        attr d1 = r
-        attr d2 = r*(pi/2-sin(radians(angle/2)))
+        #disabled = True
         operations = [
-            (d1, d2, self.children[0].topology.faces[2])
+            ChamferData(
+                angle=radians(angle/2), 
+                distance=diameter/2, 
+                face=cyl.topology.faces[2],
+                edge=cyl.topology.edges[2])
         ]
-        Cylinder:
+        Cylinder: cyl:
             radius = diameter/2
             height = length
 

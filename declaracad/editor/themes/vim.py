@@ -10,7 +10,7 @@ VIM_THEME = {
     "python": {
         "class_name": {"color": "#cccccc"},
         "comment": {"color": "#000080"},
-        "comment_bock": {"color": "#000080"},
+        "comment_block": {"color": "#000080"},
         "decorator": {"color": "#cccccc"},
         "double_quoted_fstring": {"color": "#cd0000"},
         "double_quoted_string": {"color": "#cd0000"},

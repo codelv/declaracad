@@ -10,7 +10,7 @@ DEFAULT_THEME = {
     "python": {
         "class_name": {"color": "#0000FF", "font-weight": "bold"},
         "comment": {"color": "#408080", "font-style": "italic"},
-        "comment_bock": {"color": "#408080", "font-style": "italic"},
+        "comment_block": {"color": "#408080", "font-style": "italic"},
         "decorator": {"color": "#AA22FF"},
         "double_quoted_fstring": {"color": "#BA2121"},
         "double_quoted_string": {"color": "#BA2121"},

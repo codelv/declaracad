@@ -10,7 +10,7 @@ DARKERDESERT_THEME = {
     "python": {
         "class_name": {"color": "#9090a0"},
         "comment": {"color": "#5080a0"},
-        "comment_bock": {"color": "#5080a0"},
+        "comment_block": {"color": "#5080a0"},
         "decorator": {"color": "#9090a0"},
         "default": {"background": "#121212", "color": "#9090a0"},
         "double_quoted_fstring": {"color": "#a16261"},

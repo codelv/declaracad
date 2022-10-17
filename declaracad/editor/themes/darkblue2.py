@@ -10,7 +10,7 @@ DARKBLUE2_THEME = {
     "python": {
         "class_name": {"color": "#fff8dc"},
         "comment": {"color": "#66cdaa", "font-style": "italic"},
-        "comment_bock": {"color": "#66cdaa", "font-style": "italic"},
+        "comment_block": {"color": "#66cdaa", "font-style": "italic"},
         "decorator": {"color": "#fff8dc"},
         "default": {"background": "#233b5a", "color": "#fff8dc"},
         "double_quoted_fstring": {"color": "#7fffd4"},

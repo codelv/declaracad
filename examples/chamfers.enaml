@@ -4,8 +4,8 @@ See https://dev.opencascade.org/doc/overview/html/occt_user_guides__modeling_alg
 for more on how this works.
 
 """
-
-from declaracad.occ.api import Part, Box, Chamfer
+from math import radians
+from declaracad.occ.api import Part, Box, Chamfer, ChamferData, Cylinder
 
 
 enamldef Assembly(Part):
@@ -80,3 +80,19 @@ enamldef Assembly(Part):
             dx = 200
             dy = 200
             dz = 200
+            
+    Chamfer:
+        # Using ChamferData
+        color = 'teal'
+        operations = [
+            ChamferData(
+                angle=radians(30), 
+                distance=50, 
+                edge=cyl.topology.edges[0], 
+                face=cyl.topology.faces[1],
+            )
+        ]
+        Cylinder: cyl:
+            position = (400, 400, 0)
+            radius = 100
+            height = 200
