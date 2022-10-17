@@ -103,7 +103,7 @@ class OccChamfer(OccOperation, ProxyChamfer):
         chamfer = BRepFilletAPI_MakeChamfer(shape)
         for item in operations:
             edge = None
-            angle = d.angle
+            angle: float = 0
             d1, d2 = d.distance, d.distance2 or d.distance
             if isinstance(item, (tuple, list)):
                 face = item[-1]
