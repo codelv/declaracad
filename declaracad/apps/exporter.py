@@ -9,7 +9,6 @@ Created on Aug 4, 2018
 
 @author: jrm
 """
-import faulthandler
 import json
 import sys
 import time
@@ -30,8 +29,6 @@ def main(**kwargs):
         A jsonpickle dumped exporter
 
     """
-    faulthandler.enable()
-
     model = kwargs.pop("model")
     output = kwargs.pop("output")
     # An Application is required
