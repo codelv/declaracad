@@ -9,6 +9,8 @@ Created on Sep 28, 2016
 
 @author: jrm
 """
+from typing import Any, Optional, Union
+
 from atom.api import (
     Atom,
     Bool,
@@ -24,7 +26,7 @@ from atom.api import (
 )
 from enaml.core.declarative import d_
 
-from .geom import Direction, Point, coerce_direction
+from .geom import Direction, Point, coerce_direction, coerce_point
 from .shape import ProxyShape, Shape, TopoDS_Shape
 
 
@@ -37,25 +39,22 @@ class ProxyBooleanOperation(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: BooleanOperation)
 
-    def set_disabled(self, disabled):
+    def set_disabled(self, disabled: bool):
         raise NotImplementedError
 
-    def set_shape1(self, shape):
+    def set_shape1(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_shape2(self, shape):
+    def set_shape2(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_unify(self, unify):
+    def set_unify(self, unify: bool):
         raise NotImplementedError
 
-    def set_fix(self, fix):
+    def set_fix(self, fix: bool):
         raise NotImplementedError
 
-    def set_parallel(self, parallel):
-        raise NotImplementedError
-
-    def _do_operation(self, shape1, shape2):
+    def set_parallel(self, parallel: bool):
         raise NotImplementedError
 
 
@@ -83,16 +82,16 @@ class ProxyFillet(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Fillet)
 
-    def set_disabled(self, disabled):
+    def set_disabled(self, disabled: bool):
         raise NotImplementedError
 
-    def set_radius(self, r):
+    def set_radius(self, r: float):
         raise NotImplementedError
 
-    def set_operations(self, operations):
+    def set_operations(self, operations: list):
         raise NotImplementedError
 
-    def set_shape_type(self, shape_type):
+    def set_shape_type(self, shape_type: str):
         raise NotImplementedError
 
 
@@ -125,22 +124,22 @@ class ProxyOffset(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Offset)
 
-    def set_shape(self, shape):
+    def set_shape(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_closed(self, closed):
+    def set_closed(self, closed: bool):
         raise NotImplementedError
 
-    def set_offset(self, offset):
+    def set_offset(self, offset: float):
         raise NotImplementedError
 
-    def set_offset_mode(self, mode):
+    def set_offset_mode(self, mode: str):
         raise NotImplementedError
 
-    def set_intersection(self, enabled):
+    def set_intersection(self, enabled: bool):
         raise NotImplementedError
 
-    def set_join_type(self, mode):
+    def set_join_type(self, mode: str):
         raise NotImplementedError
 
     def set_as_face(self, enabled: bool):
@@ -156,7 +155,7 @@ class ProxyThickSolid(ProxyOffset):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: ThickSolid)
 
-    def set_faces(self, faces):
+    def set_faces(self, faces: list):
         raise NotImplementedError
 
 
@@ -164,43 +163,43 @@ class ProxyPipe(ProxyOffset):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Pipe)
 
-    def set_spline(self, spline):
+    def set_spline(self, spline: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_profile(self, profile):
+    def set_profile(self, profile: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_fill_mode(self, mode):
+    def set_fill_mode(self, mode: str):
         raise NotImplementedError
 
 
 class ProxyAbstractRibSlot(ProxyOperation):
     #: Abstract class
 
-    def set_shape(self, shape):
+    def set_shape(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_contour(self, contour):
+    def set_contour(self, contour: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_plane(self, plane):
+    def set_plane(self, plane: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_fuse(self, fuse):
+    def set_fuse(self, fuse: bool):
         raise NotImplementedError
 
 
 class ProxyDraftAngle(ProxyOperation):
-    def set_disabled(self, disabled):
+    def set_disabled(self, disabled: bool):
         raise NotImplementedError
 
-    def set_angle(self, angle):
+    def set_angle(self, angle: float):
         raise NotImplementedError
 
-    def set_faces(self, faces):
+    def set_faces(self, faces: list):
         raise NotImplementedError
 
-    def set_operations(self, operations):
+    def set_operations(self, operations: list):
         raise NotImplementedError
 
 
@@ -208,13 +207,10 @@ class ProxyLinearForm(ProxyAbstractRibSlot):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: LinearForm)
 
-    def set_direction(self, direction):
+    def set_direction1(self, direction: Optional[Union[Direction, tuple, list]]):
         raise NotImplementedError
 
-    def set_direction1(self, direction):
-        raise NotImplementedError
-
-    def set_modify(self, modify):
+    def set_modify(self, modify: bool):
         raise NotImplementedError
 
 
@@ -222,13 +218,13 @@ class ProxyRevolutionForm(ProxyAbstractRibSlot):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: RevolutionForm)
 
-    def set_height1(self, direction):
+    def set_height1(self, height: float):
         raise NotImplementedError
 
-    def set_height2(self, direction):
+    def set_height2(self, height: float):
         raise NotImplementedError
 
-    def set_sliding(self, sliding):
+    def set_sliding(self, sliding: bool):
         raise NotImplementedError
 
 
@@ -236,13 +232,13 @@ class ProxyThruSections(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: ThruSections)
 
-    def set_solid(self, solid):
+    def set_solid(self, solid: bool):
         raise NotImplementedError
 
-    def set_ruled(self, ruled):
+    def set_ruled(self, ruled: bool):
         raise NotImplementedError
 
-    def set_precision(self, pres3d):
+    def set_precision(self, pres3d: float):
         raise NotImplementedError
 
 
@@ -250,10 +246,10 @@ class ProxyTransform(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Transform)
 
-    def set_shape(self, shape):
+    def set_shape(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_operations(self, operations):
+    def set_operations(self, operations: list["TransformOperation"]):
         raise NotImplementedError
 
 
@@ -271,10 +267,10 @@ class ProxyNormalProjection(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: NormalProjection)
 
-    def set_shape(self, shape):
+    def set_shape(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_max_distance(self, distance):
+    def set_max_distance(self, distance: float):
         raise NotImplementedError
 
 
@@ -282,13 +278,13 @@ class ProxyExtend(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Extend)
 
-    def set_shape(self, shape):
+    def set_shape(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
         raise NotImplementedError
 
-    def set_mode(self, mode):
+    def set_mode(self, mode: str):
         raise NotImplementedError
 
-    def set_parameters(self, parameters):
+    def set_operations(self, operations: list):
         raise NotImplementedError
 
 
@@ -298,7 +294,7 @@ class Operation(Shape):
     #: Reference to the implementation control
     proxy = Typed(ProxyOperation)
 
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         if change["name"] == "axis":
             dx, dy, dz = self.x, self.y, self.z
             if change.get("oldvalue"):
@@ -343,7 +339,7 @@ class BooleanOperation(Operation):
     parallel = d_(Bool(False))
 
     @observe("shape1", "shape2", "unify", "fix", "parallel", "disabled")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(BooleanOperation, self)._update_proxy(change)
 
 
@@ -497,7 +493,7 @@ class Fillet(Operation):
     operations = d_(List()).tag(view=True, group="Fillet")
 
     @observe("shape_type", "radius", "operations", "disabled")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Fillet, self)._update_proxy(change)
 
 
@@ -543,7 +539,7 @@ class Chamfer(Operation):
     operations = d_(List()).tag(view=True, group="Chamfer")
 
     @observe("distance", "distance2", "operations", "disabled")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Chamfer, self)._update_proxy(change)
 
 
@@ -612,7 +608,7 @@ class Offset(Operation):
         "shape",
         "as_face",
     )
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Offset, self)._update_proxy(change)
 
 
@@ -675,7 +671,7 @@ class ThickSolid(Offset):
     faces = d_(List()).tag(view=True, group="ThickSolid")
 
     @observe("faces")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(ThickSolid, self)._update_proxy(change)
 
 
@@ -727,7 +723,7 @@ class Pipe(Operation):
     ).tag(view=True, group="Pipe")
 
     @observe("spline", "profile", "fill_mode")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Pipe, self)._update_proxy(change)
 
 
@@ -802,7 +798,7 @@ class DraftAngle(Operation):
     operations = d_(List(Parameters))
 
     @observe("faces", "angle", "operations", "disabled")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -848,24 +844,24 @@ class ThruSections(Operation):
     precision = d_(Float(1e-6)).tag(view=True, group="Through Sections")
 
     @observe("solid", "ruled", "precision")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(ThruSections, self)._update_proxy(change)
 
 
 class TransformOperation(Atom):
     #: Point
-    point = Coerced(tuple)
+    point = Coerced(Point, coercer=coerce_point)
 
-    def _default_point(self):
-        return (0.0, 0.0, 0.0)
+    def _default_point(self) -> Point:
+        return Point(0.0, 0.0, 0.0)
 
 
 class Rotate(TransformOperation):
     #: Rotation axis
-    direction = Coerced(tuple)
+    direction = Coerced(Direction, coercer=coerce_direction)
 
-    def _default_direction(self):
-        return (0.0, 0.0, 1.0)
+    def _default_direction(self) -> Direction:
+        return Direction(0.0, 0.0, 1.0)
 
     #: Angle
     angle = Float(0.0, strict=False)
@@ -877,14 +873,14 @@ class Translate(TransformOperation):
     y = Float(0.0, strict=False)
     z = Float(0.0, strict=False)
 
-    def __init__(self, x=0, y=0, z=0, **kwargs):
+    def __init__(self, x: float = 0, y: float = 0, z: float = 0, **kwargs):
         super(Translate, self).__init__(x=x, y=y, z=z, **kwargs)
 
 
 class Scale(TransformOperation):
     s = Float(1.0, strict=False)
 
-    def __init__(self, s=1, **kwargs):
+    def __init__(self, s: float = 1, **kwargs):
         super(Scale, self).__init__(s=s, **kwargs)
 
 
@@ -897,7 +893,7 @@ class Mirror(TransformOperation):
     #: Mirror as plane
     plane = Bool()
 
-    def __init__(self, x=0, y=0, z=0, **kwargs):
+    def __init__(self, x: float = 0, y: float = 0, z: float = 0, **kwargs):
         super(Mirror, self).__init__(x=x, y=y, z=z, **kwargs)
 
 
@@ -959,7 +955,7 @@ class Transform(Operation):
     operations = d_(List(TransformOperation))
 
     @observe("operations")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1005,5 +1001,5 @@ class Extend(Operation):
     operations = d_(List())
 
     @observe("shape", "mode", "operations")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)

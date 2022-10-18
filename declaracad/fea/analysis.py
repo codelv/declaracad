@@ -9,6 +9,8 @@ Created on Sept 1, 2021
 
 @author: jrm
 """
+from typing import Any
+
 from atom.api import Bool, Coerced, Enum, ForwardTyped, Value, observe
 from enaml.core.declarative import d_, d_func
 
@@ -22,7 +24,7 @@ class ProxyAnalysis(ProxyShape):
     def set_source(self, source):
         raise NotImplementedError
 
-    def set_gravity(self, gravity):
+    def set_gravity(self, gravity: Direction):
         raise NotImplementedError
 
 
@@ -90,5 +92,5 @@ class Analysis(Shape):
         pass
 
     @observe("gravity")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)

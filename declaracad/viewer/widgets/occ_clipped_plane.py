@@ -7,8 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 @author: jrm
 """
+from typing import Any
+
 from atom.api import Bool, Float, ForwardTyped, Tuple, Typed, observe
-from enaml.colors import ColorMember
+from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_
 from enaml.widgets.control import Control, ProxyControl
 
@@ -17,22 +19,22 @@ class ProxyOccViewerClippedPlane(ProxyControl):
     #: A reference to the ClippedPlane declaration.
     declaration = ForwardTyped(lambda: OccViewerClippedPlane)
 
-    def set_enabled(self, enabled):
+    def set_enabled(self, enabled: bool):
         raise NotImplementedError
 
-    def set_capping(self, enabled):
+    def set_capping(self, enabled: bool):
         raise NotImplementedError
 
-    def set_capping_hashed(self, enabled):
+    def set_capping_hashed(self, enabled: bool):
         raise NotImplementedError
 
-    def set_capping_color(self, color):
+    def set_capping_color(self, color: Color):
         raise NotImplementedError
 
-    def set_position(self, position):
+    def set_position(self, position: tuple[float, float, float]):
         raise NotImplementedError
 
-    def set_direction(self, direction):
+    def set_direction(self, direction: tuple[float, float, float]):
         raise NotImplementedError
 
 
@@ -69,7 +71,7 @@ class OccViewerClippedPlane(Control):
         "capping_hatched",
         "capping_color",
     )
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         """An observer which sends state change to the proxy."""
         # The superclass handler implementation is sufficient.
         super(OccViewerClippedPlane, self)._update_proxy(change)

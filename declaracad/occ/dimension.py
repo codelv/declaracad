@@ -9,6 +9,8 @@ Created on March 25, 2020
 
 @author: jrm
 """
+from typing import Any
+
 from atom.api import Bool, Coerced, Float, ForwardTyped, List, Str, Typed, observe
 from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_
@@ -121,7 +123,7 @@ class Dimension(ToolkitObject):
         "show_units",
         "units",
     )
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Dimension, self)._update_proxy(change)
 
     def show(self):

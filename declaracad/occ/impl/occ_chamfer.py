@@ -22,7 +22,7 @@ from OCCT.TColgp import TColgp_Array1OfPnt2d
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 from declaracad.core.utils import log
-from declaracad.occ.algo import ProxyChamfer, ChamferData
+from declaracad.occ.algo import ChamferData, ProxyChamfer
 
 from .occ_algo import OccOperation
 from .topology import Topology

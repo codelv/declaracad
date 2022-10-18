@@ -11,7 +11,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from math import pi
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from atom.api import (
     Bool,
@@ -405,7 +405,7 @@ class Shape(ToolkitObject):
         "direction",
         "rotation",
     )
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
     @observe("proxy.shape")
@@ -642,7 +642,7 @@ class Box(Shape):
     # TODO: Handle other constructors
 
     @observe("dx", "dy", "dz")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -690,7 +690,7 @@ class Cone(Shape):
     apex = Property(lambda self: self.proxy.get_apex())
 
     @observe("radius", "radius2", "height", "angle")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -729,7 +729,7 @@ class Cylinder(Shape):
     angle = d_(Float(0, strict=False)).tag(view=True)
 
     @observe("radius", "height", "angle")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -776,7 +776,7 @@ class Tube(Shape):
     angle = d_(Float(0, strict=False)).tag(view=True)
 
     @observe("radius", "radius2", "height", "angle")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -822,7 +822,7 @@ class HalfSpace(Shape):
     side = d_(Coerced(Point, coercer=coerce_point))
 
     @observe("surface", "side")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(HalfSpace, self)._update_proxy(change)
 
 
@@ -874,7 +874,7 @@ class Prism(Shape):
     canonize = d_(Bool(True)).tag(view=True)
 
     @observe("shape", "vector", "infinite", "canonize")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Prism, self)._update_proxy(change)
 
 
@@ -936,7 +936,7 @@ class Sphere(Shape):
     angle3 = d_(FloatRange(low=-pi / 2, high=pi / 2, value=pi / 2)).tag(view=True)
 
     @observe("radius", "angle", "angle2", "angle3")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Sphere, self)._update_proxy(change)
 
 
@@ -982,7 +982,7 @@ class Torus(Shape):
     angle3 = d_(Float(0, strict=False)).tag(view=True)
 
     @observe("radius", "radius2", "angle", "angle2", "angle3")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Torus, self)._update_proxy(change)
 
 
@@ -1028,7 +1028,7 @@ class Wedge(Shape):
     # TODO: Handle other constructors
 
     @observe("dx", "dy", "dz", "itx")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Wedge, self)._update_proxy(change)
 
 
@@ -1065,7 +1065,7 @@ class Revol(Shape):
     angle = d_(Float(0, strict=False)).tag(view=True)
 
     @observe("shape", "angle")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super(Revol, self)._update_proxy(change)
 
 

@@ -10,6 +10,7 @@ Created on Sep 26, 2016
 @author: jrm
 """
 import math
+from typing import Any
 
 from atom.api import (
     Atom,
@@ -341,7 +342,7 @@ class OccViewer(Control):
     )
     grid_colors = d_(Coerced(tuple, coercer=color_pair_coercer))
 
-    def _default_grid_colors(self):
+    def _default_grid_colors(self) -> tuple[Color, Color]:
         return (parse_color("#888"), parse_color("#444"))
 
     #: Show tahedron
@@ -350,7 +351,7 @@ class OccViewer(Control):
     #: Background gradient this is corecred from a of strings
     background_gradient = d_(Coerced(tuple, coercer=color_pair_coercer))
 
-    def _default_background_gradient(self):
+    def _default_background_gradient(self) -> tuple[Color, Color]:
         return (parse_color("white"), parse_color("silver"))
 
     #: Default shape rendering color if none is defined
@@ -414,7 +415,7 @@ class OccViewer(Control):
     #: Lights
     lights = d_(List(ViewerLight))
 
-    def _default_lights(self):
+    def _default_lights(self) -> list[ViewerLight]:
         headlight = ViewerLight(type="directional", color="white", headlight=True)
         ambient = ViewerLight(type="ambient", color="white", intensity=0.95)
         return [headlight, ambient]
@@ -464,7 +465,7 @@ class OccViewer(Control):
         "animations",
         "display_units",
     )
-    def _update_proxy(self, change: dict):
+    def _update_proxy(self, change: dict[str, Any]):
         """An observer which sends state change to the proxy."""
         # The superclass handler implementation is sufficient.
         super(OccViewer, self)._update_proxy(change)

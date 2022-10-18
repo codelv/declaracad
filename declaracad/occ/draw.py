@@ -395,10 +395,10 @@ class Edge(Shape):
     reverse = d_(Bool()).tag(view=True)
 
     @observe("reverse", "as_wire")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
-    def get_value_at(self, t, derivative=0):
+    def get_value_at(self, t: float, derivative: int = 0):
         """Get the value of the curve derivative at t. If the edge has no
         internal parametric curve representation this will throw an error.
 
@@ -443,15 +443,15 @@ class Line(Edge):
     points = d_(List(Coerced(Point, coercer=coerce_point)))
 
     @property
-    def start(self):
+    def start(self) -> Point:
         return coerce_point(self.proxy.curve.StartPoint())
 
     @property
-    def end(self):
+    def end(self) -> Point:
         return coerce_point(self.proxy.curve.EndPoint())
 
     @observe("points")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -560,7 +560,7 @@ class Circle(Edge):
     radius = d_(Float(1, strict=False)).tag(view=True)
 
     @observe("radius")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -593,7 +593,7 @@ class Ellipse(Edge):
     minor_radius = d_(Float(1, strict=False)).tag(view=True)
 
     @observe("major_radius", "minor_radius")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -647,15 +647,15 @@ class Hyperbola(Edge):
     minor_radius = d_(Float(1, strict=False)).tag(view=True)
 
     @property
-    def start(self):
+    def start(self) -> Point:
         return coerce_point(self.proxy.curve.StartPoint())
 
     @property
-    def end(self):
+    def end(self) -> Point:
         return coerce_point(self.proxy.curve.EndPoint())
 
     @observe("major_radius", "minor_radius")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -692,15 +692,15 @@ class Parabola(Edge):
     focal_length = d_(Float(1, strict=False)).tag(view=True)
 
     @property
-    def start(self):
+    def start(self) -> Point:
         return coerce_point(self.proxy.curve.StartPoint())
 
     @property
-    def end(self):
+    def end(self) -> Point:
         return coerce_point(self.proxy.curve.EndPoint())
 
     @observe("focal_length")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1019,7 +1019,7 @@ class Circuit(Wire):
     circles = d_(List(Coerced(Circle, coercer=coerce_circle)))
 
     @observe("offset", "circles")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1052,7 +1052,7 @@ class Rectangle(Wire):
     as_face = d_(Bool())
 
     @observe("width", "height", "rx", "ry", "as_face")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1115,7 +1115,7 @@ class Text(Shape):
         "horizontal_alignment",
         "vertical_alignment",
     )
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1156,7 +1156,7 @@ class Svg(Wire):
     fill_mode = d_(Enum("auto", "always", "never"))
 
     @observe("source", "fill_mode", "mirror", "center", "scale")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1197,7 +1197,7 @@ class Pdf(Wire):
     fill_mode = d_(Enum("auto", "always", "never"))
 
     @observe("source", "fill_mode", "mirror", "center", "scale")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1219,7 +1219,7 @@ class MiddlePath(Wire):
     join_type = d_(Enum("arc", "tangent", "intersection"))
 
     @observe("shapes", "mode", "join_type")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -1247,5 +1247,5 @@ class BSplineSurface(Shape):
     continuity = d_(Enum(2, 0, 1, 3, None))
 
     @observe("points", "deg_min", "deg_max", "continuity", "interpolate", "periodic")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)

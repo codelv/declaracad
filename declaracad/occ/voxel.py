@@ -9,6 +9,8 @@ Created on July 22, 2022
 
 @author: jrm
 """
+from typing import Any
+
 from atom.api import (
     Atom,
     Coerced,
@@ -78,5 +80,5 @@ class Voxel(Shape):
     fill = d_(Int(1))
 
     @observe("source", "deflection", "splits", "threads", "mode")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)

@@ -9,6 +9,8 @@ Created on Aug 3, 2021
 
 @author: jrm
 """
+from typing import Any
+
 from atom.api import (
     Atom,
     Bool,
@@ -200,7 +202,7 @@ class Node(Atom):
     data = Dict()
 
     @observe("color", "mass", "position", "force", "torque", "fixed")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         setter = getattr(self.proxy, "set_%s" % change["name"])
         setter(change["value"])
 
@@ -249,7 +251,7 @@ class Element(Atom):
     data = Dict()
 
     @observe("front_color", "back_color")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         setter = getattr(self.proxy, "set_%s" % change["name"])
         setter(change["value"])
 

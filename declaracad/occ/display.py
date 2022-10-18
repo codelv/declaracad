@@ -9,6 +9,7 @@ Created on Dec 27, 2020
 
 @author: jrm
 """
+from typing import Any
 
 from atom.api import Bool, Coerced, Float, ForwardTyped, Str, Tuple, Typed, observe
 from enaml.colors import Color, ColorMember
@@ -23,16 +24,16 @@ class ProxyDisplayItem(ProxyControl):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: DisplayItem)
 
-    def set_position(self, position):
+    def set_position(self, position: Point):
         raise NotImplementedError
 
-    def set_color(self, color):
+    def set_color(self, color: Color):
         raise NotImplementedError
 
-    def set_transparency(self, transparency):
+    def set_transparency(self, transparency: float):
         raise NotImplementedError
 
-    def set_direction(self, direction):
+    def set_direction(self, direction: Direction):
         raise NotImplementedError
 
 
@@ -50,10 +51,10 @@ class ProxyDisplayArrow(ProxyDisplayItem):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: DisplayArrow)
 
-    def set_cone_size(self, size):
+    def set_cone_size(self, size: tuple[float, float]):
         raise NotImplementedError
 
-    def set_tube_size(self, size):
+    def set_tube_size(self, size: tuple[float, float]):
         raise NotImplementedError
 
 
@@ -61,13 +62,13 @@ class ProxyDisplayText(ProxyDisplayItem):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: DisplayText)
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         raise NotImplementedError
 
-    def set_size(self, size):
+    def set_size(self, size: float):
         raise NotImplementedError
 
-    def set_font(self, font):
+    def set_font(self, font: str):
         raise NotImplementedError
 
 
@@ -92,25 +93,25 @@ class DisplayItem(ToolkitObject):
     #: The transparency of the item
     transparency = d_(Float(strict=False))
 
-    def _default_color(self):
+    def _default_color(self) -> Color:
         return Color(0, 0, 0)
 
     #: A tuple or list of the (x, y, z) direction of this shape. This is
     #: coerced into a Point. The direction is relative to the dimensions axis.
     position = d_(Coerced(Point, coercer=coerce_point))
 
-    def _default_position(self):
+    def _default_position(self) -> Point:
         return Point(0, 0, 0)
 
     #: A tuple or list of the (x, y, z) direction of this shape. This is
     #: coerced into a Point. The direction is relative to the dimensions axis.
     direction = d_(Coerced(Direction, coercer=coerce_direction))
 
-    def _default_direction(self):
-        return Point(0, 0, 1)
+    def _default_direction(self) -> Direction:
+        return Direction(0, 0, 1)
 
     @observe("position", "color", "direction")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
     def show(self):
@@ -151,14 +152,14 @@ class DisplayArrow(DisplayItem):
     #: A tuple of (radius, length)
     tube_size = d_(Tuple())
 
-    def _default_cone_size(self):
+    def _default_cone_size(self) -> tuple[float, float]:
         return (1, 2)
 
-    def _default_tube_size(self):
+    def _default_tube_size(self) -> tuple[float, float]:
         return (0.5, 8)
 
     @observe("cone_size", "tube_size")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
 
@@ -178,5 +179,5 @@ class DisplayText(DisplayItem):
     font = d_(Str())
 
     @observe("text", "size", "font")
-    def _update_proxy(self, change):
+    def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
