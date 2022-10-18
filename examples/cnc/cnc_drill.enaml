@@ -2,7 +2,7 @@
 from math import radians
 from declaracad.parts.display import Axis
 from declaracad.occ.api import *
-from declaracad.cnc.api import Job, TwistDrill, JobSimulation, DrillingCycle
+from declaracad.cnc.api import Job, TwistDrill, JobSimulation, DrillingOperation
 
 
 enamldef SimplePart(Part):
@@ -30,7 +30,7 @@ enamldef Assembly(Part):
         position = (50, 50)
     Job: j:
         filename = 'cnc_drill.nc'
-        DrillingCycle:
+        DrillingOperation:
             surface_speed = 100
             depth = -12
             retract = 5
