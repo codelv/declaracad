@@ -16,7 +16,7 @@ import enaml
 from atom.api import Enum, Float
 from OCCT.VrmlAPI import VrmlAPI_RepresentationOfShape, VrmlAPI_Writer
 
-from declaracad.occ.api import load_model
+from declaracad.occ.api import Shape
 from declaracad.viewer.plugin import ModelExporter
 
 
@@ -40,7 +40,7 @@ class VrmlExporter(ModelExporter):
 
             return OptionsForm
 
-    def export(self):
+    def export(self, shapes: list[Shape]):
         """Export a DeclaraCAD model from an enaml file to VRML based on the
         given options.
 
@@ -60,14 +60,11 @@ class VrmlExporter(ModelExporter):
         v = self.version
         output_path = self.path
 
-        # Load the enaml model file
-        parts = load_model(self.filename)
-
         # Remove old file
         if os.path.exists(output_path):
             os.remove(output_path)
 
-        for part in parts:
+        for part in shapes:
             # Render the part from the declaration
             s = part.render()
 

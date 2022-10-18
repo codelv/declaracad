@@ -14,6 +14,7 @@ from OCCT.IFSelect import IFSelect_RetDone
 from OCCT.IGESCAFControl import IGESCAFControl_Writer
 from OCCT.Interface import Interface_Static
 
+from declaracad.occ.api import Shape
 from declaracad.occ.impl.document import create_xcaf_document
 from declaracad.viewer.plugin import ModelExporter
 
@@ -64,10 +65,10 @@ class IgesExporter(ModelExporter):
 
             return OptionsForm
 
-    def export(self):
+    def export(self, shapes: list[Shape]):
         """Export a DeclaraCAD model to an IGES file based on the given options."""
         # Set all params
-        doc = create_xcaf_document(self.filename)
+        doc = create_xcaf_document(shapes)
 
         # Send it
         exporter = IGESCAFControl_Writer()

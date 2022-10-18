@@ -384,8 +384,15 @@ def occ_mesh_factory():
     return OccMesh
 
 
+def occ_export_factory():
+    from .occ_export import OccExport
+
+    return OccExport
+
+
 #: Part
 OCC_FACTORIES = {
+    "Export": occ_export_factory,
     "Part": occ_part_factory,
     "Face": occ_face_factory,
     "RawShape": occ_raw_shape_factory,

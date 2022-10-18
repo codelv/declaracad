@@ -18,7 +18,7 @@ from OCCT.BRepMesh import BRepMesh_IncrementalMesh
 from OCCT.StlAPI import StlAPI_Writer
 from OCCT.TopoDS import TopoDS_Compound
 
-from declaracad.occ.api import load_model
+from declaracad.occ.api import Shape
 from declaracad.viewer.plugin import ModelExporter
 
 
@@ -36,7 +36,7 @@ class StlExporter(ModelExporter):
 
             return OptionsForm
 
-    def export(self):
+    def export(self, shapes: list[Shape]):
         """Export a DeclaraCAD model from an enaml file to an STL based on the
         given options.
 
@@ -51,10 +51,7 @@ class StlExporter(ModelExporter):
         builder = BRep_Builder()
         builder.MakeCompound(compound)
 
-        # Load the enaml model file
-        parts = load_model(self.filename)
-
-        for part in parts:
+        for part in shapes:
             # Render the part from the declaration
             shape = part.render()
 

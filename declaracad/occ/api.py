@@ -78,6 +78,7 @@ from .shape import (  # noqa: F401
     Box,
     Cone,
     Cylinder,
+    Export,
     Face,
     HalfSpace,
     Material,

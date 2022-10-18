@@ -140,8 +140,11 @@ def main():
 
     exporter = subparsers.add_parser("export", help="Export the given file")
     exporter.set_defaults(func=launch_exporter)
+    exporter.add_argument("-m", "--model", dest="model", help="Model to export")
+    exporter.add_argument("-o", "--output", dest="output", help="Output filename")
     exporter.add_argument(
-        "options", help="File to export or json string of ExportOption parameters"
+        "--options",
+        help="json or ExportOption parameters",
     )
 
     renderer = subparsers.add_parser("render", help="Render screenshot of file")

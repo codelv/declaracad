@@ -16,6 +16,7 @@ from typing import Any, ClassVar
 from atom.api import (
     Bool,
     Coerced,
+    Dict,
     Event,
     Float,
     FloatRange,
@@ -29,7 +30,7 @@ from atom.api import (
     Typed,
     observe,
 )
-from enaml.colors import ColorMember
+from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject
@@ -40,6 +41,7 @@ from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape, TopoDS_Shell
 from declaracad.core.utils import log, process_events
 
 from .geom import (
+    BBox,
     Direction,
     Point,
     coerce_direction,
@@ -50,29 +52,34 @@ from .geom import (
 from .materials import Material, Texture
 
 
+class ProxyExport(ProxyControl):
+    #: A reference to the Shape declaration.
+    declaration = ForwardTyped(lambda: Export)
+
+
 class ProxyShape(ProxyControl):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Shape)
 
-    def set_position(self, position):
+    def set_position(self, position: Point):
         pass
 
-    def set_direction(self, direction):
+    def set_direction(self, direction: Direction):
         pass
 
     def set_axis(self, axis):
         raise NotImplementedError
 
-    def set_color(self, color):
+    def set_color(self, color: Color):
         pass
 
-    def set_transparency(self, alpha):
+    def set_transparency(self, alpha: float):
         pass
 
     def set_texture(self, texture):
         pass
 
-    def get_bounding_box(self):
+    def get_bounding_box(self) -> BBox:
         raise NotImplementedError
 
 
@@ -529,10 +536,10 @@ class Part(Shape):
         return self
 
     @property
-    def shapes(self):
+    def shapes(self) -> list[Shape]:
         return [child for child in self.children if isinstance(child, Shape)]
 
-    def initialize(self):
+    def initialize(self) -> None:
         if self.cached:
             self.is_initialized = True
             self.initialized()
@@ -540,7 +547,7 @@ class Part(Shape):
         else:
             super().initialize()
 
-    def insert_cached_part(self):
+    def insert_cached_part(self) -> None:
         """Create and insert the cached part into the parent."""
         key = f"{self.__class__.__qualname__}.{self.cache_key}"
         cached_part = Part.cached_parts.get(key)
@@ -564,7 +571,7 @@ class Part(Shape):
         self.cache = cached_part
         self.proxy = cached_part.proxy
 
-    def destroy(self):
+    def destroy(self) -> None:
         """A reimplemented destructor.
 
         If cached is set to True, destroy removes the shape from the view
@@ -1196,3 +1203,19 @@ class TopoShape(RawShape):
 
     def get_shape(self):
         return self.shape
+
+
+class Export(ToolkitObject):
+    """A block which exports the shape"""
+
+    #: Disable export
+    disabled = d_(Bool())
+
+    #: Shape to export
+    shape = d_(Instance(Shape))
+
+    #: Export filename
+    filename = d_(Str())
+
+    #: Export options
+    options = d_(Dict())

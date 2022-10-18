@@ -13,17 +13,17 @@ from OCCT.TDocStd import TDocStd_Document
 from OCCT.XCAFApp import XCAFApp_Application
 from OCCT.XCAFDoc import XCAFDoc_ColorGen, XCAFDoc_DocumentTool
 
-from declaracad.occ.api import load_model
+from declaracad.occ.api import Shape
 from declaracad.occ.impl.utils import color_to_quantity_color
 
 
-def create_xcaf_document(filename: str) -> TDocStd_Document:
+def create_xcaf_document(shapes: list[Shape]) -> TDocStd_Document:
     """Load the model and create an XCAF document for it.
 
     Parameters
     ----------
-    filename: str
-        The path to the file
+    shapes: list[Shape]
+        The list of shapes to add to the document
 
     Returns
     -------
@@ -41,10 +41,7 @@ def create_xcaf_document(filename: str) -> TDocStd_Document:
     # material_tool = XCAFDoc_DocumentTool.MaterialTool_(doc.Main())
     # notes_tool = XCAFDoc_DocumentTool.NotesTool_(doc.Main())
 
-    # Load the enaml model file
-    parts = load_model(filename)
-
-    for part in parts:
+    for part in shapes:
         # Render the part from the declaration
         part.render()
         for s in part.proxy.walk_shapes():

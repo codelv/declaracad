@@ -19,6 +19,7 @@ from OCCT.Interface import Interface_Static
 from OCCT.STEPCAFControl import STEPCAFControl_Writer
 from OCCT.TCollection import TCollection_HAsciiString
 
+from declaracad.occ.api import Shape
 from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
 from declaracad.viewer.plugin import ModelExporter
 
@@ -75,10 +76,10 @@ class StepExporter(ModelExporter):
 
             return OptionsForm
 
-    def export(self):
+    def export(self, shapes: list[Shape]):
         """Export a DeclaraCAD model to a STEP file based on the given options."""
         # Set all params
-        doc = create_xcaf_document(self.filename)
+        doc = create_xcaf_document(shapes)
 
         # Send it
         exporter = STEPCAFControl_Writer()

@@ -44,6 +44,8 @@ from declaracad.core.utils import (
     ProcessLineReceiver,
     get_bootstrap_cmd,
 )
+from declaracad.occ.api import Shape
+from declaracad.occ.exporters import EXPORTER_REGISTRY
 
 if TYPE_CHECKING:
     from declaracad.editor.plugin import Document
@@ -103,7 +105,7 @@ class ModelExporter(Atom):
         filename = os.path.splitext(self.filename)[0]
         return f"{filename}.{ext}"
 
-    def export(self):
+    def export(self, shapes: list[Shape]):
         """Export a DeclaraCAD model from an enaml file to a 3D model format
         with the given options.
 
@@ -462,12 +464,7 @@ class ViewerPlugin(Plugin):
 
     def _default_exporters(self) -> list[Type["ModelExporter"]]:
         """TODO: push to an ExtensionPoint"""
-        from declaracad.occ.exporters.iges.exporter import IgesExporter
-        from declaracad.occ.exporters.step.exporter import StepExporter
-        from declaracad.occ.exporters.stl.exporter import StlExporter
-        from declaracad.occ.exporters.vrml.exporter import VrmlExporter
-
-        return [IgesExporter, StlExporter, StepExporter, VrmlExporter]
+        return [f() for f in EXPORTER_REGISTRY.values()]
 
     # -------------------------------------------------------------------------
     # Plugin commands
@@ -481,7 +478,7 @@ class ViewerPlugin(Plugin):
         cmd = get_bootstrap_cmd()
         data = jsonpickle.dumps(options)
         assert data != "null", f"Exporter failed to serialize: {options}"
-        cmd.extend(["export", data])
+        cmd.extend(["export", "--options", data])
         log.debug(" ".join(cmd))
         protocol = ProcessLineReceiver()
         loop = asyncio.get_event_loop()
