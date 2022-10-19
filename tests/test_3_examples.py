@@ -20,7 +20,7 @@ EXAMPLES = glob("examples/*.enaml")
 
 
 @pytest.mark.parametrize("path", EXAMPLES)
-def test_example(qt_app, path):
+def test_example(qt_app, path: str):
     if "voxel" in path:
         pytest.mark.skip("Voxel test disabled")
         return

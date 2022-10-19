@@ -12,7 +12,7 @@ from declaracad.occ.impl.occ_factories import OCC_FACTORIES
 
 
 @pytest.mark.parametrize("name", OCC_FACTORIES.keys())
-def test_declaracad_factory(name):
+def test_declaracad_factory(name: str):
     if name == "Voxel":
         pytest.mark.skip("Voxel disbled")
         return
