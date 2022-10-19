@@ -401,6 +401,7 @@ class Shape(ToolkitObject):
                 return self.proxy.get_bounding_box()
             except Exception as e:
                 log.warning(e)
+        return None
 
     #: Bounding box of this shape
     bbox = Property(_get_bounding_box, cached=True)

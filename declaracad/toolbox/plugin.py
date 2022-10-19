@@ -38,8 +38,8 @@ class Tool(Model):
     module = Value()
     doc = Str()
 
-    def _default_doc(self):
-        return inspect.getdoc(self.declaration)
+    def _default_doc(self) -> str:
+        return inspect.getdoc(self.declaration) or ""
 
     def _default_proxy(self):
         # app = Application.instance()
@@ -54,8 +54,8 @@ class ToolboxPlugin(Plugin):
     #: List of tools or
     tools = List(Tool)
 
-    def _refresh_tools(self):
-        tools = []
+    def _refresh_tools(self) -> None:
+        tools: list[Tool] = []
         excluded = ("load_model",)
         for module in get_all_modules():
             for name in dir(module):
@@ -73,7 +73,7 @@ class ToolboxPlugin(Plugin):
         log.debug("Tools loaded")
         self.tools = tools
 
-    def start(self):
+    def start(self) -> None:
         log = logging.getLogger("MARKDOWN")
         log.setLevel(logging.WARNING)
         app = Application.instance()

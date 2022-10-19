@@ -17,7 +17,7 @@ from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject
 
-from .shape import Direction, Point, coerce_direction, coerce_point
+from .shape import Direction, coerce_direction
 
 if TYPE_CHECKING:
     from OCCT.AIS import AIS_Dimension
