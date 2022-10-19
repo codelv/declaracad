@@ -42,10 +42,10 @@ class Tool(Model):
         return inspect.getdoc(self.declaration)
 
     def _default_proxy(self):
-        app = Application.instance()
-        factory = app.resolver.factories.get(self.name)
-        if factory:
-            return factory()
+        # app = Application.instance()
+        # factory = app.resolver.factories.get(self.name)
+        # if factory:
+        #     return factory()
         return UnknownProxy
 
 
