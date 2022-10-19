@@ -94,7 +94,7 @@ class Command(Atom):
 
     feedrate = Typed(float)
 
-    def _default_freedrate(self) -> Optional[float]:
+    def _default_feedrate(self) -> Optional[float]:
         if self.data and "F" in self.data:
             return float(self.data["F"])
         return None
