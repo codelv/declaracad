@@ -27,7 +27,7 @@ from atom.api import (
     Value,
     observe,
 )
-from enaml.colors import ColorMember
+from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_, d_func
 
 from .shape import Direction, Point, ProxyShape, Shape, coerce_direction, coerce_point
@@ -36,38 +36,38 @@ from .shape import Direction, Point, ProxyShape, Shape, coerce_direction, coerce
 class ProxyNode(Atom):
     declaration = ForwardTyped(lambda: Node)
 
-    def set_position(self, position):
+    def set_position(self, position: Point):
         raise NotImplementedError
 
-    def set_color(self, color):
+    def set_color(self, color: Color):
         raise NotImplementedError
 
-    def set_mass(self, mass):
+    def set_mass(self, mass: float):
         raise NotImplementedError
 
-    def set_force(self, force):
+    def set_force(self, force: Direction):
         raise NotImplementedError
 
-    def set_torque(self, torque):
+    def set_torque(self, torque: Direction):
         raise NotImplementedError
 
-    def set_fixed(self, fixed):
+    def set_fixed(self, fixed: bool):
         raise NotImplementedError
 
-    def get_displaced_position(self):
+    def get_displaced_position(self) -> Point:
         raise NotImplementedError
 
 
 class ProxyElement(Atom):
     declaration = ForwardTyped(lambda: Element)
 
-    def set_front_color(self, color):
+    def set_front_color(self, color: Color):
         raise NotImplementedError
 
-    def set_back_color(self, color):
+    def set_back_color(self, color: Color):
         raise NotImplementedError
 
-    def get_stress(self):
+    def get_stress(self) -> float:
         raise NotImplementedError
 
 
@@ -87,10 +87,10 @@ class ProxyMesh(ProxyShape):
     def find_volume(self, id) -> "Element":
         raise NotImplementedError
 
-    def set_source(self, source):
+    def set_source(self, source: str):
         raise NotImplementedError
 
-    def set_disabled(self, disabled):
+    def set_disabled(self, disabled: bool):
         raise NotImplementedError
 
 
@@ -177,13 +177,13 @@ class Node(Atom):
     position = Coerced(Point, coercer=coerce_point)
 
     #: Displaced position
-    def _get_displaced_position(self):
+    def _get_displaced_position(self) -> Point:
         return self.proxy.get_displaced_position()
 
     #: Displaced position after analysis
     displaced_position = Property(_get_displaced_position)
 
-    def _get_displacement(self):
+    def _get_displacement(self) -> Point:
         return self.displaced_position - self.position
 
     #: Get the delta between the original position and the displaced position
@@ -206,7 +206,7 @@ class Node(Atom):
         setter = getattr(self.proxy, "set_%s" % change["name"])
         setter(change["value"])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Node: x=%s y=%s z=%s>" % self.position[:]
 
 

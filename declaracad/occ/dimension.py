@@ -9,7 +9,7 @@ Created on March 25, 2020
 
 @author: jrm
 """
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from atom.api import Bool, Coerced, Float, ForwardTyped, List, Str, Typed, observe
 from enaml.colors import Color, ColorMember
@@ -17,38 +17,41 @@ from enaml.core.declarative import d_
 from enaml.widgets.control import ProxyControl
 from enaml.widgets.toolkit_object import ToolkitObject
 
-from .shape import Point, coerce_point
+from .shape import Direction, Point, coerce_direction, coerce_point
+
+if TYPE_CHECKING:
+    from OCCT.AIS import AIS_Dimension
 
 
 class ProxyDimension(ProxyControl):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Dimension)
 
-    def set_shapes(self, shapes):
+    def set_shapes(self, shapes: list):
         raise NotImplementedError
 
-    def set_display(self, display):
+    def set_display(self, display: bool):
         raise NotImplementedError
 
-    def set_color(self, color):
+    def set_color(self, color: Color):
         raise NotImplementedError
 
-    def set_direction(self, direction):
+    def set_direction(self, direction: Direction):
         raise NotImplementedError
 
-    def set_flyout(self, flyout):
+    def set_flyout(self, flyout: float):
         raise NotImplementedError
 
-    def set_extension_size(self, size):
+    def set_extension_size(self, size: float):
         raise NotImplementedError
 
-    def set_arrow_tail_size(self, size):
+    def set_arrow_tail_size(self, size: float):
         raise NotImplementedError
 
-    def set_show_units(self, show_units):
+    def set_show_units(self, show_units: bool):
         raise NotImplementedError
 
-    def set_units(self, units):
+    def set_units(self, units: str):
         raise NotImplementedError
 
 
@@ -90,15 +93,15 @@ class Dimension(ToolkitObject):
     #: Units
     units = d_(Str())
 
-    def _default_color(self):
+    def _default_color(self) -> Color:
         return Color(0, 0, 0)
 
     #: A tuple or list of the (x, y, z) direction of this shape. This is
     #: coerced into a Point. The direction is relative to the dimensions axis.
-    direction = d_(Coerced(Point, coercer=coerce_point))
+    direction = d_(Coerced(Direction, coercer=coerce_direction))
 
-    def _default_direction(self):
-        return Point(10, 10, 10)
+    def _default_direction(self) -> Direction:
+        return Direction(10, 10, 10)
 
     #: Set the flyout distance.
     flyout = d_(Float(0.0, strict=False))
@@ -126,7 +129,7 @@ class Dimension(ToolkitObject):
     def _update_proxy(self, change: dict[str, Any]):
         super(Dimension, self)._update_proxy(change)
 
-    def show(self):
+    def show(self) -> "AIS_Dimension":
         """Generates the dimension
 
         Returns

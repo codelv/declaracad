@@ -6,6 +6,8 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+from typing import Any, Optional
+
 from atom.api import Dict, Typed, set_default
 from OCCT.BRep import BRep_Builder, BRep_Tool
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
@@ -58,7 +60,7 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         "intersection": GeomAbs_Intersection,
     }
 
-    def update_shape(self, change=None):
+    def update_shape(self, change: Optional[dict[str, Any]] = None):
         d = self.declaration
         n = len(d.shapes)
         if n in (1, 3):
@@ -79,7 +81,7 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
         else:
             self.middle_path_3d(args)
 
-    def middle_path_3d(self, args):
+    def middle_path_3d(self, args: list):
         for i, s in enumerate(args[:]):
             if isinstance(s, TopoDS_Edge):
                 args[i] = BRepBuilderAPI_MakeWire(s).Wire()
@@ -139,11 +141,11 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
 
         self.shape = shape
 
-    def set_shapes(self, shapes):
+    def set_shapes(self, shapes: list[Shape]):
         self.update_shape()
 
-    def set_mode(self, mode):
+    def set_mode(self, mode: str):
         self.update_shape()
 
-    def set_join_type(self, join_type):
+    def set_join_type(self, join_type: str):
         self.update_shape()

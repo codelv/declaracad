@@ -11,7 +11,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from math import pi
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Optional
 
 from atom.api import (
     Bool,
@@ -253,7 +253,7 @@ class ProxyRevol(ProxyShape):
     def set_shape(self, shape):
         raise NotImplementedError
 
-    def set_angle(self, angle):
+    def set_angle(self, angle: float):
         raise NotImplementedError
 
 
@@ -299,7 +299,7 @@ class Shape(ToolkitObject):
     #: The tolerance to use for operations that may require it.
     tolerance = d_(Float(strict=False))
 
-    def _default_tolerance(self):
+    def _default_tolerance(self) -> float:
         return settings.tolerance
 
     #: Material
@@ -321,38 +321,38 @@ class Shape(ToolkitObject):
     texture = d_(Instance(Texture))
 
     #: Position alias
-    def _get_x(self):
+    def _get_x(self) -> float:
         return self.position.x
 
     @observe("position.x")
-    def _update_x(self, change):
+    def _update_x(self, change: dict[str, Any]):
         self.notify("x", change)
 
-    def _set_x(self, v):
+    def _set_x(self, v: float):
         self.position.x = v
 
     x = d_(Property(_get_x, _set_x))
 
-    def _get_y(self):
+    def _get_y(self) -> float:
         return self.position.y
 
     @observe("position.y")
-    def _update_y(self, change):
+    def _update_y(self, change: dict[str, Any]):
         self.notify("y", change)
 
-    def _set_y(self, v):
+    def _set_y(self, v: float):
         self.position.y = v
 
     y = d_(Property(_get_y, _set_y))
 
-    def _get_z(self):
+    def _get_z(self) -> float:
         return self.position.z
 
     @observe("position.z")
-    def _update_z(self, change):
+    def _update_z(self, change: dict[str, Any]):
         self.notify("z", change)
 
-    def _set_z(self, v):
+    def _set_z(self, v: float):
         self.position.z = v
 
     z = d_(Property(_get_z, _set_z))
@@ -361,7 +361,7 @@ class Shape(ToolkitObject):
     #: coerced into a Point.
     position = d_(Coerced(Point, coercer=coerce_point))
 
-    def _default_position(self):
+    def _default_position(self) -> Point:
         return Point(0, 0, 0)
 
     #: A tuple or list of the (u, v, w) normal vector of this shape. This is
@@ -369,7 +369,7 @@ class Shape(ToolkitObject):
     #: This is effectively the working plane.
     direction = d_(Coerced(Direction, coercer=coerce_direction))
 
-    def _default_direction(self):
+    def _default_direction(self) -> Direction:
         return Direction(0, 0, 1)
 
     #: Rotation about the normal vector in radians
@@ -387,13 +387,15 @@ class Shape(ToolkitObject):
     axis = d_(Property(_get_axis, _set_axis))
 
     def _get_topology(self):
+        if not self.proxy_is_active:
+            self.render()
         return self.proxy.topology
 
     #: A read only property that accesses the topology of the shape such
     #: as edges, faces, shells, solids, etc....
     topology = Property(_get_topology, cached=True)
 
-    def _get_bounding_box(self):
+    def _get_bounding_box(self) -> Optional[BBox]:
         if self.proxy.shape:
             try:
                 return self.proxy.get_bounding_box()
@@ -416,7 +418,7 @@ class Shape(ToolkitObject):
         super()._update_proxy(change)
 
     @observe("proxy.shape")
-    def _update_properties(self, change):
+    def _update_properties(self, change: dict[str, Any]):
         """Clear the cached references when the shape changes."""
         for k in ("bbox", "topology"):
             self.get_member(k).reset(self)
@@ -451,7 +453,7 @@ class Shape(ToolkitObject):
         self.proxy_is_active = True
         self.activated()
 
-    def render(self):
+    def render(self) -> TopoDS_Shape:
         """Generates and returns the actual shape from the declaration.
         Enaml does this automatically when it's included in the viewer so this
         is only neede when working with shapes manually.
@@ -468,7 +470,7 @@ class Shape(ToolkitObject):
             self.activate_proxy()
         return self.proxy.shape
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         qualname = self.__class__.__qualname__
         addr = f"0x{hex(id(self))}"
         name = self.name

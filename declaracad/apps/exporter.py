@@ -40,7 +40,7 @@ def main(**kwargs):
     if model and output:
         options = json.loads(kwargs.pop("options") or "{}")
         if options:
-            opts = ' '.join([f'{k}={v}' for k, v in options.items()])
+            opts = " ".join([f"{k}={v}" for k, v in options.items()])
             print(f"Exporting {model} to {output} with {opts}...")
         else:
             print(f"Exporting {model} to {output}...")
