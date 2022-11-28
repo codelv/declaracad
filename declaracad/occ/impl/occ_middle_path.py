@@ -124,10 +124,14 @@ class OccMiddlePath(OccWire, ProxyMiddlePath):
                     continue
             bisector, rev = bilo.GeomBis(arc, False)
             curve = bisector.Value()
-            t = curve.FirstParameter(), curve.LastParameter()
+
             # Use the basis curve or the type information is lost
-            c = curve.BasisCurve().Geom2dCurve()
-            edge = BRepBuilderAPI_MakeEdge(c, surf, *t).Edge()
+            t1, t2 = curve.FirstParameter(), curve.LastParameter()
+            n1, n2 = arc.FirstNode(), arc.SecondNode()
+            if n1.Infinite() or n2.Infinite():
+                edge = BRepBuilderAPI_MakeEdge(curve, surf).Edge()
+            else:
+                edge = BRepBuilderAPI_MakeEdge(curve, surf, t1, t2).Edge()
             self.graph[edge] = arc
 
         builder = BRep_Builder()
