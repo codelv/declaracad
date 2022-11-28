@@ -15,7 +15,7 @@ enamldef SimplePart(Part):
         Box:
             position = (-dx/2, -dy/2,  -dz)
             dx = 100
-            dy = 10
+            dy = 13
             dz = 5
         
         
@@ -29,7 +29,7 @@ enamldef Assembly(Part):
         SlottingOperation:
             surface_speed = 100
             slot_width = 10
-            tool = EndMill(diameter=10)
+            tool = EndMill(diameter=8)
             faces = [part.topology.faces[3]]
     JobSimulation:
         job = j
