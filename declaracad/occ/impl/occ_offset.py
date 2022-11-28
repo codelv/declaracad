@@ -14,7 +14,7 @@ from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.BRepOffset import BRepOffset_Pipe, BRepOffset_RectoVerso, BRepOffset_Skin
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 from declaracad.occ.algo import ProxyOffset, ProxyOffsetShape
 
@@ -51,9 +51,16 @@ class OccOffset(OccOperation, ProxyOffset):
         shape = Topology.cast_shape(self.get_shape_to_offset())
         if isinstance(shape, TopoDS_Edge):
             shape = BRepBuilderAPI_MakeWire(shape).Wire()
+        elif isinstance(shape, TopoDS_Compound):
+            topo = Topology(shape=shape)
+            first, *others = topo.faces
+            builder = BRepBuilderAPI_MakeFace(first)
+            for face in others:
+                builder.Add(face)
+            shape = builder.Face()
         elif not isinstance(shape, (TopoDS_Wire, TopoDS_Face)):
             t = type(shape)
-            raise TypeError("Unsupported child shape %s when using planar mode" % t)
+            raise TypeError(f"Unsupported child shape {t} when using planar mode")
         join_type = self.join_types[d.join_type]
         offset_shape = BRepOffsetAPI_MakeOffset(shape, join_type, not d.closed)
         offset_shape.Perform(d.offset, d.normal_distance)
