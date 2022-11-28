@@ -70,7 +70,15 @@ class OccOffset(OccOperation, ProxyOffset):
 
         result = Topology.cast_shape(offset_shape.Shape())
         if d.as_face:
-            self.shape = BRepBuilderAPI_MakeFace(result).Face()
+            if isinstance(result, TopoDS_Compound):
+                topo = Topology(shape=result)
+                first, *others = topo.wires
+                builder = BRepBuilderAPI_MakeFace(first)
+                for face in others:
+                    builder.Add(face)
+                self.shape = builder.Face()
+            else:
+                self.shape = BRepBuilderAPI_MakeFace(result).Face()
         else:
             self.shape = result
 
