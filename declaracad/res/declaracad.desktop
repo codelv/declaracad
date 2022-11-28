@@ -3,7 +3,7 @@ Type=Application
 Name=DeclaraCAD
 GenericName=DeclaraCAD
 Comment=A declaraive parametric 3D modeling application
-Exec=/usr/share/declaracad/declaracad
+Exec=QT_QPA_PLATFORM=xcb /usr/share/declaracad/declaracad
 Icon=/usr/share/declaracad/lib/declaracad/res/icons/declaracad.png
 Terminal=false
 Categories=Engineering;
