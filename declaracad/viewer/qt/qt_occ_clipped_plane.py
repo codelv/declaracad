@@ -6,11 +6,15 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+from typing import Optional
+
 from atom.api import Bool, Typed
+from enaml.colors import Color
 from enaml.qt.qt_control import QtControl
-from OCCT.gp import gp_Ax3, gp_Dir, gp_Pnt
+from OCCT.gp import gp_Ax3
 from OCCT.Graphic3d import Graphic3d_ClipPlane
 
+from declaracad.occ.geom import Direction, Point
 from declaracad.occ.impl.utils import color_to_quantity_color
 from declaracad.viewer.widgets.occ_clipped_plane import ProxyOccViewerClippedPlane
 
@@ -23,10 +27,10 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
     #: Updates blocked
     _updates_blocked = Bool(True)
 
-    def create_widget(self):
+    def create_widget(self) -> None:
         self.clip_plane = Graphic3d_ClipPlane()
 
-    def init_widget(self):
+    def init_widget(self) -> None:
         # super(QtOccViewerClippedPlane, self).init_widget()
         d = self.declaration
         self.set_enabled(d.enabled)
@@ -36,7 +40,7 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
         if d.capping_color:
             self.set_capping_color(d.capping_color)
 
-    def init_layout(self):
+    def init_layout(self) -> None:
         self._updates_blocked = False
         viewer = self.parent()
         clip_plane = self.clip_plane
@@ -45,7 +49,7 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
         #    ais_shp.AddClipPlane(clip_plane)
         self.update_viewer()
 
-    def destroy(self):
+    def destroy(self) -> None:
         viewer = self.parent()
         clip_plane = self.clip_plane
         clip_plane.SetOn(False)
@@ -62,7 +66,7 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
-    def update_viewer(self):
+    def update_viewer(self) -> None:
         if self._updates_blocked:
             return
         self.parent().ais_context.UpdateCurrentViewer()
@@ -70,22 +74,22 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
     # -------------------------------------------------------------------------
     # ProxyOccViewerCappedPlane API
     # -------------------------------------------------------------------------
-    def set_enabled(self, enabled):
+    def set_enabled(self, enabled: bool):
         self.clip_plane.SetOn(enabled)
         self.update_viewer()
 
-    def set_capping(self, capping):
+    def set_capping(self, capping: bool):
         self.clip_plane.SetCapping(capping)
         self.update_viewer()
 
-    def set_capping_hatched(self, hatched):
+    def set_capping_hatched(self, hatched: bool):
         if hatched:
             self.clip_plane.SetCappingHatchOn()
         else:
             self.clip_plane.SetCappingHatchOff()
         self.update_viewer()
 
-    def set_capping_color(self, color):
+    def set_capping_color(self, color: Optional[Color]) -> None:
         if not color:
             return
         c, t = color_to_quantity_color(color)
@@ -95,14 +99,19 @@ class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
         mat.SetDiffuseColor(c)
         clip_plane.SetCappingMaterial(mat)
 
-    def set_position(self, position, direction=None):
-        d = self.declaration
-        direction = direction or d.direction
+    def _update_position(
+        self,
+        position: Point,
+        direction: Direction,
+    ):
         clip_plane = self.clip_plane
         pln = clip_plane.ToPlane()
-        pln.SetPosition(gp_Ax3(gp_Pnt(*position), gp_Dir(*direction)))
+        pln.SetPosition(gp_Ax3(position.proxy, direction.proxy))
         clip_plane.SetEquation(pln)
         self.update_viewer()
 
-    def set_direction(self, direction):
-        self.set_position(self.declaration.position, direction)
+    def set_position(self, position: Point):
+        self._update_position(position, self.declaration.direction)
+
+    def set_direction(self, direction: Direction):
+        self._update_position(self.declaration.position, direction)

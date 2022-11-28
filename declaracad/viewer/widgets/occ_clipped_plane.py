@@ -9,10 +9,12 @@ The full license is in the file LICENSE, distributed with this software.
 """
 from typing import Any
 
-from atom.api import Bool, Float, ForwardTyped, Tuple, Typed, observe
+from atom.api import Bool, Coerced, ForwardTyped, Typed, observe
 from enaml.colors import Color, ColorMember
 from enaml.core.declarative import d_
 from enaml.widgets.control import Control, ProxyControl
+
+from declaracad.occ.geom import Direction, Point, coerce_direction, coerce_point
 
 
 class ProxyOccViewerClippedPlane(ProxyControl):
@@ -31,10 +33,10 @@ class ProxyOccViewerClippedPlane(ProxyControl):
     def set_capping_color(self, color: Color):
         raise NotImplementedError
 
-    def set_position(self, position: tuple[float, float, float]):
+    def set_position(self, position: Point):
         raise NotImplementedError
 
-    def set_direction(self, direction: tuple[float, float, float]):
+    def set_direction(self, direction: Direction):
         raise NotImplementedError
 
 
@@ -55,10 +57,16 @@ class OccViewerClippedPlane(Control):
     capping_color = d_(ColorMember())
 
     #: Position
-    position = d_(Tuple(Float(strict=False), default=(0, 0, 0)))
+    position = d_(Coerced(Point, coercer=coerce_point))
+
+    def _default_position(self):
+        return Point()
 
     #: Direction
-    direction = d_(Tuple(Float(strict=False), default=(1, 0, 0)))
+    direction = d_(Coerced(Direction, coercer=coerce_direction))
+
+    def _default_direction(self):
+        return Direction(1, 0, 0)
 
     # -------------------------------------------------------------------------
     # Observers
