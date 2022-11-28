@@ -10,9 +10,9 @@ Created on Aug 24, 2020
 @author: jrm
 """
 import asyncio
-import inspect
 import logging
 import warnings
+from inspect import iscoroutinefunction
 from queue import Empty, Queue
 from typing import Any, Callable
 
@@ -79,8 +79,7 @@ class Application(QtApplication):
         """Run any async deferred calls in the main ui loop."""
         while self.running:
             try:
-                task = self.queue.get(block=False)
-                await task
+                await self.queue.get(block=False)
             except Empty:
                 await asyncio.sleep(0.1)
             # except Exception as e:
@@ -111,9 +110,9 @@ class Application(QtApplication):
             the callback.
 
         """
-        if inspect.iscoroutinefunction(callback) or kwargs.pop("async_", None):
+        if iscoroutinefunction(callback) or kwargs.pop("async_", None):
             task = asyncio.create_task(callback(*args, **kwargs))
-            return self.add_task(task)
+            return self.queue.put(task)
         return super().deferred_call(callback, *args, **kwargs)
 
     def timed_call(self, ms: float, callback: Callable, *args: Any, **kwargs: Any):
@@ -134,11 +133,7 @@ class Application(QtApplication):
             the callback.
 
         """
-        if inspect.iscoroutinefunction(callback) or kwargs.pop("async_", None):
+        if iscoroutinefunction(callback) or kwargs.pop("async_", None):
             task = asyncio.create_task(callback(*args, **kwargs))
-            return super().timed_call(ms, self.add_task, task)
+            return super().timed_call(ms, self.queue.put, task)
         return super().timed_call(ms, callback, *args, **kwargs)
-
-    def add_task(self, task):
-        """Put a task into the queue"""
-        self.queue.put(task)
