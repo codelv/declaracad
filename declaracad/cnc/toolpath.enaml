@@ -103,7 +103,7 @@ enamldef Toolpath(Part): toolpath:
             wires = optimize_moves(wires, start_point, reverse)
         pos = start_point
         cmds = []
-        lift = (0, 0, self.clearance)
+        z = self.clearance
         for i, wire in enumerate(wires):
             points = list(Topology.discretize(wire, self.deflection))
             if reverse:
@@ -113,8 +113,8 @@ enamldef Toolpath(Part): toolpath:
                 rapid=True,
                 points=[
                     pos,
-                    pos + lift  if i > 0 else pos,
-                    next_point + lift,
+                    Point(pos.x, pos.y, z) if i > 0 else pos,
+                    Point(next_point.x, next_point.y, z),
                     next_point,
                 ]
             ))
@@ -123,8 +123,8 @@ enamldef Toolpath(Part): toolpath:
             pos = points[-1]
 
         # Add move to home
-        final_lift = (0, 0, end_point[2])
-        cmds.append(Movement(rapid=True, points=[pos, pos + final_lift,  end_point]))
+        final_lift = Point(pos.x, pos.y, end_point[2])
+        cmds.append(Movement(rapid=True, points=[pos, final_lift,  end_point]))
 
         # Save
         if self.filename:
