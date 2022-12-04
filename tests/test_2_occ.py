@@ -590,6 +590,21 @@ TYPE_TESTS = {
         height = 1
     """,
     ),
+    "polygon": (
+        "Wire",
+        """
+    Polygon:
+        points = [(1, 0), (1, 1), (0, 1)]
+    """,
+    ),
+    "polygon-as-face": (
+        "Face",
+        """
+    Polygon:
+        as_face = True
+        points = [(1, 0), (1, 1), (0, 1)]
+    """,
+    ),
 }
 
 
