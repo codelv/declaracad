@@ -60,8 +60,8 @@ tests:
     - isort --profile=black --check --diff declaracad tests
     - black --check --diff declaracad tests
     - flake8 --ignore=E501,E203,W503 declaracad tests
-    - yes | mypy declaracad --install-types || true
-    - mypy declaracad --ignore-missing-imports
+    # - yes | mypy declaracad --install-types || true
+    #- mypy declaracad --ignore-missing-imports
 
     # Run tests
     #- gdb -ex run -ex bt -ex quit --args python -m pytest tests -v --cov declaracad
