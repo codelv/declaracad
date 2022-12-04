@@ -9,6 +9,7 @@ The full license is in the file LICENSE, distributed with this software.
 from math import pi
 
 import pytest
+from OCCT import TopoDS
 from OCCT.TopoDS import TopoDS_Shape
 
 from declaracad.occ.api import (
@@ -520,3 +521,83 @@ def test_shapes_render(qt_app, name):
     options = {"from_string": True}
     assembly = load_model(source, options, ".enaml")[0]
     assert isinstance(assembly.render(), TopoDS_Shape)
+
+
+TYPE_TESTS = {
+    "circle": (
+        "Edge",
+        """
+    Circle:
+        radius = 2
+    """,
+    ),
+    "circle-as-wire": (
+        "Wire",
+        """
+    Circle:
+        as_wire = True
+        radius = 2
+    """,
+    ),
+    "circle-as-face": (
+        "Face",
+        """
+    Circle:
+        as_face = True
+        radius = 2
+    """,
+    ),
+    "ellipse": (
+        "Edge",
+        """
+    Ellipse:
+        major_radius = 2
+        minor_radius = 1
+    """,
+    ),
+    "ellipse-as-wire": (
+        "Wire",
+        """
+    Ellipse:
+        as_wire = True
+        major_radius = 2
+        minor_radius = 1
+    """,
+    ),
+    "ellipse-as-face": (
+        "Face",
+        """
+    Ellipse:
+        as_face = True
+        major_radius = 2
+        minor_radius = 1
+    """,
+    ),
+    "rect": (
+        "Wire",
+        """
+    Rectangle:
+        width = 2
+        height = 1
+    """,
+    ),
+    "rect-as-face": (
+        "Face",
+        """
+    Rectangle:
+        as_face = True
+        width = 2
+        height = 1
+    """,
+    ),
+}
+
+
+@pytest.mark.parametrize("name", TYPE_TESTS.keys())
+def test_shape_type(qt_app, name):
+    type_name, source = TYPE_TESTS[name]
+    options = {"from_string": True}
+    assembly = load_model(TEMPLATE % source, options, ".enaml")[0]
+    assembly.render()
+    expected_type = getattr(TopoDS, f"TopoDS_{type_name}")
+    assert isinstance(assembly.children[0].render(), expected_type)

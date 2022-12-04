@@ -110,7 +110,10 @@ class ProxyCircle(ProxyEdge):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Circle)
 
-    def set_radius(self, r):
+    def set_radius(self, r: float):
+        raise NotImplementedError
+
+    def set_as_face(self, as_face: bool):
         raise NotImplementedError
 
 
@@ -118,10 +121,13 @@ class ProxyEllipse(ProxyEdge):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Ellipse)
 
-    def set_major_radius(self, r):
+    def set_major_radius(self, r: float):
         raise NotImplementedError
 
-    def set_minor_radius(self, r):
+    def set_minor_radius(self, r: float):
+        raise NotImplementedError
+
+    def set_as_face(self, as_face: bool):
         raise NotImplementedError
 
 
@@ -129,10 +135,10 @@ class ProxyHyperbola(ProxyEdge):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Hyperbola)
 
-    def set_major_radius(self, r):
+    def set_major_radius(self, r: float):
         raise NotImplementedError
 
-    def set_minor_radius(self, r):
+    def set_minor_radius(self, r: float):
         raise NotImplementedError
 
 
@@ -559,7 +565,10 @@ class Circle(Edge):
     #: Radius of the circle
     radius = d_(Float(1, strict=False)).tag(view=True)
 
-    @observe("radius")
+    #: Convert into a face
+    as_face = d_(Bool())
+
+    @observe("radius", "as_face")
     def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
@@ -592,7 +601,10 @@ class Ellipse(Edge):
     #: Minor radius of the ellipse
     minor_radius = d_(Float(1, strict=False)).tag(view=True)
 
-    @observe("major_radius", "minor_radius")
+    #: Convert into a face
+    as_face = d_(Bool())
+
+    @observe("major_radius", "minor_radius", "as_face")
     def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
