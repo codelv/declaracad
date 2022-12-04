@@ -109,15 +109,19 @@ enamldef Toolpath(Part): toolpath:
             if reverse:
                 points = [p for p in reversed(points)]
             next_point = points[0]
-            cmds.append(Movement(
-                rapid=True,
-                points=[
-                    pos,
-                    Point(pos.x, pos.y, z) if i > 0 else pos,
-                    Point(next_point.x, next_point.y, z),
-                    next_point,
-                ]
-            ))
+
+            # Only lift if necessary
+            # eg if multiple passes are done on the same wire dont lift between
+            if next_point != pos:
+                cmds.append(Movement(
+                    rapid=True,
+                    points=[
+                        pos,
+                        Point(pos.x, pos.y, z) if i > 0 else pos,
+                        Point(next_point.x, next_point.y, z),
+                        next_point,
+                    ]
+                ))
 
             cmds.append(Movement(rapid=False, points=points))
             pos = points[-1]
@@ -208,6 +212,9 @@ enamldef ToolpathAnimation(Timer):
     #: Speed
     attr speed = 1
 
+    #: Auto start
+    attr run: bool = True
+
     attr rapid_feedrate = 1
     attr normal_feedrate = 10
 
@@ -242,5 +249,7 @@ enamldef ToolpathAnimation(Timer):
             self.stop()
 
     interval = 16
-    activated :: self.start()
+    activated ::
+        if self.run:
+            self.start()
     timeout :: self.animate()
