@@ -628,6 +628,8 @@ enamldef OutputDockItem(DockItem):
         if change:
             old_document = change['oldvalue']
             old_document.unobserve('output', self.watch_output)
+        # Unobserve to avoid duplicate observers
+        active_document.unobserve('output', self.watch_output)
         active_document.observe('output', self.watch_output)
 
     active_document :: rebind(change)
