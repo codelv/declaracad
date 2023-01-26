@@ -363,6 +363,7 @@ enamldef ModelViewer(OccViewer): viewer:
                 d = format_unit(v1.distance(v2))
                 what = shape_type[:-1].title()
                 return [
+                    "Vertices: ",
                     f"  {what} 1: {format_point(v1)}",
                     f"  {what} 2: {format_point(v2)}",
                     f"  Deltas: {delta}",
@@ -376,6 +377,7 @@ enamldef ModelViewer(OccViewer): viewer:
                     delta = format_point(c2 - c1)
                     d = format_unit(c2.distance(c1))
                     return [
+                        "Circular edges: ",
                         f"  Center 1: {format_point(c1)}",
                         f"  Center 2: {format_point(c2)}",
                         f"  Center Deltas: {delta}",
@@ -408,6 +410,7 @@ enamldef ModelViewer(OccViewer): viewer:
             return 'Nothing selected'
         desc = []
         try:
+            shapes_by_type = {}
             for d, items in selection.selection.items():
                 if desc:
                     desc.append("")
@@ -439,6 +442,9 @@ enamldef ModelViewer(OccViewer): viewer:
                 #pos = d.position
                 #desc.append(f"  Position: {pos.x}, {pos.y}, {pos.z}")
                 for shape_type, mapping in items.items():
+                    if shape_type not in shapes_by_type:
+                        shapes_by_type[shape_type] = []
+
                     n = len(mapping)
                     keys = ', '.join(map(str, sorted(mapping.keys())))
                     if n == 1:
@@ -448,14 +454,21 @@ enamldef ModelViewer(OccViewer): viewer:
                     desc.append(f"  Indices: {keys}")
                     if n == 1:
                         for k, v in mapping.items():
+                            shapes_by_type[shape_type + 's'].append(v)
                             shape_desc = describe_shape(shape_type, v)
                             if shape_desc:
                                 desc.extend(shape_desc)
                     else:
                         shapes = list(mapping.values())
-                        shape_desc = describe_shapes(shape_type, shapes)
-                        if shape_desc:
-                            desc.extend(shape_desc)
+                        shapes_by_type[shape_type].extend(shapes)
+
+            # Show deltas between different parts
+            for shape_type, shapes in shapes_by_type.items():
+                if len(shapes) > 1:
+                    shape_desc = describe_shapes(shape_type, shapes)
+                    if shape_desc:
+                        desc.append("")
+                        desc.extend(shape_desc)
 
         except Exception as e:
             print("Error describing selection: ")
@@ -478,7 +491,7 @@ enamldef ModelViewer(OccViewer): viewer:
             The message to show
 
         """
-        print(message) # Print gets forwarded to remote workbench
+        print(message)  # Print gets forwarded to remote workbench
         self.hide_notification()
         popup = NotificationPopup(self, message=message)
         popup.show()
