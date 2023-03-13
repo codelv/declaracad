@@ -118,7 +118,8 @@ def generate_wire_gcode(
             last_point = points[-1]
             cmds.extend(generate_arc_gcode(arc, format_value))
         else:
-            raise NotImplementedError("TODO: Cannot create gcode for wire")
+            t = Topology.cast_curve(edge, convert=False).GetType()
+            raise NotImplementedError(f"TODO: Cannot create gcode for wire {t}")
 
     if not wire.description:
         wire.description = "Gcode: \n%s\n" % "\n".join(cmds)
