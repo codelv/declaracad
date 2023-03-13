@@ -35,6 +35,10 @@ UNIT_SCALE = {
     'ft': 1/(12*25.4),
 }
 
+UNIT_PRECISON = {
+    'in': 5,
+}
+
 def expand_dict(p):
     for k, v in p.items():
         for p in v:
@@ -189,13 +193,15 @@ enamldef ModelViewer(OccViewer): viewer:
     func format_unit(value):
         u = self.display_units
         s = UNIT_SCALE.get(u, 1)
-        return f'{round(value*s, 3)} {u}'
+        p = UNIT_PRECISON.get(u, 3)
+        return f'{round(value*s, p)} {u}'
 
     func format_point(point):
         u = self.display_units
         s = UNIT_SCALE.get(u, 1)
+        p = UNIT_PRECISON.get(u, 3)
         x, y, z = point * s
-        return f'({round(x, 3)}, {round(y, 3)}, {round(z, 3)}) {u}'
+        return f'({round(x, p)}, {round(y, p)}, {round(z, p)}) {u}'
 
     func get_selected_shapes():
         """ Get all selected shapes
