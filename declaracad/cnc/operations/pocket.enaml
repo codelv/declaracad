@@ -170,149 +170,147 @@ enamldef CircularPocketOperation(Operation): operation:
             top=Point(center.x, center.y, top + top_clearance),
         )
 
-    Conditional:
-        condition << not operation.disabled
-        Looper:
-            iterable << operation.data
-            Part:
-                attr outside_radius = loop.item.radius - tool.diameter/2
-                attr center = loop.item.center
-                attr drop_point = Point(center.x, center.y, last_point.z)
-                attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
-                attr top_point = loop.item.top
-                attr bottom_point = loop.item.bottom
-                attr depth = top_point.z - bottom_point.z
-                attr arc_start = top_point + (0, 0, helix_radius/4)
-                attr d = -1 if climb else 1
-                name = 'Pocket'
+    Looper:
+        iterable << [] if operation.disabled else operation.data
+        Part:
+            attr outside_radius = loop.item.radius - tool.diameter/2
+            attr center = loop.item.center
+            attr drop_point = Point(center.x, center.y, last_point.z)
+            attr lift_point = Point(arc_up.points[-1].x, arc_up.points[-1].y, drop_point.z)
+            attr top_point = loop.item.top
+            attr bottom_point = loop.item.bottom
+            attr depth = top_point.z - bottom_point.z
+            attr arc_start = top_point + (0, 0, helix_radius/4)
+            attr d = -1 if climb else 1
+            name = 'Pocket'
 
-                DisplayArrow: drop_arrow:
-                    color = 'red'
-                    cone_size = (0.6, 1.5)
-                    tube_size = (0.3, 3)
-                    description = 'Drop'
-                    direction = (0, 0, -1)
-                    position = drop_point + (0, 0, 3)
+            DisplayArrow: drop_arrow:
+                color = 'red'
+                cone_size = (0.6, 1.5)
+                tube_size = (0.3, 3)
+                description = 'Drop'
+                direction = (0, 0, -1)
+                position = drop_point + (0, 0, 3)
 
-                # Heliz down to bottom of hole or max step
-                Vertex:
-                    color = 'lime'
-                    description = 'Top of circular pocket'
-                    position = top_point
-                Vertex:
-                    description = 'Bottom of circular pocket'
-                    color = 'blue'
-                    position = bottom_point
-                Polyline: move_to_point:
-                    line_style = 'dashed'
-                    color = 'lime'
-                    points = [last_point, drop_point, arc_start]
+            # Heliz down to bottom of hole or max step
+            Vertex:
+                color = 'lime'
+                description = 'Top of circular pocket'
+                position = top_point
+            Vertex:
+                description = 'Bottom of circular pocket'
+                color = 'blue'
+                position = bottom_point
+            Polyline: move_to_point:
+                line_style = 'dashed'
+                color = 'lime'
+                points = [last_point, drop_point, arc_start]
 
-                Arc: arc_in:
-                    # Arc into center
-                    color = 'purple'
-                    name = 'Arc in'
-                    direction = (1, 0, 0)
-                    radius = helix_radius/4
-                    position = top_point + (0, radius, radius)
-                    points = [
-                        top_point+(0, 0, radius),
-                        top_point+(0, radius, 0)
-                    ]
+            Arc: arc_in:
+                # Arc into center
+                color = 'purple'
+                name = 'Arc in'
+                direction = (1, 0, 0)
+                radius = helix_radius/4
+                position = top_point + (0, radius, radius)
+                points = [
+                    top_point+(0, 0, radius),
+                    top_point+(0, radius, 0)
+                ]
 
-                Arc: arc_merge:
-                    color = 'teal'
-                    name = 'Arc merge'
-                    attr p = arc_in.points[-1]
-                    attr r = arc_in.radius
-                    position = p + (d*r, 0)
-                    clockwise = not climb
-                    radius = r
-                    points = [
-                        p,
-                        p + (d*r, r)
-                    ]
+            Arc: arc_merge:
+                color = 'teal'
+                name = 'Arc merge'
+                attr p = arc_in.points[-1]
+                attr r = arc_in.radius
+                position = p + (d*r, 0)
+                clockwise = not climb
+                radius = r
+                points = [
+                    p,
+                    p + (d*r, r)
+                ]
 
-                Arc: arc_union:
-                    color = 'teal'
-                    name = 'Arc union'
-                    attr p = arc_merge.points[-1]
-                    clockwise = not climb
+            Arc: arc_union:
+                color = 'teal'
+                name = 'Arc union'
+                attr p = arc_merge.points[-1]
+                clockwise = not climb
 
-                    position = top_point + (d*arc_merge.radius, 0)
-                    radius = arc_merge.radius*2
-                    points = [
-                        p,
-                        top_point + (d*arc_merge.radius * 2, 0)
-                    ]
+                position = top_point + (d*arc_merge.radius, 0)
+                radius = arc_merge.radius*2
+                points = [
+                    p,
+                    top_point + (d*arc_merge.radius * 2, 0)
+                ]
 
-                ArcHelix: helix:
-                    color = 'teal'
-                    radius = helix_radius*3/4
-                    max_pitch = helix_pitch
-                    clockwise = not climb
-                    height = depth
-                    position = top_point
-                    spindle_speed = plunge_spindle_speed
-                    feedrate = plunge_feedrate
+            ArcHelix: helix:
+                color = 'teal'
+                radius = helix_radius*3/4
+                max_pitch = helix_pitch
+                clockwise = not climb
+                height = depth
+                position = top_point
+                spindle_speed = plunge_spindle_speed
+                feedrate = plunge_feedrate
 
-                ArcSpiral: spiral:
-                    name = 'Spiral'
-                    color = 'purple'
-                    position = bottom_point
-                    start_angle = pi if climb else 0
-                    clockwise = not climb
-                    start_radius = helix_radius*3/4
-                    end_radius = outside_radius
-                    max_step_over = operation.step_over
-                    spindle_speed = operation.spindle_speed
-                    feedrate = operation.feedrate
+            ArcSpiral: spiral:
+                name = 'Spiral'
+                color = 'purple'
+                position = bottom_point
+                start_angle = pi if climb else 0
+                clockwise = not climb
+                start_radius = helix_radius*3/4
+                end_radius = outside_radius
+                max_step_over = operation.step_over
+                spindle_speed = operation.spindle_speed
+                feedrate = operation.feedrate
 
-                Arc: arc_out:
-                    color = 'blue'
-                    name = 'Arc out'
-                    radius = helix_radius/4
-                    clockwise = not climb
-                    # Spiral end point
-                    attr p = bottom_point + (d*spiral.end_radius, 0)
-                    position = p + (-d*radius, 0)
-                    points = [
-                        p,
-                        p + (-d*radius, -radius)
-                    ]
+            Arc: arc_out:
+                color = 'blue'
+                name = 'Arc out'
+                radius = helix_radius/4
+                clockwise = not climb
+                # Spiral end point
+                attr p = bottom_point + (d*spiral.end_radius, 0)
+                position = p + (-d*radius, 0)
+                points = [
+                    p,
+                    p + (-d*radius, -radius)
+                ]
 
-                Arc: arc_up:
-                    color = 'orange'
-                    name = 'Arc up'
-                    direction = (0, -1, 0)
-                    radius = arc_out.radius
-                    clockwise = not climb
-                    # Spiral end point
-                    attr p = arc_out.points[-1]
-                    position = p + (0, 0, radius)
-                    points = [p, position + (-d*radius, 0)]
+            Arc: arc_up:
+                color = 'orange'
+                name = 'Arc up'
+                direction = (0, -1, 0)
+                radius = arc_out.radius
+                clockwise = not climb
+                # Spiral end point
+                attr p = arc_out.points[-1]
+                position = p + (0, 0, radius)
+                points = [p, position + (-d*radius, 0)]
 
-                Polyline:
-                    name = 'Return path'
-                    line_style = 'dashed'
-                    color = 'lime'
-                    attr p = arc_up.points[-1]
-                    func get_points():
-                        pts = [p, lift_point]
-                        operation.last_point = lift_point
-                        if loop.index + 1 == len(operation.data):
-                            pts.append(end_point)
-                        return pts
+            Polyline:
+                name = 'Return path'
+                line_style = 'dashed'
+                color = 'lime'
+                attr p = arc_up.points[-1]
+                func get_points():
+                    pts = [p, lift_point]
+                    operation.last_point = lift_point
+                    if loop.index + 1 == len(operation.data):
+                        pts.append(end_point)
+                    return pts
 
-                    points = get_points()
+                points = get_points()
 
-                DisplayArrow: lift_arrow:
-                    color = 'green'
-                    cone_size = drop_arrow.cone_size
-                    tube_size = drop_arrow.tube_size
-                    description = 'Lift'
-                    direction = (0, 0, 1)
-                    position = lift_point
+            DisplayArrow: lift_arrow:
+                color = 'green'
+                cone_size = drop_arrow.cone_size
+                tube_size = drop_arrow.tube_size
+                description = 'Lift'
+                direction = (0, 0, 1)
+                position = lift_point
 
 
 class PocketData(Atom):
@@ -454,7 +452,7 @@ enamldef PocketOperation(Operation): operation:
     attr toolpath = get_toolpath()
     attr last_point = start_point
     Looper:
-        iterable = toolpath
+        iterable << [] if operation.disabled else toolpath
         Part:
             attr data = loop.item
             attr drop_point = Point(data.helix_start.x, data.helix_start.y, start_point.z)
