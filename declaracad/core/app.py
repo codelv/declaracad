@@ -16,12 +16,12 @@ from inspect import iscoroutinefunction
 from queue import Empty, Queue
 from typing import Any, Callable
 
-try:
-    import nest_asyncio
-
-    nest_asyncio.apply()
-except ImportError as e:
-    warnings.warn(f"Nest asyncio not found: {e}")
+# try:
+#     import nest_asyncio
+#
+#     nest_asyncio.apply()
+# except ImportError as e:
+#     warnings.warn(f"Nest asyncio not found: {e}")
 
 from asyncqtpy import QEventLoop, QEventLoopPolicy
 from atom.api import Bool, Instance
