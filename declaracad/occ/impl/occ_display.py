@@ -19,6 +19,7 @@ from OCCT.Graphic3d import (
 )
 from OCCT.Prs3d import Prs3d_Arrow
 from OCCT.TCollection import TCollection_ExtendedString
+from OCCT.Quantity import Quantity_Color
 
 from declaracad.core.utils import log
 
@@ -37,11 +38,11 @@ class AIS_Arrow(AIS_InteractiveObject):
     def __init__(
         self,
         axis,
-        tube_radius,
-        axis_length,
-        cone_radius,
-        cone_length,
-        number_of_facetts=360,
+        tube_radius: float,
+        axis_length: float,
+        cone_radius: float,
+        cone_length: float,
+        number_of_facetts: int = 360,
     ):
         super().__init__()
         self.params = (
@@ -64,8 +65,10 @@ class AIS_Arrow(AIS_InteractiveObject):
     def ComputeSelection(self, pres, mode):
         pass
 
-    def SetColor(self, color):
+    def SetColor(self, color: Quantity_Color):
         drawer = self.Attributes()
+        if not drawer.ShadingAspect():
+            drawer.SetupOwnShadingAspect()
         sa = drawer.ShadingAspect()
         a = sa.Aspect()
         a.SetColor(color)
@@ -100,7 +103,7 @@ class OccDisplayItem(ProxyDisplayItem):
         """Activate the proxy tree for the bottom-up pass."""
         pass
 
-    def update_color(self, ais_item):
+    def update_color(self, ais_item: AIS_InteractiveObject):
         d = self.declaration
         color, alpha = color_to_quantity_color(d.color)
         ais_item.SetColor(color)
@@ -155,10 +158,10 @@ class OccDisplayArrow(OccDisplayItem, ProxyDisplayArrow):
         self.update_color(ais_item)
         self.item = ais_item
 
-    def set_cone_size(self, size):
+    def set_cone_size(self, size: tuple[float, float]):
         self.create_item()
 
-    def set_tube_size(self, size):
+    def set_tube_size(self, size: tuple[float, float]):
         self.create_item()
 
 
@@ -178,11 +181,11 @@ class OccDisplayText(OccDisplayItem, ProxyDisplayText):
         self.update_color(ais_item)
         self.item = ais_item
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         self.update_item()
 
-    def set_size(self, size):
+    def set_size(self, size: float):
         self.update_item()
 
-    def set_font(self, font):
+    def set_font(self, font: str):
         self.update_item()
