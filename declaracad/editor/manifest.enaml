@@ -132,12 +132,17 @@ def close_other_editors(event):
 def find_in_editor(event):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()
+    if text := editor.selected_text():
+        editor.search_text = text
     editor.show_find_bar = True
+    editor.show_replace_bar = False
 
 
 def replace_in_editor(event):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()
+    if text := editor.selected_text():
+        editor.search_text = text
     editor.show_replace_bar = True
 
 
@@ -145,6 +150,9 @@ def goto_in_editor(event):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()
     editor.show_goto_bar = True
+    editor.show_replace_bar = False
+    editor.show_show_find_bar = False
+
 
 
 def editor_action(event, action):
