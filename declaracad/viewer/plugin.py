@@ -464,7 +464,14 @@ class ViewerPlugin(Plugin):
 
     def _default_exporters(self) -> list[Type["ModelExporter"]]:
         """TODO: push to an ExtensionPoint"""
-        return [f() for f in EXPORTER_REGISTRY.values()]
+        exporters = []
+        for factory in EXPORTER_REGISTRY.values():
+            try:
+                exporter = factory()
+                exporters.append(exporter)
+            except Exception as e:
+                log.exception(e)
+        return exporters
 
     # -------------------------------------------------------------------------
     # Plugin commands
