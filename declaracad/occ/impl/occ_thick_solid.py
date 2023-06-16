@@ -42,6 +42,9 @@ class OccThickSolid(OccOffset, ProxyThickSolid):
     def update_shape(self, change=None):
         d = self.declaration
         shape = self.get_shape_to_offset()
+        if d.disabled:
+            self.shape = shape
+            return
         faces = TopTools_ListOfShape()
         for f in self.get_faces(shape):
             faces.Append(f)

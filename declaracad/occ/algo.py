@@ -145,6 +145,9 @@ class ProxyOffset(ProxyOperation):
     def set_as_face(self, enabled: bool):
         raise NotImplementedError
 
+    def set_disabled(self, disabled: bool):
+        raise NotImplementedError
+
 
 class ProxyOffsetShape(ProxyOffset):
     #: A reference to the Shape declaration.
@@ -560,6 +563,7 @@ class Offset(Operation):
     join_type: String
         Defines how to fill the holes that may appear between parallels to
         the two adjacent faces
+    disabled: Bool
 
 
     Examples
@@ -598,6 +602,10 @@ class Offset(Operation):
     #: The shape to offset if given
     shape = d_(Instance((Shape, TopoDS_Shape)))
 
+    #: Disble operation
+    disabled = d_(Bool())
+
+
     @observe(
         "offset",
         "offset_mode",
@@ -607,6 +615,7 @@ class Offset(Operation):
         "normal_distance",
         "shape",
         "as_face",
+        "disabled"
     )
     def _update_proxy(self, change: dict[str, Any]):
         super(Offset, self)._update_proxy(change)
@@ -648,7 +657,7 @@ class ThickSolid(Offset):
     Attributes
     ----------
 
-    closing_faces: List, optional
+    faces: List, optional
         List of faces that bound the solid.
 
     Examples

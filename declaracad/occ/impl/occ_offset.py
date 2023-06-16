@@ -49,6 +49,9 @@ class OccOffset(OccOperation, ProxyOffset):
     def update_shape(self, change=None):
         d = self.declaration
         shape = Topology.cast_shape(self.get_shape_to_offset())
+        if d.disabled:
+            self.shape = shape
+            return
         if isinstance(shape, TopoDS_Edge):
             shape = BRepBuilderAPI_MakeWire(shape).Wire()
         elif isinstance(shape, TopoDS_Compound):
