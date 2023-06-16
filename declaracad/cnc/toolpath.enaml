@@ -203,7 +203,7 @@ enamldef Toolpath(Part): toolpath:
                 direction = end - start
 
 
-enamldef ToolpathAnimation(Timer):
+enamldef ToolpathAnimation(Part): simulation:
     #: The cutting tool
     attr bit
     #: The toolpath
@@ -211,21 +211,33 @@ enamldef ToolpathAnimation(Timer):
 
     #: Speed
     attr speed = 1
-
-    #: Auto start
-    attr run: bool = True
+    attr paused: bool = False
+    attr autostart: bool = True
+    attr disabled: bool = False
 
     attr rapid_feedrate = 1
     attr normal_feedrate = 10
 
     #: Positions
-    attr positions = generate_animation(toolpath)
+    attr frames = generate_animation(toolpath)
     attr index: int = 0
     attr progress: float = 0
-    attr total = max(1, len(positions))
+    attr total = max(1, len(frames))
 
-    func generate_animation(toolpath):
-        pts = []
+    rendered ::
+        try:
+            # Attempt to assign the simulation
+            viewer.animation = self
+        except NameError:
+            pass
+        if self.autostart:
+            self.start()
+
+    func start():
+        if self.disabled:
+            return
+        self.render() # Force start
+        frames = []
         feed_normal = self.normal_feedrate
         feed_rapid = self.rapid_feedrate
         for child in toolpath.children:
@@ -233,23 +245,43 @@ enamldef ToolpathAnimation(Timer):
                 w = child.topology.wires[0]
                 s = feed_rapid if child.movement.rapid else feed_normal
                 l = max(2, int(child.topology.length * s * 1/max(1e-6, speed)))
-                pts.extend(Topology.discretize(w, l, method='abscissa'))
-        return pts
+                pts = Topology.discretize(w, l, method='abscissa')
+                frames.extend(pts)
+        self.frames = frames
+        timer.start()
 
     func animate():
         try:
             self.index += 1
-            bit.position = self.positions[self.index]
-            self.progress = 100*self.index/self.total
+            bit.position = self.frames[self.index]
         except IndexError:
+            print("Simulation complete")
+            timer.stop()
             self.index = 0
-            self.stop()
+            self.paused = True
         except Exception as e:
-            print(e)
-            self.stop()
+            print(f"Simulation error: {e}")
+            timer.stop()
+            self.index = 0
+            self.paused = True
 
-    interval = 16
-    activated ::
-        if self.run:
-            self.start()
-    timeout :: self.animate()
+    func goto(frame: int, relative: bool = False):
+        if relative:
+            i = self.index + frame
+        else:
+            i = frame
+        self.index = max(0, min(len(frames), i))
+        if self.paused:
+            self.animate()
+
+    func pause():
+        self.paused = True
+        timer.stop()
+
+    func resume():
+        self.paused = False
+        timer.start()
+
+    Timer: timer:
+        interval = 16
+        timeout :: simulation.animate()
