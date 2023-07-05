@@ -9,6 +9,7 @@ Created on March 25, 2020
 
 @author: jrm
 """
+from math import radians
 from atom.api import Typed
 from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
@@ -21,6 +22,7 @@ from OCCT.PrsDim import (
     PrsDim_LengthDimension,
     PrsDim_RadiusDimension,
 )
+from OCCT.Prs3d import Prs3d_ArrowAspect, Prs3d_DimensionAspect
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TopoDS import TopoDS_Vertex
 
@@ -58,17 +60,19 @@ class OccDimension(ProxyDimension):
         if d.units:
             dim.SetDisplayUnits(TCollection_AsciiString(d.units))
 
-        aspect = dim.DimensionAspect()
+        aspect = dim.DimensionAspect() or Prs3d_DimensionAspect()
         if d.color:
             color, transparency = color_to_quantity_color(d.color)
             aspect.SetCommonColor(color)
-        if d.arrow_tail_size:
-            aspect.SetArrowTailSize(d.arrow_tail_size)
-        if d.extension_size:
-            aspect.SetExtensionSize(d.extension_size)
-        if d.show_units:
-            aspect.MakeUnitsDisplayed(d.show_units)
+        aspect.SetArrowTailSize(d.arrow_tail_size)
+        aspect.SetExtensionSize(d.extension_size)
+        aspect.MakeUnitsDisplayed(d.show_units)
+        arrow_aspect = aspect.ArrowAspect() or Prs3d_ArrowAspect()
+        arrow_aspect.SetLength(d.arrow_size)
+        arrow_aspect.SetAngle(radians(d.arrow_angle))
+        aspect.SetArrowAspect(arrow_aspect)
         dim.SetDimensionAspect(aspect)
+
 
     def update_dimension(self):
         """Recreates the dimension catching any errors"""
@@ -156,8 +160,7 @@ class OccLengthDimension(OccDimension, ProxyLengthDimension):
         d = self.declaration
         p1 = BRep_Tool.Pnt_(v1)
         p2 = BRep_Tool.Pnt_(v2)
-        p3 = (d.direction + p2).proxy
-        return GC_MakePlane(p1, p2, p3).Value().Pln()
+        return GC_MakePlane(p1, d.direction.proxy).Value().Pln()
 
     def create_dimension(self):
         d = self.declaration

@@ -48,6 +48,12 @@ class ProxyDimension(ProxyControl):
     def set_arrow_tail_size(self, size: float):
         raise NotImplementedError
 
+    def set_arrow_size(self, size: float):
+        raise NotImplementedError
+
+    def set_arrow_angle(self, angle: float):
+        raise NotImplementedError
+
     def set_show_units(self, show_units: bool):
         raise NotImplementedError
 
@@ -107,10 +113,16 @@ class Dimension(ToolkitObject):
     flyout = d_(Float(0.0, strict=False))
 
     #: Set the extension length (distance from arrow to text).
-    extension_size = d_(Float(0.0, strict=False))
+    extension_size = d_(Float(1, strict=False))
 
     #: Set the arrow tail length.
-    arrow_tail_size = d_(Float(0.0, strict=False))
+    arrow_tail_size = d_(Float(1, strict=False))
+
+    #: Set the arrow length.
+    arrow_size = d_(Float(1, strict=False))
+
+    #: Set the arrow angle (in degrees).
+    arrow_angle = d_(Float(30, strict=False))
 
     #: List of shapes to create the dimension
     shapes = d_(List())
@@ -123,6 +135,8 @@ class Dimension(ToolkitObject):
         "flyout",
         "extension_size",
         "arrow_tail_size",
+        "arrow_size",
+        "arrow_angle",
         "show_units",
         "units",
     )
