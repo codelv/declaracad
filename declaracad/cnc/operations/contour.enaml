@@ -30,6 +30,10 @@ enamldef ContourOperation(Operation): operation:
     #: List of contour wires to cut
     attr wires: list
 
+    #: Optimize order
+    attr optimize_order: bool = False
+
+    #: Clearance height
     attr clearance_height = start_point.z
 
     #: Use climb milling
@@ -70,33 +74,49 @@ enamldef ContourOperation(Operation): operation:
                 'drop': Point(start.x, start.y, clearance_height),
                 'lift': Point(end.x, end.y, clearance_height),
             })
-        ordered_data = []
-        lift_points = [d['lift'] for d in data]
-        for lift_point in optimize_points(lift_points[:], start_point):
-            i = lift_points.index(lift_point)
-            ordered_data.append(data[i])
-        return ordered_data
+
+        if optimize_order:
+            used = {}
+            ordered_data = []
+            lift_points = [d['lift'] for d in data]
+            for lift_point in optimize_points(lift_points[:], start_point):
+                # If points are duplicates we need to track used indexes
+                start_index = used.get(lift_point, 0)
+                i = lift_points.index(lift_point, start=start_index)
+                used[lift_point] = i
+                ordered_data.append(data[i])
+            return ordered_data
+        return data
 
     Looper:
         iterable << [] if disabled else toolpath
         Part: path:
-
+            attr last_point = start_point if loop.index == 0 else toolpath[loop.index-1]['lift']
             func generate_gcode(fmt):
                 cmds = [f"(Contour {loop.index + 1})"]
                 job = operation.parent
                 cmds.extend(generate_part_gcode(self, job.format_value))
                 return cmds
 
-            Polyline:
-                attr last_point = start_point if loop.index == 0 else toolpath[loop.index-1]['lift']
-                name = 'Rapid move'
-                line_style = 'dashed'
-                color = 'lime'
-                points = [
-                    last_point,
-                    loop.item['drop'],
-                    loop.item['enter']
-                ]
+            Conditional:
+                condition << last_point != loop.item['drop']
+                Polyline:
+                    name = 'Rapid move'
+                    line_style = 'dashed'
+                    color = 'lime'
+                    points = [
+                        last_point,
+                        loop.item['drop']
+                    ]
+            Conditional:
+                condition << loop.item['drop'] != loop.item['enter']
+                Polyline:
+                    name = 'Drop move'
+                    color = 'red'
+                    points = [
+                        loop.item['drop'],
+                        loop.item['enter']
+                    ]
             Wire:
                 color = 'magenta'
                 edges = [loop.item['wire']]
