@@ -122,7 +122,7 @@ enamldef Toolpath(Part): toolpath:
                         next_point,
                     ]
                 ))
-
+            assert len(points) > 1, f"Movement is invalid at {i} - {wire}"
             cmds.append(Movement(rapid=False, points=points))
             pos = points[-1]
 

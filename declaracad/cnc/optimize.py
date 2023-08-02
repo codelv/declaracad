@@ -59,10 +59,10 @@ def optimize_moves(
             t = sp.LastParameter() if reverse else sp.FirstParameter()
             start_point = sp.Value(t)
             d = p.Distance(start_point)
-            if d < best:
+            if shortest is None or d < best:
                 best = d
                 shortest = sp
-        assert shortest is not None
+        assert shortest is not None, f"Shortest of {subpaths} is invalid"
         t = shortest.FirstParameter() if reverse else shortest.LastParameter()
         p = shortest.Value(t)
         result.append(shortest)
