@@ -7,7 +7,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 @author: jrm
 """
-from declaracad.occ.api import Part
+from declaracad.occ.api import (
+    Part, Topology, Looper, TopoShape, Pipe, Wire, Fuse, Polygon, Revol, Conditional
+)
 
 from OCCT.BRepMAT2d import (
     BRepMAT2d_BisectingLocus, BRepMAT2d_Explorer,
@@ -141,3 +143,75 @@ enamldef VCarve(Part): part:
                color = 'orange'
                description = f"Face {looper.i} Wire {loop.index}"
                shape = loop.item
+
+
+enamldef VCutShape(Part): part:
+    #: Set of wires
+    attr wires: list = []
+    #: Depth
+    attr depth = 1
+    attr parallel: bool = True
+    attr unify: bool = True
+
+    func generate_data():
+        data = []
+        profile = [
+            (0, 0),
+            (depth, 0),
+            (0, -depth),
+            (-depth, 0),
+            (0, 0),
+        ]
+
+        for i, w in enumerate(wires):
+            items = []
+            for j, e in enumerate(Topology(shape=w).edges):
+                curve = Topology.cast_curve(e)
+                t = Topology.get_value_at(curve, 0, 1)
+                try:
+                    pipe = Pipe(
+                        spline=e,
+                        profile=Polygon(
+                            as_face=True,
+                            points=profile,
+                            position=t[0],
+                            direction=t[1],
+                        ).render()
+                    ).render()
+                except Exception as err:
+                    print(f'Wire {i} edge {j} - {err}')
+                    pipe = None
+                items.append({
+                    'pipe': pipe,
+                    'edge': e,
+                    'pos': t[0],
+                    'dir': t[1],
+                })
+            if items:
+                data.append(items)
+        return data
+
+
+    Looper:
+        iterable = generate_data()
+        Fuse:
+            parallel = part.parallel
+            unify = part.unify
+            Looper:
+                iterable = loop.item
+                Conditional:
+                    condition = loop.item['pipe'] is not None
+                    TopoShape:
+                        shape = loop.item['pipe']
+                Revol:
+                    position = loop.item['pos']
+                    Polygon:
+                        closed = True
+                        as_face = True
+                        position = loop.item['pos']
+                        direction = loop.item['dir']
+                        points = [
+                            (0, 0),
+                            (depth, 0),
+                            (0, -depth),
+                        ]
