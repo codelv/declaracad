@@ -38,6 +38,7 @@ class OccRevol(OccDependentShape, ProxyRevol):
         if d.angle:
             args.append(d.angle)
         args.append(copy)
+
         revol = BRepPrimAPI_MakeRevol(*args)
         self.shape = revol.Shape()
 

@@ -20,7 +20,8 @@ from OCCT.Font import (
     Font_FontAspect,
     Font_FontMgr,
 )
-from OCCT.gp import gp_Ax3
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
+from OCCT.gp import gp_Ax3, gp_Trsf, gp_Vec
 from OCCT.NCollection import NCollection_String
 from OCCT.TCollection import TCollection_AsciiString
 
@@ -81,7 +82,15 @@ class OccText(OccShape, ProxyText):
         attr = "Graphic3d_VTA_{}".format(d.vertical_alignment.upper())
         valign = getattr(Graphic3d, attr)
         text = NCollection_String(d.text.encode("utf-8"))
-        self.shape = self.builder.Perform(self.font, text, axis, halign, valign)
+        shape = self.builder.Perform(self.font, text, axis, halign, valign)
+        if d.center:
+            bbox = self.get_bounding_box(shape)
+            x, y, z = bbox.center
+            t = gp_Trsf()
+            t.SetTranslation(gp_Vec(-x, -y, 0))
+            shape = BRepBuilderAPI_Transform(shape, t).Shape()
+        self.shape = shape
+
 
     def set_text(self, text: str):
         self.create_shape()

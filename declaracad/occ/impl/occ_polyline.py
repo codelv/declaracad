@@ -19,6 +19,7 @@ from OCCT.BRepBuilderAPI import (
 from OCCT.TopoDS import TopoDS
 
 from declaracad.occ.draw import ProxyPolyline
+from declaracad.core.utils import log
 
 from .occ_wire import OccWire
 
@@ -40,7 +41,11 @@ class OccPolyline(OccWire, ProxyPolyline):
             shape.Add(p.proxy)
         if d.closed:
             shape.Close()
-        builder = BRepBuilderAPI_Transform(shape.Wire(), t, False)
+        try:
+            builder = BRepBuilderAPI_Transform(shape.Wire(), t, False)
+        except RuntimeError as e:
+            log.error(f"Could not create polyline from {d.points}")
+            raise e
         wire = TopoDS.Wire_(builder.Shape())
         curve = self.curve = BRepAdaptor_CompCurve(wire)
         wire = curve.Wire()

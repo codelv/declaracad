@@ -7,6 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 from atom.api import set_default
+from enaml.colors import Color
 from OCCT.Aspect import (
     Aspect_TOM_BALL,
     Aspect_TOM_O,
@@ -23,10 +24,14 @@ from OCCT.Aspect import (
     Aspect_TOM_X,
 )
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
+from OCCT.Prs3d import Prs3d_PointAspect
+
 
 from declaracad.occ.draw import ProxyVertex
 
 from .occ_shape import OccShape
+from .utils import color_to_quantity_color
+
 
 MARKERS = {
     "plus": Aspect_TOM_PLUS,
@@ -60,7 +65,14 @@ class OccVertex(OccShape, ProxyVertex):
     def _default_ais_shape(self):
         d = self.declaration
         ais_shape = super()._default_ais_shape()
-        marker = MARKERS.get(d.marker)
-        if marker:
-            ais_shape.Attributes().PointAspect().SetTypeOfMarker(marker)
+        attrs = ais_shape.Attributes()
+        color, alpha  = color_to_quantity_color(d.color or Color())
+        marker = MARKERS[d.marker]
+        if aspect := attrs.PointAspect():
+            aspect.SetColor(color)
+            aspect.SetScale(d.marker_scale)
+            aspect.SetTypeOfMarker(marker)
+        else:
+            aspect = Prs3d_PointAspect(marker, color, d.marker_scale)
+        attrs.SetPointAspect(aspect)
         return ais_shape

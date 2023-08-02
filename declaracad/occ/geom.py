@@ -263,6 +263,24 @@ class Point(Atom):
     def __hash__(self):
         return hash(self[:])
 
+    def coordinates_in_range(self, low: float, high: float) -> bool:
+        """ Check if all coordinates are in the given range
+
+        """
+        return (
+            (low <= self.x <= high)
+            and (low <= self.y <= high)
+            and (low <= self.z <= high)
+        )
+
+    def clip(self, low: float, high: float) -> "Point":
+        """ Clip to the given range """
+        return Point(
+            x = min(high, max(low, self.x)),
+            y = min(high, max(low, self.y)),
+            z = min(high, max(low, self.z)),
+        )
+
     @classmethod
     def __coerce__(self, other):
         return coerce_point(other)
@@ -278,7 +296,11 @@ class Direction(Point):
     proxy = Typed(gp_Dir)
 
     def _default_proxy(self):
-        return gp_Dir(self.x, self.y, self.z)
+        try:
+            return gp_Dir(self.x, self.y, self.z)
+        except RuntimeError as e:
+            warnings.warn(f"Could not create proxy: {self}")
+            raise e
 
     @classmethod
     def __coerce__(self, other) -> "Direction":

@@ -46,7 +46,10 @@ class ProxyVertex(ProxyShape):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Vertex)
 
-    def set_marker(self, marker):
+    def set_marker(self, marker: str):
+        raise NotImplementedError
+
+    def set_marker_scale(self, scale: float):
         raise NotImplementedError
 
 
@@ -57,22 +60,22 @@ class ProxyEdge(ProxyShape):
     def set_surface(self, surface):
         raise NotImplementedError
 
-    def set_as_wire(self, enabled):
+    def set_as_wire(self, enabled: bool):
         raise NotImplementedError
 
-    def set_line_style(self, style):
+    def set_line_style(self, style: str):
         raise NotImplementedError
 
-    def set_line_width(self, width):
+    def set_line_width(self, width: float):
         raise NotImplementedError
 
-    def get_value_at(self, t, derivative=0):
+    def get_value_at(self, t: float, derivative=0):
         raise NotImplementedError
 
     def set_solve(self, params):
         raise NotImplementedError
 
-    def set_reverse(self, reverse):
+    def set_reverse(self, reverse: bool):
         raise NotImplementedError
 
 
@@ -93,16 +96,16 @@ class ProxyArc(ProxyEdge):
     #: A reference to the shape declaration.
     declaration = ForwardTyped(lambda: Arc)
 
-    def set_radius(self, r):
+    def set_radius(self, r: float):
         raise NotImplementedError
 
-    def set_alpha1(self, a):
+    def set_alpha1(self, a: float):
         raise NotImplementedError
 
-    def set_alpha2(self, a):
+    def set_alpha2(self, a: float):
         raise NotImplementedError
 
-    def set_clockwise(self, clockwise):
+    def set_clockwise(self, clockwise: bool):
         raise NotImplementedError
 
 
@@ -188,6 +191,9 @@ class ProxyText(ProxyShape):
         raise NotImplementedError
 
     def set_style(self, style: str):
+        raise NotImplementedError
+
+    def set_center(self, center: bool):
         raise NotImplementedError
 
     def set_composite(self, composite: bool):
@@ -374,6 +380,13 @@ class Vertex(Shape):
             "ball",
         )
     )
+
+    #: Display scale
+    marker_scale = d_(Float(1.0, strict=False))
+
+    @observe("marker", "marker_scale")
+    def _update_proxy(self, change: dict[str, Any]):
+        super()._update_proxy(change)
 
 
 class Edge(Shape):
@@ -1099,6 +1112,9 @@ class Text(Shape):
     #: Proxy shape
     proxy = Typed(ProxyText)
 
+    #: Center text
+    center = d_(Bool())
+
     #: Text to display
     text = d_(Str())
 
@@ -1121,6 +1137,7 @@ class Text(Shape):
     @observe(
         "text",
         "font",
+        "center",
         "size",
         "style",
         "composite",
