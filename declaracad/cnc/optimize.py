@@ -24,7 +24,7 @@ def optimize_moves(
     wires: list[TopoDS_Wire],
     start_point: Point,
     reverse: bool = False,
-    optimizer_timeout: float = 30,
+    optimizer_timeout: float = 120,
 ) -> list[TopoDS_Wire]:
     """Use Dijkstra's algorithm to find the shortest path between
     a set of wires. Ported from Inkcut
@@ -78,7 +78,7 @@ def optimize_moves(
 
 
 def optimize_points(
-    points: list[Point], start_point: Point, optimizer_timeout: float = 30
+    points: list[Point], start_point: Point, optimizer_timeout: float = 120
 ) -> list[Point]:
     """Use Dijkstra's algorithm to find the shortest path between
     a set of points. Ported from Inkcut
@@ -126,7 +126,7 @@ def optimize_points(
     return result
 
 
-def optimize_order(data: list, start_point: Point, key: Callable[[Any], Point]) -> list:
+def optimize_order(data: list, start_point: Point, key: Callable[[Any], Point], **kwargs) -> list:
     """Reorder a generic list of operations based on the start point and
     list of operation start points.
 
@@ -150,7 +150,7 @@ def optimize_order(data: list, start_point: Point, key: Callable[[Any], Point]) 
         return data
     data_points: list[Point] = [key(it) for it in data]
     reordered_data = []
-    for pt in optimize_points(data_points, start_point):
+    for pt in optimize_points(data_points, start_point, **kwargs):
         i = data_points.index(pt)
         reordered_data.append(data[i])
     return reordered_data
