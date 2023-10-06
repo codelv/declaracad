@@ -12,7 +12,7 @@ Created on Dec 10, 2015
 from enaml.layout.api import vbox, hbox, align
 from enaml.widgets.api import (
     Container, ObjectCombo, Menu, Action, Field, MultilineField, PushButton,
-    RawWidget
+    PopupView, RawWidget, Label
 )
 from enaml.qt.QtCore import Qt
 from enaml.qt.QtGui import QTextCursor
@@ -38,11 +38,39 @@ class PlainTextEdit(RawWidget):
         return widget
 
 
+enamldef NotificationPopup(PopupView):
+    foreground = 'white'
+    background = 'rgba(30, 30, 30, 0.85)'
+    window_type = 'tool_tip'
+    parent_anchor = (0.0, 0.0)
+    anchor = (0.0, 0.0)
+    offset = (10, 10)
+    timeout = 5
+    fade_in_duration = 200
+    fade_out_duration = 200
+    attr message: str = ""
+    Container:
+        Label:
+            foreground = 'white'
+            text << message
+            align = 'left'
+
+
+async def try_connect(view: "CommView"):
+    # Separate function because async func does not work with iscoroutine
+    try:
+        await view.device.connect()
+        view.show_notification("Connected!", timeout=1)
+    except Exception as e:
+        view.show_notification(f"Connection error: {e}")
+
+
 enamldef CommView(Container): view:
     attr plugin: CncPlugin
     attr device: Device := plugin.device
     attr history_index: int = -1
     attr history_limit: int = 40
+    attr notification: NotificationPopup = None
     initialized ::
         # On startup observe the device's last output
         if device:
@@ -102,8 +130,10 @@ enamldef CommView(Container): view:
             msg = text+"\r\n" if plugin.add_newline else text
             deferred_call(device.write, msg)
             to_send.text = ""
+        else:
+            show_notification("Not connected")
 
-    func add_to_history(text):
+    func add_to_history(text: str):
         if text:
             # Retain order (most recent first)
             if text in plugin.history:
@@ -115,6 +145,25 @@ enamldef CommView(Container): view:
                 plugin.history.pop(0)
         # Reset
         view.history_index = 0
+
+    func hide_notification():
+        """ Hide the previous notification message if any """
+        if self.notification:
+            self.notification.close()
+
+    func show_notification(message: str, **kwargs):
+        """ Display a notification message.
+
+        Parameters
+        ----------
+        message: String
+            The message to show
+
+        """
+        self.hide_notification()
+        popup = NotificationPopup(self, message=message, **kwargs)
+        popup.show()
+        self.notification = popup
 
     Container:
         constraints = [
@@ -138,7 +187,7 @@ enamldef CommView(Container): view:
                     device.busy = False # Force send to quit
                     deferred_call(device.disconnect)
                 else:
-                    deferred_call(device.connect)
+                    deferred_call(try_connect, view)
         PushButton: btn_clear:
             icon = load_icon("bin")
             tool_tip = "Clear console"
