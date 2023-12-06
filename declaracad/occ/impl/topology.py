@@ -296,15 +296,19 @@ class Topology(Atom):
     def _default_faces(self):
         return self._loop_topo(TopAbs_FACE)
 
-    # Note: This filters out duplicates
     vertices = List(TopoDS_Vertex)
+
+    # Note: This filters out duplicates
+    unique_vertices = List(TopoDS_Vertex)
 
     def _default_vertices(self):
         if isinstance(self.shape, TopoDS_Wire):
-            vertices = WireExplorer(wire=self.shape).ordered_vertices()
+            return WireExplorer(wire=self.shape).ordered_vertices()
         else:
-            vertices = self._loop_topo(TopAbs_VERTEX)
-        return Topology.unique_shapes(vertices)
+            return self._loop_topo(TopAbs_VERTEX)
+
+    def _default_unique_vertices(self):
+        return Topology.unique_shapes(self.vertices)
 
     #: Get a list of points from vertices
     points = List(Point)

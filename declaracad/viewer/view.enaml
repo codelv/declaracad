@@ -355,48 +355,71 @@ enamldef ModelViewer(OccViewer): viewer:
             ]
             return desc
 
-    func describe_shapes(shape_type, topods_shapes):
-        n = len(topods_shapes)
-        if n == 2:
-            if shape_type in ('vertexs', 'nodes'):
-                if shape_type == 'vertexs':
-                    v1 = Point(Topology.cast_shape(topods_shapes[0]))
-                    v2 = Point(Topology.cast_shape(topods_shapes[1]))
-                else:
-                    v1 = topods_shapes[0].position
-                    v2 = topods_shapes[1].position
-                delta = format_point(v2 - v1)
-                d = format_unit(v1.distance(v2))
-                what = shape_type[:-1].title()
-                return [
-                    "Vertices: ",
-                    f"  {what} 1: {format_point(v1)}",
-                    f"  {what} 2: {format_point(v2)}",
-                    f"  Deltas: {delta}",
-                    f"  Distance: {d}",
-                ]
-            elif shape_type == 'edges':
-                if all([Topology.is_circle(s) for s in topods_shapes]):
-                    # Show distance from centers
-                    c1 = Point(Topology.cast_curve(topods_shapes[0]).Location())
-                    c2 = Point(Topology.cast_curve(topods_shapes[1]).Location())
-                    delta = format_point(c2 - c1)
-                    d = format_unit(c2.distance(c1))
+    func describe_shapes(shapes_by_type: dict[str, list], total_shapes: int) -> list[str]:
+        shape_types = tuple(sorted(shapes_by_type.keys()))
+        if len(shape_types) == 1:
+            shape_type = shape_types[0]
+            topods_shapes = shapes_by_type[shape_type]
+            if total_shapes == 2:
+                if shape_type in ('vertexs', 'nodes'):
+                    if shape_type == 'vertexs':
+                        v1 = Point(Topology.cast_shape(topods_shapes[0]))
+                        v2 = Point(Topology.cast_shape(topods_shapes[1]))
+                    else:
+                        v1 = topods_shapes[0].position
+                        v2 = topods_shapes[1].position
+                    delta = format_point(v2 - v1)
+                    d = format_unit(v1.distance(v2))
+                    what = shape_type[:-1].title()
                     return [
-                        "Circular edges: ",
-                        f"  Center 1: {format_point(c1)}",
-                        f"  Center 2: {format_point(c2)}",
-                        f"  Center Deltas: {delta}",
-                        f"  Center Distance: {d}",
+                        "Vertices: ",
+                        f"  {what} 1: {format_point(v1)}",
+                        f"  {what} 2: {format_point(v2)}",
+                        f"  Deltas: {delta}",
+                        f"  Distance: {d}",
                     ]
-        elif n == 3 and shape_type == 'vertexs':
-            v1 = Point(Topology.cast_shape(topods_shapes[0]))
-            v2 = Point(Topology.cast_shape(topods_shapes[1]))
-            v3 = Point(Topology.cast_shape(topods_shapes[2]))
-            angle = round(degrees((v1-v2).angle(v3-v2)), 6)
-            return [
-                f"  Angle: {angle}°",
-            ]
+                elif shape_type == 'edges':
+                    if all([Topology.is_circle(s) for s in topods_shapes]):
+                        # Show distance from centers
+                        c1 = Point(Topology.cast_curve(topods_shapes[0]).Location())
+                        c2 = Point(Topology.cast_curve(topods_shapes[1]).Location())
+                        delta = format_point(c2 - c1)
+                        d = format_unit(c2.distance(c1))
+                        return [
+                            "Circular edges: ",
+                            f"  Center 1: {format_point(c1)}",
+                            f"  Center 2: {format_point(c2)}",
+                            f"  Center Deltas: {delta}",
+                            f"  Center Distance: {d}",
+                        ]
+            elif total_shapes == 3 and shape_type == 'vertexs':
+                v1 = Point(Topology.cast_shape(topods_shapes[0]))
+                v2 = Point(Topology.cast_shape(topods_shapes[1]))
+                v3 = Point(Topology.cast_shape(topods_shapes[2]))
+                angle = round(degrees((v1-v2).angle(v3-v2)), 6)
+                return [
+                    f"  Angle: {angle}°",
+                ]
+        if total_shapes == 2:
+            if len(shape_types) == 2:
+                a = shapes_by_type[shape_types[0]][0]
+                b = shapes_by_type[shape_types[1]][0]
+            else:
+                a, b = shapes_by_type[shape_types[0]][0:2]
+            result = Topology(shape=a).distance_between(b, "min")
+            if result.NbSolution() > 0:
+                v1 = Point(result.PointOnShape1(1))
+                v2 = Point(result.PointOnShape2(1))
+                d = format_unit(result.Value())
+                return [
+                    "  Min Distance:",
+                    f"  Point on first: {format_point(v1)}",
+                    f"  Point on second: {format_point(v2)}",
+                    f"  Deltas: {format_point(v2-v1)}",
+                    f"  Shortest Distance: {d}",
+                ]
+
+
 
     func describe_selection(selection):
         """ Create a text description of the selection.
@@ -416,7 +439,8 @@ enamldef ModelViewer(OccViewer): viewer:
             return 'Nothing selected'
         desc = []
         try:
-            shapes_by_type = {}
+            shapes_by_type: dict[str, list] = {}
+            total_shapes = 0
             for d, items in selection.selection.items():
                 if desc:
                     desc.append("")
@@ -448,10 +472,12 @@ enamldef ModelViewer(OccViewer): viewer:
                 #pos = d.position
                 #desc.append(f"  Position: {pos.x}, {pos.y}, {pos.z}")
                 for shape_type, mapping in items.items():
+
                     if shape_type not in shapes_by_type:
                         shapes_by_type[shape_type] = []
 
                     n = len(mapping)
+                    total_shapes += n
                     keys = ', '.join(map(str, sorted(mapping.keys())))
                     if n == 1:
                         # Strip the s
@@ -469,12 +495,11 @@ enamldef ModelViewer(OccViewer): viewer:
                         shapes_by_type[shape_type].extend(shapes)
 
             # Show deltas between different parts
-            for shape_type, shapes in shapes_by_type.items():
-                if len(shapes) > 1:
-                    shape_desc = describe_shapes(shape_type, shapes)
-                    if shape_desc:
-                        desc.append("")
-                        desc.extend(shape_desc)
+            if total_shapes == 2 or total_shapes == 3:
+                shape_desc = describe_shapes(shapes_by_type, total_shapes)
+                if shape_desc:
+                    desc.append("")
+                    desc.extend(shape_desc)
 
         except Exception as e:
             print("Error describing selection: ")
