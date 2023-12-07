@@ -16,8 +16,9 @@ from OCCT.gp import gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 from declaracad.occ.algo import Mirror, ProxyTransform, Rotate, Scale, Translate
 
 from .occ_algo import OccOperation, coerce_shape
-from .occ_shape import OccShape
+from .occ_shape import OccShape, DEFAULT_AXIS
 from .topology import Topology
+
 
 
 class OccTransform(OccOperation, ProxyTransform):
@@ -46,15 +47,9 @@ class OccTransform(OccOperation, ProxyTransform):
                     t.SetScale(gp_Pnt(*op.point), op.s)
                 result.Multiply(t)
         else:
-            axis = gp_Ax3()
-            axis.SetDirection(d.direction.proxy)
-            result.SetTransformation(axis)
-            result.SetTranslationPart(gp_Vec(*d.position))
-            if d.rotation:
-                t = gp_Trsf()
-                t.SetRotation(gp_Ax1(d.position.proxy, d.direction.proxy), d.rotation)
-                result.Multiply(t)
-
+            axis = gp_Ax3(d.position.proxy, d.direction.proxy)
+            axis.Rotate(axis.Axis(), d.rotation)
+            result.SetDisplacement(DEFAULT_AXIS, axis)
         return result
 
     def update_shape(self, change=None):

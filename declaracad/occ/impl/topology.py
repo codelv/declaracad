@@ -1254,7 +1254,7 @@ class Topology(Atom):
             'quasi-'defelction' else this is the number of points
         n: Int
             Number of points to use
-        methode: Str
+        method: Str
             A value of either 'deflection' or 'abissca'
 
         Yields

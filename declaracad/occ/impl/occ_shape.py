@@ -18,7 +18,7 @@ from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedSh
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBndLib import BRepBndLib
-from OCCT.gp import gp, gp_Ax1, gp_Ax2, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
+from OCCT.gp import gp, gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TDF import TDF_Label
 from OCCT.TopLoc import TopLoc_Location
@@ -50,6 +50,7 @@ AY = gp_Ax1()
 AY.SetDirection(gp.DY_())
 AZ = gp_Ax1()
 AZ.SetDirection(gp.DZ_())
+DEFAULT_AXIS = gp_Ax3(gp_Pnt(0, 0, 0), DZ, DX)
 
 
 def coerce_axis(value: tuple[Point, Direction, float]) -> gp_Ax2:
@@ -263,29 +264,11 @@ class OccShape(ProxyShape):
 
         """
         d = self.declaration
-
-        # Move to position and align along direction axis
-        t = gp_Trsf()
-        if d.direction.is_parallel(DZ):
-            if d.direction.is_opposite(DZ):
-                t.SetRotation(AX, pi)
-            angle = d.rotation
-        else:
-            d1 = d.direction.cross(DZ)
-            axis = gp_Ax1(gp_Pnt(0, 0, 0), d1.proxy)
-            t.SetRotation(axis, d.direction.angle(DZ))
-
-            # Apply the rotation an reverse any rotation added in
-            sign = 1 if d1.y >= 0 else -1
-            angle = d.rotation + sign * d1.angle(DX)
-
-        if angle:
-            rot = gp_Trsf()
-            rot.SetRotation(AZ, angle)
-            t.Multiply(rot)
-
-        t.SetTranslationPart(gp_Vec(*d.position))
-        return t
+        result = gp_Trsf()
+        axis = gp_Ax3(d.position.proxy, d.direction.proxy)
+        axis.Rotate(axis.Axis(), d.rotation)
+        result.SetDisplacement(DEFAULT_AXIS, axis)
+        return result
 
     def set_position(self, position):
         self.create_shape()
