@@ -9,6 +9,7 @@ Created on Dec 13, 2017
 
 @author: jrm
 """
+import enaml
 from enaml.core.api import Conditional, Include, Looper  # noqa: F401
 from enaml.widgets.api import Timer  # noqa: F401
 
@@ -101,3 +102,6 @@ from .voxel import Voxel  # noqa: F401
 Loft = ThruSections  # noqa: F401
 Sweep = Pipe  # noqa: F401
 Extrude = Prism  # noqa: F401
+
+with enaml.imports():
+    from declaracad.parts.display import Axis
