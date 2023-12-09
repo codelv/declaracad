@@ -9,35 +9,12 @@ The full license is in the file LICENSE, distributed with this software.
 import ast as python_ast
 from atom.api import Atom
 from enaml.core import enaml_ast
-from enaml.core.parser import parse
 from enaml.core.api import Looper
 from enaml.layout.api import RetractItem
 from enaml.widgets.api import Container
 from enamlx.widgets.api import TreeView, TreeViewItem, TreeViewColumn
 from declaracad.core.api import DockItem
 from declaracad.core.utils import load_icon
-
-
-def parse_python(source):
-    ast = parse(source)
-    nodes = []
-    # Walk ast and pull out nodes we're insterested in
-    for node in ast.body:
-        if isinstance(node, enaml_ast.EnamlDef):
-            nodes.append(node)
-        elif isinstance(node, enaml_ast.PythonModule):
-            for n in node.ast.body:
-                if isinstance(n, (python_ast.ClassDef,
-                                    python_ast.FunctionDef)):
-                    nodes.append(n)
-    # Hack to workaround a segfault when the tree's items are emptied
-    if not nodes:
-        nodes.append(ast)
-    return nodes
-
-def parse_gcode(source):
-    from declaracad.cnc import gcode
-    return [gcode.parse(source)]
 
 
 def format_node(node):
@@ -69,17 +46,6 @@ enamldef OutlineDockItem(DockItem): view:
     title = "Outline"
     name = 'code-outline-item'
     icon = load_icon('chart_organisation')
-    func create_outline(source):
-        try:
-            syntax = plugin.detect_syntax(plugin.active_document.name)
-            if syntax in ('python', 'enaml'):
-                return parse_python(source)
-            elif syntax == 'gcode':
-                return parse_gcode(source)
-            return []
-        except Exception as e:
-            # We could set errors here?
-            return [e]
 
     Container:
         padding = 0
@@ -88,7 +54,7 @@ enamldef OutlineDockItem(DockItem): view:
             horizontal_headers = ['Name', 'Type', "Line"]
             horizontal_stretch = True
             resize_mode = 'resize_to_contents'
-            items << create_outline(plugin.active_document.source)
+            items << plugin.active_document.outline
             Looper:
                 iterable << tree.items
                 TreeViewItem:

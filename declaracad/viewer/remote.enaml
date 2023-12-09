@@ -83,6 +83,11 @@ enamldef RemoteViewer(Container): remote_viewer:
         except:
             pass
 
+    func restart():
+        process.terminate()
+        self.protocol = None
+        process.restart()
+
     ScrollArea:
         widget_resizable = True
         # When a window container is used as a child of a QAbstractScrollArea or
@@ -131,6 +136,7 @@ enamldef ViewerDockItem(DockItem): view:
         process.document = None
         process.document = active_document
 
+
     func take_screenshot(path):
         return process.protocol.call('screenshot', path)
 
@@ -164,9 +170,8 @@ enamldef ViewerDockItem(DockItem): view:
             separator = True
         Action:
             text = "Restart viewer"
-            triggered ::
-                process.terminate()
-                process.restart()
+            triggered :: viewer.restart()
+
         Action:
             text = "Reload document"
             triggered :: reload_document()

@@ -30,6 +30,9 @@ from atom.api import (
     Tuple,
     observe,
 )
+import ast as python_ast
+from enaml.core import enaml_ast
+from enaml.core.parser import parse
 from enaml.application import timed_call
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
 from enaml.scintilla.api import Scintilla
@@ -95,6 +98,30 @@ def format_title(
     return name
 
 
+
+def parse_python(source: str) -> list:
+    ast = parse(source)
+    nodes = []
+    # Walk ast and pull out nodes we're insterested in
+    for node in ast.body:
+        if isinstance(node, enaml_ast.EnamlDef):
+            nodes.append(node)
+        elif isinstance(node, enaml_ast.PythonModule):
+            for n in node.ast.body:
+                if isinstance(n, (python_ast.ClassDef,
+                                    python_ast.FunctionDef)):
+                    nodes.append(n)
+    # Hack to workaround a segfault when the tree's items are emptied
+    if not nodes:
+        nodes.append(ast)
+    return nodes
+
+def parse_gcode(source: str) -> list:
+    from declaracad.cnc import gcode
+    return [gcode.parse(source)]
+
+
+
 class Document(Model):
     #: Name of the current document
     name = Str().tag(config=True)
@@ -120,6 +147,9 @@ class Document(Model):
 
     #: For testing
     plugin = ForwardTyped(lambda: EditorPlugin)
+
+    #: Outline for outline view
+    outline = List()
 
     def __repr__(self):
         return f"Document<name='{self.name}'>"
@@ -173,6 +203,28 @@ class Document(Model):
         else:
             plugin = workbench.get_plugin("declaracad.editor")
         self.suggestions = plugin.autocomplete(self.source, self.cursor)
+
+    def _update_outline(self):
+        return [] # TODO: This is annoyingly slow with the latest enaml...
+        from declaracad.core.workbench import DeclaracadWorkbench
+
+        try:
+            workbench = DeclaracadWorkbench.instance()
+            if workbench is None:
+                # Workbench may be empty when standalone
+                plugin = self.plugin
+            else:
+                plugin = workbench.get_plugin("declaracad.editor")
+            syntax = plugin.detect_syntax(self.source)
+            if syntax in ('python', 'enaml'):
+                self.outline = parse_python(self.source)
+            elif syntax == 'gcode':
+                self.outline = parse_gcode(self.source)
+            else:
+                self.outline = []
+        except Exception as e:
+            # We could set errors here?
+            self.outline = [e]
 
 
 class EditorPlugin(Plugin):
