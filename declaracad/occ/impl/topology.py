@@ -900,6 +900,32 @@ class Topology(Atom):
         )
 
     @classmethod
+    def is_bezier_curve(cls, shape) -> bool:
+        """Check if an edge or wire is a bezier curve.
+
+        Returns
+        -------
+        bool: Bool
+            Whether the shape is a bezier curve
+        """
+        return (
+            cls.cast_curve(shape, expected_type=GeomAbs_BezierCurve, convert=False) is not None
+        )
+
+    @classmethod
+    def is_bspline_curve(cls, shape) -> bool:
+        """Check if an edge or wire is a bspline curve.
+
+        Returns
+        -------
+        bool: Bool
+            Whether the shape is a bspline curve
+        """
+        return (
+            cls.cast_curve(shape, expected_type=GeomAbs_BSplineCurve, convert=False) is not None
+        )
+
+    @classmethod
     def is_plane(cls, shape) -> bool:
         """Check if a surface is a plane.
 

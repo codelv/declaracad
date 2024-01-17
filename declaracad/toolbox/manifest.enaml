@@ -33,11 +33,11 @@ enamldef ToolboxManifest(PluginManifest):
     id = 'declaracad.toolbox'
     factory = plugin_factory
 
-    Extension:
-        id = 'items'
-        point = DOCK_ITEM_POINT
-        DockItem:
-            plugin_id = 'declaracad.toolbox'
-            factory = item_factory
-            layout = 'left'
+    # Extension:
+    #     id = 'items'
+    #     point = DOCK_ITEM_POINT
+    #     DockItem:
+    #         plugin_id = 'declaracad.toolbox'
+    #         factory = item_factory
+    #         layout = 'left'
     

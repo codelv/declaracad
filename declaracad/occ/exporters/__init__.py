@@ -46,6 +46,12 @@ def stl_exporter_factory():
     return StlExporter
 
 
+def svg_exporter_factory():
+    from declaracad.occ.exporters.svg.exporter import SvgExporter
+
+    return SvgExporter
+
+
 def vrml_exporter_factory():
     from declaracad.occ.exporters.vrml.exporter import VrmlExporter
 
@@ -56,5 +62,6 @@ EXPORTER_REGISTRY = {
     ".iges": iges_exporter_factory,
     ".step": step_exporter_factory,
     ".stl": stl_exporter_factory,
+    ".svg": svg_exporter_factory,
     ".vrml": vrml_exporter_factory,
 }
