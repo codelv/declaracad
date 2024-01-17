@@ -704,7 +704,8 @@ class Topology(Atom):
         expected_type: Optional[GeomAbs_CurveType] = None,
         convert: bool = True,
     ) -> Optional[Union[Geom_Curve, BRepAdaptor_Curve]]:
-        """Attempt to cast the shape (an edge or wire) to a curve
+        """Attempt to cast the shape (an edge or wire) to a curve. If a cast
+        occurs the UV parameters will be lost.
 
         Parameters
         ----------
