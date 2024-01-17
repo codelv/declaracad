@@ -98,7 +98,6 @@ def format_title(
     return name
 
 
-
 def parse_python(source: str) -> list:
     ast = parse(source)
     nodes = []
@@ -108,18 +107,18 @@ def parse_python(source: str) -> list:
             nodes.append(node)
         elif isinstance(node, enaml_ast.PythonModule):
             for n in node.ast.body:
-                if isinstance(n, (python_ast.ClassDef,
-                                    python_ast.FunctionDef)):
+                if isinstance(n, (python_ast.ClassDef, python_ast.FunctionDef)):
                     nodes.append(n)
     # Hack to workaround a segfault when the tree's items are emptied
     if not nodes:
         nodes.append(ast)
     return nodes
 
+
 def parse_gcode(source: str) -> list:
     from declaracad.cnc import gcode
-    return [gcode.parse(source)]
 
+    return [gcode.parse(source)]
 
 
 class Document(Model):
@@ -205,7 +204,7 @@ class Document(Model):
         self.suggestions = plugin.autocomplete(self.source, self.cursor)
 
     def _update_outline(self):
-        return [] # TODO: This is annoyingly slow with the latest enaml...
+        return []  # TODO: This is annoyingly slow with the latest enaml...
         from declaracad.core.workbench import DeclaracadWorkbench
 
         try:
@@ -216,9 +215,9 @@ class Document(Model):
             else:
                 plugin = workbench.get_plugin("declaracad.editor")
             syntax = plugin.detect_syntax(self.source)
-            if syntax in ('python', 'enaml'):
+            if syntax in ("python", "enaml"):
                 self.outline = parse_python(self.source)
-            elif syntax == 'gcode':
+            elif syntax == "gcode":
                 self.outline = parse_gcode(self.source)
             else:
                 self.outline = []

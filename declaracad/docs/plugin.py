@@ -16,7 +16,6 @@ from declaracad.core.api import Plugin
 
 
 class DocsPlugin(Plugin):
-
     #: List of tools or
     url = Str()
 

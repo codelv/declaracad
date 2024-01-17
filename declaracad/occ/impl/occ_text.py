@@ -91,7 +91,6 @@ class OccText(OccShape, ProxyText):
             shape = BRepBuilderAPI_Transform(shape, t).Shape()
         self.shape = shape
 
-
     def set_text(self, text: str):
         self.create_shape()
 

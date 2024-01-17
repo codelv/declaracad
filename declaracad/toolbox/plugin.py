@@ -50,7 +50,6 @@ class Tool(Model):
 
 
 class ToolboxPlugin(Plugin):
-
     #: List of tools or
     tools = List(Tool)
 

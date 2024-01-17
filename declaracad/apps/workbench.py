@@ -32,7 +32,6 @@ with enaml.imports():
 
 
 def main(**kwargs):
-
     # Start the workbench
     log.info("Workbench starting")
     workbench = DeclaracadWorkbench()

@@ -1,13 +1,15 @@
 from .api import Topology, Wire, Point
 
 
-def remove_out_of_range_points(pts: list[Point], low: float, high: float) -> list[Point]:
-    """ Remove points that have any coordinate out of the given range."""
+def remove_out_of_range_points(
+    pts: list[Point], low: float, high: float
+) -> list[Point]:
+    """Remove points that have any coordinate out of the given range."""
     return [p for p in pts if p.coordinates_in_range(low, high)]
 
 
 def clip_points_to_range(pts: list[Point], low: float, high: float) -> list[Point]:
-    """ Remove points that have any coordinate out of the given range."""
+    """Remove points that have any coordinate out of the given range."""
     return [p.clip(low, high) for p in pts]
 
 

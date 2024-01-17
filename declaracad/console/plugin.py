@@ -13,6 +13,7 @@ Created on Dec 10, 2015
 import asyncio
 from declaracad.core.api import Plugin
 
+
 def patch_ipykernel():
     from ipykernel.inprocess.client import InProcessKernelClient
 
@@ -35,7 +36,6 @@ def patch_ipykernel():
         loop.run_until_complete(kernel.dispatch_shell(msg_parts))
         idents, reply_msg = self.session.recv(stream, copy=False)
         self.shell_channel.call_handlers_later(reply_msg)
-
 
     InProcessKernelClient._dispatch_to_kernel = _dispatch_to_kernel
 

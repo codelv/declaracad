@@ -605,7 +605,6 @@ class Offset(Operation):
     #: Disble operation
     disabled = d_(Bool())
 
-
     @observe(
         "offset",
         "offset_mode",
@@ -615,7 +614,7 @@ class Offset(Operation):
         "normal_distance",
         "shape",
         "as_face",
-        "disabled"
+        "disabled",
     )
     def _update_proxy(self, change: dict[str, Any]):
         super(Offset, self)._update_proxy(change)

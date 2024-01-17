@@ -126,7 +126,6 @@ class SerialConnection(Connection):
 
 
 class DeviceConfig(Model):
-
     #: Send rate
     send_rate = Float(strict=False).tag(config=True)
 

@@ -66,7 +66,7 @@ class OccVertex(OccShape, ProxyVertex):
         d = self.declaration
         ais_shape = super()._default_ais_shape()
         attrs = ais_shape.Attributes()
-        color, alpha  = color_to_quantity_color(d.color or Color())
+        color, alpha = color_to_quantity_color(d.color or Color())
         marker = MARKERS[d.marker]
         if aspect := attrs.PointAspect():
             aspect.SetColor(color)

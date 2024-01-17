@@ -298,7 +298,6 @@ class QtViewer3d(QOpenGLWidget):
 
 
 class QtOccViewer(QtControl, ProxyOccViewer):
-
     #: Viewer widget
     widget = Typed(QtViewer3d)
 

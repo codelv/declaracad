@@ -910,7 +910,8 @@ class Topology(Atom):
             Whether the shape is a bezier curve
         """
         return (
-            cls.cast_curve(shape, expected_type=GeomAbs_BezierCurve, convert=False) is not None
+            cls.cast_curve(shape, expected_type=GeomAbs_BezierCurve, convert=False)
+            is not None
         )
 
     @classmethod
@@ -923,7 +924,8 @@ class Topology(Atom):
             Whether the shape is a bspline curve
         """
         return (
-            cls.cast_curve(shape, expected_type=GeomAbs_BSplineCurve, convert=False) is not None
+            cls.cast_curve(shape, expected_type=GeomAbs_BSplineCurve, convert=False)
+            is not None
         )
 
     @classmethod

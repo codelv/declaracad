@@ -20,7 +20,6 @@ from declaracad.viewer.widgets.occ_clipped_plane import ProxyOccViewerClippedPla
 
 
 class QtOccViewerClippedPlane(QtControl, ProxyOccViewerClippedPlane):
-
     #: Viewer widget
     clip_plane = Typed(Graphic3d_ClipPlane)
 

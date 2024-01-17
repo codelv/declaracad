@@ -17,7 +17,6 @@ SETTINGS_PAGE_POINT = "declaracad.ui.settings.page"
 
 
 class DockItem(Declarative):
-
     #: The plugin to pass to this dock item
     plugin_id = d_(Str())
 
@@ -31,7 +30,6 @@ class DockItem(Declarative):
 
 
 class SettingsPage(Declarative):
-
     #: Settings page name that is displayed in the ui
     name = d_(Str())
 

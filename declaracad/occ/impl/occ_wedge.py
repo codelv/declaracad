@@ -15,7 +15,6 @@ from .occ_shape import OccShape, coerce_axis
 
 
 class OccWedge(OccShape, ProxyWedge):
-
     reference = set_default(
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_prim_a_p_i___make_wedge.html"

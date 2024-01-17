@@ -47,7 +47,6 @@ def color_from_rgbf(r: float, g: float, b: float) -> Color:
 
 
 class Texture(Atom):
-
     #: Path to the texture file or image
     path = Str()
 

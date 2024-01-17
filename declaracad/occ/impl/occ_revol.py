@@ -16,7 +16,6 @@ from .occ_shape import OccDependentShape, coerce_shape
 
 
 class OccRevol(OccDependentShape, ProxyRevol):
-
     #: Update the class reference
     reference = set_default(
         "https://dev.opencascade.org/doc/refman/html/"

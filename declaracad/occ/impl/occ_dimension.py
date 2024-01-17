@@ -73,7 +73,6 @@ class OccDimension(ProxyDimension):
         aspect.SetArrowAspect(arrow_aspect)
         dim.SetDimensionAspect(aspect)
 
-
     def update_dimension(self):
         """Recreates the dimension catching any errors"""
         try:

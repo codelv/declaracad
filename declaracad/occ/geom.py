@@ -264,9 +264,7 @@ class Point(Atom):
         return hash(self[:])
 
     def coordinates_in_range(self, low: float, high: float) -> bool:
-        """ Check if all coordinates are in the given range
-
-        """
+        """Check if all coordinates are in the given range"""
         return (
             (low <= self.x <= high)
             and (low <= self.y <= high)
@@ -274,11 +272,11 @@ class Point(Atom):
         )
 
     def clip(self, low: float, high: float) -> "Point":
-        """ Clip to the given range """
+        """Clip to the given range"""
         return Point(
-            x = min(high, max(low, self.x)),
-            y = min(high, max(low, self.y)),
-            z = min(high, max(low, self.z)),
+            x=min(high, max(low, self.x)),
+            y=min(high, max(low, self.y)),
+            z=min(high, max(low, self.z)),
         )
 
     @classmethod

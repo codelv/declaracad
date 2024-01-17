@@ -126,7 +126,9 @@ def optimize_points(
     return result
 
 
-def optimize_order(data: list, start_point: Point, key: Callable[[Any], Point], **kwargs) -> list:
+def optimize_order(
+    data: list, start_point: Point, key: Callable[[Any], Point], **kwargs
+) -> list:
     """Reorder a generic list of operations based on the start point and
     list of operation start points.
 

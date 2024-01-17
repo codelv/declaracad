@@ -20,7 +20,6 @@ from .occ_shape import OccShape, DEFAULT_AXIS
 from .topology import Topology
 
 
-
 class OccTransform(OccOperation, ProxyTransform):
     reference = set_default(
         "https://dev.opencascade.org/doc/refman/html/classgp___trsf.html"
