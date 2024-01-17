@@ -1214,8 +1214,8 @@ class Export(ToolkitObject):
     #: Disable export
     disabled = d_(Bool())
 
-    #: Shape to export
-    shape = d_(Instance(Shape))
+    #: Shapes to export
+    shapes = d_(List((Shape, TopoDS_Shape)))
 
     #: Export filename
     filename = d_(Str())

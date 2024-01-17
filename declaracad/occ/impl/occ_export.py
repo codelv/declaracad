@@ -21,8 +21,8 @@ class OccExport(ProxyExport):
         if d.disabled:
             return
         filename = d.filename
-        if d.shape:
-            shapes = [d.shape]
+        if d.shapes:
+            shapes = d.shapes
         else:
             shapes = d.children
         if shapes and filename:
