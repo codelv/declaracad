@@ -49,7 +49,7 @@ class OccOffset(OccOperation, ProxyOffset):
     def update_shape(self, change=None):
         d = self.declaration
         shape = Topology.cast_shape(self.get_shape_to_offset())
-        if d.disabled:
+        if d.disabled or d.offset == 0:
             self.shape = shape
             return
         if isinstance(shape, TopoDS_Edge):
