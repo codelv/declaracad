@@ -246,7 +246,8 @@ class Operation(Part):
 
         """
         if self.disabled:
-            return [f"({self.operation_type} is disabled)"]
+            # Keep "" at end to force a newline
+            return [f"({self.operation_type} is disabled)", ""]
 
         job = self.parent
         format_value = format_value or job.format_value
