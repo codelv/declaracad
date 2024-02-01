@@ -42,9 +42,6 @@ enamldef DrillingOperation(Operation): operation:
     #: Retract value R
     attr retract = 2.5
 
-    #: Depth of hole. For conical faces this value is computed.
-    attr depth = 0.0
-
     #: Clearance added to the bottom of the hole (added to depth)
     #: A positive number will leave stock at the bottom
     #: A negative number will remove extra stock from the bottom (if closed)
@@ -53,6 +50,10 @@ enamldef DrillingOperation(Operation): operation:
     #: Spot drilling or countersinking. When true it will set the dwell time
     #: and adjust the feedrate by 1/4.
     attr spot: bool = False
+
+    #: Depth of hole. For conical and cylindrical faces this value is computed.
+    #: If spot drilling the depth is set to 50 thou
+    attr depth = min(tool.diameter/2, 1.27) if spot else 0.0
 
     #: Dwell time
     attr dwell = 1 if spot else 0
@@ -110,11 +111,14 @@ enamldef DrillingOperation(Operation): operation:
             cylinder = Topology.cast_surface(hole)
             diameter = 2 * cylinder.Radius()
             center = Point(cylinder.Location())
+            if depth == 0:
+                depth = cylinder.Height() + diameter/2
         elif Topology.is_cone(hole):
             cone = Topology.cast_surface(hole)
             diameter = 2 * cone.RefRadius()
             center = Point(cone.Location())
-            depth = center.distance(Point(cone.Apex()))
+            if depth == 0:
+                depth = center.distance(Point(cone.Apex()))
         elif Topology.is_circle(hole):
             circle = Topology.cast_curve(hole)
             diameter = 2 * circle.Radius()
