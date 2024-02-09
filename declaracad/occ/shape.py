@@ -872,7 +872,7 @@ class Prism(Shape):
     proxy = Typed(ProxyPrism)
 
     #: Shape to build prism from
-    shape = d_(Instance(Shape)).tag(view=True)
+    shape = d_(Instance((Shape, TopoDS_Shape))).tag(view=True)
 
     #: Vector to build prism from, ignored if infinite is true
     vector = d_(Tuple((float, int), default=(0, 0, 1))).tag(view=True)
