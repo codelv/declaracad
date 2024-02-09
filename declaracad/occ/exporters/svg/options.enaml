@@ -13,7 +13,7 @@ from .exporter import SvgExporter
 
 
 enamldef OptionsForm(Form):
-    attr model: IgesExporter
+    attr model: SvgExporter
 
     func get_help(name):
         m = model.get_member(name)
