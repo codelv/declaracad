@@ -85,9 +85,13 @@ enamldef EndMill(Tool): drill:
     #: Used to calculate feed and speed
     attr flutes: int = 4
 
+    #: Adjusts feed per tooth based on diameter.
+    #: End mills smaller than 1/2" cannot feed as much per tooth
+    attr diameter_factor = max(0.1, min(1, diameter/12))
+
     #: Feed per tooth
     #: Adjust this as needed based on the job and cutter material
-    attr feed_per_tooth = 0.004
+    attr feed_per_tooth = 0.004 * diameter_factor
 
     #: Feed per rev is feed per tooth * number of flutes
     feed_per_rev = feed_per_tooth * flutes
@@ -117,9 +121,13 @@ enamldef ChamferMill(Tool): drill:
     #: Used to calculate feed and speed
     attr flutes: int = 4
 
+    #: Adjusts feed per tooth based on diameter.
+    #: End mills smaller than 1/2" cannot feed as much per tooth
+    attr diameter_factor = max(0.1, min(1, diameter/12))
+
     #: Feed per tooth
     #: Adjust this as needed based on the job and cutter material
-    attr feed_per_tooth = 0.004
+    attr feed_per_tooth = 0.004 * diameter_factor
 
     #: Feed per rev is feed per tooth * number of flutes
     feed_per_rev = feed_per_tooth * flutes
@@ -213,10 +221,14 @@ enamldef ThreadMill(Tool): cutter:
     #: Tool profile
     alias profile
 
+    #: Adjusts feed per tooth based on diameter.
+    #: End mills smaller than 1/2" cannot feed as much per tooth
+    attr diameter_factor = max(0.1, min(1, diameter/12))
+
     #: Feed per tooth
     #: Adjust this as needed based on the job and cutter material
     #: https://sct-usa.com/technical-data/thread-mill-feed-and-speed-chart/
-    attr feed_per_tooth = 0.0003
+    attr feed_per_tooth = 0.0003 * diameter_factor
 
     #: Feed per rev is feed per tooth * number of flutes
     feed_per_rev = feed_per_tooth * flutes
