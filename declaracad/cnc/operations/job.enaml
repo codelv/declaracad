@@ -10,6 +10,7 @@ Created on Nov 9, 2021
 @author: jrm
 """
 import os
+import traceback
 from datetime import datetime
 from declaracad.cnc.operation import Operation
 from declaracad.occ.api import Include, Part, Point, Timer, Topology
@@ -125,6 +126,7 @@ enamldef Job(Part):
             print(f"Wrote job to {filename}")
         except Exception as e:
             print(f"Error generating job: {e}")
+            traceback.print_exc()
 
 
 enamldef JobSimulation(Part): simulation:

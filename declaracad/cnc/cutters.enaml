@@ -4,10 +4,6 @@ Copyright (c) 2021, Jairus Martin.
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
-
-Created on Nov 10, 2021
-
-@author: jrm
 """
 from math import sin, cos, radians, pi
 from atom.api import Int, Float
@@ -264,12 +260,90 @@ enamldef ThreadMill(Tool): cutter:
                     dz = diameter
 
 
+enamldef TapCutter(Tool): cutter:
+    """ Tap cutter."""
+    #: Tool diameter
+    #: Outside thread diameter in mm
+    attr diameter = 3
+    
+    #: Length of thread section
+    attr thread_length = 10
+    
+    #: Left hand tap
+    attr left_hand: bool = False
+
+    #: Depth of thread
+    attr thread_depth = diameter / (2 * 5)
+    
+    #: Number of flutes
+    attr flutes: int = 4
+    
+    #: Total tool length including shank
+    attr total_length = 30
+    
+    #: Used to calculate pitch. For metric threads just set the pitch.
+    attr threads_per_inch = None
+    
+    #: Thread pitch
+    attr pitch = 25.4 / threads_per_inch if threads_per_inch is not None else 0
+    
+    description = f"T{self.number} - " \
+                  f"Tap {round(self.diameter, 3)} dia x {self.pitch} pitch"
+    material = 'steel'
+    
+    feed_per_rev = pitch
+    
+    #: For visual purposes only
+    attr num_threads = int(thread_length/pitch)
+            
+    Fuse:
+        material = parent.material
+        transparency = parent.transparency
+        parallel = True
+        unify = True
+        Cylinder:
+            position = (0, 0, num_threads*pitch)
+            radius = diameter/2-thread_depth
+            height = total_length - num_threads*pitch
+        Cut: profile:
+            Revol:
+                #solid = True
+                Polyline:
+                    closed = True
+                    as_face = True
+                    points = [
+                        (0, 0),
+                        (diameter/2-thread_depth, 0),
+                        (diameter/2, 0, pitch/2),
+                        (diameter/2-thread_depth, 0, pitch),
+                        (0, 0, pitch),
+                    ]
+            Looper:
+                iterable = [
+                    i * (2*pi / flutes)
+                    for i in range(flutes)
+                ]
+                Cylinder: flute:
+                    radius = diameter / (2 * 2)
+                    position = (
+                        diameter/2 * cos(loop.item), 
+                        1.1*diameter/2 * sin(loop.item)
+                    )
+                    height = pitch
+        Looper:
+            iterable = range(1, num_threads)
+            Transform:
+                shape = profile
+                position = (0, 0, loop.item*pitch)
+            
+
 enamldef Assembly(Part):
     Axis:
         pass
     ThreadMill:
         flutes = 6
         angle = 60
+        position = (0, 10)
     
     TwistDrill:
         position = (-20, 0)
@@ -283,3 +357,7 @@ enamldef Assembly(Part):
 
     FaceMill:
         position = (200, 0)
+        
+    TapCutter:
+        diameter = 1/4 * 25.4
+        threads_per_inch = 32

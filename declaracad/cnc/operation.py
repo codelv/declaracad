@@ -196,13 +196,15 @@ class Operation(Part):
 
     @d_func
     def generate_spindle_start_gcode(
-        self, format_value: Optional[Callable[[float], float]] = None
+        self,
+        format_value: Optional[Callable[[float], float]] = None,
+        reverse: bool = False
     ) -> list[str]:
         cmds = []
 
         # Turn on spindle and coolant from base operation
         s = abs(self.spindle_speed)
-        mcode = "M3" if self.spindle_speed > 0 else "M3"
+        mcode = "M4" if reverse else "M3"
         cmds.append(f"S{s} {mcode}")
 
         if self.coolant == "mist":

@@ -1,0 +1,244 @@
+"""
+Copyright (c) 2024, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+"""
+from math import ceil, pi
+from atom.api import Atom, Float, Instance, List
+from enaml.core.api import Conditional, Looper
+from declaracad.cnc.operation import Operation
+from declaracad.cnc.optimize import optimize_order
+from declaracad.occ.api import Point, Topology, Polyline, DisplayArrow, Vertex
+from declaracad.occ.geom import coerce_point
+
+
+class TappingData(Atom):
+    diameter = Float(strict=False)
+    center = Instance(Point) # Center of hole
+    retract = Instance(Point) # Retract position
+    bottom = Instance(Point) # Bottom of hole
+
+
+enamldef TappingOperation(Operation): operation:
+    """ Perform a tapping operation using a G74, G84, or manual G-Code.
+
+    All values are in mm. Use the job to convert to inches.
+
+    """
+    operation_type = f"Tapping cycle{' ' + name if name else ''}"
+
+    #: List of circular edges, cylinder faces, or points
+    attr holes: list = []
+
+    #: If true use G84 or G74, else generate a manual tapping cycle.
+    #: The machine must support reverse and spindle accel time should be
+    #: minimized
+    attr use_tapping_cycle: bool = False
+
+    # ------------------------------------------------------------------------
+    # Operation options
+    # ------------------------------------------------------------------------
+    #: Retract value R
+    attr retract = 2.5
+
+    #: Dwell time
+    attr dwell = 0
+
+    #: Clearance added to the bottom of the hole (added to depth)
+    #: A positive number will leave stock at the bottom
+    #: A negative number will remove extra stock from the bottom (if closed)
+    attr bottom_clearance = 0
+
+    #: Depth to tap
+    attr depth = 0.0
+
+    #: Slowdown factor
+    attr slowdown_factor = 0.6 / 4
+
+    #: Slowdown even more for deep holes
+    attr depth_factor = 1/3 if depth >  3 * tool.diameter else 1
+
+    #: Spindle speed calculation
+    #: Assumes surface speed is in feet per minute. Surface speeds for tapping
+    #: are different than normal surface speeds!
+    #: Note: Max spindle speed is assumed to be available in the parent scope
+    spindle_speed = min(max_spindle_speed, round(
+        12 * surface_speed / (pi*tool.diameter/25.4) * slowdown_factor * depth_factor))
+
+    #: Feedrate calculation. Feed per rev should equal the thread pitch
+    feedrate = round(spindle_speed * tool.feed_per_rev, 2)
+
+    # ------------------------------------------------------------------------
+    # Internal variables
+    # ------------------------------------------------------------------------
+    attr lift_point = get_lift_point()
+    attr drop_point = get_drop_point()
+    attr tap_data << optimize_order(
+        [find_center(h) for h in holes],
+        start_point,
+        lambda d: d.center
+    )
+    attr path = generate_path(tap_data)
+
+    func find_center(hole) -> TappingData:
+        """ Find center position of a hole"""
+        depth = self.depth
+        retract = self.retract
+        if isinstance(hole, Point):
+            # Diameter unkown
+            center = hole
+        elif Topology.is_cylinder(hole):
+            cylinder = Topology.cast_surface(hole)
+            diameter = 2 * cylinder.Radius()
+            center = Point(cylinder.Location())
+            if depth == 0:
+                depth = cylinder.Height() + diameter/2
+        elif Topology.is_circle(hole):
+            circle = Topology.cast_curve(hole)
+            diameter = 2 * circle.Radius()
+            center = Point(circle.Location())
+        else:
+            raise ValueError(f"Cannot get center of {hole}")
+        try:
+            assert tool.pitch > 0
+        except Exception as e:
+            raise ValueError(
+                f"Tool {tool.description} must define either "
+                f"threads_per_inch or pitch.")
+        # Check tool diameter
+        if tool.diameter > diameter:
+            raise ValueError(
+                f"Tool {tool.description} is too large for "
+                f"to tapp thread in hole of diameter {round(diameter, 3)}. "
+                f"Change the tool diameter "
+                f"or just use the hole position to ignore this error.")
+        # TODO: Should spot drill always be larger than hole diameter?
+        # TODO: Compute spot drill max depth?
+        if depth + bottom_clearance > tool.total_length:
+            raise ValueError(
+                f"Tool {tool.description} is not long enough to cut a "
+                f"{round(depth, 3)} hole. Adjust the tool "
+                f"`length` or use a tool.")
+        return TappingData(
+            center=center,
+            diameter=diameter,
+            retract=center + (0, 0, retract),
+            bottom=center - (0, 0, depth + bottom_clearance),
+        )
+
+    func get_lift_point():
+        last_point = self.tap_data[-1].center
+        return Point(last_point.x, last_point.y, start_point.z)
+
+    func get_drop_point():
+        first_point = self.tap_data[0].center
+        return Point(first_point.x, first_point.y, start_point.z)
+
+    func generate_path(tap_data: list[TappingData]) -> list[Point]:
+        """ Generate the path to display including the drilling cycle options.
+
+        """
+        path = [coerce_point(start_point), drop_point]
+        for entry in tap_data:
+            p = entry.center
+            drop_pos = Point(p.x, p.y, drop_point.z)
+
+            # Go to top of hole
+            path.append(drop_pos)
+            # Go to bottom
+            path.append(entry.bottom)
+            # Return to top
+            path.append(drop_pos)
+
+        path.append(lift_point)
+        path.append(coerce_point(end_point))
+        return path
+
+    generate_toolpath_gcode => (format_value):
+        """ Generate custom gcode output for this operation
+
+        """
+        cmds = []
+        p = self.path[0]
+        # Move to top of first hole
+        for p in self.path[0:2]:
+            x, y, z = map(format_value, p)
+            cmds.append(f'G0 X{x} Y{y} Z{z}')
+
+        for entry in self.tap_data:
+            p = entry.center
+            z = format_value(entry.bottom.z)
+            r = format_value(entry.retract.z)
+            if use_tapping_cycle:
+                cmd = [
+                    'G74' if tool.left_hand else 'G84',
+                    f'X{format_value(p.x)}',
+                    f'Y{format_value(p.y)}',
+                    f'Z{z}',
+                    f'R{r}',
+                    f'F{format_value(tool.pitch)}'
+                ]
+                if dwell:
+                    cmd.append(f"P{dwell}")
+
+                cmds.append(' '.join(cmd))
+            else:
+                # Go to top of hole
+                cmds.append("(Manual tapping start)")
+                cmds.append(
+                    f'G0 X{format_value(p.x)} Y{format_value(p.y)} Z{r}'
+                )
+                # Start spindle
+                cmds.append(f"F{format_value(tool.pitch)}")
+                cmds.extend(self.generate_spindle_start_gcode(reverse=tool.left_hand))
+                cmds.append(f"G1 Z{z}")
+                # Stop spindle
+                cmds.append("M5")
+                # Reverse spindle
+                cmds.append("M3" if tool.left_hand else "M4")
+                # Retract
+                cmds.append(f"G1 Z{r}")
+                cmds.extend(self.generate_spindle_stop_gcode())
+                cmds.append("")
+
+
+        # Add lift and return point
+        for p in self.path[-2:]:
+            x, y, z = map(format_value, p)
+            cmds.append(f"G0 X{x} Y{y} Z{z}")
+        return cmds
+
+    Conditional:
+        condition << not operation.disabled
+        Polyline:
+            color = operation.color
+            line_style = 'dashed'
+            color = 'lime'
+            points << path
+        Looper:
+            iterable << tap_data
+            Vertex:
+                color = 'yellow'
+                name = 'Hole center'
+                position = loop.item.center
+            Vertex:
+                color = 'magenta'
+                name = 'Bottom position'
+                position = loop.item.bottom
+        DisplayArrow: drop_arrow:
+            color = 'red'
+            cone_size = (0.6, 1.5)
+            tube_size = (0.3, 3)
+            description = 'Drop'
+            direction = (0, 0, -1)
+            position = drop_point + (0, 0, 3)
+        DisplayArrow:
+            color = 'green'
+            cone_size = drop_arrow.cone_size
+            tube_size = drop_arrow.tube_size
+            description = 'Lift'
+            direction = (0, 0, 1)
+            position = lift_point

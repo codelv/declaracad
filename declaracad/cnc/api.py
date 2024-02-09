@@ -10,10 +10,12 @@ with enaml.imports():
         ThreadMill,
         Tool,
         TwistDrill,
+        TapCutter,
     )
     from declaracad.cnc.operations.chamfer import ChamferOperation  # noqa: F401
     from declaracad.cnc.operations.contour import ContourOperation  # noqa: F401
     from declaracad.cnc.operations.drilling import DrillingOperation  # noqa: F401
+    from declaracad.cnc.operations.tapping import TappingOperation  # noqa: F401
     from declaracad.cnc.operations.facing import FacingOperation  # noqa: F401
     from declaracad.cnc.operations.job import Job, JobSimulation  # noqa: F401
     from declaracad.cnc.operations.pocket import (  # noqa: F401
