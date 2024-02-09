@@ -10,6 +10,7 @@ Created on Dec 10, 2015
 
 @author: jrm
 """
+import asyncio
 import inspect
 import logging
 
@@ -53,10 +54,12 @@ class ToolboxPlugin(Plugin):
     #: List of tools or
     tools = List(Tool)
 
-    def _refresh_tools(self) -> None:
+    async def refresh_tools(self) -> None:
         tools: list[Tool] = []
         excluded = ("load_model",)
+        await asyncio.sleep(0.01) # Allow UI to update
         for module in get_all_modules():
+            await asyncio.sleep(0.01) # Allow UI to update
             for name in dir(module):
                 if name.startswith("_") or name in excluded:
                     continue
@@ -68,6 +71,7 @@ class ToolboxPlugin(Plugin):
                     continue  # Not a class
                 tool = Tool(name=name, module=module, declaration=d)
                 tools.append(tool)
+                await asyncio.sleep(0.01) # Allow UI to update
         tools.sort(key=lambda it: it.name)
         log.debug("Tools loaded")
         self.tools = tools
@@ -78,4 +82,4 @@ class ToolboxPlugin(Plugin):
         app = Application.instance()
         # Defer this to speed up startup time
         # TODO: Connect this to some sort of event
-        app.timed_call(3000, self._refresh_tools)
+        app.deferred_call(self.refresh_tools)
