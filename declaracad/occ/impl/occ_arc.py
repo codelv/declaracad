@@ -9,9 +9,10 @@ The full license is in the file LICENSE, distributed with this software.
 from math import pi
 
 from atom.api import Typed, set_default
+from OCCT.ElCLib import ElCLib
 from OCCT.GC import GC_MakeArcOfCircle
-from OCCT.Geom import Geom_TrimmedCurve
-from OCCT.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Vec
+from OCCT.Geom import Geom_Circle, Geom_TrimmedCurve
+from OCCT.gp import gp_Ax2, gp_Circ, gp_Vec
 
 from declaracad.occ.draw import ProxyArc
 from declaracad.occ.geom import Direction
@@ -55,11 +56,12 @@ class OccArc(OccLine, ProxyArc):
                     if start.IsEqual(end, d.tolerance):
                         case = 2
                         # Full circle
-                        center = d.position.proxy
-                        start_direction = gp_Dir(gp_Vec(center, start))
-                        start_angle = axis.XDirection().Angle(start_direction)
-                        angle = start_angle + 2 * pi
-                        arc = GC_MakeArcOfCircle(c, start, angle, True).Value()
+                        start_angle = ElCLib.Parameter_(c, start)
+                        arc = Geom_TrimmedCurve(
+                            Geom_Circle(c),
+                            start_angle,
+                            start_angle + 2 * pi,
+                        )
                     else:
                         case = 3
                         arc = GC_MakeArcOfCircle(c, start, end, True).Value()
@@ -100,7 +102,6 @@ class OccArc(OccLine, ProxyArc):
                 f"(center={d.position}, radius={d.radius}, points={d.points},"
                 f" alpha1={d.alpha1}, alpha2={d.alpha2} case={case})" + help_msg
             )
-
         if d.reverse:
             arc.Reverse()
         self.curve = arc

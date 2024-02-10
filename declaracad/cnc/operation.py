@@ -14,7 +14,6 @@ from typing import Callable, Optional
 
 import enaml
 from atom.api import Bool, Coerced, Enum, Float, Instance, Str
-from OCCT.Geom import Geom_Circle
 
 from declaracad.occ.api import Arc, Direction, Part, Point, Polyline, Topology, Wire
 from declaracad.occ.geom import coerce_point
@@ -26,11 +25,13 @@ from enaml.core.declarative import d_, d_func
 
 
 def generate_arc_gcode(
-    arc: Arc, format_value: Callable[[float], float], incremental: bool = True
+    arc: Arc,
+    format_value: Callable[[float], float],
+    incremental: bool = True,
 ) -> list[str]:
-    """Generate gcodee for an Arc"""
+    """Generate gcode for an Arc"""
 
-    cmds = []
+    cmds: list[str] = []
     d = arc.direction
     center = arc.position
     start, end = arc.topology.start_point, arc.topology.end_point
@@ -105,17 +106,18 @@ def generate_wire_gcode(
             assert last_point == points[0]
             last_point = points[-1]
         elif Topology.is_circle(edge):
-            curve: Geom_Circle = Topology.cast_curve(edge)
-            points = [topo.start_point, topo.end_point]
+            curve = Topology.cast_curve(edge)
             arc = Arc(
                 direction=Direction(curve.Axis().Direction()),
                 position=Point(curve.Location()),
                 radius=curve.Radius(),
                 clockwise=Topology.is_reversed(edge),
-                points=points,
+                points=[topo.start_point, topo.end_point],
             )
-            assert last_point == points[0]
-            last_point = points[-1]
+            assert topo.start_point == arc.topology.start_point
+            assert topo.end_point == arc.topology.end_point
+            assert last_point == arc.topology.start_point
+            last_point = arc.topology.end_point
             cmds.extend(generate_arc_gcode(arc, format_value))
         else:
             t = Topology.cast_curve(edge, convert=False).GetType()
@@ -198,7 +200,7 @@ class Operation(Part):
     def generate_spindle_start_gcode(
         self,
         format_value: Optional[Callable[[float], float]] = None,
-        reverse: bool = False
+        reverse: bool = False,
     ) -> list[str]:
         cmds = []
 
