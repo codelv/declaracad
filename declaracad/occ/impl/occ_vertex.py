@@ -26,12 +26,10 @@ from OCCT.Aspect import (
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
 from OCCT.Prs3d import Prs3d_PointAspect
 
-
 from declaracad.occ.draw import ProxyVertex
 
 from .occ_shape import OccShape
 from .utils import color_to_quantity_color
-
 
 MARKERS = {
     "plus": Aspect_TOM_PLUS,

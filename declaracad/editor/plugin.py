@@ -9,6 +9,7 @@ Created on Dec 10, 2015
 
 @author: jrm
 """
+import ast as python_ast
 import os
 import subprocess
 import sys
@@ -30,10 +31,9 @@ from atom.api import (
     Tuple,
     observe,
 )
-import ast as python_ast
+from enaml.application import timed_call
 from enaml.core import enaml_ast
 from enaml.core.parser import parse
-from enaml.application import timed_call
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
 from enaml.scintilla.api import Scintilla
 from enaml.scintilla.mono_font import MONO_FONT

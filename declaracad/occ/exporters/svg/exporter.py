@@ -7,33 +7,35 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 import os
+from math import degrees, pi
 
 import enaml
-from math import pi, degrees
 from atom.api import Bool, Float
 from lxml import etree
-from OCCT.gp import gp_Ax2, gp_Pnt, gp_Dir, gp_Trsf, gp_Vec
+from OCCT.Adaptor3d import Adaptor3d_Curve
 from OCCT.BRepAdaptor import BRepAdaptor_Curve
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
-from OCCT.Geom import Geom_Circle, Geom_Ellipse, Geom_BezierCurve
-from OCCT.Adaptor3d import Adaptor3d_Curve
+from OCCT.GCPnts import GCPnts_AbscissaPoint
+from OCCT.Geom import Geom_BezierCurve, Geom_Circle, Geom_Ellipse
 from OCCT.GeomAdaptor import GeomAdaptor_Curve
 from OCCT.GeomConvert import GeomConvert_BSplineCurveToBezierCurve
-from OCCT.GCPnts import GCPnts_AbscissaPoint
-from OCCT.HLRBRep import HLRBRep_Algo, HLRBRep_HLRToShape
+from OCCT.gp import gp_Ax2, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 from OCCT.HLRAlgo import HLRAlgo_Projector
-from OCCT.TopoDS import TopoDS_Wire, TopoDS_Edge
+from OCCT.HLRBRep import HLRBRep_Algo, HLRBRep_HLRToShape
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Wire
 
-from declaracad.occ.api import Shape, Topology, Point
-from declaracad.viewer.plugin import ModelExporter
+from declaracad.occ.api import Point, Shape, Topology
 from declaracad.occ.impl.occ_shape import AX
+from declaracad.viewer.plugin import ModelExporter
+
 
 def fmt(v: float) -> str:
-    """ Round value to 6 decimal places and convert to a string"""
+    """Round value to 6 decimal places and convert to a string"""
     return f"{round(v, 6)}"
 
+
 def pnt(p: Point) -> str:
-    """ Format a point """
+    """Format a point"""
     return f"{round(p.x, 6)} {round(p.y, 6)}"
 
 
@@ -79,7 +81,9 @@ def ellipse_to_path(curve: Adaptor3d_Curve) -> str:
     else:
         sweep_flag = int(ellipse.Axis().Direction().Z() < 0)
     end = Point(curve.Value(v))
-    return f"A {fmt(rx)} {fmt(ry)} {fmt(angle)} {large_arc_flag} {sweep_flag} {pnt(end)}"
+    return (
+        f"A {fmt(rx)} {fmt(ry)} {fmt(angle)} {large_arc_flag} {sweep_flag} {pnt(end)}"
+    )
 
 
 def bezier_to_path(curve: Adaptor3d_Curve) -> str:
@@ -120,13 +124,13 @@ def create_svg_from_wires(wires: list[TopoDS_Wire]) -> etree._Element:
 
     svg.attrib["width"] = f"{fmt(bbox.dx)}mm"
     svg.attrib["height"] = f"{fmt(bbox.dy)}mm"
-    svg.attrib["viewBox"] = f"{fmt(bbox.xmin)} {fmt(bbox.ymin)} {fmt(bbox.dx)} {fmt(bbox.dy)}"
+    svg.attrib[
+        "viewBox"
+    ] = f"{fmt(bbox.xmin)} {fmt(bbox.ymin)} {fmt(bbox.dx)} {fmt(bbox.dy)}"
     g = etree.SubElement(svg, "g")
     stroke_color = "black"
     for original_wire in wires:
-        wire = Topology.cast_shape(
-            BRepBuilderAPI_Transform(original_wire, t).Shape()
-        )
+        wire = Topology.cast_shape(BRepBuilderAPI_Transform(original_wire, t).Shape())
         edges = Topology(shape=wire).edges
         if len(edges) == 1:
             edge = edges[0]

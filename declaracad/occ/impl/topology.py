@@ -1391,7 +1391,7 @@ class Topology(Atom):
 
     def _get_start_point(self) -> Point:
         """Get the first / start point of a TopoDS_Wire or TopoDS_Edge."""
-        shape = self.shape
+        shape = Topology.cast_shape(self.shape)
         if isinstance(shape, TopoDS_Edge):
             curve = BRepAdaptor_Curve(shape)
         elif isinstance(shape, TopoDS_Wire):

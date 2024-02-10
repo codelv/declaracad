@@ -311,9 +311,12 @@ enamldef ModelViewer(OccViewer): viewer:
             topology = Topology(shape=topods_shape)
             edges = len(topology.edges)
             length = format_unit(topology.length)
+
             desc = [
                 f"  Wire: {edges} edges",
-                f"  Wire Length: {length}"
+                f"  Wire Length: {length}",
+                f"  Start Point: {format_point(topology.start_point)}",
+                f"  End Point: {format_point(topology.end_point)}",
             ]
             return desc
         elif shape_type == 'face':

@@ -10,7 +10,6 @@ Created on Sep 30, 2016
 @author: jrm
 """
 import os
-from math import pi
 from typing import Generator, Union
 
 from atom.api import Bool, Instance, List, Property, Str, Typed, observe, set_default

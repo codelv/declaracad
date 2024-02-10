@@ -18,8 +18,8 @@ from OCCT.BRepBuilderAPI import (
 )
 from OCCT.TopoDS import TopoDS
 
-from declaracad.occ.draw import ProxyPolyline
 from declaracad.core.utils import log
+from declaracad.occ.draw import ProxyPolyline
 
 from .occ_wire import OccWire
 

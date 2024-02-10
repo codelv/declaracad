@@ -10,11 +10,13 @@ Created on March 25, 2020
 @author: jrm
 """
 from math import radians
+
 from atom.api import Typed
 from OCCT.BRep import BRep_Tool
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
 from OCCT.GC import GC_MakePlane
 from OCCT.gp import gp_Dir
+from OCCT.Prs3d import Prs3d_ArrowAspect, Prs3d_DimensionAspect
 from OCCT.PrsDim import (
     PrsDim_AngleDimension,
     PrsDim_DiameterDimension,
@@ -22,7 +24,6 @@ from OCCT.PrsDim import (
     PrsDim_LengthDimension,
     PrsDim_RadiusDimension,
 )
-from OCCT.Prs3d import Prs3d_ArrowAspect, Prs3d_DimensionAspect
 from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TopoDS import TopoDS_Vertex
 
@@ -158,7 +159,7 @@ class OccLengthDimension(OccDimension, ProxyLengthDimension):
     def make_plane(self, v1, v2):
         d = self.declaration
         p1 = BRep_Tool.Pnt_(v1)
-        p2 = BRep_Tool.Pnt_(v2)
+        # p2 = BRep_Tool.Pnt_(v2)
         return GC_MakePlane(p1, d.direction.proxy).Value().Pln()
 
     def create_dimension(self):

@@ -12,9 +12,7 @@ Created on Nov 9, 2021
 import traceback
 from math import pi
 from enaml.core.api import Conditional, Looper
-from declaracad.cnc.operation import (
-    Operation, generate_arc_gcode, generate_polyline_gcode
-)
+from declaracad.cnc.operation import Operation
 from declaracad.occ.api import (
     Arc, Point, Topology, Polyline, DisplayArrow, Vertex
 )

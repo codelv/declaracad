@@ -1,4 +1,4 @@
-from .api import Topology, Wire, Point
+from .api import Point, Topology, Wire
 
 
 def remove_out_of_range_points(

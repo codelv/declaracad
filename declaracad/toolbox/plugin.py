@@ -57,9 +57,9 @@ class ToolboxPlugin(Plugin):
     async def refresh_tools(self) -> None:
         tools: list[Tool] = []
         excluded = ("load_model",)
-        await asyncio.sleep(0.01) # Allow UI to update
+        await asyncio.sleep(0.01)  # Allow UI to update
         for module in get_all_modules():
-            await asyncio.sleep(0.01) # Allow UI to update
+            await asyncio.sleep(0.01)  # Allow UI to update
             for name in dir(module):
                 if name.startswith("_") or name in excluded:
                     continue
@@ -71,7 +71,7 @@ class ToolboxPlugin(Plugin):
                     continue  # Not a class
                 tool = Tool(name=name, module=module, declaration=d)
                 tools.append(tool)
-                await asyncio.sleep(0.01) # Allow UI to update
+                await asyncio.sleep(0.01)  # Allow UI to update
         tools.sort(key=lambda it: it.name)
         log.debug("Tools loaded")
         self.tools = tools

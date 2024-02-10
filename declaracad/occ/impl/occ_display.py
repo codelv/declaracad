@@ -18,8 +18,8 @@ from OCCT.Graphic3d import (
     Graphic3d_NOM_BRASS,
 )
 from OCCT.Prs3d import Prs3d_Arrow
-from OCCT.TCollection import TCollection_ExtendedString
 from OCCT.Quantity import Quantity_Color
+from OCCT.TCollection import TCollection_ExtendedString
 
 from declaracad.core.utils import log
 

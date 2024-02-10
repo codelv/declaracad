@@ -10,18 +10,19 @@ Created on Aug 31, 2020
 @author: jrm
 """
 from math import pi
+
 from OCCT.BRep import BRep_Builder
 from OCCT.Poly import Poly_Connect, Poly_PolygonOnTriangulation
-from OCCT.TColStd import TColStd_Array1OfInteger
 from OCCT.RWStl import RWStl
+from OCCT.TColStd import TColStd_Array1OfInteger
 from OCCT.TopoDS import (
-    TopoDS_Face,
     TopoDS_Compound,
-    TopoDS_Shell,
     TopoDS_Edge,
-    TopoDS_Wire,
-    TopoDS_Vertex,
+    TopoDS_Face,
+    TopoDS_Shell,
     TopoDS_Solid,
+    TopoDS_Vertex,
+    TopoDS_Wire,
 )
 
 from declaracad.occ.api import TopoShape
