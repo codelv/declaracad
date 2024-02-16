@@ -95,7 +95,10 @@ enamldef CommView(Container): view:
         try:
             msg = change['value'].decode()
             widget.moveCursor(QTextCursor.End)
-            widget.insertPlainText(msg.strip() if plugin.strip_whitespace else msg)
+            if plugin.strip_whitespace:
+                widget.insertPlainText(msg.strip())
+            else:
+                widget.insertPlainText(msg)
             widget.moveCursor(QTextCursor.End)
             scroll_to_end()
         except:
@@ -124,10 +127,11 @@ enamldef CommView(Container): view:
 
     func send_text():
         if device and device.connected:
-            text = to_send.text
+            msg = to_send.text
             # Add to history
-            add_to_history(text)
-            msg = text+"\r\n" if plugin.add_newline else text
+            add_to_history(msg)
+            if plugin.add_newline:
+                msg += "\r\n"
             deferred_call(device.write, msg)
             to_send.text = ""
         else:

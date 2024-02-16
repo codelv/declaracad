@@ -270,7 +270,7 @@ enamldef DeviceConfigView(Container):
                     objects << get_config_page(device.connection)
 
 
-enamldef CncSettingsPage(Container): page:
+enamldef DeviceSettingsPage(Container): page:
     attr model: CncPlugin
     attr plugin << model
     padding = 0
@@ -312,3 +312,20 @@ enamldef CncSettingsPage(Container): page:
                         padding = 0
                         plugin << page.plugin
                         device := plugin.device
+
+
+enamldef MonitorSettingsPage(Container): page:
+    attr model: CncPlugin
+    attr plugin << model
+    padding = 0
+    Form:
+        Label:
+            text = "Add newline when sending"
+        CheckBox:
+            tool_tip = "Add a newline to end of every message sent"
+            checked := model.add_newline
+        Label:
+            text = "Remove output whitespace"
+        CheckBox:
+            tool_tip = "Remove whitespace from output messages"
+            checked := model.strip_whitespace

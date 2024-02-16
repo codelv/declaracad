@@ -61,10 +61,16 @@ def disconnect_channel(event):
     deferred_call(plugin.disconnect)
 
 
-def settings_page_factory():
+def device_settings_page_factory():
     with enaml.imports():
-        from .settings import CncSettingsPage
-    return CncSettingsPage
+        from .settings import DeviceSettingsPage
+    return DeviceSettingsPage
+
+
+def monitor_settings_page_factory():
+    with enaml.imports():
+        from .settings import MonitorSettingsPage
+    return MonitorSettingsPage
 
 
 enamldef CncManifest(PluginManifest):
@@ -96,7 +102,11 @@ enamldef CncManifest(PluginManifest):
         SettingsPage:
             name = "CNC"
             plugin_id = 'declaracad.cnc'
-            factory = settings_page_factory
+            factory = device_settings_page_factory
+        SettingsPage:
+            name = "Monitor"
+            plugin_id = 'declaracad.cnc'
+            factory = monitor_settings_page_factory
     Extension:
         id = 'commands'
         point = 'enaml.workbench.core.commands'
