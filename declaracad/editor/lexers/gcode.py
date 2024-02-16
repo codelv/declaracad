@@ -13,8 +13,6 @@ from typing import Optional
 
 import ply.lex as lex
 
-# import ply.yacc as yacc
-# parser = yacc.yacc()
 from enaml.qt.Qsci import QsciLexerCustom
 
 
@@ -104,6 +102,8 @@ class QsciLexerGCode(QsciLexerCustom):
     YPos = 12
     ZPos = 13
     Keyword = 14
+    IOffset = 15
+    JOffset = 16
 
     # Maps to style ID above
     TOKENS = {
@@ -120,6 +120,8 @@ class QsciLexerGCode(QsciLexerCustom):
         "xpos": "XPos",
         "ypos": "YPos",
         "zpos": "ZPos",
+        "ioffset": "IOffset",
+        "joffset": "JOffset",
         "operator": "Operator",
         "keyword": "Keyword",
     }
@@ -142,6 +144,8 @@ class QsciLexerGCode(QsciLexerCustom):
         "X": XPos,
         "Y": YPos,
         "Z": ZPos,
+        "I": IOffset,
+        "J": JOffset,
     }
 
     THEMES = {
@@ -156,31 +160,37 @@ class QsciLexerGCode(QsciLexerCustom):
                 "color": "#110a60",
             },
             "mcode": {
-                "color": "#710a60",
+                "color": "#0f48ac",
             },
             "line_number": {
                 "color": "#74f69c",
             },
             "param": {
-                "color": "#710a60",
+                "color": "#bc007d",
             },
             "speed": {
                 "color": "#ffa54c",
             },
             "feed": {
-                "color": "#9f1414",
+                "color": "#7adf1c",
             },
             "pause": {
                 "color": "#0488d0",
             },
             "xpos": {
-                "color": "#800080",
+                "color": "#00a0bc",
             },
             "ypos": {
-                "color": "#008080",
+                "color": "#005bbc",
             },
             "zpos": {
-                "color": "#808000",
+                "color": "#4dbc00",
+            },
+            "ioffset": {
+                "color": "#bc9700",
+            },
+            "joffset": {
+                "color": "#bc7000",
             },
         }
     }
