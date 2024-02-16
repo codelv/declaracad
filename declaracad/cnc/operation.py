@@ -205,7 +205,7 @@ class Operation(Part):
         cmds = []
 
         # Turn on spindle and coolant from base operation
-        s = round(abs(self.spindle_speed))
+        s = abs(self.spindle_speed)
         mcode = "M4" if reverse else "M3"
         cmds.append(f"S{s} {mcode}")
 
