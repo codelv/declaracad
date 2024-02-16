@@ -14,7 +14,7 @@ import os
 import subprocess
 import sys
 from textwrap import dedent
-from typing import Union
+from typing import Optional, Union
 
 import enaml
 import jedi
@@ -153,19 +153,19 @@ class Document(Model):
     def __repr__(self):
         return f"Document<name='{self.name}'>"
 
-    def append_output(self, output):
+    def append_output(self, output: str):
         """Limit output to 1000 entries"""
         if len(self.output) > 1000:
             self.output.pop(0)
         self.output.append(output)
 
-    def _default_source(self):
+    def _default_source(self) -> str:
         """Load the document from the path given by `name`.
         If it fails to load, nothing will be returned and an error
         will be set.
         """
         try:
-            log.debug("Loading '{}' from disk.".format(self.name))
+            log.debug(f"Loading '{self.name}' from disk.")
             with open(self.name) as f:
                 return f.read()
         except Exception as e:
@@ -401,7 +401,7 @@ class EditorPlugin(Plugin):
         ui = self.workbench.get_plugin("declaracad.ui")
         return ui.get_dock_area()
 
-    def get_editor(self, document=None):
+    def get_editor(self, document: Optional[Document] = None):
         """Get the editor item for the currently active document"""
         doc = document or self.active_document
         for item in self.get_editor_items():
@@ -418,10 +418,10 @@ class EditorPlugin(Plugin):
     # -------------------------------------------------------------------------
     # Document API
     # -------------------------------------------------------------------------
-    def _default_documents(self):
+    def _default_documents(self) -> list[Document]:
         return [Document()]
 
-    def _default_active_document(self):
+    def _default_active_document(self) -> Document:
         if not self.documents:
             self.documents = self._default_documents()
         return self.documents[0]
@@ -493,7 +493,7 @@ class EditorPlugin(Plugin):
     def open_file(self, event: Union[str, ExecutionEvent]):
         """Open a file from the local filesystem"""
         if isinstance(event, ExecutionEvent):
-            path = event.parameters.get("path")
+            path = event.parameters["path"]
         else:
             path = event
 
@@ -517,7 +517,7 @@ class EditorPlugin(Plugin):
     def open_containing_folder(self, event: Union[str, ExecutionEvent]):
         """Open the folder containing the given file path"""
         if isinstance(event, ExecutionEvent):
-            path = event.parameters.get("path")
+            path = event.parameters["path"]
         else:
             path = event
         folder = os.path.dirname(path)
@@ -544,13 +544,16 @@ class EditorPlugin(Plugin):
             f.write(doc.source)
         doc.unsaved = False
 
-    def save_file_as(self, event):
+    def save_file_as(self, event: Union[str, ExecutionEvent]):
         """Save the currently active document as the given name
         overwriting and creating the directory path if necessary.
 
         """
         doc = self.active_document
-        path = event.parameters["path"]
+        if isinstance(event, ExecutionEvent):
+            path = event.parameters["path"]
+        else:
+            path = event
 
         if not doc.name:
             doc.name = path
@@ -582,7 +585,7 @@ class EditorPlugin(Plugin):
     # -------------------------------------------------------------------------
     # Code inspection API
     # -------------------------------------------------------------------------
-    def detect_syntax(self, path: str):
+    def detect_syntax(self, path: str) -> str:
         """Attempt to detect the file syntax"""
         p, ext = os.path.splitext(path)
         file_type = (ext[1:] if ext else "").lower()
@@ -594,7 +597,7 @@ class EditorPlugin(Plugin):
         log.info(f"Using syntax: {result}")
         return result
 
-    def _default_sys_path(self):
+    def _default_sys_path(self) -> list[str]:
         """Determine the sys path"""
         return [self.project_path]
 
@@ -603,7 +606,7 @@ class EditorPlugin(Plugin):
         if change["type"] == "update":
             self.sys_path = self._default_sys_path()
 
-    def autocomplete(self, source, cursor):
+    def autocomplete(self, source: str, cursor: tuple[int, int]) -> list[str]:
         """Return a list of autocomplete suggestions for the given text.
         Results are based on the modules loaded.
 
@@ -632,18 +635,19 @@ class EditorPlugin(Plugin):
                 #: Try to get a signature if the docstring matches
                 #: something Scintilla will use (ex "func(..." or "Class(...")
                 #: Scintilla ignores docstrings without a comma in the args
-                if c.type in ["function", "class", "instance"]:
+                if c.type in ("function", "class", "instance"):
                     docstring = c.docstring()
 
                     #: Remove self arg
                     docstring = docstring.replace("(self,", "(")
 
-                    if docstring.startswith("{}(".format(c.name)):
+                    if docstring.startswith(f"{c.name}("):
                         results.append(docstring)
                         continue
 
             return results
-        except Exception:
+        except Exception as e:
+            log.debug(f"Autocomplete error: {e}")
             #: Autocompletion may fail for random reasons so catch all errors
             #: as we don't want the editor to exit because of this
             return []

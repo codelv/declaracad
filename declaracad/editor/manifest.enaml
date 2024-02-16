@@ -18,19 +18,20 @@ from enaml.core.api import Looper, Conditional
 from enaml.layout.api import InsertItem, RemoveItem
 from enaml.workbench.api import Extension, PluginManifest
 from enaml.workbench.core.api import Command
+from enaml.workbench.core.execution_event import ExecutionEvent
 from enaml.workbench.ui.api import ActionItem, MenuItem, ItemGroup, Autostart
 from declaracad.ui.extensions import (
     DOCK_ITEM_POINT, DockItem, SETTINGS_PAGE_POINT, SettingsPage
 )
 
 
-def plugin_command(name, event):
+def plugin_command(name: str, event: ExecutionEvent):
     editor = event.workbench.get_plugin('declaracad.editor')
     handler = getattr(editor, name)
     handler(event)
 
 
-def open_file(event):
+def open_file(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.editor')
     path = event.parameters.get('path', '')
@@ -43,7 +44,7 @@ def open_file(event):
         event.parameters['path'] = path
         plugin.open_file(event)
 
-def new_file(event):
+def new_file(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.editor')
     with enaml.imports():
@@ -52,12 +53,12 @@ def new_file(event):
     NewFileDialog(ui.window, plugin=plugin, event=event).exec_()
 
 
-def reload_document(event):
+def reload_document(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.editor')
     plugin.reload_document(**event.parameters)
 
 
-def save_file(event):
+def save_file(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.editor')
     if plugin.active_document.name:
@@ -66,7 +67,7 @@ def save_file(event):
         return save_file_as(event)
 
 
-def save_file_as(event):
+def save_file_as(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.editor')
     path = FileDialogEx.get_save_file_name(
@@ -76,7 +77,7 @@ def save_file_as(event):
         plugin.save_file_as(event)
 
 
-def new_editor(event):
+def new_editor(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.editor')
     dock = plugin.get_dock_area()
     position = event.parameters.get('position', 'right')
@@ -93,7 +94,7 @@ def new_editor(event):
         dock.update_layout(InsertItem(item=item.name, position=position,
                                       target=target))
 
-def close_editor(event):
+def close_editor(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.editor')
     dock = plugin.get_dock_area()
     target = event.parameters.get('target')
@@ -110,7 +111,7 @@ def close_editor(event):
             plugin.close_file(doc.name)
 
 
-def close_all_editors(event):
+def close_all_editors(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.editor')
     dock = plugin.get_dock_area()
     ops = [RemoveItem(item=item.name) for item in plugin.get_editor_items()]
@@ -118,7 +119,7 @@ def close_all_editors(event):
     plugin.documents = []
 
 
-def close_other_editors(event):
+def close_other_editors(event: ExecutionEvent):
     # Close all other editors except the 'editor' parameter given
     plugin = event.workbench.get_plugin('declaracad.editor')
     dock = plugin.get_dock_area()
@@ -129,7 +130,7 @@ def close_other_editors(event):
     plugin.documents = [editor.doc]
 
 
-def find_in_editor(event):
+def find_in_editor(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()
     if text := editor.selected_text():
@@ -138,7 +139,7 @@ def find_in_editor(event):
     editor.show_replace_bar = False
 
 
-def replace_in_editor(event):
+def replace_in_editor(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()
     if text := editor.selected_text():
@@ -146,7 +147,7 @@ def replace_in_editor(event):
     editor.show_replace_bar = True
 
 
-def goto_in_editor(event):
+def goto_in_editor(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()
     editor.show_goto_bar = True
@@ -155,7 +156,7 @@ def goto_in_editor(event):
 
 
 
-def editor_action(event, action):
+def editor_action(event: ExecutionEvent, action: str):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()
     getattr(editor, action)()
@@ -166,7 +167,7 @@ def plugin_factory():
     return EditorPlugin()
 
 
-def get_examples():
+def get_examples() -> dict[str, list[str]]:
     """ Get all examples matching examples/*/*.py """
     examples = OrderedDict()
     py_files = [f.replace("\\","/").split("/")[1:] for
@@ -231,7 +232,7 @@ def outline_item_factory():
 
 
 EDITOR_ACTIONS = [
-    'declaracad.editor.{}'.format(action) for action in (
+    f"declaracad.editor.{action}" for action in (
         'comment_lines', 'uncomment_lines', 'toggle_comments',
         'undo', 'redo', 'cut', 'copy', 'paste', 'select_all', 'deselect',
     )
