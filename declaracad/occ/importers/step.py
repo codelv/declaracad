@@ -15,7 +15,7 @@ from OCCT.STEPControl import STEPControl_Reader
 from declaracad.occ.api import TopoShape
 
 
-def load_step(filename):
+def load_step(filename: str) -> list[TopoShape]:
     """Load a stp model"""
     reader = STEPControl_Reader()
     status = reader.ReadFile(filename)
@@ -23,5 +23,7 @@ def load_step(filename):
         raise ValueError("Failed to load: {}".format(filename))
     reader.PrintCheckLoad(False, IFSelect_ItemsByEntity)
     reader.PrintCheckTransfer(False, IFSelect_ItemsByEntity)
-    # ok = reader.TransferRoot()
+    ok = reader.TransferRoot()
+    if not ok:
+        raise ValueError("Failed to load: {}".format(filename))
     return [TopoShape(shape=reader.Shape(1))]
