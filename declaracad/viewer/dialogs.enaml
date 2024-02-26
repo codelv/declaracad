@@ -31,7 +31,7 @@ from enaml.widgets.api import (
     MultilineField, ImageView
 )
 from enamlx.widgets.api import DoubleSpinBox
-from declaracad.viewer.plugin import ScreenshotOptions, ModelExporter, log
+from declaracad.viewer.plugin import ViewerPlugin, ScreenshotOptions, ModelExporter, log
 from declaracad.ui.styles import DialogStyleSheet
 
 
@@ -42,16 +42,27 @@ enamldef ExportOptionsForm(Form):
 enamldef ExportDialog(Dialog): dialog:
     title = 'Export model'
     initial_size = (640, 320)
-    attr plugin
+    attr plugin: ViewerPlugin
     attr event
     attr protocol = None
     attr show_advanced: bool = True
     attr options: ModelExporter = create_default_options()
-    func create_default_options():
+    func create_default_options() -> ModelExporter:
         editor = plugin.workbench.get_plugin('declaracad.editor')
         doc = editor.active_document
         Exporter = export_type.selected
-        return Exporter(filename=doc.name)
+        plugin.last_export_type = Exporter.extension
+        if folder := plugin.last_export_folder:
+            default_folder = folder
+        else:
+            default_folder = os.path.split(doc.name)[0]
+        return Exporter(filename=doc.name, folder=default_folder)
+
+    func default_export_type(exporters: list[ModelExporter]) -> ModelExporter:
+        for exporter in exporters:
+            if plugin.last_export_type == exporter.extension:
+                return exporter
+        return exporters[0]
 
     DialogStyleSheet:
         pass
@@ -68,8 +79,9 @@ enamldef ExportDialog(Dialog): dialog:
                 Label:
                     text = "Type"
                 ObjectCombo: export_type:
-                    items = list(plugin.exporters)
+                    items = plugin.exporters
                     to_string = lambda e: e.extension
+                    selected = default_export_type(items)
                     selected :: dialog.options = create_default_options()
                 Label:
                     text = "Filename"
@@ -94,6 +106,7 @@ enamldef ExportDialog(Dialog): dialog:
                                         current_path=options.path,
                                         name_filters=[f'*.{options.extension}'])
                             if path:
+                                plugin.last_export_folder = os.path.dirname(path)
                                 ext = f'.{options.extension}'
                                 if not path.endswith(ext):
                                     path += ext

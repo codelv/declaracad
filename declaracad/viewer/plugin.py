@@ -99,11 +99,16 @@ class ModelExporter(Atom):
     extension = ""
     path = Str()
     filename = Str()
+    folder = Str()
+
+    def _default_folder(self) -> str:
+        return os.path.split(self.filename)[0]
 
     def _default_path(self) -> str:
         ext = self.extension.lower()
-        filename = os.path.splitext(self.filename)[0]
-        return f"{filename}.{ext}"
+        old_filename = os.path.split(self.filename)[-1]
+        new_filename = f"{os.path.splitext(old_filename)[0]}.{ext}"
+        return os.path.join(self.folder, new_filename)
 
     def export(self, shapes: list[Shape]):
         """Export a DeclaraCAD model from an enaml file to a 3D model format
@@ -399,6 +404,10 @@ class ViewerPlugin(Plugin):
 
     #: Viewer units
     display_units = Enum("mm", "cm", "m", "in", "ft").tag(config=True, viewer=True)
+
+    #: Export options
+    last_export_type = Str().tag(config=True)
+    last_export_folder = Str().tag(config=True)
 
     #: Viewer port
     port = Int()

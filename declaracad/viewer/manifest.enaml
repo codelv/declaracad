@@ -12,6 +12,7 @@ Created on Dec 6, 2017
 import enaml
 from enaml.workbench.api import Extension, PluginManifest
 from enaml.workbench.core.api import Command
+from enaml.workbench.core.execution_event import ExecutionEvent
 from enaml.workbench.ui.api import ActionItem
 from enaml.widgets.api import FileDialogEx
 from declaracad.ui.extensions import (
@@ -19,7 +20,7 @@ from declaracad.ui.extensions import (
 )
 
 
-def plugin_command(name, event):
+def plugin_command(name: str, event: ExecutionEvent):
     """ Delegate the command to the plugin
 
     """
@@ -31,7 +32,7 @@ def plugin_command(name, event):
         handler()
 
 
-def export(event):
+def export(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.viewer')
     with enaml.imports():
@@ -39,7 +40,7 @@ def export(event):
     ExportDialog(ui.window, plugin=plugin, event=event).exec_()
 
 
-def screenshot(event):
+def screenshot(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.viewer')
     with enaml.imports():
