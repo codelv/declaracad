@@ -6,23 +6,20 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
-import os
-from math import degrees, pi
+from math import pi
 
 import enaml
-from atom.api import Bool, Float
 from lxml import etree
 from OCCT.Adaptor3d import Adaptor3d_Curve
 from OCCT.BRepAdaptor import BRepAdaptor_Curve
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCCT.GCPnts import GCPnts_AbscissaPoint
-from OCCT.Geom import Geom_BezierCurve, Geom_Circle, Geom_Ellipse
 from OCCT.GeomAdaptor import GeomAdaptor_Curve
 from OCCT.GeomConvert import GeomConvert_BSplineCurveToBezierCurve
-from OCCT.gp import gp_Ax2, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
+from OCCT.gp import gp_Ax2, gp_Dir, gp_Pnt, gp_Trsf
 from OCCT.HLRAlgo import HLRAlgo_Projector
 from OCCT.HLRBRep import HLRBRep_Algo, HLRBRep_HLRToShape
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Wire
 
 from declaracad.occ.api import Point, Shape, Topology
 from declaracad.occ.impl.occ_shape import AX
@@ -52,7 +49,7 @@ def circle_to_path(curve: Adaptor3d_Curve) -> str:
     if isinstance(curve, BRepAdaptor_Curve):
         sweep_flag = int(not Topology.is_clockwise(curve.Edge()))
     else:
-        sweep_flag = int(ellipse.Axis().Direction().Z() < 0)
+        sweep_flag = int(circle.Axis().Direction().Z() < 0)
     end = Point(curve.Value(v))
     return f"A {fmt(r)} {fmt(r)} {fmt(angle)} {large_arc_flag} {sweep_flag} {pnt(end)}"
 

@@ -96,6 +96,12 @@ def occ_face_factory():
     return OccFace
 
 
+def occ_remove_features_factory():
+    from .occ_remove_features import OccRemoveFeatures
+
+    return OccRemoveFeatures
+
+
 def occ_fillet_factory():
     from .occ_fillet import OccFillet
 
@@ -424,6 +430,7 @@ OCC_FACTORIES = {
     "OffsetShape": occ_offset_shape_factory,
     "ThickSolid": occ_thick_solid_factory,
     "Pipe": occ_pipe_factory,
+    "RemoveFeatures": occ_remove_features_factory,
     "ThruSections": occ_thru_sections_factory,
     "Transform": occ_transform_factory,
     #: Draw

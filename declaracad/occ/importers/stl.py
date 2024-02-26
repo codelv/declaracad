@@ -12,17 +12,17 @@ Created on Aug 31, 2020
 from math import pi
 
 from OCCT.BRep import BRep_Builder
-from OCCT.Poly import Poly_Connect, Poly_PolygonOnTriangulation
+
+# from OCCT.Poly import Poly_Connect, Poly_PolygonOnTriangulation
 from OCCT.RWStl import RWStl
-from OCCT.TColStd import TColStd_Array1OfInteger
-from OCCT.TopoDS import (
+
+# from OCCT.TColStd import TColStd_Array1OfInteger
+from OCCT.TopoDS import (  # TopoDS_Edge,; TopoDS_Wire,
     TopoDS_Compound,
-    TopoDS_Edge,
     TopoDS_Face,
     TopoDS_Shell,
     TopoDS_Solid,
     TopoDS_Vertex,
-    TopoDS_Wire,
 )
 
 from declaracad.occ.api import TopoShape

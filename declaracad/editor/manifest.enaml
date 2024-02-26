@@ -155,7 +155,6 @@ def goto_in_editor(event: ExecutionEvent):
     editor.show_show_find_bar = False
 
 
-
 def editor_action(event: ExecutionEvent, action: str):
     plugin = event.workbench.get_plugin('declaracad.editor')
     editor = plugin.get_editor()

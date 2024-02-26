@@ -291,6 +291,23 @@ class ProxyExtend(ProxyOperation):
         raise NotImplementedError
 
 
+class ProxyRemoveFeatures(ProxyOperation):
+    #: A reference to the Shape declaration.
+    declaration = ForwardTyped(lambda: RemoveFeatures)
+
+    def set_shape(self, shape: Optional[Union[Shape, TopoDS_Shape]]):
+        raise NotImplementedError
+
+    def set_disabled(self, disabled: bool):
+        raise NotImplementedError
+
+    def set_parallel(self, parallel: bool):
+        raise NotImplementedError
+
+    def set_features(self, featres: list):
+        raise NotImplementedError
+
+
 class Operation(Shape):
     """Base class for Operations that are applied to other shapes."""
 
@@ -1009,5 +1026,29 @@ class Extend(Operation):
     operations = d_(List())
 
     @observe("shape", "mode", "operations")
+    def _update_proxy(self, change: dict[str, Any]):
+        super()._update_proxy(change)
+
+
+class RemoveFeatures(Operation):
+    """Remove a feature from a shape."""
+
+    #: Reference to the implementation control
+    proxy = Typed(ProxyRemoveFeatures)
+
+    #: The shape to remove features from. If not set it uses the first child.
+    shape = d_(Instance((Shape, TopoDS_Shape)))
+
+    #: If True, put all children in one operation otherwise
+    #: perform a boolean operation with each child one at a time
+    parallel = d_(Bool(False))
+
+    #: Whether the operation should be disabled.
+    disabled = d_(Bool(False))
+
+    #: List of features to remove
+    features = d_(List())
+
+    @observe("shape", "features", "parallel", "disabled")
     def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)

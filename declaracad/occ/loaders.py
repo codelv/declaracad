@@ -40,6 +40,8 @@ def load_model(
 
     """
     options = options or {}
+    if filename:
+        filename = os.path.abspath(os.path.expanduser(filename))
     if loader:
         if not loader.startswith("."):
             loader = f".{loader}"

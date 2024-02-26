@@ -12,7 +12,6 @@ Created on June, 24 2021
 from typing import Optional
 
 import ply.lex as lex
-
 from enaml.qt.Qsci import QsciLexerCustom
 
 

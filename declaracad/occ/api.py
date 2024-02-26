@@ -29,6 +29,7 @@ from .algo import (  # noqa: F401
     Offset,
     OffsetShape,
     Pipe,
+    RemoveFeatures,
     RevolutionForm,
     Rotate,
     Scale,
@@ -104,4 +105,4 @@ Sweep = Pipe  # noqa: F401
 Extrude = Prism  # noqa: F401
 
 with enaml.imports():
-    from declaracad.parts.display import Axis
+    from declaracad.parts.display import Axis  # noqa: F401
