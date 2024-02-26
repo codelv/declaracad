@@ -6,7 +6,7 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 """
 from atom.api import set_default
-from OCCT.BOPAlgo import BOPAlgo_RemoveFeatures
+from OCCT.BRepAlgoAPI import BRepAlgoAPI_Defeaturing
 
 from declaracad.occ.algo import ProxyRemoveFeatures
 
@@ -17,7 +17,7 @@ from .topology import Topology
 class OccRemoveFeatures(OccOperation, ProxyRemoveFeatures):
     reference = set_default(
         "https://dev.opencascade.org/doc/refman/html/"
-        "class_b_o_p_algo___remove_features.html"
+        "class_b_rep_algo_a_p_i___defeaturing.html"
     )
 
     def get_input_shape(self):
@@ -32,13 +32,13 @@ class OccRemoveFeatures(OccOperation, ProxyRemoveFeatures):
         if d.disabled or not d.features:
             self.shape = shape
             return
-        op = BOPAlgo_RemoveFeatures()
+        op = BRepAlgoAPI_Defeaturing()
         op.SetShape(shape)
         op.SetRunParallel(d.parallel)
         for face in d.features:
             op.AddFaceToRemove(face)
-        op.Perform()
-        if op.HasErrors():
+        op.Build()
+        if not op.IsDone():
             raise ValueError("Could not perform feature removal: %s" % d)
         self.shape = op.Shape()
 
