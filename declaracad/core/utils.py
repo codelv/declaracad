@@ -12,6 +12,7 @@ Created on Jul 12, 2015
 import asyncio
 import logging
 import os
+import subprocess
 import sys
 import time
 import traceback
@@ -76,6 +77,15 @@ def menu_icon(name: str) -> Optional[Icon]:
     if sys.platform == "win32":
         return load_icon(name)
     return None
+
+
+def open_folder(path: str):
+    """Open the folder in the system file explorer"""
+    if sys.platform == "win32":
+        os.startfile(path)
+    else:
+        cmd = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.call([cmd, path])
 
 
 def process_events():

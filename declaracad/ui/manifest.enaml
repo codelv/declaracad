@@ -12,9 +12,10 @@ Created on Dec 6, 2015
 import os
 import sys
 import enaml
-from declaracad.core.utils import menu_icon
+from declaracad.core.utils import menu_icon, open_folder
 from enaml.workbench.api import Extension, PluginManifest, ExtensionPoint
 from enaml.workbench.core.api import Command
+from enaml.workbench.core.execution_event import ExecutionEvent
 from enaml.workbench.ui.api import (
     ActionItem, Branding, MenuItem, ItemGroup, Autostart
 )
@@ -25,17 +26,17 @@ def plugin_factory():
     return DeclaracadPlugin()
 
 
-def undo(event):
+def undo(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.ui')
     plugin.undo()
 
 
-def redo(event):
+def redo(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.ui')
     plugin.redo()
 
 
-def open_preferences(event):
+def open_preferences(event: ExecutionEvent):
     with enaml.imports():
         from declaracad.ui.dialogs import PreferencesDialog
     plugin = event.workbench.get_plugin('declaracad.ui')
@@ -45,9 +46,9 @@ def open_preferences(event):
                           'declaracad.workbench.core')).exec_()
 
 
-def about_declaracad(event):
+def about_declaracad(event: ExecutionEvent):
     with enaml.imports():
-        from declaracad.ui.about_dialog import AboutDialog
+        from declaracad.ui.dialogs import AboutDialog
     plugin = event.workbench.get_plugin('declaracad.ui')
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     AboutDialog(ui.window,
@@ -55,7 +56,7 @@ def about_declaracad(event):
                     'declaracad.workbench.core')).exec_()
 
 
-def open_url(page):
+def open_url(page: str):
     if sys.platform == 'win32':
         os.startfile(page)
     else:
@@ -64,7 +65,7 @@ def open_url(page):
         subprocess.call([cmd, page])
 
 
-def open_settings(event):
+def open_settings(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.ui')
     with enaml.imports():
@@ -73,14 +74,9 @@ def open_settings(event):
     SettingsDialog(ui.window, plugin=plugin, event=event).exec_()
 
 
-def open_logs(event):
+def open_logs(event: ExecutionEvent):
     log_dir = os.path.expanduser("~/.config/declaracad/logs")
-    if sys.platform == 'win32':
-        os.startfile(log_dir)
-    else:
-        import subprocess
-        cmd = "open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.call([cmd, log_dir])
+    open_folder(log_dir)
 
 
 def settngs_page_factory():

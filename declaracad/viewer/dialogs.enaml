@@ -33,6 +33,7 @@ from enaml.widgets.api import (
 from enamlx.widgets.api import DoubleSpinBox
 from declaracad.viewer.plugin import ViewerPlugin, ScreenshotOptions, ModelExporter, log
 from declaracad.ui.styles import DialogStyleSheet
+from declaracad.core.utils import open_folder
 
 
 enamldef ExportOptionsForm(Form):
@@ -125,8 +126,8 @@ enamldef ExportDialog(Dialog): dialog:
                     text << '\n'.join([it.decode() for it in dialog.protocol.output])
         TaskDialogCommandArea:
             constraints = [
-                hbox(show_options, spacer, btn_yes, btn_no),
-                align('v_center', btn_yes, btn_no),
+                hbox(show_options, spacer, btn_open, btn_yes, btn_no),
+                align('v_center', btn_open, btn_yes, btn_no),
             ]
             CheckBox: show_options:
                 text = "Show advanced"
@@ -141,6 +142,10 @@ enamldef ExportDialog(Dialog): dialog:
                 enabled << bool(options.path)
                 text = "Export"
                 clicked :: dialog.protocol = plugin.export(options)
+            PushButton: btn_open:
+                enabled << bool(options.path)
+                text = "Open folder"
+                clicked :: open_folder(os.path.dirname(options.path))
 
 
 enamldef ScreenCaptureDialog(Dialog): dialog:
