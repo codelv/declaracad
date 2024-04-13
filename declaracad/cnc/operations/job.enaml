@@ -91,8 +91,9 @@ enamldef Job(Part):
 
             with open(filename, 'w') as f:
                 f.write("(Generated with DeclaraCAD)\n")
-                f.write(f"(File: {filename})\n")
-                f.write(f"(Date: {datetime.now().strftime('%c')})\n")
+                f.write("(File: %s)\n" % filename)
+                created = datetime.now().strftime('%c')
+                f.write("(Date: %s)\n" % created)
                 # Absolute mode, incremental arc mode, feed per minute, activate xy plane
                 f.write("G90 G91.1 G94 G17\n")
                 if self.inches:
