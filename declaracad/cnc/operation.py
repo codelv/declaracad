@@ -91,7 +91,9 @@ def generate_polyline_gcode(
 
 
 def generate_wire_gcode(
-    wire: Wire, format_value: Callable[[float], float]
+    wire: Wire,
+    format_value: Callable[[float], float],
+    discretize: Optional[float] = None
 ) -> list[str]:
     """Generate code for a Wire"""
     cmds = []
@@ -119,6 +121,17 @@ def generate_wire_gcode(
             assert last_point == arc.topology.start_point
             last_point = arc.topology.end_point
             cmds.extend(generate_arc_gcode(arc, format_value))
+        elif discretize is not None:
+            # Convert other to polyline
+            points = list(Topology.discretize(edge, discretize))
+            if Topology.is_reversed(edge):
+                points = list(reversed(points))
+
+            for p in points:
+                x, y, z = map(format_value, p)
+                cmds.append(f"G1 X{x} Y{y} Z{z}")
+            assert last_point == points[0]
+            last_point = points[-1]
         else:
             t = Topology.cast_curve(edge, convert=False).GetType()
             raise NotImplementedError(f"TODO: Cannot create gcode for wire {t}")
@@ -130,7 +143,7 @@ def generate_wire_gcode(
 
 
 def generate_part_gcode(
-    part: Part, format_value: Callable[[float], float]
+    part: Part, format_value: Callable[[float], float], **options
 ) -> list[str]:
     """Generate code for a Part"""
     cmds: list[str] = []
@@ -145,9 +158,9 @@ def generate_part_gcode(
         elif isinstance(child, Arc):
             cmds.extend(generate_arc_gcode(child, format_value))
         elif isinstance(child, Wire):
-            cmds.extend(generate_wire_gcode(child, format_value))
+            cmds.extend(generate_wire_gcode(child, format_value, **options))
         elif isinstance(child, Part):
-            cmds.extend(generate_part_gcode(child, format_value))
+            cmds.extend(generate_part_gcode(child, format_value, **options))
     return cmds
 
 

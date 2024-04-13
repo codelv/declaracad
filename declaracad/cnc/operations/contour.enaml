@@ -36,6 +36,10 @@ enamldef ContourOperation(Operation): operation:
     #: Clearance height
     attr clearance_height = start_point.z
 
+    #: Use discretize to convert edges that are not simple lines or arcs
+    #: into a polyline.
+    attr discretize = None
+
     #: Use climb milling
     attr climb: bool = True
 
@@ -82,7 +86,7 @@ enamldef ContourOperation(Operation): operation:
             for lift_point in optimize_points(lift_points[:], start_point):
                 # If points are duplicates we need to track used indexes
                 start_index = used.get(lift_point, 0)
-                i = lift_points.index(lift_point, start=start_index)
+                i = lift_points.index(lift_point, start_index)
                 used[lift_point] = i
                 ordered_data.append(data[i])
             return ordered_data
@@ -95,7 +99,7 @@ enamldef ContourOperation(Operation): operation:
             func generate_gcode(fmt):
                 cmds = [f"(Contour {loop.index + 1})"]
                 job = operation.parent
-                cmds.extend(generate_part_gcode(self, job.format_value))
+                cmds.extend(generate_part_gcode(self, job.format_value, discretize=discretize))
                 return cmds
 
             Conditional:
