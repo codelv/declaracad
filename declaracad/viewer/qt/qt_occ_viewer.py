@@ -18,7 +18,7 @@ from enaml.application import Application
 from enaml.colors import Color
 from enaml.qt import QtGui
 from enaml.qt.qt_control import QtControl
-from enaml.qt.QtCore import Qt, QTimer
+from enaml.qt.QtCore import Qt, QTimer, QPoint
 from enaml.qt.QtGui import QPalette
 from enaml.qt.QtWidgets import QOpenGLWidget
 from OCCT import Aspect, TopAbs, V3d
@@ -125,6 +125,7 @@ class QtViewer3d(QOpenGLWidget):
         self._selection = None
         self._drawtext = True
         self._select_pen = QtGui.QPen(QtGui.QColor(0, 0, 0), 2)
+        self.dragStartPos = QPoint()
         self._callbacks = {
             "key_pressed": [],
             "mouse_dragged": [],
@@ -161,6 +162,12 @@ class QtViewer3d(QOpenGLWidget):
             ]
             return ctypes.pythonapi.PyCapsule_New(hwnd, None, None)
         return hwnd
+
+    def scalePoint(self, x: float, y: float) -> tuple[float, float]:
+        """ Scale for HighDPI / Wayland screens """
+        screen = self.window().windowHandle().screen()
+        dpi = screen.devicePixelRatio()
+        return (x*dpi, y*dpi)
 
     def resizeEvent(self, event):
         view = self.proxy.v3d_view
@@ -218,7 +225,8 @@ class QtViewer3d(QOpenGLWidget):
         pos = self.dragStartPos = event.pos()
         if self._fire_event("mouse_pressed", event):
             return
-        self.proxy.v3d_view.StartRotation(pos.x(), pos.y())
+        x, y = self.scalePoint(pos.x(), pos.y())
+        self.proxy.v3d_view.StartRotation(int(x), int(y))
 
     def mouseReleaseEvent(self, event):
         if self._fire_event("mouse_released", event):
@@ -228,7 +236,7 @@ class QtViewer3d(QOpenGLWidget):
 
         if btn == Qt.LeftButton:
             pt = event.pos()
-            pos = (pt.x(), pt.y())
+            pos = self.scalePoint(pt.x(), pt.y())
             shift = event.modifiers() == Qt.ShiftModifier
             area = self._drawbox if self._select_area else None
             self.proxy.update_selection(pos=pos, area=area, shift=shift)
@@ -244,8 +252,9 @@ class QtViewer3d(QOpenGLWidget):
         tolerance = 2
         pt = event.pos()
         start = self.dragStartPos
-        sx, sy = start.x(), start.y()
-        dx, dy = pt.x() - sx, pt.y() - start.y()
+        sx, sy = self.scalePoint(start.x(), start.y())
+        x, y = self.scalePoint(pt.x(), pt.y())
+        dx, dy = x - sx, y - sy
         if abs(dx) <= tolerance and abs(dy) <= tolerance:
             return
         self._drawbox = (sx, sy, dx, dy)
@@ -257,30 +266,22 @@ class QtViewer3d(QOpenGLWidget):
         buttons = event.buttons()
         modifiers = event.modifiers()
         view = self.proxy.v3d_view
-        # ROTATE
+        sx, sy = self.scalePoint(self.dragStartPos.x(), self.dragStartPos.y())
+        x, y = self.scalePoint(pt.x(), pt.y())
         if buttons == Qt.LeftButton:
-            # dx = pt.x() - self.dragStartPos.x()
-            # dy = pt.y() - self.dragStartPos.y()
             if not self._lock_rotation:
-                view.Rotation(pt.x(), pt.y())
+                view.Rotation(int(x), int(y))
             self._drawbox = None
-        # DYNAMIC ZOOM
         elif buttons == Qt.RightButton and not modifiers == Qt.ShiftModifier:
             view.Redraw()
-            view.Zoom(
-                abs(self.dragStartPos.x()),
-                abs(self.dragStartPos.y()),
-                abs(pt.x()),
-                abs(pt.y()),
-            )
+            view.Zoom(abs(sx), abs(sy), abs(x), abs(y))
             self.dragStartPos = pt
             self._drawbox = None
-        # PAN
         elif buttons == Qt.MouseButton.MiddleButton:
-            dx = pt.x() - self.dragStartPos.x()
-            dy = pt.y() - self.dragStartPos.y()
+            dx = x - sx
+            dy = y - sy
             self.dragStartPos = pt
-            view.Pan(dx, -dy)
+            view.Pan(int(dx), -int(dy))
             self._drawbox = None
         # DRAW BOX
         # ZOOM WINDOW
@@ -294,7 +295,7 @@ class QtViewer3d(QOpenGLWidget):
         else:
             self._drawbox = None
             ais_context = self.proxy.ais_context
-            ais_context.MoveTo(pt.x(), pt.y(), view, True)
+            ais_context.MoveTo(int(x), int(y), view, True)
 
 
 class QtOccViewer(QtControl, ProxyOccViewer):
