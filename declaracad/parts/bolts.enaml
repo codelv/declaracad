@@ -181,7 +181,24 @@ enamldef ButtonSocketBolt(Part): bolt:
                 radius = bolt.diameter/2
                 height = bolt.length
     
+
+enamldef HexBolt(Part): bolt:
+    attr length = 16
+    attr diameter = 8
+    attr head_diameter = 14
+    attr head_height = 5.3
+    Extrude:
+        vector = (0, 0, head_height)
+        Polygon:
+            as_face = True
+            count = 6
+            radius = head_diameter/2
+    Cylinder: body:
+        position = (0, 0, -bolt.length)
+        radius = bolt.diameter/2
+        height = bolt.length
         
+
 enamldef Assembly(Part):
     ButtonSocketBolt:
         color = 'purple'
