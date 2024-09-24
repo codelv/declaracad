@@ -129,7 +129,7 @@ enamldef ThreadingOperation(Operation): operation:
             traceback.print_exc()
         return threading_data
 
-    func optimize_order(data):
+    func optimize_order(data: list[ThreadingData]) -> list[ThreadingData]:
         """ Optimize the cutting order if multiple pockets are given."""
         if len(data) <= 1:
             return data
@@ -140,7 +140,7 @@ enamldef ThreadingOperation(Operation): operation:
             reordered_data.append(data[i])
         return reordered_data
 
-    func calculate_height(depth):
+    func calculate_height(depth: float) -> float:
         # Adjust the start height so the helix
         # does a full arc and always an extra loop
         n = ceil(depth/tool.pitch) + 1
