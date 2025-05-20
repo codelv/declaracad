@@ -84,6 +84,9 @@ class OccFillet(OccOperation, ProxyFillet):
                 if isinstance(item, TopoDS_Face):
                     for edge in Topology(shape=item).edges_from_face(item):
                         fillet.Add(r, edge)
+                elif isinstance(item, TopoDS_Wire):
+                    for edge in Topology(shape=item).edges_from_wire(item):
+                        fillet.Add(r, edge)
                 else:
                     fillet.Add(r, item)
                 continue
@@ -97,11 +100,17 @@ class OccFillet(OccOperation, ProxyFillet):
                     array.SetValue(i + 1, gp_Pnt2d(*pt))
                 fillet.Add(array, edge)
                 continue
-            if n == 2 and isinstance(item[1], TopoDS_Face):
-                r, face = item
-                for edge in Topology(shape=face).edges_from_face(face):
-                    fillet.Add(r, edge)
-                continue
+            if n == 2:
+                if isinstance(item[1], TopoDS_Face):
+                    r, face = item
+                    for edge in Topology(shape=face).edges_from_face(face):
+                        fillet.Add(r, edge)
+                    continue
+                elif isinstance(item[1], TopoDS_Wire):
+                    r, wire = item
+                    for edge in Topology(shape=wire).edges_from_wire(wire):
+                        fillet.Add(r, edge)
+                    continue
             # custom radius or r1 and r2 radius fillets
             fillet.Add(*item)
         self.shape = fillet.Shape()
