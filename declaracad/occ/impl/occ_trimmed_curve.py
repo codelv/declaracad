@@ -14,7 +14,7 @@ from declaracad.occ.draw import ProxyTrimmedCurve
 
 from .occ_edge import OccEdge
 from .occ_shape import OccShape
-from .topology import Topology
+from .topology import Shape, Topology
 
 
 class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
@@ -45,7 +45,10 @@ class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
             else:
                 curve = BRep_Tool.Curve_(child.shape, 0, 1)[0]
         else:
-            curve = BRep_Tool.Curve_(shape, 0, 1)[0]
+            if isinstance(shape, Shape) and hasattr(shape.proxy, "curve"):
+                curve = shape.proxy.curve
+            else:
+                curve = BRep_Tool.Curve_(shape, 0, 1)[0]
         if curve is None:
             curve = Topology.cast_curve(shape)
         if curve is None:
