@@ -1,0 +1,119 @@
+# Created in DeclaraCAD
+from math import pi, sin, cos, radians
+from declaracad.occ.api import *
+
+enamldef SpurGearProfile(Wire):
+    # See https://lcamtuf.coredump.cx/gcnc/ch6/
+    
+    # =============================================
+    # Inputs 
+    # =============================================
+    attr tooth_count = 24
+    
+    # Contact angle in degrees. Should be between 15 and 25
+    attr pressure_angle = 18
+    
+    #: Width of tooth 
+    attr tooth_width = 1.1
+    
+    # Size of fillet at inside of gear
+    attr fillet_size = 0.25
+    
+    # The addendum is the distance by which every tooth sticks out 
+    # above the pitch (contact) circle
+    attr addendum_factor = 1 # Should be between 0.7 and 2
+    attr addendum = addendum_factor * tooth_width * 2 / pi
+    
+    # Dedendum is the distance to the bottom
+    attr dedendum_factor = 1.25
+    attr dedendum = dedendum_factor*addendum
+    
+    # =============================================
+    # Computed fields 
+    # =============================================
+    # Pitch Distance
+    # Length of arc on pitch circle from start of one tooth to next tooth
+    attr pitch = tooth_width * 2 * tooth_count
+    
+    # Angle between each tooth
+    attr pitch_angle = 2 * pi / tooth_count
+    
+    # Angle from one side of tooth to other side of same tooth
+    attr tooth_width_angle = pitch_angle / 4
+        
+    # Middle
+    attr pitch_diameter = pitch / pi
+    
+    # Outside diaemter
+    attr outside_diameter = pitch_diameter + 2*addendum
+    
+    # 
+    attr base_diameter = pitch_diameter * cos(radians(pressure_angle))
+    
+    # Inside plus clearance
+    attr root_diameter = base_diameter-fillet_size
+    
+    func involute_curve(start_angle: float, pitch: float, t: float) -> Point:
+        # Generate the curve for the contact surface
+        a = start_angle + t * pi/2
+        r = pitch / 2
+        c = Point(r * cos(a), r * sin(a))
+        s = pi / 2 * r * t
+        return Point(c.x + s * sin(a), c.y - s * cos(a))
+        
+    Wire: tooth_profile:
+        Wire: half_tooth_profile:
+            # Bottom non-contact part of gear
+            Fillet:
+                radius = fillet_size
+                Polyline:
+                    attr r = root_diameter/2
+                    attr a = tooth_width_angle
+                    points = [
+                        (r*cos(a-tooth_width_angle), r*sin(a-tooth_width_angle)),
+                        (r*cos(a), r*sin(a)),
+                        trimmed_profile.topology.start_point,
+                    ]
+                
+            # Contact face profile
+            TrimmedCurve: trimmed_profile:
+                v = profile.topology.intersection_parameters(Circle(radius=outside_diameter/2))[0]
+                BSpline: profile:
+                    color = 'purple'
+                    points = [
+                        involute_curve(tooth_width_angle, pitch_diameter, t/100) for t in range(0, 100)
+                    ]
+            # Arc on outside circle
+            Arc:
+                radius = outside_diameter/2
+                points = [
+                    trimmed_profile.topology.end_point,
+                    (radius*cos(2*tooth_width_angle), radius*sin(2*tooth_width_angle))
+                ]
+        Transform:
+            shape = half_tooth_profile
+            operations = [Mirror(x=1)]
+    Looper:
+        iterable = range(tooth_count)
+        Transform:
+            shape = tooth_profile
+            operations = [Rotate(angle=pitch_angle*loop.index)]
+            
+
+enamldef SpurGear(Part):
+    attr thickness = 1
+    alias profile
+    Extrude:
+        vector = (0, 0, thickness)
+        Face:
+            SpurGearProfile: profile:
+                pass
+    
+        
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    SpurGear:
+        profile.addendum_factor = 1.5
+        profile.tooth_count = 10
