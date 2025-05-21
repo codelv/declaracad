@@ -42,6 +42,7 @@ from OCCT.Geom import (
     Geom_Parabola,
     Geom_Surface,
 )
+from OCCT.GeomAPI import GeomAPI_ProjectPointOnCurve
 from OCCT.GeomAbs import (
     GeomAbs_BezierCurve,
     GeomAbs_BSplineCurve,
@@ -1354,6 +1355,24 @@ class Topology(Atom):
             yield a.Parameter(i)
 
     @classmethod
+    def parameter_at(cls, curve, point: Point) -> list[float]:
+        """ Determine the parameter from a point on the curve """
+        projection = GeomAPI_ProjectPointOnCurve(point.proxy, curve)
+        return [projection.Parameter(i+1) for i in range(projection.NbPoints())]
+
+    def intersection_parameters(self, curve) -> list[float]:
+        """ Determine the parameter from a point on the curve """
+        result = self.intersection(curve)
+        if not result:
+            return []
+        vertices = Topology(shape=result).vertices
+        if not vertices:
+            return []
+        point = Point(vertices[0])
+        projection = GeomAPI_ProjectPointOnCurve(point.proxy, Topology.cast_curve(self.shape))
+        return [projection.Parameter(i+1) for i in range(projection.NbPoints())]
+
+    @classmethod
     def bbox(cls, shapes, optimal=False, tolerance=0, enlarge=0):
         """Compute the bounding box of the shape or list of shapes
 
@@ -1526,8 +1545,8 @@ class Topology(Atom):
     # Intersection
     # -------------------------------------------------------------------------
     def intersection(
-        self, shape: Union[Shape, TopoDS_Shape], tol=1e-6
-    ) -> Optional[list[TopoDS_Shape]]:
+        self, shape: Union[Shape, TopoDS_Shape], multiple: bool = False, tol: float=1e-6
+    ) -> Optional[Union[TopoDS_Shape, list[TopoDS_Shape]]]:
         """Returns the resulting intersection of this and the given shape
         or None if an error or an empty list there are no intersections.
 
@@ -1535,11 +1554,13 @@ class Topology(Atom):
         ----------
         shape: Union[Shape, TopoDS_Shape]
             The shape to intersect with
+        multiple: bool
+            If true, return all results from section edges.
 
         Returns
         -------
-        results: Optional[List[TopoDS_Shape]]
-            The list of intersections.
+        results: Optional[Union[TopoDS_Shape, list[TopoDS_Shape]]]:
+            The single result or list of intersections depending on the multiple parameter.
 
         """
         from .occ_shape import coerce_shape
@@ -1552,8 +1573,10 @@ class Topology(Atom):
         op.Build()
         if op.HasErrors():
             return None
-        cast = Topology.cast_shape
-        return [cast(s) for s in op.SectionEdges()]
+        if multiple:
+            return [Topology.cast_shape(it) for it in op.SectionEdges()]
+        return Topology.cast_shape(op.Shape())
+
 
     # -------------------------------------------------------------------------
     # Distances
