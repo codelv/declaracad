@@ -13,6 +13,8 @@ from atom.api import set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_ThruSections
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Vertex, TopoDS_Wire
+from OCCT.ShapeFix import ShapeFix_Shape
+
 
 from declaracad.occ.algo import ProxyThruSections
 
@@ -41,12 +43,20 @@ class OccThruSections(OccOperation, ProxyThruSections):
                 loft.AddWire(s)
 
         #: Set the shape
-        self.shape = loft.Shape()
+        shape = loft.Shape()
+        if d.fix:
+            fixer = ShapeFix_Shape(shape)
+            if fixer.Perform():
+                shape = fixer.Shape()
+        self.shape = shape
 
     def set_solid(self, solid):
         self.update_shape()
 
     def set_ruled(self, ruled):
+        self.update_shape()
+
+    def set_fix(self, fix):
         self.update_shape()
 
     def set_precision(self, pres3d):

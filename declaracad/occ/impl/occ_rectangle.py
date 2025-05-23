@@ -20,7 +20,7 @@ from OCCT.BRepBuilderAPI import (
 )
 from OCCT.GC import GC_MakeArcOfEllipse
 from OCCT.gp import gp_Pnt
-from OCCT.TopoDS import TopoDS
+from OCCT import TopoDS
 
 from declaracad.occ.draw import ProxyRectangle
 
@@ -120,7 +120,7 @@ class OccRectangle(OccWire, ProxyRectangle):
             shape = BRepBuilderAPI_MakePolygon(
                 gp_Pnt(0, 0, 0), gp_Pnt(w, 0, 0), gp_Pnt(w, h, 0), gp_Pnt(0, h, 0), True
             ).Wire()
-        wire = TopoDS.Wire_(BRepBuilderAPI_Transform(shape, t, False).Shape())
+        wire = TopoDS.Wire(BRepBuilderAPI_Transform(shape, t, False).Shape())
         self.curve = BRepAdaptor_CompCurve(wire)
         if d.as_face:
             self.shape = BRepBuilderAPI_MakeFace(wire).Face()

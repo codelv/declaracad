@@ -77,8 +77,8 @@ from OCCT.TopAbs import (
     TopAbs_WIRE,
 )
 from OCCT.TopExp import TopExp, TopExp_Explorer
+from OCCT import TopoDS
 from OCCT.TopoDS import (
-    TopoDS,
     TopoDS_Compound,
     TopoDS_CompSolid,
     TopoDS_Edge,
@@ -132,7 +132,7 @@ class WireExplorer(Atom):
 
         # Convert occ_seq to python list
         seq = []
-        topology_type = TopoDS.Edge_ if edges else TopoDS.Vertex_
+        topology_type = TopoDS.Edge if edges else TopoDS.Vertex
         occ_iterator = TopTools_ListIteratorOfListOfShape(occ_seq)
         while occ_iterator.More():
             topo_to_add = topology_type(occ_iterator.Value())
@@ -167,14 +167,14 @@ class Topology(Atom):
 
     #: Maps topology types and functions that can create this topology
     topo_factory = {
-        TopAbs_VERTEX: TopoDS.Vertex_,
-        TopAbs_EDGE: TopoDS.Edge_,
-        TopAbs_FACE: TopoDS.Face_,
-        TopAbs_WIRE: TopoDS.Wire_,
-        TopAbs_SHELL: TopoDS.Shell_,
-        TopAbs_SOLID: TopoDS.Solid_,
-        TopAbs_COMPOUND: TopoDS.Compound_,
-        TopAbs_COMPSOLID: TopoDS.CompSolid_,
+        TopAbs_VERTEX: TopoDS.Vertex,
+        TopAbs_EDGE: TopoDS.Edge,
+        TopAbs_FACE: TopoDS.Face,
+        TopAbs_WIRE: TopoDS.Wire,
+        TopAbs_SHELL: TopoDS.Shell,
+        TopAbs_SOLID: TopoDS.Solid,
+        TopAbs_COMPOUND: TopoDS.Compound,
+        TopAbs_COMPSOLID: TopoDS.CompSolid,
     }
 
     topo_types = {
@@ -760,7 +760,7 @@ class Topology(Atom):
             match the expected type (if given).
         """
         try:
-            face = TopoDS.Face_(shape)
+            face = TopoDS.Face(shape)
         except RuntimeError:
             return None
         surface = BRepAdaptor_Surface(face, True)

@@ -241,6 +241,9 @@ class ProxyThruSections(ProxyOperation):
     def set_ruled(self, ruled: bool):
         raise NotImplementedError
 
+    def set_fix(self, fix: bool):
+        raise NotImplementedError
+
     def set_precision(self, pres3d: float):
         raise NotImplementedError
 
@@ -862,13 +865,16 @@ class ThruSections(Operation):
     #: if they are smoothed out by approximation
     ruled = d_(Bool(False)).tag(view=True, group="Through Sections")
 
+    #: Apply shape fixing to the result
+    fix = d_(Bool(False)).tag(view=True, group="Through Sections")
+
     #: pres3d defines the precision criterion used by the approximation
     #:  algorithm;
     #: the default value is 1.0e-6. Use AddWire and AddVertex to define
     #: the successive sections of the shell or solid to be built.
     precision = d_(Float(1e-6)).tag(view=True, group="Through Sections")
 
-    @observe("solid", "ruled", "precision")
+    @observe("solid", "ruled", "precision", "fix")
     def _update_proxy(self, change: dict[str, Any]):
         super(ThruSections, self)._update_proxy(change)
 

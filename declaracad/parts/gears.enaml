@@ -108,12 +108,56 @@ enamldef SpurGear(Part):
         Face:
             SpurGearProfile: profile:
                 pass
-    
+
+enamldef HelicalSpurGear(Part):
+    attr thickness = 1
+    attr angle = 2.5
+    alias profile
+    Loft: 
+        solid = True
+        ruled = True
         
+        SpurGearProfile: profile:
+            pass
+        
+        Transform:
+            shape = profile
+            operations = [
+                Translate(z=thickness),
+                Rotate(angle=radians(angle)),
+            ]
+
+enamldef DoubleHelicalSpurGear(Part):
+    attr thickness = 1
+    attr angle = 2.5
+    alias profile
+    Loft: 
+        solid = True
+        ruled = True
+        fix = True
+        SpurGearProfile: profile:
+            pass
+        
+        Transform:
+            shape = profile
+            operations = [
+                Translate(z=thickness/2),
+                Rotate(angle=radians(angle)),
+            ]
+        Transform:
+            shape = profile
+            operations = [
+                Translate(z=thickness),
+            ]
 
 enamldef Assembly(Part):
     Axis:
         pass
-    SpurGear:
-        profile.addendum_factor = 1.5
-        profile.tooth_count = 10
+    #SpurGear:
+    #    profile.addendum_factor = 1.5
+    #    profile.tooth_count = 10
+    #HelicalSpurGear:
+    #    profile.tooth_count = 20
+    #    position = (0, 10)
+    DoubleHelicalSpurGear:
+        thickness = 5

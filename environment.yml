@@ -1,14 +1,14 @@
 name: declaracad
 
 channels:
- - codelv
  - conda-forge
  - defaults
+ - https://codelv.com/assets/repo
 
 dependencies:
- - python >=3.10
+ - python >=3.12
  - cxx-compiler
  - pybind11
  - pysmesh >=9.6
- - pyocct >=7.6
+ - pyocct >=7.9
  - pychrono >=7.0
