@@ -9,6 +9,7 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
+
 from atom.api import Instance, set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCCT.gp import gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec

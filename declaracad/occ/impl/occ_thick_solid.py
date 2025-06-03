@@ -9,6 +9,7 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
+
 from atom.api import set_default
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid
 from OCCT.TopoDS import TopoDS_Shape

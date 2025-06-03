@@ -9,6 +9,7 @@ Created on Oct 18, 2022
 
 @author: jrm
 """
+
 import os
 
 from declaracad.occ.exporters import export_shapes

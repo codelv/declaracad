@@ -9,6 +9,7 @@ Created on Aug 31, 2020
 
 @author: jrm
 """
+
 import os
 from typing import Callable, Optional
 

@@ -9,6 +9,7 @@ Created on Aug 22, 2020
 
 @author: jrm
 """
+
 import sys
 import time
 from typing import Any, Callable, Optional

@@ -6,6 +6,7 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+
 from enaml.colors import Color
 from OCCT import Graphic3d
 from OCCT.Graphic3d import (

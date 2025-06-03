@@ -9,6 +9,7 @@ Created on Dec 11, 2017
 
 @author: jrm
 """
+
 from atom.api import Callable, Enum, Str
 from enaml.core.declarative import Declarative, d_
 

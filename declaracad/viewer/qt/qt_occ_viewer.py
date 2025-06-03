@@ -8,6 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 Created on Sep 26, 2016
 
 """
+
 import os
 import sys
 from contextlib import contextmanager
@@ -18,7 +19,7 @@ from enaml.application import Application
 from enaml.colors import Color
 from enaml.qt import QtGui
 from enaml.qt.qt_control import QtControl
-from enaml.qt.QtCore import Qt, QTimer, QPoint
+from enaml.qt.QtCore import QPoint, Qt, QTimer
 from enaml.qt.QtGui import QPalette
 from enaml.qt.QtWidgets import QOpenGLWidget
 from OCCT import Aspect, TopAbs, V3d
@@ -164,10 +165,10 @@ class QtViewer3d(QOpenGLWidget):
         return hwnd
 
     def scalePoint(self, x: float, y: float) -> tuple[float, float]:
-        """ Scale for HighDPI / Wayland screens """
+        """Scale for HighDPI / Wayland screens"""
         screen = self.window().windowHandle().screen()
         dpi = screen.devicePixelRatio()
-        return (x*dpi, y*dpi)
+        return (x * dpi, y * dpi)
 
     def resizeEvent(self, event):
         view = self.proxy.v3d_view

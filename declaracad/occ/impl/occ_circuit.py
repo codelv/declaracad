@@ -7,6 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Created on Jan 27, 2022
 """
+
 from typing import Optional
 
 from atom.api import Typed

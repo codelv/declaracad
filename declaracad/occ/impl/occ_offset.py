@@ -9,6 +9,7 @@ Created on Sep 27, 2016
 
 @author: jrm
 """
+
 from atom.api import set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.BRepOffset import BRepOffset_Pipe, BRepOffset_RectoVerso, BRepOffset_Skin

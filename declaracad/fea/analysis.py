@@ -9,6 +9,7 @@ Created on Sept 1, 2021
 
 @author: jrm
 """
+
 from typing import Any
 
 from atom.api import Bool, Coerced, Enum, ForwardTyped, Value, observe

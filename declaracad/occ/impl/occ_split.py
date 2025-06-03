@@ -9,6 +9,7 @@ Created on Sep 27, 2016
 
 @author: jrm
 """
+
 from atom.api import set_default
 from OCCT.BOPAlgo import BOPAlgo_Splitter
 from OCCT.TopTools import TopTools_ListOfShape

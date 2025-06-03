@@ -6,6 +6,7 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Cut
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeCylinder
 

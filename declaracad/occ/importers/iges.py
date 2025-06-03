@@ -9,6 +9,7 @@ Created on Aug 31, 2020
 
 @author: jrm
 """
+
 from OCCT.IFSelect import IFSelect_ItemsByEntity, IFSelect_RetDone
 from OCCT.IGESControl import IGESControl_Reader
 

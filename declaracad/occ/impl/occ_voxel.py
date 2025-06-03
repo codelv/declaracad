@@ -9,6 +9,7 @@ Created on July 22, 2022
 
 @author: jrm
 """
+
 from atom.api import ForwardTyped, Typed
 from enaml.colors import parse_color
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Common

@@ -9,6 +9,7 @@ Created on Sep 28, 2016
 
 @author: jrm
 """
+
 from typing import Any, Optional, Union
 
 from atom.api import (
@@ -34,6 +35,9 @@ class ProxyOperation(ProxyShape):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Operation)
 
+    def set_fix(self, fix: bool):
+        raise NotImplementedError
+
 
 class ProxyBooleanOperation(ProxyOperation):
     #: A reference to the Shape declaration.
@@ -49,9 +53,6 @@ class ProxyBooleanOperation(ProxyOperation):
         raise NotImplementedError
 
     def set_unify(self, unify: bool):
-        raise NotImplementedError
-
-    def set_fix(self, fix: bool):
         raise NotImplementedError
 
     def set_parallel(self, parallel: bool):
@@ -317,6 +318,10 @@ class Operation(Shape):
     #: Reference to the implementation control
     proxy = Typed(ProxyOperation)
 
+    #: Attempt to fix issues in the resulting shape
+    fix = d_(Bool(False))
+
+    @observe("fix")
     def _update_proxy(self, change: dict[str, Any]):
         if change["name"] == "axis":
             dx, dy, dz = self.x, self.y, self.z
@@ -354,14 +359,11 @@ class BooleanOperation(Operation):
     #: Unify using ShapeUpgrade_UnifySameDomain
     unify = d_(Bool(False))
 
-    #: Attempt to fix issues in the resulting shape
-    fix = d_(Bool(False))
-
     #: If True, put all children in one operation otherwise
     #: perform a boolean operation with each child one at a time
     parallel = d_(Bool(False))
 
-    @observe("shape1", "shape2", "unify", "fix", "parallel", "disabled")
+    @observe("shape1", "shape2", "unify", "parallel", "disabled")
     def _update_proxy(self, change: dict[str, Any]):
         super(BooleanOperation, self)._update_proxy(change)
 

@@ -7,6 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Created on Jan, 15 2022
 """
+
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve, BRepAdaptor_Curve
 from OCCT.GeomLib import GeomLib
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire

@@ -9,6 +9,7 @@ Created on Dec 27, 2020
 
 @author: jrm
 """
+
 from typing import Any, Generator, Iterable, Optional
 
 from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
@@ -191,7 +192,7 @@ def walk_edges(
 
 
 def split_wires(
-    graph: dict[Point, list[TopoDS_Wire]]
+    graph: dict[Point, list[TopoDS_Wire]],
 ) -> Generator[TopoDS_Wire, None, None]:
     """Split the graph into wires at their branch points.
 

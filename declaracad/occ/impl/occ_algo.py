@@ -9,6 +9,7 @@ Created on Sep 27, 2016
 
 @author: jrm
 """
+
 import warnings
 
 from atom.api import Instance, Str, Subclass, set_default
@@ -49,7 +50,8 @@ class OccOperation(OccDependentShape, ProxyOperation):
     in general these operations are expensive.
     """
 
-    pass
+    def set_fix(self, fix: bool):
+        self.update_shape()
 
 
 class OccBooleanOperation(OccOperation, ProxyBooleanOperation):

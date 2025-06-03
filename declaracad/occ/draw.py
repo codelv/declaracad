@@ -9,6 +9,7 @@ Created on Sept 27, 2016
 
 @author: jrm
 """
+
 from math import cos, pi, sin
 from typing import Any, Optional
 

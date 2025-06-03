@@ -9,6 +9,7 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
+
 from atom.api import Typed, set_default
 from OCCT.GC import GC_MakeLine
 from OCCT.Geom import Geom_Line

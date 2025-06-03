@@ -7,6 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 @author: jrm
 """
+
 from typing import Any
 
 from atom.api import Bool, Coerced, ForwardTyped, Typed, observe

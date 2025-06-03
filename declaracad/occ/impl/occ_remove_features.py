@@ -5,6 +5,7 @@ Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
 """
+
 from atom.api import set_default
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Defeaturing
 

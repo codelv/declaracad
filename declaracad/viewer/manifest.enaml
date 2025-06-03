@@ -35,6 +35,11 @@ def plugin_command(name: str, event: ExecutionEvent):
 def export(event: ExecutionEvent):
     ui = event.workbench.get_plugin('enaml.workbench.ui')
     plugin = event.workbench.get_plugin('declaracad.viewer')
+    if not plugin.exporters:
+        return event.workbench.message_critical(
+            "Export error",
+            "No exporters could be loaded. Please check the log."
+        )
     with enaml.imports():
         from .dialogs import ExportDialog
     ExportDialog(ui.window, plugin=plugin, event=event).exec_()

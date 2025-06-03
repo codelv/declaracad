@@ -9,6 +9,7 @@ Created on March 25, 2020
 
 @author: jrm
 """
+
 from math import radians
 
 from atom.api import Typed

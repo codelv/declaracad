@@ -9,6 +9,7 @@ Created on Aug 24, 2021
 
 @author: jrm
 """
+
 from typing import Union
 
 from atom.api import (

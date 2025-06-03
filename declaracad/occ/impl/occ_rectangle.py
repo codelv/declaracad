@@ -9,7 +9,9 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
+
 from atom.api import Typed
+from OCCT import TopoDS
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
@@ -20,7 +22,6 @@ from OCCT.BRepBuilderAPI import (
 )
 from OCCT.GC import GC_MakeArcOfEllipse
 from OCCT.gp import gp_Pnt
-from OCCT import TopoDS
 
 from declaracad.occ.draw import ProxyRectangle
 

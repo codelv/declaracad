@@ -9,5 +9,6 @@ Created on Sep 26, 2016
 
 @author: jrm
 """
+
 from .occ_clipped_plane import OccViewerClippedPlane  # noqa: F401
 from .occ_viewer import OccViewer  # noqa: F401

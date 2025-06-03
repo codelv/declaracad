@@ -9,6 +9,7 @@ Created on Dec 6, 2015
 
 @author: jrm
 """
+
 from declaracad import main
 
 if __name__ == "__main__":

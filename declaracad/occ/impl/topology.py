@@ -9,10 +9,11 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
+
 from typing import Any, Iterable, Optional, TypeVar, Union
 
 from atom.api import Atom, Bool, Instance, List, Property, Typed
-from OCCT import GeomAbs
+from OCCT import GeomAbs, TopoDS
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRepAdaptor import (
     BRepAdaptor_CompCurve,
@@ -42,7 +43,6 @@ from OCCT.Geom import (
     Geom_Parabola,
     Geom_Surface,
 )
-from OCCT.GeomAPI import GeomAPI_ProjectPointOnCurve
 from OCCT.GeomAbs import (
     GeomAbs_BezierCurve,
     GeomAbs_BSplineCurve,
@@ -61,6 +61,7 @@ from OCCT.GeomAbs import (
     GeomAbs_SurfaceType,
     GeomAbs_Torus,
 )
+from OCCT.GeomAPI import GeomAPI_ProjectPointOnCurve
 from OCCT.gp import gp_Pnt, gp_Vec
 from OCCT.GProp import GProp_GProps
 from OCCT.ShapeAnalysis import ShapeAnalysis_FreeBounds
@@ -77,7 +78,6 @@ from OCCT.TopAbs import (
     TopAbs_WIRE,
 )
 from OCCT.TopExp import TopExp, TopExp_Explorer
-from OCCT import TopoDS
 from OCCT.TopoDS import (
     TopoDS_Compound,
     TopoDS_CompSolid,
@@ -1356,12 +1356,12 @@ class Topology(Atom):
 
     @classmethod
     def parameter_at(cls, curve, point: Point) -> list[float]:
-        """ Determine the parameter from a point on the curve """
+        """Determine the parameter from a point on the curve"""
         projection = GeomAPI_ProjectPointOnCurve(point.proxy, curve)
-        return [projection.Parameter(i+1) for i in range(projection.NbPoints())]
+        return [projection.Parameter(i + 1) for i in range(projection.NbPoints())]
 
     def intersection_parameters(self, curve) -> list[float]:
-        """ Determine the parameter from a point on the curve """
+        """Determine the parameter from a point on the curve"""
         result = self.intersection(curve)
         if not result:
             return []
@@ -1369,8 +1369,10 @@ class Topology(Atom):
         if not vertices:
             return []
         point = Point(vertices[0])
-        projection = GeomAPI_ProjectPointOnCurve(point.proxy, Topology.cast_curve(self.shape))
-        return [projection.Parameter(i+1) for i in range(projection.NbPoints())]
+        projection = GeomAPI_ProjectPointOnCurve(
+            point.proxy, Topology.cast_curve(self.shape)
+        )
+        return [projection.Parameter(i + 1) for i in range(projection.NbPoints())]
 
     @classmethod
     def bbox(cls, shapes, optimal=False, tolerance=0, enlarge=0):
@@ -1545,7 +1547,10 @@ class Topology(Atom):
     # Intersection
     # -------------------------------------------------------------------------
     def intersection(
-        self, shape: Union[Shape, TopoDS_Shape], multiple: bool = False, tol: float=1e-6
+        self,
+        shape: Union[Shape, TopoDS_Shape],
+        multiple: bool = False,
+        tol: float = 1e-6,
     ) -> Optional[Union[TopoDS_Shape, list[TopoDS_Shape]]]:
         """Returns the resulting intersection of this and the given shape
         or None if an error or an empty list there are no intersections.
@@ -1576,7 +1581,6 @@ class Topology(Atom):
         if multiple:
             return [Topology.cast_shape(it) for it in op.SectionEdges()]
         return Topology.cast_shape(op.Shape())
-
 
     # -------------------------------------------------------------------------
     # Distances

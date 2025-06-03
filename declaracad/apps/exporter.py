@@ -9,6 +9,7 @@ Created on Aug 4, 2018
 
 @author: jrm
 """
+
 import json
 import sys
 import time

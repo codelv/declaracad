@@ -9,6 +9,7 @@ Created on Aug 31, 2020
 
 @author: jrm
 """
+
 from math import pi
 
 from OCCT.BRep import BRep_Builder

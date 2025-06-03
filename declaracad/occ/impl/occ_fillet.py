@@ -9,14 +9,16 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
+
 from atom.api import set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.BRepFilletAPI import BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeFillet2d
 from OCCT.BRepTools import BRepTools
 from OCCT.ChFi3d import ChFi3d_Polynomial, ChFi3d_QuasiAngular, ChFi3d_Rational
 from OCCT.gp import gp_Pnt2d
+from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TColgp import TColgp_Array1OfPnt2d
-from OCCT.TopoDS import TopoDS_Face, TopoDS_Vertex, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape, TopoDS_Vertex, TopoDS_Wire
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import ProxyFillet
@@ -48,11 +50,17 @@ class OccFillet(OccOperation, ProxyFillet):
 
         s = child.shape
         if isinstance(s, (TopoDS_Wire, TopoDS_Face)):
-            self.fillet_2d(child)
+            shape = self.fillet_2d(child)
         else:
-            self.fillet_3d(child)
+            shape = self.fillet_3d(child)
 
-    def fillet_2d(self, child):
+        if d.fix:
+            fixer = ShapeFix_Shape(shape)
+            if fixer.Perform():
+                shape = fixer.Shape()
+        self.shape = shape
+
+    def fillet_2d(self, child) -> TopoDS_Shape:
         d = self.declaration
         shape = child.shape
         was_wire = isinstance(shape, TopoDS_Wire)
@@ -72,9 +80,9 @@ class OccFillet(OccOperation, ProxyFillet):
         shape = Topology.cast_shape(builder.Shape())
         if was_wire:
             shape = BRepTools.OuterWire_(shape)
-        self.shape = shape
+        return shape
 
-    def fillet_3d(self, child):
+    def fillet_3d(self, child) -> TopoDS_Shape:
         d = self.declaration
         fillet = BRepFilletAPI_MakeFillet(child.shape)
         operations = d.operations if d.operations else child.topology.edges
@@ -113,7 +121,7 @@ class OccFillet(OccOperation, ProxyFillet):
                     continue
             # custom radius or r1 and r2 radius fillets
             fillet.Add(*item)
-        self.shape = fillet.Shape()
+        return fillet.Shape()
 
     def set_shape_type(self, shape_type):
         self.update_shape()

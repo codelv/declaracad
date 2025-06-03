@@ -6,9 +6,11 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+
 from math import pi
 
 import enaml
+from atom.api import Str
 from lxml import etree
 from OCCT.Adaptor3d import Adaptor3d_Curve
 from OCCT.BRepAdaptor import BRepAdaptor_Curve
@@ -121,9 +123,9 @@ def create_svg_from_wires(wires: list[TopoDS_Wire]) -> etree._Element:
 
     svg.attrib["width"] = f"{fmt(bbox.dx)}mm"
     svg.attrib["height"] = f"{fmt(bbox.dy)}mm"
-    svg.attrib[
-        "viewBox"
-    ] = f"{fmt(bbox.xmin)} {fmt(bbox.ymin)} {fmt(bbox.dx)} {fmt(bbox.dy)}"
+    svg.attrib["viewBox"] = (
+        f"{fmt(bbox.xmin)} {fmt(bbox.ymin)} {fmt(bbox.dx)} {fmt(bbox.dy)}"
+    )
     g = etree.SubElement(svg, "g")
     stroke_color = "black"
     for original_wire in wires:
@@ -180,9 +182,9 @@ def create_svg_from_wires(wires: list[TopoDS_Wire]) -> etree._Element:
                         ay = curve.Directrix2()
                         angle = ax.Angle(AX)
                         if angle != 0:
-                            ellipse.attrib[
-                                "transform"
-                            ] = f"rotate({fmt(angle)} {pnt(center)})"
+                            ellipse.attrib["transform"] = (
+                                f"rotate({fmt(angle)} {pnt(center)})"
+                            )
                         px = Point(ax.Location())
                         py = Point(ay.Location())
                         if center.distance(px) >= center.distance(py):
@@ -248,6 +250,9 @@ def create_svg_from_wires(wires: list[TopoDS_Wire]) -> etree._Element:
 
 class SvgExporter(ModelExporter):
     extension = "svg"
+
+    author = Str()
+    company = Str()
 
     @classmethod
     def get_options_view(cls):

@@ -6,6 +6,7 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+
 from OCCT.Interface import Interface_HArray1OfHAsciiString
 from OCCT.TCollection import TCollection_ExtendedString, TCollection_HAsciiString
 from OCCT.TDataStd import TDataStd_Name

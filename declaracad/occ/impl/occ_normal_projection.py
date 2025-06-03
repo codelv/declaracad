@@ -9,6 +9,7 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
+
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_NormalProjection
 from OCCT.TopoDS import TopoDS_Compound

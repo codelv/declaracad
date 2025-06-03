@@ -9,6 +9,7 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
+
 import os
 from typing import Generator, Union
 

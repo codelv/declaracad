@@ -9,6 +9,7 @@ Created on Nov 9, 2021
 
 @author: jrm
 """
+
 import traceback
 from typing import Callable, Optional
 
@@ -93,7 +94,7 @@ def generate_polyline_gcode(
 def generate_wire_gcode(
     wire: Wire,
     format_value: Callable[[float], float],
-    discretize: Optional[float] = None
+    discretize: Optional[float] = None,
 ) -> list[str]:
     """Generate code for a Wire"""
     cmds = []

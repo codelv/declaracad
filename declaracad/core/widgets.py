@@ -9,6 +9,7 @@ Created on Dec 7, 2017
 
 @author: jrm
 """
+
 from atom.api import Bool, ForwardTyped, Instance, Int, Typed, set_default
 from enaml.core.declarative import d_
 from enaml.qt.qt_factories import QT_FACTORIES

@@ -9,6 +9,7 @@ Created on March 25, 2020
 
 @author: jrm
 """
+
 from typing import TYPE_CHECKING, Any
 
 from atom.api import Bool, Coerced, Float, ForwardTyped, List, Str, Typed, observe

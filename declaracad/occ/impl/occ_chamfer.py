@@ -9,6 +9,7 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
+
 from atom.api import Dict, set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.BRepFilletAPI import (
@@ -18,8 +19,9 @@ from OCCT.BRepFilletAPI import (
 )
 from OCCT.BRepTools import BRepTools
 from OCCT.gp import gp_Pnt2d
+from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TColgp import TColgp_Array1OfPnt2d
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import ChamferData, ProxyChamfer
@@ -46,11 +48,16 @@ class OccChamfer(OccOperation, ProxyChamfer):
             self.shape = child.shape
             return
         if isinstance(child.shape, (TopoDS_Wire, TopoDS_Face)):
-            self.chamfer_2d(child)
+            shape = self.chamfer_2d(child)
         elif self.has_profile_operations():
-            self.chamfer_profile(child)
+            shape = self.chamfer_profile(child)
         else:
-            self.chamfer_3d(child)
+            shape = self.chamfer_3d(child)
+        if d.fix:
+            fixer = ShapeFix_Shape(shape)
+            if fixer.Perform():
+                shape = fixer.Shape()
+        self.shape = shape
 
     def has_profile_operations(self) -> bool:
         T = (tuple, list)
@@ -59,7 +66,7 @@ class OccChamfer(OccOperation, ProxyChamfer):
                 return True
         return False
 
-    def chamfer_2d(self, child):
+    def chamfer_2d(self, child) -> TopoDS_Shape:
         d = self.declaration
         shape = child.shape
         was_wire = isinstance(shape, TopoDS_Wire)
@@ -89,16 +96,15 @@ class OccChamfer(OccOperation, ProxyChamfer):
         shape = Topology.cast_shape(builder.Shape())
         if was_wire:
             shape = BRepTools.OuterWire_(shape)
-        self.shape = shape
+        return shape
 
-    def chamfer_3d(self, child):
+    def chamfer_3d(self, child) -> TopoDS_Shape:
         d = self.declaration
         shape = child.shape
         operations = d.operations if d.operations else child.topology.faces
 
         if self.has_profile_operations():
-            self.shape = self.chamfer_profile(shape, d.operations)
-            return
+            return self.chamfer_profile(shape, d.operations)
 
         chamfer = BRepFilletAPI_MakeChamfer(shape)
         for item in operations:
@@ -138,9 +144,9 @@ class OccChamfer(OccOperation, ProxyChamfer):
                 chamfer.AddDA(d1, angle, edge, face)
             else:
                 chamfer.Add(d1, d2, edge, face)
-        self.shape = chamfer.Shape()
+        return chamfer.Shape()
 
-    def chamfer_profile(self, child):
+    def chamfer_profile(self, child) -> TopoDS_Shape:
         """Use fillet with custom shape. Only supports 45 deg chamfers."""
         d = self.declaration
         if d.distance2:
@@ -165,7 +171,7 @@ class OccChamfer(OccOperation, ProxyChamfer):
                     raise ValueError("Cannot mix profile and two distances")
             else:
                 builder.Add(d.distance, e)
-        self.shape = builder.Shape()
+        return builder.Shape()
 
     def set_distance(self, d):
         self.update_shape()

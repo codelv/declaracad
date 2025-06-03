@@ -9,6 +9,7 @@ Created on Dec 23, 2021
 
 @author: jrm
 """
+
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_DraftAngle
 from OCCT.gp import gp_Pln
 

@@ -9,6 +9,7 @@ Created on Dec 6, 2015
 
 @author: jrm
 """
+
 from .models import Model, Plugin  # noqa: F401
 from .utils import log  # noqa: F401
 from .widgets import EmbeddedWindow, FramelessWindow  # noqa: F401

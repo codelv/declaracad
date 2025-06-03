@@ -9,6 +9,7 @@ Created on Jul 12, 2015
 
 @author: jrm
 """
+
 import enaml
 from atom.api import Atom, Enum, Instance, List, Str
 from enaml.layout.api import (

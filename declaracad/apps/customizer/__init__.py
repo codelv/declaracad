@@ -9,6 +9,7 @@ Created on July 28, 2018
 
 @author: jrm
 """
+
 import enaml
 
 from declaracad.core.app import Application

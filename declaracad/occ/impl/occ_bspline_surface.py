@@ -9,6 +9,7 @@ Created on Dec 24, 2021
 
 @author: jrm
 """
+
 from atom.api import Typed, set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.Geom import Geom_BSplineSurface

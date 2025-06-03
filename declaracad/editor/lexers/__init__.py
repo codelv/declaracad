@@ -9,6 +9,7 @@ Created on June, 24 2021
 
 @author: jrm
 """
+
 from atom.api import Validate
 from enaml.qt import scintilla_lexers, scintilla_tokens
 from enaml.scintilla.api import Scintilla

@@ -9,6 +9,7 @@ Created on June, 24 2021
 
 @author: jrm
 """
+
 from typing import Optional
 
 import ply.lex as lex

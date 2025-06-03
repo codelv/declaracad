@@ -17,7 +17,7 @@ enamldef OptionsForm(Form):
 
     func get_help(name):
         m = model.get_member(name)
-        if not m.metadata:
+        if not m or not m.metadata:
             return ''
         return m.metadata.get('help', '')
     Looper:
