@@ -1,0 +1,41 @@
+# Created in DeclaraCAD
+import math
+from declaracad.occ.api import *
+from declaracad.parts.display import Axis
+from declaracad.cnc.api import Job, EndMill, JobSimulation, ContourOperation
+inch = 25.4
+
+enamldef SimplePart(Part):
+    alias stock
+    Cut:
+        Box: stock:
+            position = (-dx/2, -dx/2, -dz)
+            dx = 6*inch
+            dy = 6*inch
+            dz = 0.5*inch
+        Cylinder:
+            radius = 3*inch/2
+            position = (0, 0, -height)
+            height = stock.dz
+                
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    SimplePart: part:
+        pass
+    Offset: offset:
+        offset = -3
+        shape = part.topology.edges[12]
+    
+    Job: circle_job:
+        filename = 'cnc_3in_circle_6mm-endmill.nc'
+        ContourOperation:
+            #disabled = True
+            surface_speed = 100
+            tool = EndMill(diameter=6)
+            wires = [offset.topology.edges[0]]
+
+    JobSimulation:
+        job = circle_job
+        rate = 0.5
