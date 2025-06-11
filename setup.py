@@ -29,7 +29,6 @@ requirements = [
     "PyQt6",
     "PyQt6-QScintilla",
     #'PyQt6-WebEngine',
-    "service_identity",
     "ezdxf",
     "pdf4py",
 ]
