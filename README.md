@@ -120,17 +120,19 @@ There is currently no installer as it's in pre-alpha state. It runs on windows a
 
 ```bash
 
-#: Install conda or miniconda
-#: See https://conda.io/miniconda.html
+#: Install micromamba (or conda/miniconda)
+#: See https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html
 
 #: Create a conda env
-conda create -n declaracad
+micromamba create -n declaracad
 
 #: Activate it (on windows just do `activate declaracad`)
-source activate declaracad
+micromamba activate declaracad
 
 #: Install it OCCT and dependencies
-conda install -c trelau -c conda-forge pyocct pysmesh
+micromamba install -c conda-forge pyocct==7.9
+# smesh is optional
+# micromamba install -c conda-forge pysmesh
 
 #: Clone the repo
 git clone https://github.com/codelv/declaracad.git
