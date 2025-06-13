@@ -114,10 +114,16 @@ ENV/
 *.db
 
 /parts/
-/*.tap
-/*.nc
-
+*.tap
+*.nc
 *.so
-
 *.zip
+
+# Docs
+docs/_build
+docs/source/_static
+docs/source/_templates
+docs/source/doctrees
+docs/source/html
+docs/source/decls/*.rst
 

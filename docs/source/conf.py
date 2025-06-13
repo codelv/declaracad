@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'declaracad'
-copyright = '2021, CodeLV'
+project = 'DeclaraCAD'
+copyright = '2025, CodeLV'
 author = 'CodeLV'
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.1'
+release = '0.5.0'
 
 # The master toctree document.
 master_doc = 'index'

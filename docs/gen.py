@@ -20,6 +20,8 @@ def make_decls():
     for Widget in widgets:
         example = "No example available."
         try:
+            if not inspect.isclass(Widget):
+                continue
             mod = Widget.__module__.split(".")[-1]
             for filename in ['{mod}.enaml',
                              '{mod}s.enaml',
@@ -49,11 +51,12 @@ def make_decls():
             Implementation
             ----------------------------
             .. autoclass:: {mod.__module__}.{mod.__name__}
+               :show-inheritance:
+               :members:
 
-            """.strip()).format(mod=OCC_FACTORIES[Widget.__name__]())
+            """).format(mod=OCC_FACTORIES[Widget.__name__]())
         except:
             impl = "No implementation found"
-
 
 
         with open('source/decls/{}.rst'.format(Widget.__name__.lower()), 'w') as f:
@@ -67,9 +70,11 @@ def make_decls():
             ----------------------------
 
             .. autoclass:: {w.__module__}.{w.__name__}
+               :show-inheritance:
+               :members:
 
             {impl}
-            """.format(w=Widget, impl=impl, ex=example)))
+            """).format(w=Widget, impl=impl, ex=example))
 
     with open('source/decls/index.rst', 'w') as f:
         f.write(dedent("""
