@@ -29,7 +29,7 @@ enamldef ClippedPlaneRow(Container):
     attr plane
     attr high_plane
     attr bbox
-    attr axis << plane.direction.index(1)
+    attr axis << plane.direction[:].index(1)
     attr labels = {0: 'X', 1: 'Y', 2: 'Z'}
 
     constraints = [hbox(label, cbx, sldr),

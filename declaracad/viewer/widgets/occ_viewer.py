@@ -300,6 +300,8 @@ class ProxyOccViewer(ProxyControl):
     def update_display(self):
         raise NotImplementedError
 
+    def full_bbox(self) -> BBox:
+        raise NotImplementedError
 
 class OccViewer(Control):
     """A widget to view OpenCascade shapes."""
@@ -310,6 +312,9 @@ class OccViewer(Control):
     #: Bounding box of displayed shapes. A tuple of the following values
     #: (xmin, ymin, zmin, xmax, ymax, zmax).
     bbox = d_(Typed(BBox), writable=False)
+
+    def _default_bbox(self):
+        return self.proxy.full_bbox()
 
     #: Any errors that occurred while rendering
     errors = d_(Dict(), writable=False)

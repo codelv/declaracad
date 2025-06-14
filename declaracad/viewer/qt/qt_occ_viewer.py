@@ -642,8 +642,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         self.ais_context.UpdateCurrentViewer()
 
         # Recompute bounding box
-        bbox = self.get_bounding_box(self._displayed_shapes.keys())
-        d.bbox = BBox(*bbox)
+        d.bbox = self.full_bbox()
 
         # Trigger loaded
         d.rendered()
@@ -651,6 +650,10 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     # -------------------------------------------------------------------------
     # Viewer API
     # -------------------------------------------------------------------------
+    def full_bbox(self):
+        params = self.get_bounding_box(self._displayed_shapes.keys())
+        return BBox(*params)
+
     def get_bounding_box(
         self, shapes: list[TopoDS_Shape]
     ) -> tuple[float, float, float, float, float, float]:

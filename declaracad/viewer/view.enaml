@@ -531,7 +531,7 @@ enamldef ModelViewer(OccViewer): viewer:
         popup.show()
         self.notification = popup
 
-    func toggle_clipped_plane(axis):
+    func toggle_clipped_plane(axis: int):
         """ Show or hide the clipped plane slider for the given axis.
 
         Parameters
