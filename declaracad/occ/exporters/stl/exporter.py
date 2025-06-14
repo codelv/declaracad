@@ -67,7 +67,7 @@ class StlExporter(ModelExporter):
         # TODO: pyOCCT needs to support updating the reference
         # exporter.SetASCIIMode(not self.binary)
         mesh = BRepMesh_IncrementalMesh(
-            compound, self.linear_deflection, self.relative, self.angular_deflection
+            compound, self.linear_deflection, self.relative, self.angular_deflection, True
         )
         mesh.Perform()
         if not mesh.IsDone():
