@@ -14,15 +14,18 @@ import os
 
 import enaml
 from atom.api import Enum, Float, Str
+from OCCT.APIHeaderSection import APIHeaderSection_MakeHeader
 from OCCT.HeaderSection import HeaderSection_FileDescription, HeaderSection_FileName
 from OCCT.IFSelect import IFSelect_RetDone
 from OCCT.Interface import Interface_Static
 from OCCT.STEPCAFControl import STEPCAFControl_Writer
 from OCCT.TCollection import TCollection_HAsciiString
 
+
 from declaracad.occ.api import Shape
 from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
 from declaracad.viewer.plugin import ModelExporter
+from declaracad.core.utils import log
 
 SetCVal = Interface_Static.SetCVal_
 SetIVal = Interface_Static.SetIVal_
@@ -88,13 +91,30 @@ class StepExporter(ModelExporter):
         exporter.SetColorMode(True)
         step_model = exporter.Writer().WS().Model()
 
+        SetIVal("write.precision.mode", PRECISION_MODES[self.precision_mode])
+        if self.precision_mode == "greatest":
+            SetRVal("write.precision.val", self.precision_val)
+        SetIVal("write.step.assembly", ASSEMBLY_MODES[self.assembly_mode])
+        SetCVal("write.step.schema", self.schema)
+        if self.product_name:
+            SetCVal("write.step.product.name", self.product_name)
+        SetIVal("write.surfacecurve.mode", SURFACECURVE_MODES[self.surfacecurve_mode])
+        SetCVal("write.step.unit", self.units.upper())
+        SetIVal("write.step.vertex.mode", VERTEX_MODES[self.vertex_mode])
+
         if self.description:
             tp = HeaderSection_FileDescription.get_type_descriptor_()
             entity = step_model.HeaderEntity(tp)
             entity.SetDescription(create_hascii_list(self.description.split("\n")))
 
+
         tp = HeaderSection_FileName.get_type_descriptor_()
-        entity = step_model.HeaderEntity(tp)
+        if step_model.HasHeaderEntity(tp):
+            entity = step_model.HeaderEntity(tp)
+        else:
+            # OCCT 0.7.9+
+            entity = APIHeaderSection_MakeHeader(0)
+
         entity.SetOriginatingSystem(TCollection_HAsciiString("DeclaraCAD"))
 
         if self.author:
@@ -112,16 +132,10 @@ class StepExporter(ModelExporter):
             # Typo!
             entity.SetAuthorisation(TCollection_HAsciiString(self.authorization))
 
-        SetIVal("write.precision.mode", PRECISION_MODES[self.precision_mode])
-        if self.precision_mode == "greatest":
-            SetRVal("write.precision.val", self.precision_val)
-        SetIVal("write.step.assembly", ASSEMBLY_MODES[self.assembly_mode])
-        SetCVal("write.step.schema", self.schema)
-        if self.product_name:
-            SetCVal("write.step.product.name", self.product_name)
-        SetIVal("write.surfacecurve.mode", SURFACECURVE_MODES[self.surfacecurve_mode])
-        SetCVal("write.step.unit", self.units.upper())
-        SetIVal("write.step.vertex.mode", VERTEX_MODES[self.vertex_mode])
+        if not step_model.HasHeaderEntity(tp):
+            # OCCT 0.7.9+
+            entity.Apply(step_model)
+
         exporter.Transfer(doc)
         status = exporter.Write(self.path)
         if status != IFSelect_RetDone or not os.path.exists(self.path):
