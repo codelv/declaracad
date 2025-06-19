@@ -1,0 +1,61 @@
+"""
+Copyright (c) 2025, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+"""
+from enaml.application import Application
+from enaml.widgets.api import MainWindow, Container, IPythonConsole, MenuBar, Menu, Action
+
+from declaracad.core.utils import load_icon
+
+from .plugin import ConsolePlugin
+
+enamldef AppMenuBar(MenuBar):
+    Menu:
+        title = '&File'
+        Action:
+            text = 'Quit'
+            triggered :: Application.instance().stop()
+    Menu:
+        title = '&Edit'
+        Action:
+            text = 'Cut'
+            triggered :: copy_to_clipboard(cut=True)
+        Action:
+            text = 'Copy'
+            triggered :: copy_to_clipboard()
+        Action:
+            text = 'Paste'
+            triggered :: paste_from_clipboard()
+
+
+enamldef StandaloneConsole(MainWindow): view:
+    attr plugin: ConsolePlugin
+    attr clipboard = Application.instance()._qapp.clipboard()
+    alias console
+    title = "Console - DeclaraCAD"
+    icon = load_icon('logo')
+
+    func copy_to_clipboard(cut: bool = False):
+        control = console.proxy.text_control
+        cursor = control.textCursor()
+        if cursor.hasSelection():
+            clipboard.setText(cursor.selectedText())
+            if cut:
+                cursor.removeSelectedText()
+
+    func paste_from_clipboard():
+        control = console.proxy.text_control
+        text = clipboard.text()
+        if text and control.canPaste():
+            cursor = control.textCursor()
+            cursor.insertText(text)
+
+    AppMenuBar:
+        pass
+    Container:
+        padding = 0
+        IPythonConsole: console:
+            minimum_size = (320, 320)

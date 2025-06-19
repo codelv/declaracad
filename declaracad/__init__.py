@@ -95,6 +95,13 @@ def launch_renderer(args):
     renderer.main(**args.__dict__)
 
 
+def launch_console(args):
+    init_logging()
+    from declaracad.apps import console
+
+    console.main(**args.__dict__)
+
+
 def launch_customizer(args):
     init_logging()
     from declaracad.apps import customizer
@@ -181,6 +188,10 @@ def main():
     editor = subparsers.add_parser("edit", help="Edit a file")
     editor.set_defaults(func=launch_editor)
     editor.add_argument("filename", help="File to edit")
+
+    console = subparsers.add_parser("console", help="Open an ipython console")
+    console.set_defaults(func=launch_console)
+    editor.add_argument("-c", help="Command to run")
 
     args = parser.parse_args()
 
