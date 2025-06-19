@@ -6,6 +6,7 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 
 """
+
 from math import pi
 
 import pytest
@@ -74,6 +75,18 @@ def test_point_offset():
 
     a = p.offset(5, (0, 1, 0))
     assert a == Point(1, 5, 0)
+
+
+def test_point_coordinate_in_range():
+    p = Point(1000, 200, 100)
+    assert not p.coordinates_in_range(-200, 200)
+    assert p.coordinates_in_range(-200, 1000)
+
+
+def test_point_clip():
+    assert Point(1000, 200, 100).clip(-300, 300) == Point(300, 200, 100)
+    assert Point(100, -400, 200).clip(-300, 300) == Point(100, -300, 200)
+    assert Point(100, 0, -500).clip(-300, 300) == Point(100, 0, -300)
 
 
 def test_direction():
