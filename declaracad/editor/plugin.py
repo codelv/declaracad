@@ -626,7 +626,8 @@ class EditorPlugin(Plugin):
         try:
             #: TODO: Move to separate process
             line, column = cursor
-            script = jedi.Script(source, line + 1, column, sys_path=self.sys_path)
+            project = jedi.Project(self.project_path, sys_path=self.sys_path)
+            script = jedi.Script(source, line + 1, column, project=project)
 
             #: Get suggestions
             results = []
