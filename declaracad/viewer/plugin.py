@@ -10,6 +10,7 @@ Created on Dec 13, 2017
 @author: jrm
 """
 
+import sys
 import asyncio
 import functools
 import json
@@ -53,6 +54,15 @@ if TYPE_CHECKING:
 
     with enaml.imports():
         from .remote import RemoteViewer, ViewerDockItem
+
+
+def remote_env(platform: str):
+    # Set QT_QPA_PLATFORM='platform' on linux
+    env = None
+    if sys.platform == "linux":
+        env = os.environ.copy()
+        env['QT_QPA_PLATFORM'] = platform
+    return env
 
 
 @functools.lru_cache
@@ -219,7 +229,7 @@ class ViewerProcess(ProcessLineReceiver):
         )
         log.debug(f"Spawning '{' '.join(cmd)}'")
         loop = asyncio.get_event_loop()
-        self.process = await loop.subprocess_exec(lambda: self, *cmd)
+        self.process = await loop.subprocess_exec(lambda: self, *cmd, env=remote_env('xcb'))
         return self.process
 
     def restart(self):
@@ -499,7 +509,7 @@ class ViewerPlugin(Plugin):
         log.debug(" ".join(cmd))
         protocol = ProcessLineReceiver()
         loop = asyncio.get_event_loop()
-        deferred_call(loop.subprocess_exec, lambda: protocol, *cmd)
+        deferred_call(loop.subprocess_exec, lambda: protocol, *cmd, env=remote_env("offscreen"))
         return protocol
 
     def screenshot(self, options: Optional[ScreenshotOptions] = None) -> list[str]:
