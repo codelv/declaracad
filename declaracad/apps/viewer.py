@@ -19,6 +19,8 @@ from atom.api import Instance, Str, Typed
 
 from declaracad.core.app import Application
 from declaracad.core.utils import JsonRpcProtocol, RemoteLogger, log
+from declaracad.console.plugin import patch_ipykernel
+
 
 with enaml.imports():
     from declaracad.viewer.standalone import ViewerWindow
@@ -142,11 +144,24 @@ def main(
         Viewer reference ID from the application. Can be any str if testing.
 
     """
+
+    # Set default surface format to avoid OCCT warnings
+    from enaml.qt.QtGui import QSurfaceFormat
+    surface_format = QSurfaceFormat()
+    surface_format.setDepthBufferSize(24)
+    surface_format.setStencilBufferSize(8)
+    surface_format.setVersion(3, 2)
+    surface_format.setProfile(QSurfaceFormat.CoreProfile)
+    QSurfaceFormat.setDefaultFormat(surface_format)
+
     app = Application()
     if not port and not os.path.exists(filename):
         raise ValueError(f"File {filename} does not exist!")
     if port and not ref:
         raise ValueError("A ref is required when port is given")
+
+    # Required for embedded console
+    patch_ipykernel()
 
     view = ViewerWindow(filename="-", frameless=bool(port))
     view.show()
