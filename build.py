@@ -9,12 +9,15 @@ Created on Jan 12, 2018
 
 @author
 """
+import re
 import sh
 import os
 import sys
 import textwrap
 from glob import glob
 from contextlib import contextmanager
+
+PY_VER = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 CONTROL_TEMPLATE = """
 Package: {name}
@@ -41,7 +44,7 @@ def cd(path):
         os.chdir(cwd)
 
 
-def make_installer(cfg):
+def make_deb(cfg):
     """ """
     print("Building installer...")
     build_dir = 'build/{name}-{version}'.format(**cfg)
@@ -62,7 +65,7 @@ def make_installer(cfg):
 
     #: Write
     os.makedirs(install_dir)
-    print(sh.cp('-R', glob('build/exe.linux-x86_64-3.5/*'), install_dir))
+    print(sh.cp('-R', glob(f'build/exe.linux-x86_64-{PY_VER}/*'), install_dir))
 
     #: Make a simlink to /usr/local/bin
     #print(sh.ln('-sf', '{install_dir}/{name}'.format(**cfg),
@@ -87,67 +90,83 @@ def main(cfg):
     """ Build and run the app
     
     """
-    try:
-        #: Clean
-        print("Clean...")
-        sh.rm('-R', glob('build/*'))
-    except:
-        pass
+    print("Clean...")
+    sh.rm('-Rf', glob('build/*'))
 
     #: Build
     print("Build...")
-    print(sh.python('release.py', 'build'))
+    try:
+        print(sh.python('release.py', 'build', _err_to_out=True))
+    except Exception as e:
+        for line in e.stdout.split(b"\n"):
+            print(line.decode())
+        raise
 
     #: Enter build
-    print("Trim...")
-    with cd('build/exe.linux-x86_64-3.5/'):
-        #: Trim out crap that's not needed
-        for p in [
-                #'libicu*',
-                'lib/PyQt5/Qt',
-                'lib/PyQt5/QtB*',
-                'lib/PyQt5/QtDes*',
-                'lib/PyQt5/QtH*',
-                'lib/PyQt5/QtL*',
-                'lib/PyQt5/QtM*',
-                'lib/PyQt5/QtN*',
-                'lib/PyQt5/QtPos*',
-                'lib/PyQt5/QtT*',
-                'lib/PyQt5/QtO*',
-                'lib/PyQt5/QtSe*',
-                'lib/PyQt5/QtSq*',
-                'lib/PyQt5/QtQ*',
-                'lib/PyQt5/QtWeb*',
-                'lib/PyQt5/QtX*',
-                #'platforms',
-                #'imageformats',
-                'libQt5Net*',
-                'libQt5Pos*',
-                'libQt5Q*',
-                'libQt5Sq*',
-                'libQt5O*',
-                'libQt5T*',
-                'libQt5Web*',
-                #'declaracad',
-                'libQt5X*'
-                ]:
-            try:
-                sh.rm('-R', glob(p))
-            except Exception as e:
-                print(e)
+    # print("Trim...")
+    with cd(f'build/exe.linux-x86_64-{PY_VER}/'):
+    #     #: Trim out crap that's not needed
+    #     for p in [
+    #             #'libicu*',
+    #             'lib/PyQt6/Qt',
+    #             'lib/PyQt6/QtB*',
+    #             'lib/PyQt6/QtDes*',
+    #             'lib/PyQt6/QtH*',
+    #             'lib/PyQt6/QtL*',
+    #             'lib/PyQt6/QtM*',
+    #             'lib/PyQt6/QtN*',
+    #             'lib/PyQt6/QtPos*',
+    #             'lib/PyQt6/QtT*',
+    #             #'lib/PyQt6/QtO*',
+    #             'lib/PyQt6/QtSe*',
+    #             'lib/PyQt6/QtSq*',
+    #             'lib/PyQt6/QtQ*',
+    #             #'lib/PyQt6/QtWeb*',
+    #             'lib/PyQt6/QtX*',
+    #             #'platforms',
+    #             #'imageformats',
+    #             'libQt6Net*',
+    #             'libQt6Pos*',
+    #             'libQt6Q*',
+    #             'libQt6Sq*',
+    #             'libQt6O*',
+    #             'libQt6T*',
+    #             'libQt6Web*',
+    #             #'declaracad',
+    #             'libQt6X*'
+    #             ]:
+    #         try:
+    #             sh.rm('-Rf', glob(p))
+    #         except Exception as e:
+    #             print(e)
 
         #: Test the app
         print("Launching...")
         cmd = sh.Command('./{name}'.format(**cfg))
-        print(cmd())
+        try:
+            print(cmd(_err_to_out=True))
+        except Exception as e:
+            for line in e.stdout.split(b"\n"):
+                print(line.decode())
+            raise
+
 
     #: If good then build installer
-    make_installer(cfg)
+    # make_deb(cfg)
+
+def find_version():
+    with open("declaracad/__init__.py") as f:
+        for line in f:
+            m = re.search(r'version = [\'"](.+)["\']', line)
+            if m:
+                return m.group(1)
+    raise Exception("Could not find version in declaracad/__init__.py")
 
 if __name__ == '__main__':
+
     cfg = {
         'name': 'declaracad',
-        'version': 1.0,
+        'version': find_version(),
         'maintainer': 'CodeLV <frmdstryr@gmail.com>',
         'section': 'engineering',
         'depends': '',

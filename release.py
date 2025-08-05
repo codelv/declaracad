@@ -11,6 +11,7 @@ Created on Dec 5, 2017
 """
 import os
 import sys
+import enaml
 import importlib
 import declaracad
 from glob import glob
@@ -48,20 +49,17 @@ def find_data_files(*modules):
     return files.items()
 
 
-def find_occt_libs():
+def find_extra_libs():
     """ Find all the libTK*.so files """
     import OCCT
     root = dirname(dirname(dirname(OCCT.__path__[0])))
 
     if sys.platform == 'win32':
         root = os.path.join(root, 'Library', 'lib')
-        target = 'lib'
         libs = 'TK*.lib'
     elif sys.platform == 'darwin':
-        target = '..'
         libs = 'libTK*.dylib'
     else:
-        target = '..'
         libs = 'libTK*.so'
 
     results = []
@@ -69,8 +67,19 @@ def find_occt_libs():
 
     for filename in glob(pattern):
         lib = os.path.split(filename)[-1]
-        dest = os.path.join(target, lib)
+        dest = os.path.join('lib', lib)
         results.append((filename, dest))
+
+    if sys.platform == "linux":
+        # Copy lib for QtXcbQpa plugin
+        import PyQt6
+        qt_libs = os.path.join(PyQt6.__path__[0], 'Qt6', 'lib')
+        dest = os.path.join('lib', '')
+        for filename in glob(f"{qt_libs}/libQt6XcbQpa.so*"):
+            lib = os.path.split(filename)[-1]
+            results.append((filename, f'lib/PyQt6/Qt6/lib/{lib}'))
+        "PyQt6/Qt6/lib/libQt6XcbQpa.so.6"
+        # include lib
 
     assert results, "No occt libraries found!"
     return results
@@ -78,84 +87,93 @@ def find_occt_libs():
 
 is_windows = sys.platform == 'win32'
 
-
-setup(
-  name='declaracad',
-  author="CodeLV",
-  author_email="frmdstryr@gmail.com",
-  license='GPLv3',
-  url='https://github.com/codelv/declaracad/',
-  description="A declarative parametric 3D modeling application",
-  long_description=open("README.md").read(),
-  version=declaracad.version,
-  options=dict(
-      build_exe=dict(
-          packages=[
-              'declaracad',
-              'enaml.core.compiler_helpers',
-              'enaml.core.template_',
-              'enaml.scintilla.api',
-              'enaml.workbench.core.api',
-              'enaml.workbench.core.core_plugin',
-              'enaml.workbench.ui.ui_plugin',
-              'enamlx.widgets.api',
-              'markdown',
-              'html.parser',
-              'pygments',
-              'ipykernel',
-              'zmq.utils.garbage',
-          ],
-          zip_include_packages=[
-            'asyncqt', 'asyncio', 'attr',
-            'backcall', 'bytecode',
-            'curses', 'chardet', 'collections', 'concurrent', 'ctypes',
-            'colorama',
-            'dateutil', 'distutils', 'docutils',
-            'email',
-            'enamlx',
-            'encodings',
-            'ezdxf',
-            'http',
-            'IPython', 'ipython_genutils', 'ipykernel',
-            'importlib', 'importlib_metadata',
-            'json', 'jsonpickle', 'jupyter_client', 'jupyter_core',
-            'jedi', 'jinja2',
-            'logging',
-            'numpydoc',
-            'multiprocessing',
-            'parso', 'pygments',  'pytest', 'pluggy', 'ply', 'prompt_toolkit',
-            'pytz', 'pydoc_data', 'pycparser', 'ptyprocess', 'pkg_resources',
-            'qtpy', 'qtconsole',
-            'sqlite3', 'sphinx', 'serial', 'scipy',
-            'traitlets', 'tornado', 'toml', 'test',
-            'unittest', 'urllib',
-            'wcwidth',
-            'xml', 'xmlrpc',
-            '_distutils_hack',
-          ],
-          zip_includes=find_enaml_files('enaml'),
-          include_files=find_occt_libs(),
-          excludes=[
-              'alabaster',
-              'babel',
-              'wx',
-              'tkinter',
-              'matplotlib',
-              'lib2to3',
-              'enamlx.qt.qt_occ_viewer',
-              'zmq.eventloop.minitornado',
-          ],
-      )
-  ),
-  executables=[
-      Executable(
-          'main.py',
-          icon='declaracad/res/icons/logo.' + ('ico' if is_windows else 'png'),
-          targetName='declaracad',
-          shortcutName="DeclaraCAD" if is_windows else None,
-          shortcutDir="DesktopFolder" if is_windows else None,
-          # stdout doesn't
-          # base='Win32GUI' is_windows else None
-      )
-  ]
-)
+with enaml.imports():
+    setup(
+        name='declaracad',
+        author="CodeLV",
+        author_email="frmdstryr@gmail.com",
+        license='GPLv3',
+        url='https://github.com/codelv/declaracad/',
+        description="A declarative parametric 3D modeling application",
+        long_description=open("README.md").read(),
+        version=declaracad.version,
+        options=dict(
+            build_exe=dict(
+                packages=[
+                    'declaracad',
+                    'enaml',
+                    'enamlx',
+                    'PyQt6.QtOpenGL',
+                    # 'enaml.core.compiler_helpers',
+                    # 'enaml.core.template_',
+                    # 'enaml.scintilla.api',
+                    # 'enaml.workbench.core.api',
+                    # 'enaml.workbench.core.core_plugin',
+                    # 'enaml.workbench.ui.ui_plugin',
+                    # 'enamlx.widgets.api',
+                    "parso",  "jedi", # Needed outsize of zip for autocomplete to work
+                    'markdown',
+                    'html.parser',
+                    'pygments',
+                    'ipykernel',
+                    'zmq.utils.garbage',
+                ],
+                zip_include_packages=[
+                    'asyncqt', 'asyncio', 'attr',
+                    'backcall', 'bytecode',
+                    'curses', 'chardet', 'collections', 'concurrent', 'ctypes',
+                    'colorama',
+                    'dateutil', 'distutils', 'docutils',
+                    'email',
+                    'enamlx',
+                    'encodings',
+                    'ezdxf',
+                    'http',
+                    'IPython', 'ipython_genutils', 'ipykernel',
+                    'importlib', 'importlib_metadata',
+                    'json', 'jsonpickle', 'jupyter_client', 'jupyter_core',
+                    'jinja2',
+                    'logging',
+                    'numpydoc',
+                    'multiprocessing',
+                    'pygments',  'pluggy', 'prompt_toolkit',
+                    'pytz', 'pydoc_data', 'pycparser', 'ptyprocess', 'pkg_resources',
+                    'qtpy', 'qtconsole',
+                    'sqlite3', 'sphinx', 'serial', 'scipy',
+                    'traitlets', 'tornado', 'toml', 'test',
+                    'unittest', 'urllib',
+                    'wcwidth',
+                    'xml', 'xmlrpc',
+                    '_distutils_hack',
+                ],
+                zip_includes=find_enaml_files('enaml'),
+                include_files=find_extra_libs(),
+                excludes=[
+                    'alabaster',
+                    'babel',
+                    'wx',
+                    'tkinter',
+                    'matplotlib',
+                    'lib2to3',
+                    'enamlx.qt.qt_occ_viewer',
+                    'zmq.eventloop.minitornado',
+                    'sphinx',
+                    'vtkmodules',
+                    'wheel'
+                    'debugpy',
+                ],
+            )
+        ),
+        executables=[
+            Executable(
+                'main.py',
+                base="gui",
+                icon='declaracad/res/icons/logo.' + ('ico' if is_windows else 'png'),
+                target_name='declaracad',
+                shortcut_name="DeclaraCAD" if is_windows else None,
+                shortcut_dir="DesktopFolder" if is_windows else None,
+                # stdout doesn't
+                # base='Win32GUI' is_windows else None
+            )
+        ]
+    )
