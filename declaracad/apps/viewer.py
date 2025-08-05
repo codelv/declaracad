@@ -142,8 +142,9 @@ def main(
         applicable if the port argument is not given.
     ref: str, optional
         Viewer reference ID from the application. Can be any str if testing.
-
     """
+    log.debug(f"Starting viewer pid={os.getpid()} cwd={os.getcwd()} port={port}")
+
 
     # Set default surface format to avoid OCCT warnings
     from enaml.qt.QtGui import QSurfaceFormat
