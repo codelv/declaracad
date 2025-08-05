@@ -22,5 +22,19 @@ enamldef LoadedPart(Part):
     attr filename: str
     attr options: dict = {}
     description << filename[0:100]
+
+    func load():
+        shapes = load_model(filename, options)
+        if color := self.color:
+            for shape in shapes:
+                shape.color = color
+        if transparency := self.transparency:
+            for shape in shapes:
+                shape.transparency = transparency
+        if material := self.material:
+            for shape in shapes:
+                shape.material = material
+        return shapes
+
     Include:
-        objects << load_model(filename, options)
+        objects << load()
