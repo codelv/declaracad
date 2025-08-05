@@ -838,6 +838,9 @@ class Wire(Edge):
     #: Edges used to create this wire
     edges = d_(List())
 
+    #: Apply shape fixing
+    fix = d_(Bool())
+
     @observe("edges")
     def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)

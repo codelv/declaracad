@@ -16,6 +16,7 @@ from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepLib import BRepLib
 from OCCT.TopoDS import TopoDS_Edge
 from OCCT.TopTools import TopTools_ListOfShape
+from OCCT.ShapeFix import ShapeFix_Wire
 
 from declaracad.core.utils import log
 from declaracad.occ.draw import ProxyWire
@@ -77,6 +78,11 @@ class OccWire(OccDependentShape, ProxyWire):
             raise RuntimeError(msg)
         if d.reverse:
             wire.Reverse()
+        if d.fix:
+            fixer = ShapeFix_Wire()
+            fixer.Load(wire)
+            if fixer.Perform():
+                wire = fixer.Wire()
         self.curve = BRepAdaptor_CompCurve(wire)
         self.shape = wire
 

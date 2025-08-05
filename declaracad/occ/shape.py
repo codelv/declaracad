@@ -613,6 +613,9 @@ class Face(Shape):
     #: List of wires to use
     wires = d_(List())
 
+    #: Apply shape fixing to the result
+    fix = d_(Bool(False))
+
 
 class Box(Shape):
     """A primitive Box shape.
