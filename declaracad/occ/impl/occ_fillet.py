@@ -11,20 +11,33 @@ Created on Dec 23, 2021
 """
 
 from atom.api import set_default
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+from OCCT.BRepAlgoAPI import BRepAlgoAPI_Common
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakePolygon,
+    BRepBuilderAPI_MakeWire,
+)
 from OCCT.BRepFilletAPI import BRepFilletAPI_MakeFillet, BRepFilletAPI_MakeFillet2d
 from OCCT.BRepTools import BRepTools
 from OCCT.ChFi3d import ChFi3d_Polynomial, ChFi3d_QuasiAngular, ChFi3d_Rational
 from OCCT.gp import gp_Pnt2d
 from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TColgp import TColgp_Array1OfPnt2d
-from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape, TopoDS_Vertex, TopoDS_Wire
+from OCCT.TopoDS import (
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Shape,
+    TopoDS_Vertex,
+    TopoDS_Wire,
+)
+from OCCT.TopTools import TopTools_ListOfShape
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import ProxyFillet
 
 from .occ_algo import OccOperation
-from .topology import Topology
+from .occ_polyline import OccPolyline
+from .topology import Topology, Point
 
 
 class OccFillet(OccOperation, ProxyFillet):
@@ -49,7 +62,9 @@ class OccFillet(OccOperation, ProxyFillet):
             return
 
         s = child.shape
-        if isinstance(s, (TopoDS_Wire, TopoDS_Face)):
+        if isinstance(child, OccPolyline):
+            shape = self.fillet_polyline(child)
+        elif isinstance(s, (TopoDS_Wire, TopoDS_Face)):
             shape = self.fillet_2d(child)
         else:
             shape = self.fillet_3d(child)
@@ -59,6 +74,90 @@ class OccFillet(OccOperation, ProxyFillet):
             if fixer.Perform():
                 shape = fixer.Shape()
         self.shape = shape
+
+    def fillet_polyline(self, child: OccPolyline) -> TopoDS_Shape:
+        """Fillet a polyline that may be 3d"""
+        d = self.declaration
+        points = child.declaration.points
+        operations = d.operations if d.operations else child.topology.vertices
+        wires = []
+
+        # Fillet each segment of the wire
+        for i in range(1, len(points) - 1):
+            p0 = points[i - 1]
+            p1 = points[i]
+            p2 = points[i + 1]
+
+            radius = None
+
+            # Create a polyline
+            poly = BRepBuilderAPI_MakePolygon()
+            poly.Add(p0.proxy)
+            poly.Add(p1.proxy)
+            poly.Add(p2.proxy)
+            wire = Topology.cast_shape(poly.Shape())
+            middle_vertex = Topology(shape=wire).vertices[1]
+
+            # Determine if the vertex was filleted
+            point = Point(middle_vertex)
+            for item in operations:
+                if isinstance(item, (tuple, list)):
+                    r, v = item
+                    if point == v:
+                        radius = r
+                        break
+                elif isinstance(item, TopoDS_Vertex):
+                    if point == item:
+                        radius = d.radius
+                        break
+                else:
+                    log.warning(f"Invalid fillet {item}")
+
+            if radius is not None:
+                face = BRepBuilderAPI_MakeFace(wire).Face()
+                fillet = BRepFilletAPI_MakeFillet2d(face)
+                fillet.AddFillet(middle_vertex, radius)
+                result = Topology.cast_shape(fillet.Shape())
+                wire = BRepTools.OuterWire_(result)
+            wires.append(wire)
+
+        assert wires
+        if len(wires) == 1:
+            return wires[0]  # No merging needed
+
+        # Merge filleted edges by taking the intersection of overlapping segments
+        edges = []
+        last_index = len(wires) - 1
+        for i in range(1, len(wires)):
+            last_wire = wires[i - 1]
+            wire = wires[i]
+            last_topo = Topology(shape=last_wire)
+            topo = Topology(shape=wire)
+            if last_topo.end_point == Topology(shape=wire).start_point:
+                # No fillet
+                edges.extend(last_topo.edges)
+            else:
+                if i == 1:
+                    # Add starting edges
+                    edges.extend(last_topo.edges[0:2])
+                common = BRepAlgoAPI_Common(last_wire, wire)
+                common.Build()
+                common_edges = Topology(shape=common.Shape()).edges
+                assert common_edges, "Fillet radius too large"
+                edges.extend(common_edges)
+                edges.append(topo.edges[1])  # Add filleted edge
+                if i == last_index:
+                    # Add final edges
+                    edges.append(topo.edges[2])
+
+        # Create a wire
+        shapes = TopTools_ListOfShape()
+        for edge in edges:
+            shapes.Append(edge)
+        builder = BRepBuilderAPI_MakeWire()
+        builder.Add(shapes)
+        assert builder.IsDone(), f"Could not create wire with filleted edges {d}"
+        return builder.Wire()
 
     def fillet_2d(self, child) -> TopoDS_Shape:
         d = self.declaration
