@@ -59,7 +59,7 @@ class GCodeLexer:
         return t
 
     def t_COMMENT(self, t):
-        r"\(.*"
+        r"[;\(].*"
         t.lexer.value = t.value
         return t
 
