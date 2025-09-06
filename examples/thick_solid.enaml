@@ -1,0 +1,25 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    
+    ThickSolid:
+        offset = 1
+        join_type = "arc"
+        faces = [
+            self.children[0].topology.faces[1]
+        ]
+        Fillet:
+            radius = 2
+            operations = [
+                box.topology.edges[i]
+                for i in (0, 2, 4, 6)
+            ]
+            Box: box:
+                position = (-dx/2, -dy/2)
+                dx = 10
+                dy = 16
+                dz = 8
