@@ -254,7 +254,7 @@ enamldef ModelViewer(OccViewer): viewer:
 
 
     key_pressed ::
-        key = change['value'][1].text()
+        key = change['value'].text()
         last_key = self.last_key
         self.last_key = key
 

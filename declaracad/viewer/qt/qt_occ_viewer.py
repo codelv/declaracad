@@ -149,14 +149,6 @@ class QtViewer3d(QOpenGLWidget):
         self._drawtext = True
         self._select_pen = QtGui.QPen(QtGui.QColor(0, 0, 0), 2)
         self.dragStartPos = QPoint()
-        self._callbacks = {
-            "key_pressed": [],
-            "mouse_dragged": [],
-            "mouse_scrolled": [],
-            "mouse_moved": [],
-            "mouse_pressed": [],
-            "mouse_released": [],
-        }
         self.proxy = None
         self._last_code = None
 
@@ -197,8 +189,12 @@ class QtViewer3d(QOpenGLWidget):
 
     # def resizeGL(self, w: int, h: int):
     #    self.proxy.v3d_view.MustBeResized()
+    def keyPressEvent(self, event):
+        if self.hasFocus():
+            self.proxy.declaration.key_pressed(event)
 
     def wheelEvent(self, event):
+        self.proxy.declaration.mouse_wheeled(event)
         if self._lock_zoom:
             return
         delta = event.angleDelta().y()
@@ -207,12 +203,14 @@ class QtViewer3d(QOpenGLWidget):
         view.SetZoom(1.25 if delta > 0 else 0.8)
 
     def mousePressEvent(self, event):
+        self.proxy.declaration.mouse_pressed(event)
         self.setFocus()
         pos = self.dragStartPos = event.pos()
         x, y = self.scalePoint(pos.x(), pos.y())
         self.proxy.v3d_view.StartRotation(int(x), int(y))
 
     def mouseReleaseEvent(self, event):
+        self.proxy.declaration.mouse_released(event)
         view = self.proxy.v3d_view
         btn = event.button()
 
@@ -242,6 +240,7 @@ class QtViewer3d(QOpenGLWidget):
         self._drawbox = (sx, sy, dx, dy)
 
     def mouseMoveEvent(self, event):
+        self.proxy.declaration.mouse_moved(event)
         pt = event.pos()
         buttons = event.buttons()
         modifiers = event.modifiers()
@@ -407,7 +406,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             self._update_rendering_params()
             self.set_grid_mode(d.grid_mode)
             self.set_grid_colors(d.grid_colors)
-            self.init_signals()
 
     def init_viewer(self):
         widget = self.widget
@@ -475,14 +473,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             key = info.FindKey(i)
             value = info.FindFromIndex(i)
             log.info(f"  {key.ToCString()}: {value.ToCString()}")
-
-    def init_signals(self):
-        d = self.declaration
-        callbacks = self.widget._callbacks
-        for name in callbacks.keys():
-            cb = getattr(d, name, None)
-            if cb is not None:
-                callbacks[name].append(cb)
 
     def child_added(self, child):
         if isinstance(child, OccShape):
