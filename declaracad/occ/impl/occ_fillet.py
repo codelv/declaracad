@@ -37,7 +37,7 @@ from declaracad.occ.algo import ProxyFillet
 
 from .occ_algo import OccOperation
 from .occ_polyline import OccPolyline
-from .topology import Topology, Point
+from .topology import Point, Topology
 
 
 class OccFillet(OccOperation, ProxyFillet):
@@ -146,9 +146,9 @@ class OccFillet(OccOperation, ProxyFillet):
                 assert common_edges, "Fillet radius too large"
                 edges.extend(common_edges)
                 edges.append(topo.edges[1])  # Add filleted edge
-                if i == last_index:
-                    # Add final edges
-                    edges.append(topo.edges[2])
+                if i == last_index and len(topo.edges) > 2:
+                    # Add final edge
+                    edges.extend(topo.edges[2:])
 
         # Create a wire
         shapes = TopTools_ListOfShape()
