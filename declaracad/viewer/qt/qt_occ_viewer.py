@@ -1,27 +1,26 @@
 """
-Copyright (c) 2016-2020, Jairus Martin.
+Copyright (c) 2016-2025, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
 
-Created on Sep 26, 2016
-
 """
 
+import ctypes
 import os
 import sys
 from contextlib import contextmanager
 from typing import Any, Optional
 
-from atom.api import Bool, Dict, Int, List, Property, Typed
+from atom.api import Bool, Dict, Instance, Int, List, Property, Typed
 from enaml.application import Application
 from enaml.colors import Color
 from enaml.qt import QtGui
 from enaml.qt.qt_control import QtControl
 from enaml.qt.QtCore import QPoint, Qt, QTimer
 from enaml.qt.QtGui import QPalette
-from enaml.qt.QtWidgets import QOpenGLWidget
+from enaml.qt.QtWidgets import QApplication, QOpenGLWidget
 from OCCT import Aspect, TopAbs, V3d
 from OCCT.AIS import (
     AIS_DisplayMode,
@@ -35,11 +34,14 @@ from OCCT.Aspect import (
     Aspect_GFM_VER,
     Aspect_GridDrawMode,
     Aspect_GridType,
+    Aspect_NeutralWindow,
+    Aspect_Window,
 )
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRepBndLib import BRepBndLib
 from OCCT.Graphic3d import (
     Graphic3d_Camera,
+    Graphic3d_DiagnosticInfo_Basic,
     Graphic3d_RenderingParams,
     Graphic3d_RM_RASTERIZATION,
     Graphic3d_RM_RAYTRACING,
@@ -49,11 +51,12 @@ from OCCT.Graphic3d import (
     Graphic3d_TypeOfShadingModel,
 )
 from OCCT.MeshVS import MeshVS_Mesh, MeshVS_MeshEntityOwner
-from OCCT.OpenGl import OpenGl_GraphicDriver
+from OCCT.OpenGl import OpenGl_Context, OpenGl_GraphicDriver, OpenGl_Window
 from OCCT.Prs3d import Prs3d_Drawer
 from OCCT.PrsMgr import PrsMgr_PresentationManager
 from OCCT.Quantity import Quantity_Color, Quantity_NOC_BLACK, Quantity_NOC_WHITE
 from OCCT.TCollection import TCollection_AsciiString
+from OCCT.TColStd import TColStd_IndexedDataMapOfStringString
 from OCCT.TopoDS import TopoDS_Shape
 from OCCT.V3d import (
     V3d_AmbientLight,
@@ -76,19 +79,24 @@ from declaracad.viewer.widgets.occ_viewer import (
     ViewerSelection,
 )
 
+USE_WAYLAND = False
+EGL_DRAW = 0x3059
+
 if sys.platform == "win32":
     from OCCT.WNT import WNT_Window
-
-    V3d_Window = WNT_Window
 elif sys.platform == "darwin":
     from OCCT.Cocoa import Cocoa_Window
-
-    V3d_Window = Cocoa_Window
 else:
-    from OCCT.Xw import Xw_Window
+    try:
+        # libEGL = ctypes.cdll.LoadLibrary("libEGL.so")
+        from OCCT.Wayland import Wayland_DisplayConnection, Wayland_Window
 
-    V3d_Window = Xw_Window
+        from declaracad.helpers import wayland_display, wayland_params
 
+        USE_WAYLAND = True
+    except ImportError:
+        Xw_DisplayConnection = Aspect_DisplayConnection
+        from OCCT.Xw import Xw_Window  # , Xw_DisplayConnection
 
 V3D_VIEW_MODES: dict[str, V3d_TypeOfOrientation] = {
     "top": V3d.V3d_Zpos,
@@ -109,6 +117,20 @@ BLACK = Quantity_Color(Quantity_NOC_BLACK)
 WHITE = Quantity_Color(Quantity_NOC_WHITE)
 
 SelectionInfoType = dict[str, dict[int, OccShape]]
+
+ctypes.pythonapi.PyCapsule_New.restype = ctypes.py_object
+ctypes.pythonapi.PyCapsule_New.argtypes = [
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
+
+ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object, ctypes.c_char_p]
+ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+
+
+def capsule(ptr):
+    return ctypes.pythonapi.PyCapsule_New(ptr, None, None)
 
 
 class QtViewer3d(QOpenGLWidget):
@@ -138,31 +160,15 @@ class QtViewer3d(QOpenGLWidget):
         self.proxy = None
         self._last_code = None
 
-        # enable Mouse Tracking
         self.setMouseTracking(True)
-        # Strong focus
         self.setFocusPolicy(Qt.StrongFocus)
-
-        # required for overpainting the widget
-        self.setAutoFillBackground(False)
+        self.setUpdatesEnabled(True)
+        self.setUpdateBehavior(QOpenGLWidget.UpdateBehavior.NoPartialUpdate)
         self.setBackgroundRole(QPalette.NoRole)
         self.setAttribute(Qt.WA_PaintOnScreen)
         self.setAttribute(Qt.WA_NoSystemBackground)
-
-    def get_window_id(self):
-        """Returns an the identifier of the GUI widget."""
-        hwnd = self.winId()
         if sys.platform == "win32":
-            import ctypes
-
-            ctypes.pythonapi.PyCapsule_New.restype = ctypes.py_object
-            ctypes.pythonapi.PyCapsule_New.argtypes = [
-                ctypes.c_int,
-                ctypes.c_void_p,
-                ctypes.c_void_p,
-            ]
-            return ctypes.pythonapi.PyCapsule_New(hwnd, None, None)
-        return hwnd
+            QApplication.setAttribute(Qt.AA_UseDesktopOpenGL)
 
     def scalePoint(self, x: float, y: float) -> tuple[float, float]:
         """Scale for HighDPI / Wayland screens"""
@@ -171,8 +177,11 @@ class QtViewer3d(QOpenGLWidget):
         return (x * dpi, y * dpi)
 
     def resizeEvent(self, event):
-        view = self.proxy.v3d_view
-        if view:
+        if view := self.proxy.v3d_view:
+            # if window := self.proxy.v3d_window:
+            #    bounds = self.rect()
+            #    w, h = self.scalePoint(bounds.width(), bounds.height())
+            #    window.SetSize(int(w), int(h))
             view.MustBeResized()
 
     def keyPressEvent(self, event):
@@ -191,8 +200,11 @@ class QtViewer3d(QOpenGLWidget):
     def initializeGL(self):
         self.proxy.init_viewer()
 
-    def resizeGL(self):
-        self.proxy.v3d_view.MustBeResized()
+    # def paintGL(self):
+    #    self.proxy.v3d_view.Redraw()
+
+    # def resizeGL(self, w: int, h: int):
+    #    self.proxy.v3d_view.MustBeResized()
 
     def wheelEvent(self, event):
         if self._fire_event("mouse_scrolled", event):
@@ -331,14 +343,14 @@ class QtOccViewer(QtControl, ProxyOccViewer):
     # -------------------------------------------------------------------------
     # OpenCascade specific members
     # -------------------------------------------------------------------------
-    display_connection = Typed(Aspect_DisplayConnection)
+    display_connection = Instance(Aspect_DisplayConnection)
     v3d_viewer = Typed(V3d_Viewer)
     v3d_view = Typed(V3d_View)
 
     ais_context = Typed(AIS_InteractiveContext)
     prs3d_drawer = Typed(Prs3d_Drawer)
     prs_mgr = Typed(PrsMgr_PresentationManager)
-    v3d_window = Typed(V3d_Window)
+    v3d_window = Instance(Aspect_Window)
     gfx_structure_manager = Typed(Graphic3d_StructureManager)
     gfx_structure = Typed(Graphic3d_Structure)
     graphics_driver = Typed(OpenGl_GraphicDriver)
@@ -363,6 +375,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
 
     def init_widget(self):
         super().init_widget()
+        d = self.declaration
         widget = self.widget
         widget.proxy = self
 
@@ -371,42 +384,27 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         redisplay_timer.setInterval(8)
         redisplay_timer.timeout.connect(self.on_redisplay_requested)
 
-    def init_viewer(self):
-        """Init viewer when the QOpenGLWidget is ready"""
-        d = self.declaration
-        widget = self.widget
         if sys.platform == "win32":
             display = Aspect_DisplayConnection()
+        elif USE_WAYLAND:
+            display = Wayland_DisplayConnection()
         else:
-            DISPLAY = os.environ.get("DISPLAY", "0")
-            display_name = TCollection_AsciiString(DISPLAY)
-            display = Aspect_DisplayConnection(display_name)
+            display = Xw_DisplayConnection()
         self.display_connection = display
 
-        # Create viewer
-        graphics_driver = self.graphics_driver = OpenGl_GraphicDriver(display)
+        # Create driver
+        graphics_driver = self.graphics_driver = OpenGl_GraphicDriver(display, False)
+        # options = graphics_driver.ChangeOptions()
+        # options.buffersNoSwap = True
+        # options.buffersOpaqueAlpha = True
+        # options.useSystemBuffer = False
 
+        # Setup viewer
         viewer = self.v3d_viewer = V3d_Viewer(graphics_driver)
         viewer.SetDefaultShadingModel(
             Graphic3d_TypeOfShadingModel.Graphic3d_TOSM_FRAGMENT
         )
-        view = self.v3d_view = viewer.CreateView()
 
-        # Setup window
-        win_id = widget.get_window_id()
-        if sys.platform == "win32":
-            window = WNT_Window(win_id)
-        elif sys.platform == "darwin":
-            window = Cocoa_Window(win_id)
-        else:
-            window = Xw_Window(self.display_connection, win_id)
-        if not window.IsMapped():
-            window.Map()
-        self.v3d_window = window
-        view.SetWindow(window)
-        view.MustBeResized()
-
-        # Setup viewer
         ais_context = self.ais_context = AIS_InteractiveContext(viewer)
         self.prs3d_drawer = ais_context.DefaultDrawer()
 
@@ -415,10 +413,9 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         gfx_mgr = self.gfx_structure_manager = prs_mgr.StructureManager()
         self.gfx_structure = Graphic3d_Structure(gfx_mgr)
 
-        # Dump gl info and grab msaa
-        self.dump_gl_info()
-
         # Lights camera
+        view = self.v3d_view = viewer.CreateView()
+        view.SetImmediateUpdate(False)
         self.camera = view.Camera()
 
         try:
@@ -426,10 +423,6 @@ class QtOccViewer(QtControl, ProxyOccViewer):
         except Exception as e:
             log.exception(e)
             viewer.SetDefaultLights()
-
-        # viewer.DisplayPrivilegedPlane(True, 1)
-        # view.SetShadingModel(
-        #        Graphic3d_TypeOfShadingModel.Graphic3d_TOSM_FRAGMENT)
 
         # background gradient
         with self.redraw_blocked():
@@ -452,6 +445,57 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             self.set_grid_colors(d.grid_colors)
             self.init_signals()
 
+    def init_viewer(self):
+        widget = self.widget
+        if USE_WAYLAND:
+            log.debug("Init EGL context")
+            # wayland_init_driver(self.graphics_driver, widget)
+            egl_display, egl_context, egl_config, _ = wayland_params(widget)
+            assert self.graphics_driver.InitEglContext(
+                egl_display, egl_context, egl_config
+            )
+        else:
+            log.debug("Init GL context")
+            assert self.graphics_driver.InitContext()
+
+        log.debug(f"Create window")
+        win_id = widget.winId()
+        if sys.platform == "win32":
+            window = WNT_Window(capsule(win_id))
+        elif sys.platform == "darwin":
+            window = Cocoa_Window(win_id)
+        elif USE_WAYLAND:
+            window = Wayland_Window(self.display_connection, win_id)
+        else:
+            window = Xw_Window(self.display_connection, win_id)
+        if not window.IsMapped():
+            window.Map()
+
+        # window = self.v3d_window = Aspect_NeutralWindow()
+        # window.SetVirtual(True)
+        # window.SetNativeHandle(win_id)
+        # bounds = widget.rect()
+        # w, h = widget.scalePoint(bounds.width(), bounds.height())
+        # window.SetSize(int(w), int(h))
+
+        view = self.v3d_view
+        if USE_WAYLAND:
+            log.debug("Create new context")
+            context = OpenGl_Context()
+            print(context.HasSRGB())
+
+            assert context.Init(True)
+            view.SetWindow(window, context.RenderingContext())
+        else:
+            view.SetWindow(window)
+
+        self.v3d_window = window
+
+        self.dump_gl_info(view)
+        view.MustBeResized()
+        view.SetImmediateUpdate(True)
+
+        log.debug("Redraw")
         self.redraw()
 
         qt_app = self._qt_app
@@ -459,47 +503,14 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             self.child_added(child)
             qt_app.processEvents()
 
-    def dump_gl_info(self):
-        # Debug info
-        try:
-            ctx = self.graphics_driver.GetSharedContext()
-            if ctx is None or not ctx.IsValid():
-                return
-            v1 = ctx.VersionMajor()
-            v2 = ctx.VersionMinor()
-            log.info("OpenGL version: {}.{}".format(v1, v2))
-            log.info("GPU memory: {}".format(ctx.AvailableMemory()))
-            log.info("GPU memory info: {}".format(ctx.MemoryInfo().ToCString()))
-
-            msaa = self.msaa_samples = ctx.MaxMsaaSamples()
-            log.info("Max MSAA samples: {}".format(msaa))
-
-            supports_raytracing = ctx.HasRayTracing()
-            log.info("Supports ray tracing: {}".format(supports_raytracing))
-            if supports_raytracing:
-                log.info("Supports textures: {}".format(ctx.HasRayTracingTextures()))
-                log.info(
-                    "Supports adaptive sampling: {}".format(
-                        ctx.HasRayTracingAdaptiveSampling()
-                    )
-                )
-                log.info(
-                    "Supports adaptive sampling atomic: {}".format(
-                        ctx.HasRayTracingAdaptiveSamplingAtomic()
-                    )
-                )
-            else:
-                ver_too_low = ctx.IsGlGreaterEqual(3, 1)
-                if not ver_too_low:
-                    log.info("OpenGL version must be >= 3.1")
-                else:
-                    ext = "GL_ARB_texture_buffer_object_rgb32"
-                    if not ctx.CheckExtension(ext):
-                        log.info("OpenGL extension {} is missing".format(ext))
-                    else:
-                        log.info("OpenGL glBlitFramebuffer is missing")
-        except Exception as e:
-            log.exception(e)
+    def dump_gl_info(self, view: V3d_View):
+        log.info("GL Info:")
+        info = TColStd_IndexedDataMapOfStringString()
+        view.DiagnosticInformation(info, Graphic3d_DiagnosticInfo_Basic)
+        for i in range(1, info.Size() + 1):
+            key = info.FindKey(i)
+            value = info.FindFromIndex(i)
+            log.info(f"  {key.ToCString()}: {value.ToCString()}")
 
     def init_signals(self):
         d = self.declaration

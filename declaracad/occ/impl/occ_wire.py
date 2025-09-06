@@ -14,9 +14,9 @@ from atom.api import Typed, set_default
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepLib import BRepLib
+from OCCT.ShapeFix import ShapeFix_Wire
 from OCCT.TopoDS import TopoDS_Edge
 from OCCT.TopTools import TopTools_ListOfShape
-from OCCT.ShapeFix import ShapeFix_Wire
 
 from declaracad.core.utils import log
 from declaracad.occ.draw import ProxyWire

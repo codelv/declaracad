@@ -20,8 +20,7 @@ with enaml.imports():
 
 
 def main(**kwargs):
-    """Launch a standalone ipython console application. Mainly for debugging purposes.
-    """
+    """Launch a standalone ipython console application. Mainly for debugging purposes."""
     enamlx.install()
     app = QtApplication()
     plugin = ConsolePlugin()
@@ -29,4 +28,3 @@ def main(**kwargs):
     window.show()
     signal.signal(signal.SIGINT, lambda *args, **kwargs: app.stop())
     app.start()
-

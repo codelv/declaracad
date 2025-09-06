@@ -17,10 +17,9 @@ import sys
 import enaml
 from atom.api import Instance, Str, Typed
 
+from declaracad.console.plugin import patch_ipykernel
 from declaracad.core.app import Application
 from declaracad.core.utils import JsonRpcProtocol, RemoteLogger, log
-from declaracad.console.plugin import patch_ipykernel
-
 
 with enaml.imports():
     from declaracad.viewer.standalone import ViewerWindow
@@ -145,9 +144,9 @@ def main(
     """
     log.debug(f"Starting viewer pid={os.getpid()} cwd={os.getcwd()} port={port}")
 
-
     # Set default surface format to avoid OCCT warnings
     from enaml.qt.QtGui import QSurfaceFormat
+
     surface_format = QSurfaceFormat()
     surface_format.setDepthBufferSize(24)
     surface_format.setStencilBufferSize(8)

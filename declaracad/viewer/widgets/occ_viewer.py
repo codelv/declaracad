@@ -303,6 +303,7 @@ class ProxyOccViewer(ProxyControl):
     def full_bbox(self) -> BBox:
         raise NotImplementedError
 
+
 class OccViewer(Control):
     """A widget to view OpenCascade shapes."""
 

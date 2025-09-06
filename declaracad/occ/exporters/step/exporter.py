@@ -21,11 +21,10 @@ from OCCT.Interface import Interface_Static
 from OCCT.STEPCAFControl import STEPCAFControl_Writer
 from OCCT.TCollection import TCollection_HAsciiString
 
-
+from declaracad.core.utils import log
 from declaracad.occ.api import Shape
 from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
 from declaracad.viewer.plugin import ModelExporter
-from declaracad.core.utils import log
 
 SetCVal = Interface_Static.SetCVal_
 SetIVal = Interface_Static.SetIVal_
@@ -106,7 +105,6 @@ class StepExporter(ModelExporter):
             tp = HeaderSection_FileDescription.get_type_descriptor_()
             entity = step_model.HeaderEntity(tp)
             entity.SetDescription(create_hascii_list(self.description.split("\n")))
-
 
         tp = HeaderSection_FileName.get_type_descriptor_()
         if step_model.HasHeaderEntity(tp):

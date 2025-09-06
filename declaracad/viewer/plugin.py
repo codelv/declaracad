@@ -10,11 +10,11 @@ Created on Dec 13, 2017
 @author: jrm
 """
 
-import sys
 import asyncio
 import functools
 import json
 import os
+import sys
 import time
 from asyncio.base_events import Server
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Type
@@ -61,7 +61,7 @@ def remote_env(platform: str):
     env = None
     if sys.platform == "linux":
         env = os.environ.copy()
-        env['QT_QPA_PLATFORM'] = platform
+        env["QT_QPA_PLATFORM"] = platform
     return env
 
 
@@ -229,7 +229,9 @@ class ViewerProcess(ProcessLineReceiver):
         )
         log.debug(f"Spawning '{' '.join(cmd)}'")
         loop = asyncio.get_event_loop()
-        self.process = await loop.subprocess_exec(lambda: self, *cmd, env=remote_env('xcb'))
+        self.process = await loop.subprocess_exec(
+            lambda: self, *cmd, env=remote_env("xcb")
+        )
         return self.process
 
     def restart(self):
@@ -509,7 +511,9 @@ class ViewerPlugin(Plugin):
         log.debug(" ".join(cmd))
         protocol = ProcessLineReceiver()
         loop = asyncio.get_event_loop()
-        deferred_call(loop.subprocess_exec, lambda: protocol, *cmd, env=remote_env("offscreen"))
+        deferred_call(
+            loop.subprocess_exec, lambda: protocol, *cmd, env=remote_env("offscreen")
+        )
         return protocol
 
     def screenshot(self, options: Optional[ScreenshotOptions] = None) -> list[str]:
