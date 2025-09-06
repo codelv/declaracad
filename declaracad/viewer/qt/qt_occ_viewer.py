@@ -178,15 +178,7 @@ class QtViewer3d(QOpenGLWidget):
 
     def resizeEvent(self, event):
         if view := self.proxy.v3d_view:
-            # if window := self.proxy.v3d_window:
-            #    bounds = self.rect()
-            #    w, h = self.scalePoint(bounds.width(), bounds.height())
-            #    window.SetSize(int(w), int(h))
             view.MustBeResized()
-
-    def keyPressEvent(self, event):
-        if self.hasFocus():
-            self._fire_event("key_pressed", event)
 
     def focusInEvent(self, event):
         self.proxy.v3d_view.Redraw()
@@ -207,43 +199,20 @@ class QtViewer3d(QOpenGLWidget):
     #    self.proxy.v3d_view.MustBeResized()
 
     def wheelEvent(self, event):
-        if self._fire_event("mouse_scrolled", event):
-            return
         if self._lock_zoom:
             return
-        delta = event.angleDelta().y()  # PyQt5
+        delta = event.angleDelta().y()
         view = self.proxy.v3d_view
         view.Redraw()
         view.SetZoom(1.25 if delta > 0 else 0.8)
 
-    def dragMoveEvent(self, event):
-        if self._fire_event("mouse_dragged", event):
-            return
-
-    def _fire_event(self, name, event):
-        handled = False
-        view = self.proxy.v3d_view
-        for cb in self._callbacks.get(name, []):
-            # Raise StopIteration to ignore the default handlers
-            try:
-                cb((view, event))
-            except StopIteration:
-                handled = True
-            except Exception as e:
-                log.exception(e)
-        return handled
-
     def mousePressEvent(self, event):
         self.setFocus()
         pos = self.dragStartPos = event.pos()
-        if self._fire_event("mouse_pressed", event):
-            return
         x, y = self.scalePoint(pos.x(), pos.y())
         self.proxy.v3d_view.StartRotation(int(x), int(y))
 
     def mouseReleaseEvent(self, event):
-        if self._fire_event("mouse_released", event):
-            return
         view = self.proxy.v3d_view
         btn = event.button()
 
@@ -273,8 +242,6 @@ class QtViewer3d(QOpenGLWidget):
         self._drawbox = (sx, sy, dx, dy)
 
     def mouseMoveEvent(self, event):
-        if self._fire_event("mouse_moved", event):
-            return
         pt = event.pos()
         buttons = event.buttons()
         modifiers = event.modifiers()
@@ -296,12 +263,9 @@ class QtViewer3d(QOpenGLWidget):
             self.dragStartPos = pt
             view.Pan(int(dx), -int(dy))
             self._drawbox = None
-        # DRAW BOX
-        # ZOOM WINDOW
         elif buttons == Qt.RightButton and modifiers == Qt.ShiftModifier:
             self._zoom_area = True
             self.draw_box(event)
-        # SELECT AREA
         elif buttons == Qt.LeftButton and modifiers == Qt.ShiftModifier:
             self._select_area = True
             self.draw_box(event)
