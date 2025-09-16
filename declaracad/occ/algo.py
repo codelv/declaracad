@@ -248,6 +248,9 @@ class ProxyThruSections(ProxyOperation):
     def set_precision(self, pres3d: float):
         raise NotImplementedError
 
+    def set_sections(self, sections: list):
+        raise NotImplementedError
+
 
 class ProxyTransform(ProxyOperation):
     #: A reference to the Shape declaration.
@@ -876,7 +879,10 @@ class ThruSections(Operation):
     #: the successive sections of the shell or solid to be built.
     precision = d_(Float(1e-6)).tag(view=True, group="Through Sections")
 
-    @observe("solid", "ruled", "precision", "fix")
+    #: List of sections to loft through
+    sections = d_(List())
+
+    @observe("solid", "ruled", "precision", "fix", "sections")
     def _update_proxy(self, change: dict[str, Any]):
         super(ThruSections, self)._update_proxy(change)
 
