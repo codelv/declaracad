@@ -65,6 +65,7 @@ class OccOffset(OccOperation, ProxyOffset):
         elif not isinstance(shape, (TopoDS_Wire, TopoDS_Face)):
             t = type(shape)
             raise TypeError(f"Unsupported child shape {t} when using planar mode")
+        was_face = isinstance(shape, TopoDS_Face)
         join_type = self.join_types[d.join_type]
         offset_shape = BRepOffsetAPI_MakeOffset(shape, join_type, not d.closed)
         offset_shape.Perform(d.offset, d.normal_distance)
@@ -73,7 +74,7 @@ class OccOffset(OccOperation, ProxyOffset):
             raise ValueError("Could not perform offset: %s" % d)
 
         result = Topology.cast_shape(offset_shape.Shape())
-        if d.as_face:
+        if d.as_face or was_face:
             if isinstance(result, TopoDS_Compound):
                 topo = Topology(shape=result)
                 first, *others = topo.wires
