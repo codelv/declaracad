@@ -10,7 +10,7 @@ Created on Dec 23, 2021
 @author: jrm
 """
 
-from atom.api import Instance, set_default
+from atom.api import Instance
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakePipe
 from OCCT.GeomFill import (
@@ -34,7 +34,7 @@ from .occ_shape import OccShape
 
 
 class OccPipe(OccOperation, ProxyPipe):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_offset_a_p_i___make_pipe.html"
     )

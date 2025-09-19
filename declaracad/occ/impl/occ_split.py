@@ -10,7 +10,6 @@ Created on Sep 27, 2016
 @author: jrm
 """
 
-from atom.api import set_default
 from OCCT.BOPAlgo import BOPAlgo_Splitter
 from OCCT.TopTools import TopTools_ListOfShape
 
@@ -22,7 +21,7 @@ from .occ_algo import OccBooleanOperation
 class OccSplit(OccBooleanOperation, ProxySplit):
     """Fuse all the child shapes together."""
 
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/overview/html/"
         "occt_user_guides__boolean_operations.html#occt_algorithms_8"
     )

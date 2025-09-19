@@ -7,7 +7,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import set_default
 from OCCT import TopoDS
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.ShapeFix import ShapeFix_Face
@@ -31,7 +30,7 @@ def shape_to_face(shape):
 
 
 class OccFace(OccDependentShape, ProxyFace):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_builder_a_p_i___make_face.html"
     )

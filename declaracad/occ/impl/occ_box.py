@@ -7,7 +7,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import set_default
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeBox
 
 from declaracad.occ.shape import ProxyBox
@@ -16,7 +15,7 @@ from .occ_shape import OccShape, coerce_axis
 
 
 class OccBox(OccShape, ProxyBox):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_prim_a_p_i___make_box.html"
     )

@@ -10,7 +10,6 @@ Created on Dec 23, 2021
 @author: jrm
 """
 
-from atom.api import set_default
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Common
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeFace,
@@ -41,7 +40,7 @@ from .topology import Point, Topology
 
 
 class OccFillet(OccOperation, ProxyFillet):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_fillet_a_p_i___make_fillet.html"
     )

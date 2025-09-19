@@ -7,7 +7,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import set_default
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakePrism
 from OCCT.gp import gp_Vec
 
@@ -17,7 +16,7 @@ from .occ_shape import OccDependentShape, coerce_shape
 
 
 class OccPrism(OccDependentShape, ProxyPrism):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_prim_a_p_i___make_prism.html"
     )

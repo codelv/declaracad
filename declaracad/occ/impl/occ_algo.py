@@ -177,7 +177,7 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
 class OccCommon(OccBooleanOperation, ProxyCommon):
     """Common of all the child shapes together."""
 
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_algo_a_p_i___common.html"
     )
@@ -187,7 +187,7 @@ class OccCommon(OccBooleanOperation, ProxyCommon):
 class OccCut(OccBooleanOperation, ProxyCut):
     """Cut all the child shapes from the first shape."""
 
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_algo_a_p_i___cut.html"
     )
@@ -198,7 +198,7 @@ class OccCut(OccBooleanOperation, ProxyCut):
 class OccFuse(OccBooleanOperation, ProxyFuse):
     """Fuse all the child shapes together."""
 
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/overview/html/"
         "occt_user_guides__boolean_operations.html#occt_algorithms_7"
     )

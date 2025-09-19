@@ -9,7 +9,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 from math import pi
 
-from atom.api import set_default
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeSphere
 
 from declaracad.occ.shape import ProxySphere
@@ -18,7 +17,7 @@ from .occ_shape import OccShape, coerce_axis
 
 
 class OccSphere(OccShape, ProxySphere):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_prim_a_p_i___make_sphere.html"
     )

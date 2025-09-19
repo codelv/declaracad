@@ -9,7 +9,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 from typing import Any, Optional
 
-from atom.api import Dict, Typed, set_default
+from atom.api import Dict, Typed
 from OCCT.BRep import BRep_Builder, BRep_Tool
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
@@ -41,7 +41,7 @@ from .topology import Topology
 
 
 class OccMiddlePath(OccWire, ProxyMiddlePath):
-    reference = set_default(  # type: ignore
+    reference = (  # type: ignore
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_offset_a_p_i___middle_path.html"
     )

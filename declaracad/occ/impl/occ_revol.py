@@ -7,7 +7,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import set_default
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeRevol
 from OCCT.gp import gp_Ax1
 
@@ -18,7 +17,7 @@ from .occ_shape import OccDependentShape, coerce_shape
 
 class OccRevol(OccDependentShape, ProxyRevol):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_prim_a_p_i___make_wedge.html"
     )

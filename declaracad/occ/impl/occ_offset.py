@@ -10,7 +10,6 @@ Created on Sep 27, 2016
 @author: jrm
 """
 
-from atom.api import set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.BRepOffset import BRepOffset_Pipe, BRepOffset_RectoVerso, BRepOffset_Skin
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape
@@ -24,7 +23,7 @@ from .topology import Topology
 
 
 class OccOffset(OccOperation, ProxyOffset):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_offset_a_p_i___make_offset.html"
     )
@@ -107,7 +106,7 @@ class OccOffset(OccOperation, ProxyOffset):
 
 
 class OccOffsetShape(OccOffset, ProxyOffsetShape):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_offset_a_p_i___make_offset_shape.html"
     )

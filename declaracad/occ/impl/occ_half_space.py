@@ -7,7 +7,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeHalfSpace
 from OCCT.gp import gp_Pln
@@ -18,7 +17,7 @@ from .occ_shape import OccDependentShape
 
 
 class OccHalfSpace(OccDependentShape, ProxyHalfSpace):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_prim_a_p_i___make_half_space.html"
     )

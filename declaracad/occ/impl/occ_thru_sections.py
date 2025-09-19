@@ -10,7 +10,6 @@ Created on Sep 27, 2016
 @author: jrm
 """
 
-from atom.api import set_default
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_ThruSections
 from OCCT.BRepTools import BRepTools
@@ -23,7 +22,7 @@ from .occ_algo import OccOperation
 
 
 class OccThruSections(OccOperation, ProxyThruSections):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_offset_a_p_i___thru_sections.html"
     )

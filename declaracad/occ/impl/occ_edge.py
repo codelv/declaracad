@@ -7,7 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.Aspect import (
     Aspect_TOL_DASH,
     Aspect_TOL_DOT,
@@ -35,7 +35,7 @@ LINE_TYPES = {
 
 class OccEdge(OccShape, ProxyEdge):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_builder_a_p_i___make_edge.html"
     )

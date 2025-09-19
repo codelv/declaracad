@@ -19,7 +19,7 @@ from .occ_algo import OccBooleanOperation
 
 
 class OccIntersection(OccBooleanOperation, ProxyIntersection):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/overview/html/"
         "occt_user_guides__boolean_operations.html#occt_algorithms_10a"
     )

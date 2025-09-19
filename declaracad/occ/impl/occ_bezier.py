@@ -7,7 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.Geom import Geom_BezierCurve
 from OCCT.TColgp import TColgp_Array1OfPnt
 
@@ -18,7 +18,7 @@ from .occ_line import OccLine
 
 class OccBezier(OccLine, ProxyBezier):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/class_geom___bezier_curve.html"
     )
 

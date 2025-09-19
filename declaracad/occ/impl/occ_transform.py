@@ -10,7 +10,7 @@ Created on Dec 23, 2021
 @author: jrm
 """
 
-from atom.api import Instance, set_default
+from atom.api import Instance
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCCT.gp import gp_Ax1, gp_Ax2, gp_Ax3, gp_Dir, gp_Pnt, gp_Trsf, gp_Vec
 
@@ -22,9 +22,7 @@ from .topology import Topology
 
 
 class OccTransform(OccOperation, ProxyTransform):
-    reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/classgp___trsf.html"
-    )
+    reference = "https://dev.opencascade.org/doc/refman/html/classgp___trsf.html"
 
     _old_shape = Instance(OccShape)
 

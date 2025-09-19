@@ -7,7 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.Geom import Geom_Circle
 
@@ -19,9 +19,7 @@ from .occ_shape import coerce_axis
 
 class OccCircle(OccEdge, ProxyCircle):
     #: Update the class reference
-    reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/classgp___circ.html"
-    )
+    reference = "https://dev.opencascade.org/doc/refman/html/classgp___circ.html"
 
     curve = Typed(Geom_Circle)
 

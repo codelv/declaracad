@@ -10,7 +10,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT import TopoDS
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import (
@@ -27,7 +27,7 @@ from .occ_wire import OccWire
 
 class OccPolyline(OccWire, ProxyPolyline):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_builder_a_p_i___make_polygon.html"
     )

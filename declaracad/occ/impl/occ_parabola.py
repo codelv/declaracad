@@ -7,7 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.Geom import Geom_Parabola
 
 from declaracad.occ.draw import ProxyParabola
@@ -18,9 +18,7 @@ from .occ_shape import coerce_axis
 
 class OccParabola(OccEdge, ProxyParabola):
     #: Update the class reference
-    reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/classgp___parab.html"
-    )
+    reference = "https://dev.opencascade.org/doc/refman/html/classgp___parab.html"
 
     curve = Typed(Geom_Parabola)
 

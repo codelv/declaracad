@@ -10,7 +10,7 @@ Created on Dec 24, 2021
 @author: jrm
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.Geom import Geom_BSplineCurve
 from OCCT.GeomAbs import GeomAbs_C0, GeomAbs_C1, GeomAbs_C2, GeomAbs_C3, GeomAbs_CN
 from OCCT.GeomAPI import GeomAPI_Interpolate, GeomAPI_PointsToBSpline
@@ -37,7 +37,7 @@ CONTINUITY = {
 
 class OccBSpline(OccLine, ProxyBSpline):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_geom___b_spline_curve.html"
     )

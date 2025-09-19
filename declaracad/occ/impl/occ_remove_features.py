@@ -6,7 +6,6 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 """
 
-from atom.api import set_default
 from OCCT.BRepAlgoAPI import BRepAlgoAPI_Defeaturing
 
 from declaracad.occ.algo import ProxyRemoveFeatures
@@ -16,7 +15,7 @@ from .topology import Topology
 
 
 class OccRemoveFeatures(OccOperation, ProxyRemoveFeatures):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_algo_a_p_i___defeaturing.html"
     )

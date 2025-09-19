@@ -10,7 +10,6 @@ Created on Dec 23, 2021
 @author: jrm
 """
 
-from atom.api import set_default
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid
 from OCCT.TopoDS import TopoDS_Shape
 from OCCT.TopTools import TopTools_ListOfShape
@@ -22,7 +21,7 @@ from .topology import Topology
 
 
 class OccThickSolid(OccOffset, ProxyThickSolid):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_offset_a_p_i___make_thick_solid.html"
     )

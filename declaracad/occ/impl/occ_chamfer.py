@@ -10,7 +10,7 @@ Created on Dec 23, 2021
 @author: jrm
 """
 
-from atom.api import Dict, set_default
+from atom.api import Dict
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.BRepFilletAPI import (
     BRepFilletAPI_MakeChamfer,
@@ -31,7 +31,7 @@ from .topology import Topology
 
 
 class OccChamfer(OccOperation, ProxyChamfer):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_fillet_a_p_i___make_chamfer.html"
     )

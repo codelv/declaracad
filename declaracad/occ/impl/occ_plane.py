@@ -10,7 +10,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.Geom import Geom_Plane
 from OCCT.gp import gp_Pln
@@ -22,9 +22,7 @@ from .occ_shape import OccShape
 
 class OccPlane(OccShape, ProxyPlane):
     #: Update the class reference
-    reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/classgp___pnt.html"
-    )
+    reference = "https://dev.opencascade.org/doc/refman/html/classgp___pnt.html"
 
     curve = Typed(Geom_Plane)
 

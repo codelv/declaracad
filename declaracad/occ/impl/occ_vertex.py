@@ -7,7 +7,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import set_default
 from enaml.colors import Color
 from OCCT.Aspect import (
     Aspect_TOM_BALL,
@@ -52,7 +51,7 @@ MARKERS = {
 
 class OccVertex(OccShape, ProxyVertex):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_builder_a_p_i___make_vertex.html"
     )

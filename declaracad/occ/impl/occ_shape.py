@@ -11,9 +11,9 @@ Created on Sep 30, 2016
 """
 
 import os
-from typing import Generator, Union
+from typing import ClassVar, Generator, Union
 
-from atom.api import Bool, Instance, List, Property, Str, Typed, observe, set_default
+from atom.api import Bool, Instance, List, Property, Str, Typed, observe
 from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder
@@ -84,7 +84,7 @@ class OccShape(ProxyShape):
     topology = Typed(Topology)
 
     #: Class reference url
-    reference = Str()
+    reference: ClassVar[str] = ""
 
     #: Cached reference to the viewer
     def _get_viewer(self):
@@ -462,7 +462,7 @@ class OccPart(OccDependentShape, ProxyPart):
 
 class OccRawShape(OccShape, ProxyRawShape):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/" "class_topo_d_s___shape.html"
     )
 
@@ -480,7 +480,7 @@ class OccRawShape(OccShape, ProxyRawShape):
 
 class OccRawPart(OccPart, ProxyRawPart):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/" "class_topo_d_s___shape.html"
     )
 

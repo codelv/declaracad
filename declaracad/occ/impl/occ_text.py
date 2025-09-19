@@ -12,7 +12,7 @@ Created on Dec 24, 2021
 
 import os
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT import Graphic3d
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCCT.Font import (
@@ -38,7 +38,7 @@ FONT_CACHE: dict[tuple[str, str, float], Font_BRepFont] = {}
 
 class OccText(OccShape, ProxyText):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/class_topo_d_s___shape.html"
     )
 

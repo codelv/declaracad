@@ -7,7 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.BRep import BRep_Tool
 from OCCT.Geom import Geom_TrimmedCurve
 
@@ -20,7 +20,7 @@ from .topology import Shape, Topology
 
 class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/class_geom___trimmed_curve.html"
     )
 

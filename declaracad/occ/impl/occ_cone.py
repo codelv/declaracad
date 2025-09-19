@@ -9,7 +9,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 from typing import Optional
 
-from atom.api import set_default
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeCone
 from OCCT.TopoDS import TopoDS_Face
 
@@ -21,7 +20,7 @@ from .topology import Topology
 
 
 class OccCone(OccShape, ProxyCone):
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_prim_a_p_i___make_cone.html"
     )

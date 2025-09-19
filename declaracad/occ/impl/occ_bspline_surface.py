@@ -10,7 +10,7 @@ Created on Dec 24, 2021
 @author: jrm
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace
 from OCCT.Geom import Geom_BSplineSurface
 from OCCT.GeomAPI import GeomAPI_PointsToBSplineSurface
@@ -24,7 +24,7 @@ from .occ_shape import OccShape
 
 
 class OccBSplineSurface(OccShape, ProxyBSplineSurface):
-    reference = set_default(  # type: ignore
+    reference = (  # type: ignore
         "https://dev.opencascade.org/doc/refman/html/"
         "class_geom_a_p_i___points_to_b_spline_surface.html"
     )

@@ -15,7 +15,7 @@ import re
 import warnings
 from math import cos, pi, radians, sin, sqrt, tan
 
-from atom.api import Atom, Dict, ForwardTyped, Instance, Str, set_default
+from atom.api import Atom, Dict, ForwardTyped, Instance, Str
 from lxml import etree
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBuilderAPI import (
@@ -736,7 +736,7 @@ SVG_NODES = {
 
 class OccSvg(OccShape, ProxySvg):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_builder_a_p_i___make_wire.html"
     )

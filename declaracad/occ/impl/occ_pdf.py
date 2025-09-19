@@ -15,7 +15,7 @@ import os
 import warnings
 from typing import Optional
 
-from atom.api import Instance, Value, set_default
+from atom.api import Instance, Value
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
@@ -95,7 +95,7 @@ def make_rect(x, y, w, h) -> tuple[gp_Pnt, BRepBuilderAPI_MakeWire]:
 
 class OccPdf(OccShape, ProxyPdf):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_builder_a_p_i___make_wire.html"
     )

@@ -10,7 +10,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepLib import BRepLib
@@ -28,7 +28,7 @@ from .topology import Topology
 
 class OccWire(OccDependentShape, ProxyWire):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_b_rep_builder_a_p_i___make_wire.html"
     )

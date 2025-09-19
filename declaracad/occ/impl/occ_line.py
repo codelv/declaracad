@@ -10,7 +10,7 @@ Created on Sep 30, 2016
 @author: jrm
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.GC import GC_MakeLine
 from OCCT.Geom import Geom_Line
 from OCCT.gp import gp_Lin
@@ -23,9 +23,7 @@ from .occ_shape import coerce_axis
 
 class OccLine(OccEdge, ProxyLine):
     #: Update the class reference
-    reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/classgp___lin.html"
-    )
+    reference = "https://dev.opencascade.org/doc/refman/html/classgp___lin.html"
 
     curve = Typed(Geom_Line)
 

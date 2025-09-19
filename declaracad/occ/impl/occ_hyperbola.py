@@ -7,7 +7,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.Geom import Geom_Hyperbola
 
 from declaracad.occ.draw import ProxyHyperbola
@@ -18,9 +18,7 @@ from .occ_shape import coerce_axis
 
 class OccHyperbola(OccEdge, ProxyHyperbola):
     #: Update the class reference
-    reference = set_default(
-        "https://dev.opencascade.org/doc/refman/html/classgp___hypr.html"
-    )
+    reference = "https://dev.opencascade.org/doc/refman/html/classgp___hypr.html"
 
     curve = Typed(Geom_Hyperbola)
 

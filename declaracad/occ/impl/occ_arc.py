@@ -9,7 +9,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 from math import pi
 
-from atom.api import Typed, set_default
+from atom.api import Typed
 from OCCT.ElCLib import ElCLib
 from OCCT.GC import GC_MakeArcOfCircle
 from OCCT.Geom import Geom_Circle, Geom_TrimmedCurve
@@ -23,7 +23,7 @@ from .occ_line import OccLine
 
 class OccArc(OccLine, ProxyArc):
     #: Update the class reference
-    reference = set_default(
+    reference = (
         "https://dev.opencascade.org/doc/refman/html/"
         "class_g_c___make_arc_of_circle.html"
     )
