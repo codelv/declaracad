@@ -88,6 +88,8 @@ def load_gcode(filename, **options):
     units = options.get("units", "mm")
     # feedrate = options.get("feedrate", 0)
     scale = 25.4 if units == "in" else 1
+    printer_mode = False
+
     for cmd in doc.commands:
         data = cmd.data
         if cmd.id in ("G0", "G1"):
@@ -99,10 +101,18 @@ def load_gcode(filename, **options):
             if last == pos:
                 log.debug(f"Duplicate: {cmd}")
                 continue
+            line_style = "solid"
             if cmd.id == "G0":
                 color = rapid_color
+                line_style = "dashed"
             elif last_cmd and last_cmd.id == "G0":
                 color = plunge_color
+            elif printer_mode:
+                if "E" in data:
+                    color = normal_color
+                else:
+                    color = rapid_color
+                    line_style = "dashed"
             else:
                 color = normal_color
 
@@ -120,7 +130,7 @@ def load_gcode(filename, **options):
                         points=[last, pos],
                         description=f"Gcode: {cmd.source}",
                         color=color,
-                        line_style="dashed" if cmd.id == "G0" else "solid",
+                        line_style=line_style,
                     )
                 )
             last = pos
@@ -306,6 +316,9 @@ def load_gcode(filename, **options):
             mode = "absolute"
         elif cmd.id == "G91":
             mode = "incremental"
+        elif cmd.id == "M104" or cmd.id == "M109":
+            # Common 3d printer extruder temperature control cmds, assume 3d printer gcode
+            printer_mode = True
         else:
             log.debug(f"Ignoring: {cmd}")
 
