@@ -28,11 +28,14 @@ class GCodeLexer:
         "DIVIDE",
         "LPAREN",
         "RPAREN",
+        "LBRACKET",
+        "RBRACKET",
         "DOT",
         "COMMA",
         "SPACE",
         "TAB",
         "PERCENT",
+        "EQUAL",
         "NEWLINE",
         "CODE",
         "COMMENT",
@@ -45,16 +48,19 @@ class GCodeLexer:
     t_DIVIDE = r"/"
     t_LPAREN = r"\("
     t_RPAREN = r"\)"
+    t_LBRACKET = r"\["
+    t_RBRACKET = r"\]"
     t_COMMA = r","
     t_SPACE = r"\ "
     t_TAB = r"\t"
     t_NEWLINE = r"\r?\n"
     t_DOT = r"\."
     t_PERCENT = r"%"
+    t_EQUAL = r"="
 
     # A regular expression rule with some action code
     def t_NUMBER(self, t):
-        r"(\d+\.?\d*|\.\d+)"
+        r"(\-?\d+\.?\d*|\-?\.\d+)"
         t.lexer.value = float(t.value)
         return t
 
@@ -64,7 +70,7 @@ class GCodeLexer:
         return t
 
     def t_CODE(self, t):
-        r"[_A-Za-z]"
+        r"[_A-Za-z]+"
         t.lexer.value = t.value
         return t
 
@@ -104,6 +110,7 @@ class QsciLexerGCode(QsciLexerCustom):
     Keyword = 14
     IOffset = 15
     JOffset = 16
+    Extrude = 17
 
     # Maps to style ID above
     TOKENS = {
@@ -124,6 +131,7 @@ class QsciLexerGCode(QsciLexerCustom):
         "joffset": "JOffset",
         "operator": "Operator",
         "keyword": "Keyword",
+        "extrude": "Extrude",
     }
 
     # Map gcode token to python token to copy themes
@@ -146,6 +154,7 @@ class QsciLexerGCode(QsciLexerCustom):
         "Z": ZPos,
         "I": IOffset,
         "J": JOffset,
+        "E": Extrude,
     }
 
     THEMES = {
@@ -192,6 +201,9 @@ class QsciLexerGCode(QsciLexerCustom):
             "joffset": {
                 "color": "#bc7000",
             },
+            "extrude": {
+                "color": "#1c83df",
+            },
         }
     }
 
@@ -235,6 +247,7 @@ class QsciLexerGCode(QsciLexerCustom):
         set_style = self.setStyling
         state: Optional[str] = None
         code: Optional[str] = None
+        last_tok: Optional[str] = None
         style: int = self.Default
         CODES = self.CODES
         for token in lexer:
@@ -246,16 +259,30 @@ class QsciLexerGCode(QsciLexerCustom):
             elif t == "CODE":
                 code = token.value
                 assert code is not None
-                state = t
-                style = CODES.get(code, self.Param)
-                set_style(i, style)
+                if state == "VALUE":
+                    set_style(i, self.Default)
+                else:
+                    state = t
+                    style = CODES.get(code, self.Param)
+                    set_style(i, style)
             elif t in ("SPACE", "TAB", "NEWLINE", "PERCENT", "DOT"):
                 state = None
+                set_style(i, self.Default)
+            elif t == "EQUAL" and last_tok == "CODE":
+                state = "VALUE"
                 set_style(i, self.Default)
             elif t == "NUMBER":
                 if state == "CODE":
                     set_style(i, style)
+                elif state == "VALUE" and last_tok not in (
+                    "EQUAL",
+                    "COMMA",
+                    "LPAREN",
+                    "LBRACKET",
+                ):
+                    set_style(i, self.Default)
                 else:
                     set_style(i, self.Number)
             else:
                 set_style(i, self.Default)
+            last_tok = t
