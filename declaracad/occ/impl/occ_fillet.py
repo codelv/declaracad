@@ -79,7 +79,7 @@ class OccFillet(OccOperation, ProxyFillet):
         d = self.declaration
         points = child.declaration.points
         operations = d.operations if d.operations else child.topology.vertices
-        wires = []
+        filleted_wires = []
 
         # Fillet each segment of the wire
         for i in range(1, len(points) - 1):
@@ -118,36 +118,37 @@ class OccFillet(OccOperation, ProxyFillet):
                 fillet.AddFillet(middle_vertex, radius)
                 result = Topology.cast_shape(fillet.Shape())
                 wire = BRepTools.OuterWire_(result)
-            wires.append(wire)
+            filleted_wires.append((radius, wire))
 
-        assert wires
-        if len(wires) == 1:
-            return wires[0]  # No merging needed
+        assert filleted_wires
+        if len(filleted_wires) == 1:
+            r, wire = filleted_wires[0]
+            return wire  # No merging needed
 
         # Merge filleted edges by taking the intersection of overlapping segments
         edges = []
-        last_index = len(wires) - 1
-        for i in range(1, len(wires)):
-            last_wire = wires[i - 1]
-            wire = wires[i]
-            last_topo = Topology(shape=last_wire)
+        last_index = len(filleted_wires) - 1
+        last_radius, last_wire = filleted_wires[0]
+        last_topo = Topology(shape=last_wire)
+        edges.extend(last_topo.edges[0:-1])
+        for i in range(1, len(filleted_wires)):
+            radius, wire = filleted_wires[i]
             topo = Topology(shape=wire)
-            if last_topo.end_point == topo.start_point:
-                # No fillet
-                edges.extend(last_topo.edges)
+            if last_radius is None and radius is None:
+                edges.append(topo.edges[0]) # Add common edge with no fillets
             else:
-                if i == 1:
-                    # Add starting edges
-                    edges.extend(last_topo.edges[0:-1])
                 common = BRepAlgoAPI_Common(last_wire, wire)
                 common.Build()
                 common_edges = Topology(shape=common.Shape()).edges
                 assert common_edges, "Fillet radius too large"
                 edges.extend(common_edges)
-                edges.append(topo.edges[1])  # Add filleted edge
-                if i == last_index and len(topo.edges) > 2:
-                    # Add final edge
-                    edges.extend(topo.edges[2:])
+            if i == last_index:
+                edges.extend(topo.edges[1:]) # Add all remaining edges
+            elif radius is not None:
+                edges.append(topo.edges[1]) # Add only the filleted edge
+            last_wire = wire
+            last_topo = topo
+            last_radius = radius
 
         # Create a wire
         shapes = TopTools_ListOfShape()
