@@ -1,0 +1,43 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+        
+    Fillet:
+        color = 'blue'
+        operations = [
+            (2, children[0].topology.vertices[1]),
+        ]
+        Polyline:
+            points = [
+                (0, 1),
+                (-5, 1),
+                (-5, 6),
+                (0, 6),
+            ]
+        
+    Fillet:
+        operations = [
+            (5, children[0].topology.vertices[2]),
+        ]
+        Polyline:
+            points = [
+                (16, 0),
+                (16, 20),
+                (8, 20),
+                (8, 50),
+                (0, 50),
+            ]
+
+    Fillet:
+        color = "green"
+        radius = 2
+        Polyline:
+            points = [
+                (10, -1),
+                (10, -20, 5),
+                (1, -20, 5),
+                (1, -20, 10),
+            ]

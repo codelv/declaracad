@@ -132,13 +132,13 @@ class OccFillet(OccOperation, ProxyFillet):
             wire = wires[i]
             last_topo = Topology(shape=last_wire)
             topo = Topology(shape=wire)
-            if last_topo.end_point == Topology(shape=wire).start_point:
+            if last_topo.end_point == topo.start_point:
                 # No fillet
                 edges.extend(last_topo.edges)
             else:
                 if i == 1:
                     # Add starting edges
-                    edges.extend(last_topo.edges[0:2])
+                    edges.extend(last_topo.edges[0:-1])
                 common = BRepAlgoAPI_Common(last_wire, wire)
                 common.Build()
                 common_edges = Topology(shape=common.Shape()).edges
