@@ -134,6 +134,9 @@ class OccChamfer(OccOperation, ProxyChamfer):
             if isinstance(face, TopoDS_Edge) and d1 == d2:
                 edge = face
                 chamfer.Add(d1, edge)
+            elif isinstance(face, TopoDS_Wire) and d1 == d2:
+                for edge in child.topology.edges_from_wire(face):
+                    chamfer.Add(d1, edge)
             elif edge is None:
                 for edge in child.topology.edges_from_face(face):
                     if angle:
