@@ -84,6 +84,7 @@ from .shape import (  # noqa: F401
     Export,
     Face,
     HalfSpace,
+    Hole,
     Material,
     Part,
     Prism,

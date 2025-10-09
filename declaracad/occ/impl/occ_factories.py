@@ -127,6 +127,12 @@ def occ_half_space_factory():
     return OccHalfSpace
 
 
+def occ_hole():
+    from .occ_hole import OccHole
+
+    return OccHole
+
+
 def occ_hyperbola_factory():
     from .occ_hyperbola import OccHyperbola
 
@@ -414,6 +420,7 @@ OCC_FACTORIES = {
     "Tube": occ_tube_factory,
     "Wedge": occ_wedge_factory,
     #: Primatives
+    "Hole": occ_hole,
     "HalfSpace": occ_half_space_factory,
     "Revol": occ_revol_factory,
     #: Operations

@@ -135,7 +135,7 @@ class OccFillet(OccOperation, ProxyFillet):
             radius, wire = filleted_wires[i]
             topo = Topology(shape=wire)
             if last_radius is None and radius is None:
-                edges.append(topo.edges[0]) # Add common edge with no fillets
+                edges.append(topo.edges[0])  # Add common edge with no fillets
             else:
                 common = BRepAlgoAPI_Common(last_wire, wire)
                 common.Build()
@@ -143,9 +143,9 @@ class OccFillet(OccOperation, ProxyFillet):
                 assert common_edges, "Fillet radius too large"
                 edges.extend(common_edges)
             if i == last_index:
-                edges.extend(topo.edges[1:]) # Add all remaining edges
+                edges.extend(topo.edges[1:])  # Add all remaining edges
             elif radius is not None:
-                edges.append(topo.edges[1]) # Add only the filleted edge
+                edges.append(topo.edges[1])  # Add only the filleted edge
             last_wire = wire
             last_topo = topo
             last_radius = radius

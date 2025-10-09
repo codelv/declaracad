@@ -1,0 +1,44 @@
+# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Cut:
+        Box: box:
+             position = (-dx/2, -dy/2)
+             dx = 50
+             dy = 60
+             dz = 10
+        Hole: center_through_hole:
+            # A hole with no top_edge or bottom_edge styles
+            # defined is the same as a Cylinder except the diameter
+            # and depth are used instead of radius and height
+            diameter = 10
+            depth = box.dz
+        Hole: center_hole:
+            # Defining the top edge as "cone" 1 adds a cone
+            # to the top of the hole which when cut from the box
+            # makes it chamfered by the cone distance.
+            position = (0, 0, 2)
+            diameter = 20
+            depth = box.dz-self.z
+            top_edge = ("cone", 1)
+            bottom_edge = ("chamfer", 2)
+
+        Looper: corner_holes:
+            attr offset = 8
+            iterable = [
+                (box.dx/2-offset, box.dy/2-offset),
+                (-box.dx/2+offset, box.dy/2-offset),
+                (-box.dx/2+offset, -box.dy/2+offset),
+                (box.dx/2-offset, -box.dy/2+offset),
+            ]
+            Hole:
+                position = loop.item
+                diameter = 6
+                depth = box.dz
+                # Defining the top edge as "cone" 1 adds a cone
+                # to the top of the hole which when cut from the box
+                # makes it chamfered by the cone distance.
+                top_edge = ("cone", 1)

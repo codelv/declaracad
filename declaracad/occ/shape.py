@@ -11,12 +11,14 @@ Created on Sep 30, 2016
 @author: jrm
 """
 from math import pi
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar, Optional, Union
 
 from atom.api import (
+    Atom,
     Bool,
     Coerced,
     Dict,
+    Enum,
     Event,
     Float,
     FloatRange,
@@ -243,6 +245,43 @@ class ProxyWedge(ProxyShape):
         raise NotImplementedError
 
     def set_itx(self, itx):
+        raise NotImplementedError
+
+
+class HoleEdgeStyle(Atom):
+    kind = Enum("chamfer", "cone")
+    distance = Float(strict=False)
+    distance2 = Float(strict=False)
+
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1 and isinstance(args[0], tuple):
+            value = args[0]
+            n = len(value)
+            if n == 3:
+                kind, distance, distance2 = value
+                super().__init__(kind=kind, distance=distance, distance2=distance2)
+                return
+            elif n == 2:
+                kind, distance = value
+                super().__init__(kind=kind, distance=distance)
+                return
+        super().__init__(*args, **kwargs)
+
+
+class ProxyHole(ProxyShape):
+    #: A reference to the shape declaration.
+    declaration = ForwardTyped(lambda: Hole)
+
+    def set_diameter(self, diameter: float):
+        raise NotImplementedError
+
+    def set_depth(self, depth: float):
+        raise NotImplementedError
+
+    def set_top_edge(self, value: HoleEdgeStyle):
+        raise NotImplementedError
+
+    def set_bottom_edge(self, value: HoleEdgeStyle):
         raise NotImplementedError
 
 
@@ -1043,6 +1082,52 @@ class Wedge(Shape):
     @observe("dx", "dy", "dz", "itx")
     def _update_proxy(self, change: dict[str, Any]):
         super(Wedge, self)._update_proxy(change)
+
+
+class Hole(Shape):
+    """A primitive Hole shape.
+
+    Attributes
+    ----------
+
+    diameter: Float
+        The diameter of the hole.
+    depth: Float
+        The depth of the hole.
+    top_edge: Float | Tuple[Float, Float]
+        If negative, add a chamfer to the top of the hole. If positive add a cone.
+    bottom_edge: Float | Tuple[Float, Float]
+        If negative, add a chamfer on the bottom of the hole. If positive add a cone.
+
+    Examples
+    --------
+
+    Hole:
+        diameter = 4
+        depth = 20
+        top_edge = ('chamfer', 0.5)
+        bottom_edge =('cone', 0.5)
+
+    """
+
+    #: Proxy shape
+    proxy = Typed(ProxyHole)
+
+    #: Hole diameter
+    diameter = d_(Float(1, strict=False)).tag(view=True)
+
+    #: Hole depth
+    depth = d_(Float(1, strict=False)).tag(view=True)
+
+    #: Top edge style
+    top_edge = d_(Coerced(HoleEdgeStyle))
+
+    #: Bottom chamfer of the hole
+    bottom_edge = d_(Coerced(HoleEdgeStyle))
+
+    @observe("diameter", "depth", "top_edge", "bottom_edge")
+    def _update_proxy(self, change: dict[str, Any]):
+        super()._update_proxy(change)
 
 
 class Revol(Shape):
