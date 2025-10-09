@@ -278,10 +278,10 @@ class ProxyHole(ProxyShape):
     def set_depth(self, depth: float):
         raise NotImplementedError
 
-    def set_top_edge(self, value: HoleEdgeStyle):
+    def set_far_edge(self, value: HoleEdgeStyle):
         raise NotImplementedError
 
-    def set_bottom_edge(self, value: HoleEdgeStyle):
+    def set_near_edge(self, value: HoleEdgeStyle):
         raise NotImplementedError
 
 
@@ -1094,10 +1094,10 @@ class Hole(Shape):
         The diameter of the hole.
     depth: Float
         The depth of the hole.
-    top_edge: Float | Tuple[Float, Float]
-        If negative, add a chamfer to the top of the hole. If positive add a cone.
-    bottom_edge: Float | Tuple[Float, Float]
-        If negative, add a chamfer on the bottom of the hole. If positive add a cone.
+    far_edge: Float | Tuple[Float, Float]
+        If negative, add a chamfer to the far edge of the hole. If positive add a cone. Far meaning furthest edge from the position.
+    near_edge: Float | Tuple[Float, Float]
+        If negative, add a chamfer on the near edge of the hole. If positive add a cone. Near meaning closest edge to the position.
 
     Examples
     --------
@@ -1105,8 +1105,8 @@ class Hole(Shape):
     Hole:
         diameter = 4
         depth = 20
-        top_edge = ('chamfer', 0.5)
-        bottom_edge =('cone', 0.5)
+        far_edge = ('chamfer', 0.5)
+        near_edge =('cone', 0.5)
 
     """
 
@@ -1119,13 +1119,13 @@ class Hole(Shape):
     #: Hole depth
     depth = d_(Float(1, strict=False)).tag(view=True)
 
-    #: Top edge style
-    top_edge = d_(Coerced(HoleEdgeStyle))
+    #: Far / top edge style
+    far_edge = d_(Coerced(HoleEdgeStyle))
 
-    #: Bottom chamfer of the hole
-    bottom_edge = d_(Coerced(HoleEdgeStyle))
+    #: Near / Bottom chamfer of the hole
+    near_edge = d_(Coerced(HoleEdgeStyle))
 
-    @observe("diameter", "depth", "top_edge", "bottom_edge")
+    @observe("diameter", "depth", "far_edge", "near_edge")
     def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 

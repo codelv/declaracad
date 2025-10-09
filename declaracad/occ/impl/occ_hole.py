@@ -30,11 +30,11 @@ class OccHole(OccShape, ProxyHole):
         d = self.declaration
         r = d.diameter / 2
         h = d.depth
-        if d.top_edge.distance or d.bottom_edge.distance:
+        if d.far_edge.distance or d.near_edge.distance:
             poly = BRepBuilderAPI_MakePolygon()
 
             poly.Add(gp_Pnt(0, 0, 0))
-            if edge_style := d.bottom_edge:
+            if edge_style := d.near_edge:
                 d1 = abs(edge_style.distance)
                 d2 = abs(edge_style.distance2 or d1)
                 if edge_style.kind == "chamfer":
@@ -42,7 +42,7 @@ class OccHole(OccShape, ProxyHole):
                 y = r + d1
                 if y < 0:
                     raise ValueError(
-                        f"Bottom edge chamfer distance cannot be > hole radius. Got  R={r} D={d1}"
+                        f"Near edge chamfer distance cannot be > hole radius. Got  R={r} D={d1}"
                     )
                 elif y > 0:
                     poly.Add(gp_Pnt(0, y, 0))
@@ -53,7 +53,7 @@ class OccHole(OccShape, ProxyHole):
                 poly.Add(gp_Pnt(0, r, 0))
                 z = 0
 
-            if edge_style := d.top_edge:
+            if edge_style := d.far_edge:
                 d1 = abs(edge_style.distance)
                 d2 = abs(edge_style.distance2 or d1)
                 if edge_style.kind == "chamfer":
@@ -62,7 +62,7 @@ class OccHole(OccShape, ProxyHole):
                 y = r + d1
                 if y < 0:
                     raise ValueError(
-                        f"Top edge chamfer cannot be > hole radius. Got R={r} D={d1}"
+                        f"Far edge chamfer cannot be > hole radius. Got R={r} D={d1}"
                     )
                 elif y > 0:
                     poly.Add(gp_Pnt(0, y, h))
