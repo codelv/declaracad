@@ -20,6 +20,7 @@ from .algo import (  # noqa: F401
     Common,
     Cut,
     DraftAngle,
+    Evolved,
     Extend,
     Fillet,
     Fuse,

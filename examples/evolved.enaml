@@ -1,0 +1,36 @@
+from math import pi
+from enaml.core.api import Looper
+from declaracad.occ.api import (
+    Axis, Part, Evolved, Polyline, Polygon, Circle, Ellipse, Rectangle, Arc
+)
+
+              
+enamldef Assembly(Part): 
+    name = "Evolved"
+    Axis:
+        pass
+
+    Evolved:
+        Ellipse:
+            major_radius = 30
+            minor_radius = 40
+        Polygon:
+            points = [
+                (0, 2, 0),
+                (0, -2, 0),
+                (0, 0, 5),
+            ]
+
+    Evolved:
+
+        Polyline: poly:
+            closed = True
+            points = [
+                (0, 0),
+                (0, 10),
+                (0, 20, 10),
+                (0, 0, 10),
+            ]
+        Circle:
+            direction = (1, 0)
+            radius = 2

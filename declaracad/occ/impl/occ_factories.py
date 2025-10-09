@@ -91,6 +91,12 @@ def occ_ellipse_factory():
     return OccEllipse
 
 
+def occ_evolved_factory():
+    from .occ_evolved import OccEvolved
+
+    return OccEvolved
+
+
 def occ_face_factory():
     from .occ_face import OccFace
 
@@ -427,6 +433,7 @@ OCC_FACTORIES = {
     "Chamfer": occ_chamfer_factory,
     "Cut": occ_cut_factory,
     "Common": occ_common_factory,
+    "Evolved": occ_evolved_factory,
     "Fuse": occ_fuse_factory,
     "Intersection": occ_intersection_factory,
     "Split": occ_split_factory,

@@ -177,6 +177,17 @@ class ProxyPipe(ProxyOffset):
         raise NotImplementedError
 
 
+class ProxyEvolved(ProxyOffset):
+    #: A reference to the Shape declaration.
+    declaration = ForwardTyped(lambda: Evolved)
+
+    def set_spline(self, spline: Optional[Union[Shape, TopoDS_Shape]]):
+        raise NotImplementedError
+
+    def set_profile(self, profile: Optional[Union[Shape, TopoDS_Shape]]):
+        raise NotImplementedError
+
+
 class ProxyAbstractRibSlot(ProxyOperation):
     #: Abstract class
 
@@ -758,6 +769,57 @@ class Pipe(Operation):
     @observe("spline", "profile", "fill_mode")
     def _update_proxy(self, change: dict[str, Any]):
         super(Pipe, self)._update_proxy(change)
+
+
+class Evolved(Operation):
+    """An operation that extrudes a profile along a spline, wire, or path.
+
+    Attributes
+    ----------
+
+    spline: Edge or Wire
+        The spline to extrude along.
+    profile: Wire
+        The profile to extrude.
+
+    Examples
+    --------
+
+    See examples/evolved.enaml
+
+    """
+
+    #: Reference to the implementation control
+    proxy = Typed(ProxyEvolved)
+
+    #: Spline to make the evolve along. It must be closed.
+    spline = d_(Instance(object))
+
+    #: Profile to make the evolved shaped from.
+    #: This must be a planar Wire or Face.
+    profile = d_(Instance(object))
+
+    #: Run in parallel
+    parallel = d_(Bool(True))
+
+    #: Whether to fuse into a single solid or keep as a compound.
+    solid = d_(Bool())
+
+    #: Remove self-intersections in the result
+    volume = d_(Bool())
+
+    #: This axe prof flag
+    global_axis = d_(Bool(True))
+
+    # Whether the profile must be connected to the spline
+    require_profile_on_spline = d_(Bool())
+
+    #: Join type
+    join_type = d_(Enum("arc", "tangent", "intersection"))
+
+    @observe("spline", "profile", "join_type", "solid", "volume", "global_axis")
+    def _update_proxy(self, change: dict[str, Any]):
+        super()._update_proxy(change)
 
 
 class AbstractRibSlot(Operation):
