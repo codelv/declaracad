@@ -1,7 +1,5 @@
-from math import pi
-from enaml.core.api import Looper
 from declaracad.occ.api import (
-    Axis, Part, Evolved, Polyline, Polygon, Circle, Ellipse, Rectangle, Arc
+    Axis, Part, Evolved, Polygon, Ellipse, Rectangle, Circle
 )
 
               
@@ -18,19 +16,15 @@ enamldef Assembly(Part):
             points = [
                 (0, 2, 0),
                 (0, -2, 0),
-                (0, 0, 5),
+                (0, 0, 3),
             ]
 
     Evolved:
-
-        Polyline: poly:
-            closed = True
-            points = [
-                (0, 0),
-                (0, 10),
-                (0, 20, 10),
-                (0, 0, 10),
-            ]
+        color = 'teal'
+        Rectangle: 
+            position = (-width/2, -height/2)
+            width = 40
+            height = 20
         Circle:
             direction = (1, 0)
             radius = 2
