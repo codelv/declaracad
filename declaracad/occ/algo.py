@@ -154,6 +154,9 @@ class ProxyOffsetShape(ProxyOffset):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: OffsetShape)
 
+    def set_solid(self, solid: bool):
+        raise NotImplementedError
+
 
 class ProxyThickSolid(ProxyOffset):
     #: A reference to the Shape declaration.
@@ -684,6 +687,13 @@ class OffsetShape(Offset):
 
     #: Reference to the implementation control
     proxy = Typed(ProxyOffsetShape)
+
+    #: Create a solid from the resulting shape
+    solid = d_(Bool(True))
+
+    @observe("solid")
+    def _update_proxy(self, change: dict[str, Any]):
+        super()._update_proxy(change)
 
 
 class ThickSolid(Offset):

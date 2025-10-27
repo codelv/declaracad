@@ -10,11 +10,21 @@ Created on Sep 27, 2016
 @author: jrm
 """
 
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakeSolid,
+    BRepBuilderAPI_MakeWire,
+)
 from OCCT.BRepOffset import BRepOffset_Pipe, BRepOffset_RectoVerso, BRepOffset_Skin
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
-from OCCT.TopoDS import TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+from OCCT.TopoDS import (
+    TopoDS_Compound,
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Solid,
+    TopoDS_Wire,
+)
 
 from declaracad.occ.algo import ProxyOffset, ProxyOffsetShape
 
@@ -113,10 +123,9 @@ class OccOffsetShape(OccOffset, ProxyOffsetShape):
 
     def update_shape(self, change=None):
         d = self.declaration
-        shape = self.get_shape_to_offset()
         offset_shape = BRepOffsetAPI_MakeOffsetShape()
         offset_shape.PerformByJoin(
-            shape,
+            self.get_shape_to_offset(),
             d.offset,
             d.tolerance,
             self.offset_modes[d.offset_mode],
@@ -124,4 +133,11 @@ class OccOffsetShape(OccOffset, ProxyOffsetShape):
             False,
             self.join_types[d.join_type],
         )
-        self.shape = offset_shape.Shape()
+        shape = Topology.cast_shape(offset_shape.Shape())
+        if d.solid and not isinstance(shape, TopoDS_Solid):
+            self.shape = BRepBuilderAPI_MakeSolid(shape).Shape()
+        else:
+            self.shape = shape
+
+    def set_solid(self, solid: bool):
+        self.update_shape()
