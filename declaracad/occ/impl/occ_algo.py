@@ -70,10 +70,10 @@ class OccBooleanOperation(OccOperation, ProxyBooleanOperation):
         shapes = []
         unify = d.unify
         fix = d.fix
-        if d.shape1 and d.shape2:
-            shapes = [coerce_shape(d.shape1), coerce_shape(d.shape2)]
-        else:
-            shapes = []
+        if shape := d.shape1:
+            shapes.append(coerce_shape(shape))
+        if shape := d.shape2:
+            shapes.append(coerce_shape(shape))
         shapes.extend(list(self.child_shapes()))
 
         shape, *other_shapes = shapes
