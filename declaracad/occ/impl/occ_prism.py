@@ -7,12 +7,14 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakePrism
 from OCCT.gp import gp_Vec
 
 from declaracad.occ.shape import ProxyPrism
 
 from .occ_shape import OccDependentShape, coerce_shape
+from .topology import Topology
 
 
 class OccPrism(OccDependentShape, ProxyPrism):
@@ -36,7 +38,9 @@ class OccPrism(OccDependentShape, ProxyPrism):
         else:
             args = (shape, gp_Vec(*d.vector), copy, d.canonize)
         prism = BRepPrimAPI_MakePrism(*args)
-        self.shape = prism.Shape()
+        shape = prism.Shape()
+        transform = BRepBuilderAPI_Transform(shape, self.get_transform(), False)
+        self.shape = Topology.cast_shape(transform.Shape())
 
     def set_shape(self, shape):
         self.update_shape()
