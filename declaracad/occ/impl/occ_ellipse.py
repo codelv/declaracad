@@ -7,6 +7,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
+from math import pi
+
 from atom.api import Typed
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.Geom import Geom_Ellipse
@@ -25,9 +27,13 @@ class OccEllipse(OccEdge, ProxyEllipse):
 
     def create_shape(self):
         d = self.declaration
-        major = max(d.major_radius, d.minor_radius)
-        minor = min(d.major_radius, d.minor_radius)
-        curve = self.curve = Geom_Ellipse(coerce_axis(d.axis), major, minor)
+        r1, r2 = d.major_radius, d.minor_radius
+        axis = coerce_axis(d.axis)
+        if r1 >= r2:
+            curve = Geom_Ellipse(axis, r1, r2)
+        else:
+            curve = Geom_Ellipse(axis, r2, r1).Rotated(axis.Axis(), pi / 2)
+        self.curve = curve
         edge = self.make_edge(curve)
         if d.as_face:
             wire = BRepBuilderAPI_MakeWire(edge).Wire()
