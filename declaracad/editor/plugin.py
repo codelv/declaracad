@@ -627,11 +627,11 @@ class EditorPlugin(Plugin):
             #: TODO: Move to separate process
             line, column = cursor
             project = jedi.Project(self.project_path, sys_path=self.sys_path)
-            script = jedi.Script(source, line + 1, column, project=project)
+            script = jedi.Script(source, project=project)
 
             #: Get suggestions
             results = []
-            for c in script.completions():
+            for c in script.complete(line, column):
                 results.append(c.name)
 
                 #: Try to get a signature if the docstring matches
