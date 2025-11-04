@@ -173,7 +173,9 @@ class QtViewer3d(QOpenGLWidget):
             view.MustBeResized()
 
     def focusInEvent(self, event):
-        self.proxy.v3d_view.Redraw()
+        view = self.proxy.v3d_view
+        view.MustBeResized()
+        view.Redraw()
 
     def focusOutEvent(self, event):
         self.proxy.v3d_view.Redraw()
