@@ -3,54 +3,74 @@ on:
   push:
     branches:
     - '*'
-  #pull_request:
-  #  branches:
-  #  - '*'
 jobs:
-  build:
-    name: Build (${{ matrix.python-version }}, ${{ matrix.os }})
+  test:
+    name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'windows-latest']
-        python-version: ['3.12']
     steps:
       - name: "Download"
-        uses: actions/checkout@v2
-      - name: "Install miniconda"
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
-      - name: "Configure conda"
-        run: |
-            conda info
-            conda config --add channels conda-forge
-            conda install nomkl
-      - name: "Install compiler"
+        uses: actions/checkout@v5
+      - name: "Install OpenGL"
         if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get -q -y install libegl-dev libglx-dev libxi-dev
+      - name: "Create environment"
+        uses: mamba-org/setup-micromamba@v2
+        with:
+            environment-file: environment.yml
+            cache-environment: true
+      - name: "Install declaracad"
         shell: bash -l {0}
         run: |
-            conda install gxx_linux-64
-      - name: "Install"
+            python -m pip install -e .
+            python -m pip install pytest pytest-qt flake8 isort black mypy
+      - name: "Run tests"
+        shell: bash -l {0}
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest tests
+
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest']
+    steps:
+      - name: "Download"
+        uses: actions/checkout@v5
+      - name: "Install OpenGL"
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get -q -y install libegl-dev libglx-dev libxi-dev
+      - name: "Create environment"
+        uses: mamba-org/setup-micromamba@v2
+        with:
+            environment-file: environment.yml
+            cache-environment: true
+      - name: "Install declaracad"
         shell: bash -l {0}
         run: |
-            conda install -c trelau -c conda-forge pyocct
             python -m pip install -e .
             python -m pip install cx-freeze
       - name: "Build dist"
         if: ${{ matrix.os == 'ubuntu-latest' }}
         shell: bash -l {0}
-        run: |
-            python release.py bdist
+        run: python release.py bdist
       - name: "Build msi"
         if: ${{ matrix.os == 'windows-latest' }}
         shell: bash -l {0}
-        run: |
-            python release.py bdist_msi
+        run: python release.py bdist_msi
       - name: "Upload package"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-            name: declaracad-py${{ matrix.python-version }}-${{ matrix.os }}
+            name: declaracad-${{ matrix.os }}
             path: dist/declaracad-*
