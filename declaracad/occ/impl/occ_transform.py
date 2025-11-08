@@ -36,13 +36,13 @@ class OccTransform(OccOperation, ProxyTransform):
                     t.SetTranslation(gp_Vec(op.x, op.y, op.z))
                 elif isinstance(op, Rotate):
                     t.SetRotation(
-                        gp_Ax1(gp_Pnt(*op.point), gp_Dir(*op.direction)), op.angle
+                        gp_Ax1(gp_Pnt(*op.position), gp_Dir(*op.direction)), op.angle
                     )
                 elif isinstance(op, Mirror):
                     Ax = gp_Ax2 if op.plane else gp_Ax1
-                    t.SetMirror(Ax(gp_Pnt(*op.point), gp_Dir(op.x, op.y, op.z)))
+                    t.SetMirror(Ax(gp_Pnt(*op.position), gp_Dir(op.x, op.y, op.z)))
                 elif isinstance(op, Scale):
-                    t.SetScale(gp_Pnt(*op.point), op.s)
+                    t.SetScale(gp_Pnt(*op.position), op.s)
                 result.Multiply(t)
         else:
             axis = gp_Ax3(d.position.proxy, d.direction.proxy)

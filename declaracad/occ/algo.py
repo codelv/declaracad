@@ -961,9 +961,9 @@ class ThruSections(Operation):
 
 class TransformOperation(Atom):
     #: Point
-    point = Coerced(Point, coercer=coerce_point)
+    position = Coerced(Point, coercer=coerce_point)
 
-    def _default_point(self) -> Point:
+    def _default_position(self) -> Point:
         return Point(0.0, 0.0, 0.0)
 
 
