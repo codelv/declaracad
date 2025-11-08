@@ -58,6 +58,8 @@ def test_point():
     assert Point(1, 2, 3) * 2 == Point(2, 4, 6)
     assert Point(2, 4, 6) / 2 == Point(1, 2, 3)
 
+    assert -Point(1, 2, 3) == Point(-1, -2, -3)
+
     with pytest.raises(TypeError):
         Point(1, 2, 3) / Point(1, 2, 3)
 

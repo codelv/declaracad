@@ -188,6 +188,9 @@ class Point(Atom):
     def __truediv__(self, other):
         return self.__class__(self.x / other, self.y / other, self.z / other)
 
+    def __neg__(self):
+        return self.__class__(-self.x, -self.y, -self.z)
+
     def cross(self, other) -> "Point":
         p = self.__coerce__(other)
         return self.__coerce__(self.proxy.Crossed(p.proxy))
