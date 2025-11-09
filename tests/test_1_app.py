@@ -34,9 +34,11 @@ def test_app():
             else:
                 sig = signal.SIGINT
             p.send_signal(sig)
-        p.poll()
+
         if p.returncode is not None:
             break
+    p.wait(10)
+    p.kill()
     stdout, stderr = p.communicate()
     for line in stdout.split(b"\n"):
         print(stdout)
