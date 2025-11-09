@@ -41,13 +41,13 @@ def load_model(
 
     """
     options = options or {}
-    if filename:
-        filename = os.path.abspath(os.path.expanduser(filename))
     if loader:
         if not loader.startswith("."):
             loader = f".{loader}"
         hook: Optional[Callable] = LOADER_REGISTRY[loader.lower()]
     else:
+        if filename:
+            filename = os.path.abspath(os.path.expanduser(filename))
         if not filename or not os.path.exists(filename):
             raise ValueError(f"File '{filename}' does not exist!")
         path, ext = os.path.splitext(filename.lower())

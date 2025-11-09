@@ -447,6 +447,7 @@ TESTS = {
     """,
     "prism": """
     Prism:
+        vector = (0, 0, 10)
         Wire:
             Polyline:
                 points = [(0,5,0), (2,6,0),  (5,4,0), (0,5,0)]
