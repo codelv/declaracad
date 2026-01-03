@@ -103,7 +103,10 @@ class StepExporter(ModelExporter):
 
         if self.description:
             tp = HeaderSection_FileDescription.get_type_descriptor_()
-            entity = step_model.HeaderEntity(tp)
+            if step_model.HasHeaderEntity(tp):
+                entity = step_model.HeaderEntity(tp)
+            else:
+                entity = APIHeaderSection_MakeHeader(0)
             entity.SetDescription(create_hascii_list(self.description.split("\n")))
 
         tp = HeaderSection_FileName.get_type_descriptor_()
