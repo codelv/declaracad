@@ -21,7 +21,13 @@ from OCCT.BRepTools import BRepTools
 from OCCT.gp import gp_Pnt2d
 from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TColgp import TColgp_Array1OfPnt2d
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Shape, TopoDS_Wire
+from OCCT.TopoDS import (
+    TopoDS_Edge,
+    TopoDS_Face,
+    TopoDS_Shape,
+    TopoDS_Vertex,
+    TopoDS_Wire,
+)
 
 from declaracad.core.utils import log
 from declaracad.occ.algo import ChamferData, ProxyChamfer
@@ -80,7 +86,19 @@ class OccChamfer(OccOperation, ProxyChamfer):
             if isinstance(item, (tuple, list)):
                 n = len(item)
                 if n == 2:
-                    e1, e2 = item
+                    # (distance, vertex) format
+                    if isinstance(item[0], (float, int)) and isinstance(
+                        item[1], TopoDS_Vertex
+                    ):
+                        edges = Topology(shape=shape).edges_from_vertex(item[1])
+                        if len(edges) != 2:
+                            raise ValueError(
+                                "Cannot chamfer vertex with more than 2 edges"
+                            )
+                        e1, e2 = edges
+                        d1 = d2 = item[0]
+                    else:
+                        e1, e2 = item
                     builder.AddChamfer(e1, e2, d1, d2)
                 elif n == 3:
                     d1, e1, e2 = item
@@ -90,6 +108,12 @@ class OccChamfer(OccOperation, ProxyChamfer):
                     builder.AddChamfer(e1, e2, d1, d2)
                 else:
                     log.warning(f"Invalid chamfer {item}")
+            elif isinstance(item, TopoDS_Vertex):
+                edges = Topology(shape=shape).edges_from_vertex(item)
+                if len(edges) != 2:
+                    raise ValueError("Cannot chamfer vertex with more than 2 edges")
+                e1, e2 = edges
+                builder.AddChamfer(e1, e2, d1, d2)
             else:
                 log.warning(f"Invalid chamfer {item}")
 
