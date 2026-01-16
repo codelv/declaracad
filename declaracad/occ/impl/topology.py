@@ -686,7 +686,7 @@ class Topology(Atom):
         Parameters
         -----------
         topods_shape: TopoDS_Shape
-            The shape to cas
+            The shape to cast
 
         Returns
         -------
