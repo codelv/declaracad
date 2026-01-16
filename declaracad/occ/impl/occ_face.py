@@ -10,7 +10,7 @@ The full license is in the file LICENSE, distributed with this software.
 from OCCT import TopoDS
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
 from OCCT.ShapeFix import ShapeFix_Face
-from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
+from OCCT.TopoDS import TopoDS_Compound, TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 
 from declaracad.occ.shape import ProxyFace
 
@@ -26,6 +26,13 @@ def shape_to_face(shape):
         return shape
     if isinstance(shape, TopoDS_Edge):
         return BRepBuilderAPI_MakeWire(shape).Wire()
+    if isinstance(shape, TopoDS_Compound):
+        topo = Topology(shape=shape)
+        if len(topo.faces) == 1:
+            return topo.faces[0]
+        if len(topo.wires) == 1:
+            return topo.wires[0]
+        raise ValueError(f"Cannot convert compound {shape} to face")
     return TopoDS.Wire(shape)
 
 
