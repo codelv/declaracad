@@ -11,7 +11,7 @@ Created on Sep 30, 2016
 """
 
 import os
-from typing import ClassVar, Generator, Union
+from typing import ClassVar, Generator, Optional, Union
 
 from atom.api import Bool, Instance, List, Property, Str, Typed, observe
 from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
@@ -53,9 +53,12 @@ AZ.SetDirection(gp.DZ_())
 DEFAULT_AXIS = gp_Ax3(gp_Pnt(0, 0, 0), DZ, DX)
 
 
-def coerce_axis(value: tuple[Point, Direction, float]) -> gp_Ax2:
-    pos, dir, rotation = value
-    axis = gp_Ax2(pos.proxy, dir.proxy)
+def coerce_axis(value: tuple[Point, Direction, Optional[Direction], float]) -> gp_Ax2:
+    pos, dn, dx, rotation = value
+    if dx is None:
+        axis = gp_Ax2(pos.proxy, dn.proxy)  # dx is calculated
+    else:
+        axis = gp_Ax2(pos.proxy, dn.proxy, dx.proxy)
     axis.Rotate(axis.Axis(), rotation)
     return axis
 

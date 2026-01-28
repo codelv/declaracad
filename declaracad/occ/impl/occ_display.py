@@ -154,7 +154,7 @@ class OccDisplayArrow(OccDisplayItem, ProxyDisplayArrow):
 
     def create_item(self):
         d = self.declaration
-        axis = coerce_axis((d.position, d.direction, 0))
+        axis = coerce_axis((d.position, d.direction, None, 0))
         ais_item = AIS_Arrow(axis.Axis(), *d.tube_size, *d.cone_size)
         self.update_color(ais_item)
         self.item = ais_item

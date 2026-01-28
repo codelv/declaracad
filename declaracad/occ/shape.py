@@ -404,25 +404,33 @@ class Shape(ToolkitObject):
         return Point(0, 0, 0)
 
     #: A tuple or list of the (u, v, w) normal vector of this shape. This is
-    #: coerced into a Vector setting the orentation of the shape.
+    #: coerced into a Vector setting the orientation of the shape.
     #: This is effectively the working plane.
     direction = d_(Coerced(Direction, coercer=coerce_direction))
 
     def _default_direction(self) -> Direction:
         return Direction(0, 0, 1)
 
+    #: Sets the x-direction of the shape's axis. If None (default) it is calculated using
+    #: an axis perpendicular to the normal.
+    x_direction = d_(
+        Coerced(
+            (type(None), Direction),
+            coercer=lambda v: None if v is None else coerce_direction(v),
+        )
+    )
+
     #: Rotation about the normal vector in radians
     rotation = d_(Coerced(float, coercer=coerce_rotation))
 
     def _get_axis(self):
-        return (self.position, self.direction, self.rotation)
+        return (self.position, self.direction, self.x_direction, self.rotation)
 
     def _set_axis(self, axis):
-        self.position, self.direction, self.rotation = axis
+        self.position, self.direction, self.x_direction, self.rotation = axis
 
-    #: A tuple or list of the (u, v, w) axis of this shape. This is
-    #: coerced into a Vector that defines the x, y, and z orientation of
-    #: this shape.
+    #: A tuple of (position, normal direction, x-direction (optional), rotation) defining the
+    #: axis or "workplane" where this shape located.
     axis = d_(Property(_get_axis, _set_axis))
 
     def _get_topology(self):
