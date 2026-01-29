@@ -100,6 +100,9 @@ class ProxyFace(ProxyShape):
     def set_wire(self, wire):
         raise NotImplementedError
 
+    def set_surface(self, surface):
+        raise NotImplementedError
+
 
 class ProxyBox(ProxyShape):
     #: A reference to the shape declaration.
@@ -656,6 +659,9 @@ class Face(Shape):
 
     #: Reference to the implementation control
     proxy = Typed(ProxyFace)
+
+    #: Surface to build on
+    surface = d_(Instance((TopoDS_Face, TopoDS_Shell)))
 
     #: List of wires to use
     wires = d_(List())

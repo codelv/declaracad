@@ -18,7 +18,7 @@ from .occ_shape import OccDependentShape, OccShape
 from .topology import Topology
 
 
-def shape_to_face(shape):
+def shape_to_wire(shape) -> TopoDS_Wire:
     if isinstance(shape, OccShape):
         shape = shape.shape
     shape = Topology.cast_shape(shape)
@@ -51,11 +51,19 @@ class OccFace(OccDependentShape, ProxyFace):
         if not shapes:
             raise ValueError("No wires or children available to create a face!")
 
-        for i, s in enumerate(shapes):
-            if i == 0:
-                shape = BRepBuilderAPI_MakeFace(shape_to_face(s))
-            else:
-                shape.Add(shape_to_face(s))
+        if d.surface:
+            if len(shapes) > 1:
+                raise ValueError("Only 1 wire can be used when a surface is given!")
+            shape = BRepBuilderAPI_MakeFace(
+                d.surface,
+                shape_to_wire(shapes[0])
+            )
+        else:
+            for i, s in enumerate(shapes):
+                if i == 0:
+                    shape = BRepBuilderAPI_MakeFace(shape_to_wire(s))
+                else:
+                    shape.Add(shape_to_wire(s))
 
         face = shape.Face()
         if d.fix:
