@@ -146,7 +146,7 @@ def occ_hyperbola_factory():
 
 
 def occ_intersection_factory():
-    from .occ_intersection import OccIntersection
+    from .occ_algo import OccIntersection
 
     return OccIntersection
 

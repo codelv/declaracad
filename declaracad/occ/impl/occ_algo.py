@@ -18,6 +18,7 @@ from OCCT.BRepAlgoAPI import (
     BRepAlgoAPI_Common,
     BRepAlgoAPI_Cut,
     BRepAlgoAPI_Fuse,
+    BRepAlgoAPI_Section,
 )
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing
 from OCCT.ShapeFix import ShapeFix_Shape
@@ -38,6 +39,7 @@ from declaracad.occ.algo import (
     ProxyGlue,
     ProxyOperation,
     ProxySew,
+    ProxyIntersection,
 )
 from declaracad.occ.voxel import Voxel
 
@@ -204,6 +206,17 @@ class OccFuse(OccBooleanOperation, ProxyFuse):
     )
     op_name = "Fuse"
     op = set_default(BRepAlgoAPI_Fuse)
+
+
+class OccIntersection(OccBooleanOperation, ProxyIntersection):
+    """Fuse all the child shapes together."""
+
+    reference = (
+        "https://dev.opencascade.org/doc/refman/html"
+        "class_b_rep_algo_a_p_i___section.htm"
+    )
+    op_name = "Section"
+    op = set_default(BRepAlgoAPI_Section)
 
 
 class OccSew(OccOperation, ProxySew):
