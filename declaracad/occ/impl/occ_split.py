@@ -15,7 +15,7 @@ from OCCT.TopTools import TopTools_ListOfShape
 
 from declaracad.occ.algo import ProxySplit
 
-from .occ_algo import OccBooleanOperation
+from .occ_algo import OccBooleanOperation, coerce_shape
 
 
 class OccSplit(OccBooleanOperation, ProxySplit):
@@ -31,17 +31,17 @@ class OccSplit(OccBooleanOperation, ProxySplit):
         d = self.declaration
         tools = TopTools_ListOfShape()
         if d.shape1:
-            shape = d.shape1
+            shape = coerce_shape(d.shape1)
             splitter.AddArgument(shape)
         else:
             shape = None
         if d.shape2:
-            tools.Append(d.shape2)
+            tools.Append(coerce_shape(d.shape2))
         for c in self.children():
             if shape:
-                tools.Append(c.shape)
+                tools.Append(coerce_shape(c.shape))
             else:
-                shape = c.shape
+                shape = coerce_shape(c.shape)
                 splitter.AddArgument(shape)
         splitter.SetTools(tools)
         splitter.Perform()

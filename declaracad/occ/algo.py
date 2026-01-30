@@ -281,6 +281,9 @@ class ProxySew(ProxyOperation):
     #: A reference to the Shape declaration.
     declaration = ForwardTyped(lambda: Sew)
 
+    def set_solid(self, solid: bool):
+        raise NotImplementedError
+
 
 class ProxyGlue(ProxyOperation):
     #: A reference to the Shape declaration.
@@ -1074,6 +1077,12 @@ class Sew(Operation):
     #: Reference to the implementation control
     proxy = Typed(ProxySew)
 
+    #: Convert resulting shell to a solid
+    solid = d_(Bool())
+
+    @observe("solid")
+    def _update_proxy(self, change: dict[str, Any]):
+        super()._update_proxy(change)
 
 class Glue(Operation):
     #: Reference to the implementation control

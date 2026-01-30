@@ -20,7 +20,7 @@ from OCCT.BRepAlgoAPI import (
     BRepAlgoAPI_Fuse,
     BRepAlgoAPI_Section,
 )
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing, BRepBuilderAPI_MakeSolid
 from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TopoDS import TopoDS_Shape
 from OCCT.TopTools import TopTools_ListOfShape
@@ -221,11 +221,19 @@ class OccIntersection(OccBooleanOperation, ProxyIntersection):
 
 class OccSew(OccOperation, ProxySew):
     def update_shape(self, change=None):
+        d = self.declaration
         builder = BRepBuilderAPI_Sewing()
         for s in self.child_shapes():
             builder.Add(Topology.cast_shape(s))
         builder.Perform()
-        self.shape = Topology.cast_shape(builder.SewedShape())
+        shape = Topology.cast_shape(builder.SewedShape())
+        if d.solid:
+            shape = BRepBuilderAPI_MakeSolid(shape).Solid()
+        if d.fix:
+            fixer = ShapeFix_Shape(shape)
+            if fixer.Perform():
+                shape = fixer.Shape()
+        self.shape = Topology.cast_shape(shape)
 
 
 class OccGlue(OccOperation, ProxyGlue):
