@@ -53,6 +53,8 @@ enamldef SpurGearProfile(Wire):
     # Inside plus clearance
     attr root_diameter = base_diameter-fillet_size
     
+    alias tooth_profile
+    
     func involute_curve(start_angle: float, pitch: float, t: float) -> Point:
         # Generate the curve for the contact surface
         a = start_angle + t * pi/2
@@ -62,6 +64,7 @@ enamldef SpurGearProfile(Wire):
         return Point(c.x + s * sin(a), c.y - s * cos(a))
         
     Wire: tooth_profile:
+        color = 'green'
         Wire: half_tooth_profile:
             # Bottom non-contact part of gear
             Fillet:
@@ -94,10 +97,10 @@ enamldef SpurGearProfile(Wire):
             shape = half_tooth_profile
             operations = [Mirror(x=1)]
     Looper:
-        iterable = range(tooth_count)
+        iterable = range(1, tooth_count)
         Transform:
             shape = tooth_profile
-            operations = [Rotate(angle=pitch_angle*loop.index)]
+            operations = [Rotate(angle=pitch_angle*loop.item)]
             
 
 enamldef SpurGear(Part):
@@ -150,14 +153,16 @@ enamldef DoubleHelicalSpurGear(Part):
                 Translate(z=thickness),
             ]
 
+    
 enamldef Assembly(Part):
     Axis:
         pass
-    #SpurGear:
-    #    profile.addendum_factor = 1.5
-    #    profile.tooth_count = 10
+    
+    SpurGear:
+        profile.addendum_factor = 1.5
+        profile.tooth_count = 10
     #HelicalSpurGear:
     #    profile.tooth_count = 20
     #    position = (0, 10)
-    DoubleHelicalSpurGear:
-        thickness = 5
+    #DoubleHelicalSpurGear:
+    #    thickness = 5
