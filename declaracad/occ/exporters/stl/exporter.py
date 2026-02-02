@@ -25,7 +25,7 @@ from declaracad.viewer.plugin import ModelExporter
 
 class StlExporter(ModelExporter):
     extension = "stl"
-    linear_deflection = Float(0.05, strict=False)
+    linear_deflection = Float(0.03, strict=False)
     angular_deflection = Float(0.5, strict=False)
     relative = Bool()
     binary = Bool()
