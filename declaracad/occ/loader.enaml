@@ -11,7 +11,7 @@ Created on Aug, 2020
 """
 import os
 from enaml.core.api import Include
-from declaracad.occ.api import Part, load_model
+from declaracad.occ.api import Part, Transform, Topology, load_model
 
 
 enamldef LoadedPart(Part):
@@ -20,11 +20,16 @@ enamldef LoadedPart(Part):
 
     """
     attr filename: str
+    attr center: bool =  False
     attr options: dict = {}
     description << filename[0:100]
 
     func load():
         shapes = load_model(filename, options)
+        if center:
+            bbox = Topology.bbox(shapes)
+            pos = -bbox.center
+            shapes = [Transform(shape=s, position=pos)  for s in shapes]
         if color := self.color:
             for shape in shapes:
                 shape.color = color
