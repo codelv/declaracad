@@ -54,10 +54,7 @@ class OccFace(OccDependentShape, ProxyFace):
         if d.surface:
             if len(shapes) > 1:
                 raise ValueError("Only 1 wire can be used when a surface is given!")
-            shape = BRepBuilderAPI_MakeFace(
-                d.surface,
-                shape_to_wire(shapes[0])
-            )
+            shape = BRepBuilderAPI_MakeFace(d.surface, shape_to_wire(shapes[0]))
         else:
             for i, s in enumerate(shapes):
                 if i == 0:

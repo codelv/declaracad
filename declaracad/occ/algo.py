@@ -1084,6 +1084,7 @@ class Sew(Operation):
     def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 
+
 class Glue(Operation):
     #: Reference to the implementation control
     proxy = Typed(ProxyGlue)

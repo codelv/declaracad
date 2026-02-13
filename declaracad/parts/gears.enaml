@@ -8,16 +8,21 @@ enamldef SpurGearProfile(Wire):
     # =============================================
     # Inputs 
     # =============================================
+    
+    # Number of teeth. 
     attr tooth_count = 24
     
     # Contact angle in degrees. Should be between 15 and 25
     attr pressure_angle = 18
     
-    #: Width of tooth 
-    attr tooth_width = 1.1
+    #: Module. Equal to pitch diameter / number of teeth.  
+    attr modulus = 0.7
     
+    #: Width of tooth. This can be used directly instead of the modulus
+    attr tooth_width =  modulus * pi / 2
+
     # Size of fillet at inside of gear
-    attr fillet_size = 0.25
+    attr fillet_size = dedendum/4
     
     # The addendum is the distance by which every tooth sticks out 
     # above the pitch (contact) circle
@@ -27,7 +32,7 @@ enamldef SpurGearProfile(Wire):
     # Dedendum is the distance to the bottom
     attr dedendum_factor = 1.25
     attr dedendum = dedendum_factor*addendum
-    
+
     # =============================================
     # Computed fields 
     # =============================================
@@ -47,12 +52,16 @@ enamldef SpurGearProfile(Wire):
     # Outside diaemter
     attr outside_diameter = pitch_diameter + 2*addendum
     
-    # 
+    # Bottom diameter
     attr base_diameter = pitch_diameter * cos(radians(pressure_angle))
     
     # Inside plus clearance
     attr root_diameter = base_diameter-fillet_size
+
+    # Tooth depth
+    attr tooth_depth = addendum + dedendum
     
+    # Alias to a single tooth
     alias tooth_profile
     
     func involute_curve(start_angle: float, pitch: float, t: float) -> Point:
@@ -161,6 +170,10 @@ enamldef Assembly(Part):
     SpurGear:
         profile.addendum_factor = 1.5
         profile.tooth_count = 10
+    SpurGear:
+        position = (10, 0)
+        profile.tooth_width = 0.6
+        profile.tooth_count = 16
     #HelicalSpurGear:
     #    profile.tooth_count = 20
     #    position = (0, 10)

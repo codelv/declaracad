@@ -20,7 +20,7 @@ from OCCT.BRepAlgoAPI import (
     BRepAlgoAPI_Fuse,
     BRepAlgoAPI_Section,
 )
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_Sewing, BRepBuilderAPI_MakeSolid
+from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeSolid, BRepBuilderAPI_Sewing
 from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TopoDS import TopoDS_Shape
 from OCCT.TopTools import TopTools_ListOfShape
@@ -37,9 +37,9 @@ from declaracad.occ.algo import (
     ProxyCut,
     ProxyFuse,
     ProxyGlue,
+    ProxyIntersection,
     ProxyOperation,
     ProxySew,
-    ProxyIntersection,
 )
 from declaracad.occ.voxel import Voxel
 

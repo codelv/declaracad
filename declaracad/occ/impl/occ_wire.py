@@ -11,11 +11,20 @@ Created on Sep 30, 2016
 """
 
 from atom.api import Typed
-from OCCT.BRepAdaptor import BRepAdaptor_CompCurve
-from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
+from OCCT.BRepAdaptor import (
+    BRepAdaptor_CompCurve,
+    BRepAdaptor_Curve2d,
+    BRepAdaptor_Surface,
+)
+from OCCT.BRepBuilderAPI import (
+    BRepBuilderAPI_FindPlane,
+    BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakeWire,
+)
 from OCCT.BRepLib import BRepLib
 from OCCT.ShapeFix import ShapeFix_Wire
-from OCCT.TopoDS import TopoDS_Edge
+from OCCT.TopoDS import TopoDS_Edge, TopoDS_Face, TopoDS_Wire
 from OCCT.TopTools import TopTools_ListOfShape
 
 from declaracad.core.utils import log
@@ -83,8 +92,32 @@ class OccWire(OccDependentShape, ProxyWire):
             fixer.Load(wire)
             if fixer.Perform():
                 wire = fixer.Wire()
+
+        if surface := d.surface:
+            wire = self.apply_to_surface(wire, surface)
+
         self.curve = BRepAdaptor_CompCurve(wire)
         self.shape = wire
+
+    def apply_to_surface(self, wire: TopoDS_Wire, face: TopoDS_Face) -> TopoDS_Wire:
+        # Attempt to put the wire onto the surface given
+        finder = BRepBuilderAPI_FindPlane(wire)
+        if not finder.Found():
+            raise ValueError("Cannot apply a non-planar wire to a surface.")
+        plane = BRepBuilderAPI_MakeFace(finder.Plane().Pln()).Face()
+        surface = BRepAdaptor_Surface(face).Surface().Surface()
+        builder = BRepBuilderAPI_MakeWire()
+        for edge in Topology(shape=wire).edges:
+            adapter_curve_2d = BRepAdaptor_Curve2d(edge, plane)
+            topo = Topology(shape=edge)
+            new_edge = BRepBuilderAPI_MakeEdge(
+                adapter_curve_2d.Curve(),
+                surface,
+                adapter_curve_2d.FirstParameter(),
+                adapter_curve_2d.LastParameter(),
+            ).Edge()
+            builder.Add(new_edge)
+        return builder.Wire()
 
     def extract_edges(self, child, edges):
         d = child.declaration
