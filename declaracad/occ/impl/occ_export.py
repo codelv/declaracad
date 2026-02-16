@@ -11,6 +11,7 @@ Created on Oct 18, 2022
 """
 
 import os
+import traceback
 
 from declaracad.occ.exporters import export_shapes
 from declaracad.occ.shape import ProxyExport
@@ -31,5 +32,6 @@ class OccExport(ProxyExport):
                 path = os.path.abspath(os.path.expanduser(filename))
                 export_shapes(path, shapes, **d.options)
                 print(f"Exported {path}")
-            except Exception as e:
-                print(f"Export failed: {e}")
+            except Exception:
+                print("Export failed:")
+                traceback.print_exc()
