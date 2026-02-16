@@ -10,11 +10,12 @@ The full license is in the file LICENSE, distributed with this software.
 from math import pi
 
 import enaml
-from atom.api import Str
+from atom.api import Float, Str
 from lxml import etree
 from OCCT.Adaptor3d import Adaptor3d_Curve
 from OCCT.BRepAdaptor import BRepAdaptor_Curve
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
+from OCCT.BRepLib import BRepLib
 from OCCT.GCPnts import GCPnts_AbscissaPoint
 from OCCT.GeomAdaptor import GeomAdaptor_Curve
 from OCCT.GeomConvert import GeomConvert_BSplineCurveToBezierCurve
@@ -26,6 +27,18 @@ from OCCT.TopoDS import TopoDS_Wire
 from declaracad.occ.api import Point, Shape, Topology
 from declaracad.occ.impl.occ_shape import AX
 from declaracad.viewer.plugin import ModelExporter
+
+RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+CC_NS = "http://creativecommons.org/ns#"
+DC_NS = "http://purl.org/dc/elements/1.1/"
+SVG_NS = "http://www.w3.org/2000/svg"
+NSMAP = {
+    None: SVG_NS,
+    "svg": SVG_NS,
+    "rdf": RDF_NS,
+    "cc": CC_NS,
+    "dc": DC_NS,
+}
 
 
 def fmt(v: float) -> str:
@@ -114,13 +127,12 @@ def bspline_to_path(curve: Adaptor3d_Curve) -> str:
     return " ".join(data)
 
 
-def create_svg_from_wires(wires: list[TopoDS_Wire]) -> etree._Element:
-    svg = etree.Element("svg")
-    svg.attrib["xmlns"] = "http://www.w3.org/2000/svg"
+def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree._Element:
+    svg = etree.Element("svg", nsmap=NSMAP)
     bbox = Topology.bbox(wires)
     t = gp_Trsf()
-    t.SetScale(gp_Pnt(0, 0, 0), 3.5433070866)
-
+    t.SetScale(gp_Pnt(0, 0, 0), scale)
+    svg.attrib["version"] = "1.1"
     svg.attrib["width"] = f"{fmt(bbox.dx)}mm"
     svg.attrib["height"] = f"{fmt(bbox.dy)}mm"
     svg.attrib["viewBox"] = (
@@ -251,8 +263,11 @@ def create_svg_from_wires(wires: list[TopoDS_Wire]) -> etree._Element:
 class SvgExporter(ModelExporter):
     extension = "svg"
 
+    title = Str()
+    description = Str()
     author = Str()
-    company = Str()
+
+    scale = Float(1.0, strict=False)
 
     @classmethod
     def get_options_view(cls):
@@ -279,7 +294,10 @@ class SvgExporter(ModelExporter):
         for part in shapes:
             projector = HLRAlgo_Projector(xy)
             hlr = HLRBRep_Algo()
-            shape = part.render()
+            if isinstance(part, Shape):
+                shape = part.render()
+            else:
+                shape = part
             hlr.Add(shape)
             hlr.Projector(projector)
             hlr.Update()
@@ -287,7 +305,9 @@ class SvgExporter(ModelExporter):
             result = HLRBRep_HLRToShape(hlr)
 
             try:
-                topo = Topology(shape=result.VCompound())
+                result = result.VCompound()
+                BRepLib.BuildCurves3d_(result)
+                topo = Topology(shape=result)
                 wires.extend(Topology.join_edges(topo.edges))
             except RuntimeError:
                 pass
@@ -298,8 +318,30 @@ class SvgExporter(ModelExporter):
             #    pass
         if not wires:
             raise RuntimeError("No wires to export")
-        doc = create_svg_from_wires(wires)
+        doc = create_svg_from_wires(wires, self.scale)
+
+        # Set metadata
+        if self.title or self.author or self.description:
+            self.set_metadata(doc)
+
         with open(self.path, "wb") as f:
             result = etree.tostring(doc, pretty_print=True, xml_declaration=False)
             # print(result)
             f.write(result)
+
+    def set_metadata(self, doc: etree._Element):
+        """Populate the metadata"""
+        metadata = etree.SubElement(doc, "metadata")
+        rdf = etree.SubElement(metadata, "{%s}RDF" % RDF_NS)
+        work = etree.SubElement(rdf, "{%s}Work" % CC_NS)
+        if title := self.title.strip():
+            node = etree.SubElement(work, "{%s}title" % DC_NS)
+            node.text = title
+        if author := self.author.strip():
+            creator = etree.SubElement(work, "{%s}creator" % DC_NS)
+            agent = etree.SubElement(creator, "{%s}Agent" % CC_NS)
+            node = etree.SubElement(agent, "{%s}title" % DC_NS)
+            node.text = author
+        if desc := self.description.strip():
+            node = etree.SubElement(work, "{%s}description" % DC_NS)
+            node.text = desc

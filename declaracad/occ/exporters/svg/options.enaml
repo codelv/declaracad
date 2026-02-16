@@ -21,9 +21,13 @@ enamldef OptionsForm(Form):
             return ''
         return m.metadata.get('help', '')
     Looper:
-        iterable = ("author", "company")
+        iterable = ("title", "author", "description")
         Label:
             text = loop.item.title()
             tool_tip << get_help(loop.item)
         Field:
             text := getattr(model, loop.item)
+    Label:
+        text = "Scale"
+    DoubleSpinBox:
+        value := model.scale
