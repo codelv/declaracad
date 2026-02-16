@@ -998,7 +998,10 @@ class Topology(Atom):
             face = BRepBuilderAPI_MakeFace(shape).Face()
         else:
             face = shape
-        return Topology(shape=face).area > 0
+        cw = Topology(shape=face).area > 0
+        if cls.is_reversed(shape):
+            return not cw
+        return cw
 
     # @classmethod
     # def is_internal(
