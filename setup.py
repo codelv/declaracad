@@ -11,7 +11,10 @@ import sys
 from setuptools import setup, find_packages
 from glob import glob
 
-from pybind11.setup_helpers import Pybind11Extension, build_ext
+try:
+    from pybind11.setup_helpers import Pybind11Extension, build_ext
+except ImportError:
+    Pybind11Extension = None
 
 requirements = [
     "enaml>=0.10.4",
