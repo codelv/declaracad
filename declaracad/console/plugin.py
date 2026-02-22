@@ -15,6 +15,39 @@ import asyncio
 from declaracad.core.api import Plugin
 
 
+def patch_iostream():
+    """IOStream _thread_main is broken if the loop is already running"""
+    from ipykernel.iostream import IOPubThread
+
+    def _thread_main(self):
+        """The inner loop that's actually run in a thread"""
+
+        def _start_event_gc():
+            self._event_pipe_gc_task = asyncio.ensure_future(self._run_event_pipe_gc())
+            return self._event_pipe_gc_task
+
+        self.io_loop.run_sync(_start_event_gc)
+
+        if not self._stopped:
+            # avoid race if stop called before start thread gets here
+            # probably only comes up in tests
+            self.io_loop.start()
+
+        if self._event_pipe_gc_task is not None:
+            # cancel gc task to avoid pending task warnings
+            async def _cancel():
+                self._event_pipe_gc_task.cancel()  # type:ignore[union-attr]
+
+            if not self._stopped:
+                self.io_loop.run_sync(_cancel)
+            else:
+                self._event_pipe_gc_task.cancel()
+
+        self.io_loop.close(all_fds=True)
+
+    IOPubThread._thread_main = _thread_main
+
+
 def patch_ipykernel():
     from ipykernel.inprocess.client import InProcessKernelClient
 
@@ -43,4 +76,5 @@ def patch_ipykernel():
 
 class ConsolePlugin(Plugin):
     def start(self):
+        patch_iostream()
         patch_ipykernel()

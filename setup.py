@@ -11,10 +11,7 @@ import sys
 from setuptools import setup, find_packages
 from glob import glob
 
-try:
-    from pybind11.setup_helpers import Pybind11Extension, build_ext
-except ImportError:
-    Pybind11Extension = None
+from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 requirements = [
     "enaml>=0.10.4",
@@ -31,6 +28,7 @@ requirements = [
     #'PyQt6-WebEngine',
     "ezdxf",
     "pdf4py",
+    "ply", # lexers
 ]
 
 
@@ -45,6 +43,10 @@ if sys.platform == "win32":
 def find_include(name: str) -> str:
     prefix = os.path.dirname(os.path.dirname(sys.executable))
     return os.path.join(prefix, "include", name)
+
+def find_lib(name: str) -> str:
+    prefix = os.path.dirname(os.path.dirname(sys.executable))
+    return os.path.join(prefix, "lib", name)
 
 
 def find_version():
@@ -68,16 +70,28 @@ ext_modules = []
 if Pybind11Extension is not None:
     cmdclss = {"build_ext": build_ext}
     ext_module = Pybind11Extension(
-        "declaracad.extensions",
-        sources=glob("src/*.cpp"),
+        "declaracad.helpers",
+        optional=sys.platform != "linux",
+        sources=glob("src/helpers.cpp"),
         include_dirs=[
             "src",
             find_include("opencascade"),
+            find_include("qt6"),
+            find_include("qt6/QtCore"),
+            find_include("qt6/QtGui"),
+            find_include("qt6/QtOpenGLWidgets"),
             os.path.join(pyocct_dir, "inc"),
             os.path.join(pyocct_dir, "src"),
         ],
-        libraries=["TKernel", "TKOpenGl", "TKVoxel"],
-        optional=True,
+        libraries=[
+            #"TKernel", "TKOpenGl", "TKVoxel"
+            #"Qt6Core",
+            "TKernel",
+            "TKOpenGl",
+            "Qt6Gui",
+            "Qt6Widgets",
+            "Qt6OpenGLWidgets",
+        ],
         # define_macros = [('VERSION_INFO', __version__)],
     )
     ext_modules.append(ext_module)
