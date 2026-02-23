@@ -1,9 +1,9 @@
 # Created in DeclaraCAD
 from declaracad.occ.api import *
-from enaml.core.api import Looper
-
 
 enamldef Assembly(Part):
+    Axis:
+        pass
     Split: split:
         # Split the sphere in half along the x axis
         display = False
