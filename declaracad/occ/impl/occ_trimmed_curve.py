@@ -7,8 +7,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from atom.api import Typed
+from atom.api import Instance
 from OCCT.BRep import BRep_Tool
+from OCCT.BRepAdaptor import BRepAdaptor_Curve
 from OCCT.Geom import Geom_TrimmedCurve
 
 from declaracad.occ.draw import ProxyTrimmedCurve
@@ -24,7 +25,7 @@ class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
         "https://dev.opencascade.org/doc/refman/html/class_geom___trimmed_curve.html"
     )
 
-    curve = Typed(Geom_TrimmedCurve)
+    curve = Instance((BRepAdaptor_Curve, Geom_TrimmedCurve))
 
     def create_shape(self):
         pass
@@ -54,8 +55,12 @@ class OccTrimmedCurve(OccEdge, ProxyTrimmedCurve):
             curve = Topology.cast_curve(shape)
         if curve is None:
             raise RuntimeError(f"Could not create TrimmedCurve {d} (no curve)")
-        trimmed_curve = self.curve = Geom_TrimmedCurve(curve, d.u, d.v)
-        self.shape = self.make_edge(trimmed_curve)
+        if isinstance(curve, BRepAdaptor_Curve):
+            trimmed_curve = self.curve = curve.Trim(d.u, d.v, d.tolerance)
+            self.shape = trimmed_curve.Edge()
+        else:
+            trimmed_curve = self.curve = Geom_TrimmedCurve(curve, d.u, d.v)
+            self.shape = self.make_edge(trimmed_curve)
 
     def set_u(self, u):
         self.update_shape()
