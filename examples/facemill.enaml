@@ -50,7 +50,7 @@ enamldef FacingOperation(Part):
                 i += 1
                 y += step_over
                 space = HalfSpace(position=(0, y, 0), direction=(0,1,0))
-                results = topo.intersection(space.render())
+                results = topo.intersection(space.render(), multiple=True)
                 if results:                
                     if len(results) != 1:
                         raise NotImplementedError("TODO: Handle islands")

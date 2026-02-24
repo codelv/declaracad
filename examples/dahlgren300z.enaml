@@ -193,7 +193,7 @@ enamldef EngraverColumn(Part): part:
         name = 'front plate'
         material << part.material
         operations << [Rotate(
-                point=front_cover.position,
+                position=front_cover.position,
                 direction=(1,0,0),
                 angle=math.pi-angle2d(arch_poly.points[-2], arch_poly.points[-1], i=1, j=2)
         )]

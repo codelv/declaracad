@@ -95,7 +95,7 @@ enamldef Wall(Fuse):
                 attr pos << (points[loop_index-1][0],points[loop_index-1][1],floor)
                 operations = [
                     Rotate(
-                        point=pos,
+                        position=pos,
                         direction=(0,0,1),
                         angle=angle(points[loop_index-1],points[loop_index])
                     )
@@ -111,7 +111,7 @@ enamldef Room(Part):
 
     Prism:
         vector = (0, 0, 8)
-        color = 'antiquewhite'
+        #color = 'antiquewhite'
         Cut:
             Face:
                 Polyline: poly:
@@ -131,7 +131,7 @@ enamldef Room(Part):
 enamldef Assembly(Part):
     name = "House"
 
-    Wall:
+    Wall: outside_wall:
         # Ext
         points = [
             (0,0),
@@ -146,10 +146,15 @@ enamldef Assembly(Part):
     #    dy = 25
     #    dz = inch(1)
     #    position = (0, 0, -dz)
+    LengthDimension:
+        direction = (0, 1, 0)
+        shapes = [
+          outside_wall.topology.edges[0],
+        ]
 
-    Wall:
+    Wall: w1:
         # Master BR
-        color = 'tan'
+        #vcolor = 'tan'
         points = [
             (12,0),
             (12,12),

@@ -17,7 +17,7 @@ import sys
 import enaml
 from atom.api import Instance, Str, Typed
 
-from declaracad.console.plugin import patch_ipykernel
+from declaracad.console.plugin import patch_ipykernel, patch_iostream
 from declaracad.core.app import Application
 from declaracad.core.utils import JsonRpcProtocol, RemoteLogger, log
 
@@ -161,6 +161,7 @@ def main(
         raise ValueError("A ref is required when port is given")
 
     # Required for embedded console
+    patch_iostream()
     patch_ipykernel()
 
     view = ViewerWindow(filename="-", frameless=bool(port))

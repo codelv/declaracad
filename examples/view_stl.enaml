@@ -1,6 +1,7 @@
 # Created in DeclaraCAD
 from declaracad.occ.api import *
+from declaracad.occ.loader import LoadedPart
 
 enamldef Assembly(Part):
     LoadedPart:
-        filename = 'examples/vacuum_nozzle.stl'
+        filename = 'examples/models/five_spoke_wheel.stl'

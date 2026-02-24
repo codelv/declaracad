@@ -25,6 +25,12 @@ def test_example(qt_app, path: str):
     if "voxel" in path:
         pytest.mark.skip("Voxel test disabled")
         return
+    if "chamfer_profile" in path:
+        try:
+            from OCCT.ChFi3d import ChFi3d_Linear
+        except ImportError:
+            pytest.mark.skip("ChFi3d_Linear profile not available")
+            return
     assembly = load_model(path)
     for shape in assembly:
         assert isinstance(shape.render(), TopoDS_Shape)

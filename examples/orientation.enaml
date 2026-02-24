@@ -41,19 +41,19 @@ enamldef Assembly(Part):
     Polygon:
        color = 'red'
        direction = (0, 1, 0)
-       position = direction
+       position = (0, 1, 0)
        radius = 1
        count = 3
     Polygon:
         color = 'yellow'
         direction = (1, 0, 0)
-        position = direction
+        position = (1, 0, 0)
         radius = 1
         count = 3
     Polygon:
         color = 'blue'
         direction = (1, 1, 0)
-        position = direction
+        position = (1, 1, 0)
         #rotation = pi
         radius = 1
         count = 3
