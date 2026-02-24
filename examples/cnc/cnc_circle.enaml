@@ -29,7 +29,7 @@ enamldef Assembly(Part):
         shape = part.topology.edges[12]
     
     Job: circle_job:
-        filename = 'cnc_3in_circle_6mm-endmill.nc'
+        filename = 'cnc_circle.nc'
         ContourOperation:
             #disabled = True
             surface_speed = 100
