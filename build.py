@@ -73,7 +73,7 @@ def make_deb(cfg):
 
     #: Make a desktop icon /usr/share/applications
     os.makedirs(desktop_dir)
-    print(sh.cp('{name}/res/declaracad.desktop'.format(**cfg), desktop_dir))
+    print(sh.cp('{name}/packaging/declaracad.desktop'.format(**cfg), desktop_dir))
 
     #: Prepare
     try:
