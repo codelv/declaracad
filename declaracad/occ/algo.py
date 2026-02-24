@@ -284,6 +284,9 @@ class ProxySew(ProxyOperation):
     def set_solid(self, solid: bool):
         raise NotImplementedError
 
+    def set_unify(self, enabled: bool):
+        raise NotImplementedError
+
 
 class ProxyGlue(ProxyOperation):
     #: A reference to the Shape declaration.
@@ -1080,7 +1083,10 @@ class Sew(Operation):
     #: Convert resulting shell to a solid
     solid = d_(Bool())
 
-    @observe("solid")
+    #: Unify the result
+    unify = d_(Bool())
+
+    @observe("solid", "unify")
     def _update_proxy(self, change: dict[str, Any]):
         super()._update_proxy(change)
 

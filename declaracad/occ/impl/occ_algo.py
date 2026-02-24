@@ -22,6 +22,7 @@ from OCCT.BRepAlgoAPI import (
 )
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeSolid, BRepBuilderAPI_Sewing
 from OCCT.ShapeFix import ShapeFix_Shape
+from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
 from OCCT.TopoDS import TopoDS_Shape
 from OCCT.TopTools import TopTools_ListOfShape
 
@@ -229,6 +230,9 @@ class OccSew(OccOperation, ProxySew):
         shape = Topology.cast_shape(builder.SewedShape())
         if d.solid:
             shape = BRepBuilderAPI_MakeSolid(shape).Solid()
+        if d.unify:
+            upgrader = ShapeUpgrade_UnifySameDomain(shape, True, True, True)
+            shape = Topology.cast_shape(upgrader.Shape())
         if d.fix:
             fixer = ShapeFix_Shape(shape)
             if fixer.Perform():
