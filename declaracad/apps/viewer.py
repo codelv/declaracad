@@ -13,6 +13,7 @@ Created on July 28, 2018
 import asyncio
 import os
 import sys
+import traceback
 
 import enaml
 from atom.api import Instance, Str, Typed
@@ -120,8 +121,12 @@ async def run_local(app: Application, view: ViewerWindow, filename: str, watch: 
         mtime = os.stat(filename).st_mtime
         if mtime != last_mtime:
             log.info(f"{filename} changed, reloading")
-            view.version += 1
+            try:
+                view.version += 1
+            except Exception:
+                traceback.print_exc()
             last_mtime = mtime
+    log.warning("File watcher stopped")
 
 
 def main(
