@@ -18,6 +18,7 @@ from OCCT.BRepBuilderAPI import (
 from OCCT.BRepOffset import BRepOffset_Pipe, BRepOffset_RectoVerso, BRepOffset_Skin
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeOffsetShape
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
+from OCCT.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
 from OCCT.TopoDS import (
     TopoDS_Compound,
     TopoDS_Edge,
@@ -83,6 +84,8 @@ class OccOffset(OccOperation, ProxyOffset):
             raise ValueError("Could not perform offset: %s" % d)
 
         result = Topology.cast_shape(offset_shape.Shape())
+        if d.unify:
+            result = ShapeUpgrade_UnifySameDomain(result).Shape()
         if d.as_face or was_face:
             if isinstance(result, TopoDS_Compound):
                 topo = Topology(shape=result)

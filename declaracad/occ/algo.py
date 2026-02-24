@@ -131,6 +131,9 @@ class ProxyOffset(ProxyOperation):
     def set_closed(self, closed: bool):
         raise NotImplementedError
 
+    def set_unify(self, unify: bool):
+        raise NotImplementedError
+
     def set_offset(self, offset: float):
         raise NotImplementedError
 
@@ -647,7 +650,10 @@ class Offset(Operation):
     #: The shape to offset if given
     shape = d_(Instance((Shape, TopoDS_Shape)))
 
-    #: Disble operation
+    #: Unify edges
+    unify = d_(Bool())
+
+    #: Disable operation
     disabled = d_(Bool())
 
     @observe(
@@ -659,6 +665,7 @@ class Offset(Operation):
         "normal_distance",
         "shape",
         "as_face",
+        "unify",
         "disabled",
     )
     def _update_proxy(self, change: dict[str, Any]):
