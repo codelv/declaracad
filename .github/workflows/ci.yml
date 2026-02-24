@@ -38,7 +38,6 @@ jobs:
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: test
     strategy:
       fail-fast: false
       matrix:
