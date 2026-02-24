@@ -22,15 +22,25 @@ EXAMPLES = glob("examples/*.enaml")
 
 @pytest.mark.parametrize("path", EXAMPLES)
 def test_example(qt_app, path: str):
+    if "paste" in path:
+        pytest.skip("paste test disabled")
+        return
     if "voxel" in path:
-        pytest.mark.skip("Voxel test disabled")
+        pytest.skip("Voxel test disabled")
         return
     if "chamfer_profile" in path:
         try:
             from OCCT.ChFi3d import ChFi3d_Linear
         except ImportError:
-            pytest.mark.skip("ChFi3d_Linear profile not available")
+            pytest.skip("ChFi3d_Linear profile not available")
             return
+    with open(path) as f:
+        if "from SMESH" in f.read():
+            try:
+                import SMESH
+            except ImportError:
+                pytest.skip("SMESH not available")
+                return
     assembly = load_model(path)
     for shape in assembly:
         assert isinstance(shape.render(), TopoDS_Shape)
