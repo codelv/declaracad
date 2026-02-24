@@ -11,7 +11,6 @@ Created on Dec 26, 2020
 """
 
 import math
-import warnings
 from contextlib import contextmanager
 from typing import Any, Optional, Union
 
@@ -24,7 +23,6 @@ from OCCT.TopoDS import TopoDS_Shape
 try:
     from SMESH.SMDS import SMDS_MeshNode
 except ImportError as e:
-    warnings.warn(f"{e}")
 
     class SMDS_MeshNode:  # type: ignore
         pass

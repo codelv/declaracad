@@ -11,7 +11,6 @@ Created on Aug 3, 2021
 """
 
 import os
-import warnings
 from typing import Optional, Union
 
 from atom.api import Dict, ForwardTyped, Typed
@@ -58,9 +57,7 @@ try:
     from SMESH.SMDS import SMDS_MeshElement, SMDS_MeshNode
     from SMESH.SMESH import SMESH_Gen, SMESH_Mesh, SMESH_MeshVSLink
     from SMESH.SMESHDS import SMESHDS_Mesh
-except ImportError as e:
-    warnings.warn(f"{e}")
-
+except ImportError:
     # Dummy imports
     SMESH_Gen = object
     SMESH_Mesh = object

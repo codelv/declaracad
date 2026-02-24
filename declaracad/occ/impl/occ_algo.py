@@ -10,8 +10,6 @@ Created on Sep 27, 2016
 @author: jrm
 """
 
-import warnings
-
 from atom.api import Instance, Str, Subclass, set_default
 from OCCT.BRepAlgoAPI import (
     BRepAlgoAPI_BooleanOperation,
@@ -29,7 +27,6 @@ from OCCT.TopTools import TopTools_ListOfShape
 try:
     from OCCT.Voxel import Voxel_BooleanOperation
 except ImportError as e:
-    warnings.warn(f"{e}")
     Voxel_BooleanOperation = None
 
 from declaracad.occ.algo import (
