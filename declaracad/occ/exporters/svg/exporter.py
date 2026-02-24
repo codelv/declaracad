@@ -62,7 +62,10 @@ def circle_to_path(curve: Adaptor3d_Curve) -> str:
     length = GCPnts_AbscissaPoint.Length_(curve)
     large_arc_flag = int(length > r * pi)
     if isinstance(curve, BRepAdaptor_Curve):
-        sweep_flag = int(not Topology.is_clockwise(curve.Edge()))
+        cw = Topology.is_clockwise(curve.Edge())
+        if Topology.is_reversed(curve.Edge()):
+            cw = not cw
+        sweep_flag = int(not cw)
     else:
         sweep_flag = int(circle.Axis().Direction().Z() < 0)
     end = Point(curve.Value(v))
