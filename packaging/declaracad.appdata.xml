@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+    <id>declaracad.desktop</id>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>GPL-3.0-only</project_license>
+    <name>DeclaraCAD</name>
+    <summary>A declaraive parametric 3D modeling application</summary>
+    <description>
+        <p>
+            A declaraive parametric 3D modeling application using OpenCASCADE and python/enaml.
+        </p>
+        <p>Features:</p>
+        <ul>
+            <li>Code based CAD</li>
+            <li>3D Modeling</li>
+            <li>Basic CAM support</li>
+        </ul>
+    </description>
+    <screenshots>
+        <screenshot type="default">
+            <image>https://raw.githubusercontent.com/declaracad/declaracad/refs/heads/master/packaging/declaracad.png</image>
+        </screenshot>
+    </screenshots>
+    <url type="homepage">https://declaracad.com/</url>
+    <update_contact>frmdstryr@gmail.com</update_contact>
+</component>
