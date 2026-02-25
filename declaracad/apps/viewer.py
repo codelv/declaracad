@@ -18,7 +18,7 @@ import traceback
 import enaml
 from atom.api import Instance, Str, Typed
 
-from declaracad.console.plugin import patch_ipykernel, patch_iostream
+from declaracad.console.plugin import patch_iostream, patch_ipykernel
 from declaracad.core.app import Application
 from declaracad.core.utils import JsonRpcProtocol, RemoteLogger, log
 
@@ -150,7 +150,9 @@ def main(
     log.debug(f"Starting viewer pid={os.getpid()} cwd={os.getcwd()} port={port}")
 
     # Set default surface format to avoid OCCT warnings
+    from enaml.qt.QtCore import Qt
     from enaml.qt.QtGui import QSurfaceFormat
+    from enaml.qt.QtWidgets import QApplication
 
     surface_format = QSurfaceFormat()
     surface_format.setDepthBufferSize(24)
@@ -159,7 +161,17 @@ def main(
     surface_format.setProfile(QSurfaceFormat.CoreProfile)
     QSurfaceFormat.setDefaultFormat(surface_format)
 
+    args = ["declaracad"]
+    if sys.platform == "win32":
+        QApplication.setAttribute(Qt.AA_UseDesktopOpenGL)
+    elif "QT_QPA_PLATFORM" not in os.environ:
+        # Set platform to xcb on linux. OCCT does not yet support wayland
+        args.append("-platform")
+        args.append("xcb")
+
+    qapp = QApplication(args)
     app = Application()
+
     if not port and not os.path.exists(filename):
         raise ValueError(f"File {filename} does not exist!")
     if port and not ref:

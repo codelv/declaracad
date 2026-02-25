@@ -127,6 +127,7 @@ enamldef AnimationControl(PopupView):
                     viewer.animation.goto(value)
             maximum << len(viewer.animation.frames) if viewer.animation else 100
 
+
 enamldef ViewerWindow(FramelessWindow): window:
     #: Window title
     title = "DeclaraCAD - Viewer"

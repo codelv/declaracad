@@ -158,9 +158,7 @@ class QtViewer3d(QOpenGLWidget):
         self.setUpdateBehavior(QOpenGLWidget.UpdateBehavior.NoPartialUpdate)
         self.setBackgroundRole(QPalette.NoRole)
         self.setAttribute(Qt.WA_PaintOnScreen)
-        self.setAttribute(Qt.WA_NoSystemBackground)
-        if sys.platform == "win32":
-            QApplication.setAttribute(Qt.AA_UseDesktopOpenGL)
+        self.setAttribute(Qt.WA_OpaquePaintEvent)
 
     def scalePoint(self, x: float, y: float) -> tuple[float, float]:
         """Scale for HighDPI / Wayland screens"""
@@ -180,17 +178,15 @@ class QtViewer3d(QOpenGLWidget):
     def focusOutEvent(self, event):
         self.proxy.v3d_view.Redraw()
 
-    def paintEvent(self, event):
-        self.proxy.v3d_view.Redraw()
-
     def initializeGL(self):
         self.proxy.init_viewer()
 
-    # def paintGL(self):
-    #    self.proxy.v3d_view.Redraw()
+    def paintGL(self):
+        self.proxy.v3d_view.Redraw()
 
     # def resizeGL(self, w: int, h: int):
     #    self.proxy.v3d_view.MustBeResized()
+
     def keyPressEvent(self, event):
         if self.hasFocus():
             self.proxy.declaration.key_pressed(event)
