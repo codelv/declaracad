@@ -7,12 +7,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-import signal
-
 import enaml
 import enamlx
-from enaml.qt.qt_application import QtApplication
 
+from declaracad.core.app import Application
 from declaracad.editor.plugin import Document, EditorPlugin, install_lexers
 
 with enaml.imports():
@@ -28,10 +26,9 @@ def main(filename: str, **kwargs):
         The file path to load
     """
     enamlx.install()
-    app = QtApplication()
+    app = Application()
     plugin = EditorPlugin()
     install_lexers()
     editor = StandaloneEditor(plugin=plugin, doc=Document(name=filename, plugin=plugin))
     editor.show()
-    signal.signal(signal.SIGINT, lambda *args, **kwargs: app.stop())
     app.start()

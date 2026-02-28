@@ -33,7 +33,7 @@ def main(**kwargs):
     model = kwargs.pop("model")
     output = kwargs.pop("output")
     # An Application is required
-    Application()
+    Application(platform="xcb")
     t0 = time.time()
 
     sys.stdout.flush()

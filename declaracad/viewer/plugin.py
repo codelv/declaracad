@@ -41,19 +41,34 @@ from enaml.colors import ColorMember
 from enaml.layout.api import InsertItem
 
 from declaracad.core.api import Plugin, log
-from declaracad.core.utils import (
-    JsonRpcProtocol,
-    ProcessLineReceiver,
-    get_bootstrap_cmd,
-)
+from declaracad.fea.impl import fea_factories  # noqa: F401
 from declaracad.occ.api import Shape
 from declaracad.occ.exporters import EXPORTER_REGISTRY
+from declaracad.occ.impl import occ_factories  # noqa: F401
+from declaracad.viewer.qt import qt_factories  # noqa: F401
+
+from .protocol import JsonRpcProtocol, ProcessLineReceiver
 
 if TYPE_CHECKING:
     from declaracad.editor.plugin import Document
 
     with enaml.imports():
         from .remote import RemoteViewer, ViewerDockItem
+
+
+def get_bootstrap_cmd() -> list[str]:
+    """Get the command to the main executable depending on how it's run
+
+    Returns
+    -------
+    cmd: List[str]
+        The command to run declaracad
+    """
+    is_frozen = getattr(sys, "frozen", False)
+    cmd = [sys.executable]
+    if not sys.executable.endswith("declaracad") and not is_frozen:
+        cmd.extend(["-m", "declaracad"])
+    return cmd
 
 
 def remote_env(platform: str):

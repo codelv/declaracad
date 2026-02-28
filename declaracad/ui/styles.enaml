@@ -12,7 +12,8 @@ from enaml.stdlib.dock_area_styles import (
     TabBarTabStyle, TitleBarLabelStyle, TitleBarButtonStyle
 )
 from enaml.qt.docking.xbms import TAB_BUTTON
-from enaml.qt.QtWidgets import QWidget
+from enaml.qt.QtGui import QColor
+from enaml.qt.QtWidgets import QApplication
 
 CACHE = {}
 
@@ -20,9 +21,9 @@ CACHE = {}
 def get_system_color(name='window'):
     color = CACHE.get(name)
     if color is None:
-        palette = QWidget().palette()
+        palette = QApplication.palette()
         qcolor = getattr(palette, name)().color()
-        color = CACHE[name] = qcolor.name(qcolor.HexArgb)
+        color = CACHE[name] = qcolor.name(QColor.HexArgb)
     return color
 
 

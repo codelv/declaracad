@@ -208,9 +208,9 @@ enamldef CommView(Container): view:
             enabled << bool(device and device.connected)
             placeholder << "Enter a command.." if enabled else "Disconnected... reconnect first."
             tool_tip = "Press enter to send"
-            KeyEvent:
-                keys = ['return']
-                released :: send_text()
+            #KeyEvent:
+            #    keys = ['return']
+            #    released :: send_text()
             KeyEvent:
                 released ::
                     code = change['value']['code']

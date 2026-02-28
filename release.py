@@ -18,7 +18,6 @@ from glob import glob
 from os.path import dirname, split, exists
 from cx_Freeze import setup, Executable
 
-
 def find_enaml_files(*modules):
     """ Find .enaml files to include in the zip """
     files = {}
@@ -70,17 +69,6 @@ def find_extra_libs():
         dest = os.path.join('lib', lib)
         results.append((filename, dest))
 
-    if sys.platform == "linux":
-        # Copy lib for QtXcbQpa plugin
-        import PyQt6
-        qt_libs = os.path.join(PyQt6.__path__[0], 'Qt6', 'lib')
-        dest = os.path.join('lib', '')
-        for filename in glob(f"{qt_libs}/libQt6XcbQpa.so*"):
-            lib = os.path.split(filename)[-1]
-            results.append((filename, f'lib/PyQt6/Qt6/lib/{lib}'))
-        "PyQt6/Qt6/lib/libQt6XcbQpa.so.6"
-        # include lib
-
     assert results, "No occt libraries found!"
     return results
 
@@ -103,7 +91,6 @@ with enaml.imports():
                     'declaracad',
                     'enaml',
                     'enamlx',
-                    'PyQt6.QtOpenGL',
                     # 'enaml.core.compiler_helpers',
                     # 'enaml.core.template_',
                     # 'enaml.scintilla.api',
@@ -116,7 +103,7 @@ with enaml.imports():
                     'html.parser',
                     'pygments',
                     'ipykernel',
-                    'zmq.utils.garbage',
+                    'zmq.utils.garbage', # Needed for embedded qt console
                 ],
                 zip_include_packages=[
                     'asyncqt', 'asyncio', 'attr',

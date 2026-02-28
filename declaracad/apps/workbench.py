@@ -10,8 +10,6 @@ Created on Dec 6, 2015
 @author: jrm
 """
 
-import signal
-
 import enaml
 import enamlx
 
@@ -36,12 +34,6 @@ def main(**kwargs):
     # Start the workbench
     log.info("Workbench starting")
     workbench = DeclaracadWorkbench()
-
-    # Make sure ^C keeps working and does a proper shutdown
-    def quit(*args):
-        workbench.invoke_command("enaml.workbench.ui.close_window")
-
-    signal.signal(signal.SIGINT, quit)
 
     # Register plugins
     workbench.register(DeclaracadManifest())

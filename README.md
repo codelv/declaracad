@@ -7,4 +7,4 @@ See the new website at [declaracad.com](https://declaracad.com)
 
 ## License
 
-The application is released under the GPL v3 (due to the use of PyQt5 and QScintilla).
+The application is released under the GPL v3.

@@ -24,6 +24,7 @@ from declaracad.ui.extensions import (
     DOCK_ITEM_POINT, DockItem, SETTINGS_PAGE_POINT, SettingsPage
 )
 
+from .plugin import EditorPlugin
 
 def plugin_command(name: str, event: ExecutionEvent):
     editor = event.workbench.get_plugin('declaracad.editor')
@@ -196,7 +197,6 @@ def get_examples() -> dict[str, list[str]]:
 
 
 def plugin_factory():
-    from .plugin import EditorPlugin
     return EditorPlugin()
 
 

@@ -10,7 +10,7 @@ Created on Dec 7, 2017
 @author: jrm
 """
 
-from atom.api import Bool, ForwardTyped, Instance, Int, Typed, set_default
+from atom.api import Bool, Event, ForwardTyped, Instance, Int, Typed, set_default
 from enaml.core.declarative import d_
 from enaml.qt.qt_factories import QT_FACTORIES
 from enaml.qt.qt_window import QtWindow
@@ -89,7 +89,7 @@ class EmbeddedWindow(RawWidget):
 
     def create_widget(self, parent):
         window = QWindow.fromWinId(self.window_id)
-        return QWidget.createWindowContainer(window, parent=parent)
+        return QWidget.createWindowContainer(window, parent)
 
 
 class PlainTextEdit(RawWidget):

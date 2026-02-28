@@ -10,6 +10,7 @@ Created on Dec 10, 2015
 
 @author: jrm
 """
+
 from atom.api import Str
 
 from declaracad.core.api import Plugin

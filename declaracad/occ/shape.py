@@ -10,6 +10,7 @@ Created on Sep 30, 2016
 
 @author: jrm
 """
+
 from math import pi
 from typing import Any, ClassVar, Optional, Union
 

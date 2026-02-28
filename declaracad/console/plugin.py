@@ -10,6 +10,7 @@ Created on Dec 10, 2015
 
 @author: jrm
 """
+
 import asyncio
 
 from declaracad.core.api import Plugin
@@ -36,7 +37,7 @@ def patch_iostream():
         if self._event_pipe_gc_task is not None:
             # cancel gc task to avoid pending task warnings
             async def _cancel():
-                self._event_pipe_gc_task.cancel()  # type:ignore[union-attr]
+                self._event_pipe_gc_task.cancel()  # type: ignore[union-attr]
 
             if not self._stopped:
                 self.io_loop.run_sync(_cancel)

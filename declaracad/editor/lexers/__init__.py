@@ -11,32 +11,32 @@ Created on June, 24 2021
 """
 
 from atom.api import Validate
-from enaml.qt import scintilla_lexers, scintilla_tokens
 from enaml.scintilla.api import Scintilla
 
 from declaracad.editor.themes import THEMES
 
-from .gcode import QsciLexerGCode
-
-CUSTOM_LEXERS = {
-    "gcode": QsciLexerGCode,
-}
-
-
-class EnamlLexer(scintilla_lexers.EnamlLexer):
-    def keywords(self, kwset):
-        from declaracad.occ import api
-
-        kwds = super().keywords(kwset)
-        # kwset == 1 are things like if, and, else, etc..
-        # kwset == 2 are builtins but don't seem to be used for anything
-        if kwset == 1:
-            kwds += " " + " ".join([a for a in dir(api) if not a.startswith("_")])
-        return kwds
+CUSTOM_LEXERS = {}
 
 
 def install_lexers():
     """Update enaml's editor"""
+    return
+    from enaml.qt import scintilla_lexers, scintilla_tokens
+
+    from .gcode import QsciLexerGCode
+
+    CUSTOM_LEXERS["gcode"] = QsciLexerGCode
+
+    class EnamlLexer(scintilla_lexers.EnamlLexer):
+        def keywords(self, kwset):
+            from declaracad.occ import api
+
+            kwds = super().keywords(kwset)
+            # kwset == 1 are things like if, and, else, etc..
+            # kwset == 2 are builtins but don't seem to be used for anything
+            if kwset == 1:
+                kwds += " " + " ".join([a for a in dir(api) if not a.startswith("_")])
+            return kwds
 
     items = list(Scintilla.syntax.items)
 

@@ -12,23 +12,81 @@ Created on Aug 24, 2020
 
 import asyncio
 import logging
-from inspect import iscoroutinefunction
+import os
+import signal
+import sys
+from inspect import iscoroutine, iscoroutinefunction
 from queue import Empty, Queue
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from asyncqtpy import QEventLoop, QEventLoopPolicy
-from atom.api import Bool, Instance
+from atom.api import Bool, Instance, Typed
+from enaml.qt import QT_API
 from enaml.qt.qt_application import QtApplication
+from enaml.qt.QtCore import QTimer
+from enaml.qt.QtWidgets import QApplication
 
 from declaracad.core.utils import log
-from declaracad.fea.impl import fea_factories  # noqa: F401
-from declaracad.occ.impl import occ_factories  # noqa: F401
-from declaracad.viewer.qt import qt_factories  # noqa: F401
 
-asyncio.set_event_loop_policy(QEventLoopPolicy())
+
+def init_qapp(platform: Optional[str] = None):
+    """Initialize the QApplication and configure the platform and library paths.
+
+    Parameters
+    ----------
+    platform: str | None
+        Specifies the Qt platform unless QT_QPA_PLATFORM is defined. This is unused on windows.
+
+    """
+    args = ["declaracad"]
+    if sys.platform == "win32":
+        QApplication.setAttribute(Qt.AA_UseDesktopOpenGL)
+    elif "QT_QPA_PLATFORM" not in os.environ and platform is not None:
+        # Set platform to xcb on linux. OCCT does not yet support wayland
+        args.append("-platform")
+        args.append(platform)
+
+    is_frozen = getattr(sys, "frozen", False)
+    if is_frozen:
+        # Workaround an issue with frozen Qt not properly loading plugins
+        if "side" in QT_API:
+            from PySide6 import QtCore
+        else:
+            from PyQt6 import QtCore
+        qt_lib_dir = os.path.dirname(QtCore.__file__)
+        plugins_dir = os.path.join(qt_lib_dir, "plugins")
+        QApplication.addLibraryPath(plugins_dir)
+
+    log.debug(f"QApp init {args}")
+    return QApplication(args)
 
 
 class Application(QtApplication):
+    """ """
+
+    interp_timer = Typed(QTimer)
+
+    def __init__(self, platform: Optional[str] = None):
+        init_qapp(platform)
+        super().__init__()
+        self.init_sigint()
+
+    def init_sigint(self):
+        """Add sigint handler"""
+        signal.signal(signal.SIGINT, lambda sig, frame: self.stop())
+        # Timer makes it close with Ctrl+C without needing focus/click
+        # See https://stackoverflow.com/questions/4938723/
+        timer = self.interp_timer = QTimer()
+        timer.timeout.connect(lambda: None)
+        timer.start(500)
+
+    def stop(self):
+        """Stop the application"""
+        log.debug("App stopped")
+        super().stop()
+
+
+class AsyncApplication(Application):
     """Add asyncio support . Seems like a complete hack compared to twisted
     but whatever.
 
@@ -38,8 +96,9 @@ class Application(QtApplication):
     queue = Instance(Queue, ())
     running = Bool()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, platform: Optional[str] = None):
+        super().__init__(platform)
+        asyncio.set_event_loop_policy(QEventLoopPolicy())
         assert self.loop is not None
 
         # Set logger level
@@ -66,17 +125,22 @@ class Application(QtApplication):
     def stop(self):
         """Stop the application"""
         self.running = False
+        self.queue.put(None)
         super().stop()
 
     async def main(self):
         """Run any async deferred calls in the main ui loop."""
         while self.running:
             try:
-                await self.queue.get(block=False)
+                task = self.queue.get(block=False)
+                if task is None:
+                    break
+                await task
             except Empty:
                 await asyncio.sleep(0.1)
             # except Exception as e:
             #    log.exception(e)
+        log.debug("Main finished")
 
     def on_async_exception(self, loop, context):
         """Exception handler that ignores"""
@@ -104,8 +168,12 @@ class Application(QtApplication):
 
         """
         if iscoroutinefunction(callback) or kwargs.pop("async_", None):
-            task = asyncio.create_task(callback(*args, **kwargs))
-            return self.queue.put(task)
+
+            async def deferred_task():
+                task = self.loop.create_task(callback(*args, **kwargs))
+                self.queue.put(task)
+
+            return self.queue.put(deferred_task())
         return super().deferred_call(callback, *args, **kwargs)
 
     def timed_call(self, ms: float, callback: Callable, *args: Any, **kwargs: Any):
@@ -127,6 +195,10 @@ class Application(QtApplication):
 
         """
         if iscoroutinefunction(callback) or kwargs.pop("async_", None):
-            task = asyncio.create_task(callback(*args, **kwargs))
-            return super().timed_call(ms, self.queue.put, task)
+
+            async def deferred_task():
+                task = self.loop.create_task(callback(*args, **kwargs))
+                self.queue.put(task)
+
+            return super().timed_call(ms, self.queue.put, deferred_task())
         return super().timed_call(ms, callback, *args, **kwargs)

@@ -13,12 +13,11 @@ import inspect
 from atom.api import Enum
 from enaml.core.api import Looper, Conditional
 from enaml.widgets.api import  Container, Menu, Action, WebView
-from enaml.scintilla.api import Scintilla
 from enamlx.widgets.api import TreeView, TreeViewItem, TreeViewColumn
 from declaracad.core.api import DockItem
 from declaracad.core.utils import load_icon
+from declaracad.editor.widgets import CodeEditor
 from declaracad.editor.themes import THEMES
-
 
 
 enamldef DocsDockItem(DockItem):
@@ -34,7 +33,7 @@ enamldef DocsDockItem(DockItem):
                 url << plugin.url
         Conditional:
             condition << not plugin.url
-            Scintilla:
+            CodeEditor:
                 hug_height = 'ignore'
                 hug_width = 'ignore'
                 minimum_size = (320, 320)

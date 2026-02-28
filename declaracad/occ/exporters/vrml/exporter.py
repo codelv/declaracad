@@ -23,14 +23,10 @@ from declaracad.viewer.plugin import ModelExporter
 
 class VrmlExporter(ModelExporter):
     extension = "vrml"
-    deflection = Float(-1, strict=False).tag(
-        help=dedent(
-            """
+    deflection = Float(-1, strict=False).tag(help=dedent("""
         The default value is -1. When the deflection value is less than 0,
         the deflection is calculated from the relative size of the shape.
-        """.strip()
-        )
-    )
+        """.strip()))
     version = Enum(2, 1)
     representation = Enum("both", "shaded", "wire-frame")
 

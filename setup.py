@@ -26,12 +26,9 @@ requirements = [
     "asyncqtpy",  # asyncio + qt
     "pyserial>=3.5",
     "lxml",
-    "PyQt6",
-    "PyQt6-QScintilla",
-    #'PyQt6-WebEngine',
+    "pyqcodeeditor", # text editor
     "ezdxf",
     "pdf4py",
-    "ply", # lexers
 ]
 
 

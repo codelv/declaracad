@@ -10,3 +10,6 @@ dependencies:
  - cxx-compiler
  - pybind11
  - pyocct >=7.9
+ - pyside6
+ - qt6-wayland
+ - cx_Freeze

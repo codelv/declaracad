@@ -13,7 +13,7 @@ import sys
 from enaml.workbench.api import Extension, PluginManifest
 from enaml.workbench.ui.api import ActionItem, MenuItem, ItemGroup, Autostart
 
-from .app import Application, log
+from .app import AsyncApplication, log
 
 
 def application_factory():
@@ -21,7 +21,7 @@ def application_factory():
     and installs asyncio support.
     """
     log.info("Create app")
-    return Application()
+    return AsyncApplication(platform="xcb")
 
 
 def window_factory(workbench):

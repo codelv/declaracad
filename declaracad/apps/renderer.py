@@ -11,8 +11,8 @@ import os
 import re
 
 import enaml
-from enaml.qt.qt_application import QtApplication
 
+from declaracad.core.app import Application
 from declaracad.occ.impl import occ_factories  # noqa: F401
 from declaracad.viewer.qt import qt_factories  # noqa: F401
 
@@ -20,7 +20,7 @@ with enaml.imports():
     from declaracad.viewer.offscreen import OccViewer, OffscreenRenderer
 
 
-def export(app: QtApplication, viewer: OccViewer, output: str, **kwargs):
+def export(app: Application, viewer: OccViewer, output: str, **kwargs):
     """Initialize the viewer, take the screenshot and then stop the app"""
     viewer.proxy.init_viewer()
 
@@ -53,7 +53,7 @@ def main(
         The size of the image in the format "widthxheight"
 
     """
-    app = QtApplication()
+    app = Application(platform="xcb")
     if not os.path.exists(filename):
         raise ValueError("File %s does not exist!" % filename)
     if not output:

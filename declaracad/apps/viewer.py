@@ -18,9 +18,10 @@ import traceback
 import enaml
 from atom.api import Instance, Str, Typed
 
-from declaracad.console.plugin import patch_iostream, patch_ipykernel
-from declaracad.core.app import Application
-from declaracad.core.utils import JsonRpcProtocol, RemoteLogger, log
+from declaracad.console.plugin import ConsolePlugin
+from declaracad.core.app import AsyncApplication as Application
+from declaracad.core.utils import log
+from declaracad.viewer.protocol import JsonRpcProtocol, RemoteLogger
 
 with enaml.imports():
     from declaracad.viewer.standalone import ViewerWindow
@@ -96,6 +97,7 @@ async def run_remote(
 
     """
     try:
+        log.debug("Running remove viewer")
         assert app.loop is not None
         transport, protocol = await app.loop.create_connection(
             lambda: ViewerProtocol(app=app, view=view, ref=ref), "127.0.0.1", port
@@ -111,6 +113,7 @@ async def run_remote(
 
 async def run_local(app: Application, view: ViewerWindow, filename: str, watch: bool):
     """Set the filename for the viewer to load and watch for changes"""
+    log.debug("Running local viewer")
     view.filename = filename
     if not watch:
         return
@@ -152,7 +155,6 @@ def main(
     # Set default surface format to avoid OCCT warnings
     from enaml.qt.QtCore import Qt
     from enaml.qt.QtGui import QSurfaceFormat
-    from enaml.qt.QtWidgets import QApplication
 
     surface_format = QSurfaceFormat()
     surface_format.setDepthBufferSize(24)
@@ -161,16 +163,7 @@ def main(
     surface_format.setProfile(QSurfaceFormat.CoreProfile)
     QSurfaceFormat.setDefaultFormat(surface_format)
 
-    args = ["declaracad"]
-    if sys.platform == "win32":
-        QApplication.setAttribute(Qt.AA_UseDesktopOpenGL)
-    elif "QT_QPA_PLATFORM" not in os.environ:
-        # Set platform to xcb on linux. OCCT does not yet support wayland
-        args.append("-platform")
-        args.append("xcb")
-
-    qapp = QApplication(args)
-    app = Application()
+    app = Application(platform="xcb")
 
     if not port and not os.path.exists(filename):
         raise ValueError(f"File {filename} does not exist!")
@@ -178,8 +171,8 @@ def main(
         raise ValueError("A ref is required when port is given")
 
     # Required for embedded console
-    patch_iostream()
-    patch_ipykernel()
+    plugin = ConsolePlugin()
+    plugin.start()  # patch
 
     view = ViewerWindow(filename="-", frameless=bool(port))
     view.show()

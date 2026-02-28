@@ -19,7 +19,7 @@ from enaml.qt.q_resource_helpers import get_cached_qcolor
 from enaml.qt.QtCore import Qt
 
 from enaml.layout.api import vbox, hbox, align
-from enaml.scintilla.api import Scintilla, ScintillaIndicator, ScintillaMarker
+#from enaml.scintilla.api import Scintilla, ScintillaIndicator, ScintillaMarker
 from enaml.scintilla.mono_font import MONO_FONT
 from enaml.widgets.api import (
     Container, Timer, MultilineField, Menu, Action, PopupView, Label,
@@ -32,6 +32,7 @@ from declaracad.core.utils import load_icon, load_image, log
 from declaracad.core.widgets import PlainTextEdit
 from .themes import THEMES
 from .plugin import Document, format_title
+from .widgets import CodeEditor
 
 
 
@@ -260,7 +261,7 @@ enamldef EditorFindBar(Container): bar:
 
 
 
-enamldef Editor(Scintilla): editor:
+enamldef Editor(CodeEditor): editor:
     hug_height = 'ignore'
     hug_width = 'ignore'
     syntax << plugin.detect_syntax(doc.name)
@@ -293,7 +294,7 @@ enamldef Editor(Scintilla): editor:
     activated ::
         set_text(doc.source)
         w = self.proxy.widget
-        w.indicatorReleased.connect(self.on_indicator_clicked)
+        #w.indicatorReleased.connect(self.on_indicator_clicked)
         update_settings()
 
     func update_settings():
@@ -316,25 +317,25 @@ enamldef Editor(Scintilla): editor:
 
     func set_code_folding():
         w = self.proxy.widget
-        style = w.FoldStyle.NoFoldStyle
-        if plugin.code_folding:
-            name = plugin.code_fold_style.title().replace('-', '')
-            style = getattr(w.FoldStyle, f'{name}FoldStyle')
-        w.setFolding(style)
+        # style = w.FoldStyle.NoFoldStyle
+        # if plugin.code_folding:
+        #     name = plugin.code_fold_style.title().replace('-', '')
+        #     style = getattr(w.FoldStyle, f'{name}FoldStyle')
+        # w.setFolding(style)
 
     func set_margin_colors():
         w = self.proxy.widget
         bg = get_cached_qcolor(parse_color(theme['settings']['paper']))
         fg = get_cached_qcolor(parse_color(theme['settings']['color']))
-        w.setMarginsBackgroundColor(bg)
-        w.setFoldMarginColors(bg, bg)
-        w.setMarginsForegroundColor(fg)
+        #w.setMarginsBackgroundColor(bg)
+        #w.setFoldMarginColors(bg, bg)
+        #w.setMarginsForegroundColor(fg)
 
     func set_show_scrollbars():
         w = self.proxy.widget
         policy = Qt.ScrollBarAsNeeded if plugin.show_scrollbars else Qt.ScrollBarAlwaysOff
-        w.setHorizontalScrollBarPolicy(policy)
-        w.setVerticalScrollBarPolicy(policy)
+        #w.setHorizontalScrollBarPolicy(policy)
+        #w.setVerticalScrollBarPolicy(policy)
 
     func get_comment_token():
         if not doc.name:
@@ -604,6 +605,7 @@ enamldef OutputDockItem(DockItem):
     closed :: active_document.unobserve('output', watch_output)
     attr active_document << plugin.active_document
     attr documents_observed: list = []
+    alias output
     active_document :: rebind(change)
 
     func rebind(change):

@@ -19,6 +19,7 @@ from declaracad.ui.extensions import (
     DOCK_ITEM_POINT, DockItem, SETTINGS_PAGE_POINT, SettingsPage
 )
 
+from .plugin import ViewerPlugin
 
 def plugin_command(name: str, event: ExecutionEvent):
     """ Delegate the command to the plugin
@@ -54,7 +55,6 @@ def screenshot(event: ExecutionEvent):
 
 
 def plugin_factory():
-    from .plugin import ViewerPlugin
     return ViewerPlugin()
 
 

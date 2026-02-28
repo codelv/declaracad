@@ -43,6 +43,7 @@ from enaml.workbench.core.execution_event import ExecutionEvent
 from declaracad.core.api import Model, Plugin, log
 
 from .lexers import install_lexers  # Install lexer
+from .qt import qt_factories
 from .themes import THEMES
 
 
@@ -440,16 +441,14 @@ class EditorPlugin(Plugin):
             path = os.path.join(self.project_path, path)
         doc = Document(
             name=path,
-            source=dedent(
-                """
+            source=dedent("""
                 # Created in DeclaraCAD
                 from declaracad.occ.api import *
 
                 enamldef Assembly(Part):
                     Box:
                         pass
-                """
-            ).lstrip(),
+                """).lstrip(),
         )
         self.documents.append(doc)
         self.active_document = doc
