@@ -8,7 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 """
 
 import pytest
-from enaml.qt.qt_application import QtApplication
+from declaracad.core.app import Application
 
 # Make sure it installs
 from declaracad.occ.impl import occ_factories  # noqa: F401
@@ -17,9 +17,9 @@ from declaracad.occ.impl import occ_factories  # noqa: F401
 @pytest.fixture(scope="session")
 def qt_app():
     """Make sure a QtApplication is active."""
-    app = QtApplication.instance()
+    app = Application.instance()
     if app is None:
-        app = QtApplication()
+        app = Application()
         yield app
         app.stop()
     else:
