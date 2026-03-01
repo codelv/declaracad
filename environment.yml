@@ -11,5 +11,5 @@ dependencies:
  - pybind11
  - pyocct >=7.9
  - pyside6
- - qt6-wayland
+ - qt6-wayland # [linux]
  - cx_Freeze
