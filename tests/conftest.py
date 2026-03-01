@@ -8,6 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 """
 
 import pytest
+
 from declaracad.core.app import Application
 
 # Make sure it installs

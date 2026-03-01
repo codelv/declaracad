@@ -14,6 +14,7 @@ import sys
 import enaml
 import importlib
 import declaracad
+import shutil
 from glob import glob
 from os.path import dirname, split, exists
 from cx_Freeze import setup, Executable
@@ -72,8 +73,16 @@ def find_extra_libs():
     assert results, "No occt libraries found!"
     return results
 
-
 is_windows = sys.platform == 'win32'
+
+
+def cleanup():
+    if is_windows:
+        return
+    shutil
+
+
+
 
 with enaml.imports():
     setup(
@@ -91,13 +100,6 @@ with enaml.imports():
                     'declaracad',
                     'enaml',
                     'enamlx',
-                    # 'enaml.core.compiler_helpers',
-                    # 'enaml.core.template_',
-                    # 'enaml.scintilla.api',
-                    # 'enaml.workbench.core.api',
-                    # 'enaml.workbench.core.core_plugin',
-                    # 'enaml.workbench.ui.ui_plugin',
-                    # 'enamlx.widgets.api',
                     "parso",  "jedi", # Needed outsize of zip for autocomplete to work
                     'markdown',
                     'html.parser',
@@ -106,30 +108,37 @@ with enaml.imports():
                     'zmq.utils.garbage', # Needed for embedded qt console
                 ],
                 zip_include_packages=[
-                    'asyncqt', 'asyncio', 'attr',
-                    'backcall', 'bytecode',
+                    'asttokens',
+                    'asyncqtpy',
+                    'asyncio',
+                    'attr',
+                    'backcall',
+                    'bytecode',
                     'curses', 'chardet', 'collections', 'concurrent', 'ctypes',
-                    'colorama',
+                    'colorama', 'comm',
                     'dateutil', 'distutils', 'docutils',
                     'email',
-                    'enamlx',
+                    'executing',
                     'encodings',
                     'ezdxf',
-                    'http',
+                    'http', 'html', 'fontTools',
                     'IPython', 'ipython_genutils', 'ipykernel',
                     'importlib', 'importlib_metadata',
                     'json', 'jsonpickle', 'jupyter_client', 'jupyter_core',
                     'jinja2',
                     'logging',
                     'numpydoc',
-                    'multiprocessing',
-                    'pygments',  'pluggy', 'prompt_toolkit',
-                    'pytz', 'pydoc_data', 'pycparser', 'ptyprocess', 'pkg_resources',
+                    'multiprocessing', 'markdown',
+                    'pathlib', 'pdf4py', 'pygments',  'pluggy', 'prompt_toolkit', 'packaging',
+                    'pytz', 'pydoc_data', 'pycparser', 'ptyprocess', 'pkg_resources', 'platformdirs',
+                    'pyparsing',
                     'qtpy', 'qtconsole',
-                    'sqlite3', 'sphinx', 'serial', 'scipy',
-                    'traitlets', 'tornado', 'toml', 'test',
+                    're',
+                    'sqlite3', 'sphinx', 'serial', 'scipy', 'stack_data', 'sysconfig',
+                    'traitlets', 'tornado', 'toml', 'test', 'tomlib',
                     'unittest', 'urllib',
                     'wcwidth',
+                    'zipfile',
                     'xml', 'xmlrpc',
                     '_distutils_hack',
                 ],
@@ -140,7 +149,7 @@ with enaml.imports():
                     'babel',
                     'wx',
                     'tkinter',
-                    'matplotlib',
+                    'matplotlib', 'matplotlib_inline',
                     'lib2to3',
                     'enamlx.qt.qt_occ_viewer',
                     'zmq.eventloop.minitornado',
