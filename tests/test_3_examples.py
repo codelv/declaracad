@@ -30,14 +30,14 @@ def test_example(qt_app, path: str):
         return
     if "chamfer_profile" in path:
         try:
-            from OCCT.ChFi3d import ChFi3d_Linear
+            from OCCT.ChFi3d import ChFi3d_Linear  # noqa: F401
         except ImportError:
             pytest.skip("ChFi3d_Linear profile not available")
             return
     with open(path) as f:
         if "from SMESH" in f.read():
             try:
-                import SMESH
+                import SMESH  # noqa: F401
             except ImportError:
                 pytest.skip("SMESH not available")
                 return

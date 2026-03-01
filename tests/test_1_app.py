@@ -17,14 +17,14 @@ import pytest
 
 try:
     from OCCT import OpenGl  # noqa: F401
+
     opengl_unavailable = False
 
     if "CI" in os.environ and sys.platform != "win32":
-        opengl_unavailable = True # Disable
+        opengl_unavailable = True  # Disable
 
 except ImportError:
     opengl_unavailable = True
-
 
 
 @pytest.mark.skipif(opengl_unavailable, reason="OpenGL not available")
