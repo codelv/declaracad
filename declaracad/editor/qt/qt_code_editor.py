@@ -1,35 +1,32 @@
-# Ripped from enaml's qt_scintilla'
-import logging
-import sys
+# ------------------------------------------------------------------------------
+# Copyright (c) 2026, Jairus Martin.
+# Copyright (c) 2013-2025, Nucleic Development Team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file LICENSE, distributed with this software.
+# ------------------------------------------------------------------------------
+
 import weakref
 
 from atom.api import Typed, Value
 from enaml.colors import parse_color
 from enaml.fonts import parse_font
-from enaml.qt import PYQT6_API, QT_API
 from enaml.qt.q_resource_helpers import (
     QColor_from_Color,
     QFont_from_Font,
-    get_cached_qimage,
 )
 from enaml.qt.qt_control import QtControl
-from enaml.qt.QtCore import QRect, QSize, Qt
+from enaml.qt.QtCore import Qt
 from enaml.qt.QtGui import (
     QColor,
     QFont,
-    QPainter,
-    QPalette,
-    QPen,
-    QResizeEvent,
     QWheelEvent,
 )
-from enaml.qt.QtWidgets import QApplication, QPlainTextEdit, QWidget
 from pyqcodeeditor.QCodeEditor import QCodeEditor as BaseQCodeEditor
 
+from declaracad.editor.syntaxes import SYNTAXES
 from declaracad.editor.widgets import ProxyCodeEditor
-
-# from .scintilla_lexers import LEXERS, LEXERS_INV
-# from .scintilla_tokens import TOKENS
 
 
 def _make_color(color_str: str) -> QColor:
@@ -48,93 +45,14 @@ def _make_font(font_str: str) -> QFont:
     return QFont()
 
 
-class QLineNumberArea(QWidget):
-    def __init__(self, parent: "QCodeEditor"):
-        self.editor = parent
-        super().__init__(parent)
-
-    def sizeHint(self) -> QSize:
-        return QSize(self.editor.lineNumberAreaWidth(), 0)
-
-    def paintEvent(self, event):
-        self.editor.lineNumberPaintEvent(event)
-
-
 class QCodeEditor(BaseQCodeEditor):
     zoomLevel: int = 0
-    # def __init__(self, parent):
-    #     super().__init__(parent)
-    #     self.lineNumberArea = QLineNumberArea(self)
-    #     self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
-    #     self.updateRequest.connect(self.updateLineNumberArea)
-    #     self.cursorPositionChanged.connect(self.highlightCurrentLine)
-    #     palette = QApplication.palette()
-    #     self.zoomLevel: int = 0
-    #     self.lineNumberAreaPadding: int = 10
-    #     self.lineNumberAreaBackground = palette.alternateBase()
-    #     self.lineNumberAreaTextBrush = palette.brightText()
-    #     self.updateLineNumberAreaWidth(0)
-    #     self.highlightCurrentLine()
-    #     self.setBackgroundVisible(True)
-    #
-    # def setPaper(self, color: QColor):
-    #     self.palette().setColor(QPalette.Base, color)
-    #
-    # def setColor(self, color: QColor):
-    #     self.palette().setColor(QPalette.Text, color)
-    #
-    # def lineNumberAreaWidth(self) -> int:
-    #     digits = 1
-    #     n = max(1, self.blockCount())
-    #     while n >= 10:
-    #         n /= 10
-    #         digits += 1
-    #     return self.lineNumberAreaPadding + self.fontMetrics().width('9') * digits
-    #
-    # def updateLineNumberAreaWidth(self, block_count: int):
-    #     self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
-    #
-    # def highlightCurrentLine(self):
-    #     pass
-    #
-    # def updateLineNumberArea(self, rect: QRect, dy: int):
-    #     lna = self.lineNumberArea
-    #     if dy:
-    #         lna.scroll(0, dy)
-    #     else:
-    #         lna.update(0, rect.y(), lna.width(), rect.height())
-    #
-    #     if rect.contains(self.viewport().rect()):
-    #         self.updateLineNumberAreaWidth(0)
-    #
-    # def lineNumberPaintEvent(self, event):
-    #     region = event.rect()
-    #     lna = self.lineNumberArea
-    #     painter = QPainter(self.lineNumberArea)
-    #     painter.fillRect(region, self.lineNumberAreaBackground)
-    #     block = self.firstVisibleBlock()
-    #     block_number = block.blockNumber()
-    #     top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
-    #     bottom = top + self.blockBoundingRect(block).height()
-    #
-    #     painter.setBrush(self.lineNumberAreaTextBrush)
-    #     w = self.lineNumberArea.width()-self.lineNumberAreaPadding/2
-    #     h = self.fontMetrics().height()
-    #     region_top = region.top()
-    #     region_bottom = region.bottom()
-    #     while block.isValid() and top <= region_bottom:
-    #         if block.isVisible() and bottom >= region_top:
-    #             painter.drawText(0, top, w, h, Qt.AlignRight, f"{block_number + 1}")
-    #
-    #         block = block.next()
-    #         top = bottombottom = top + self.blockBoundingRect(block).height()
-    #         block_number += 1
-    #
-    # def resizeEvent(self, event: QResizeEvent):
-    #     super().resizeEvent(event)
-    #     cr = self.contentsRect()
-    #     w = self.lineNumberAreaWidth()
-    #     self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), w, cr.height()))
+
+    def selectAll(self, enabled: bool = True):
+        if enabled:
+            super().selectAll()
+        else:
+            super().textCursor().clearSelection()
 
     def wheelEvent(self, event: QWheelEvent):
         """Overridden to use ctrl + mouse wheel to zoom"""
@@ -233,8 +151,6 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         if d is not None:
             d.text_changed()
 
-            self.refresh_line_number_width()
-
     def on_cursor_position_changed(self):
         """Handle the 'cursorPositionChanged' signal on the widget."""
         d = self.declaration
@@ -312,16 +228,6 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         if d.autocomplete in ["api", "all"] and d.autocompletions:
             self.set_autocompletions(d.autocompletions)
 
-    def refresh_line_number_width(self):
-        """When the number of lines changes update the width accordingly.
-        Always shows one more than the width of the number of lines.
-
-        """
-        w = self.widget
-        # Only update it if show_line_numbers=True
-        # if w.marginWidth(NUMBER_MARGIN) > 0:
-        #    w.setMarginWidth(NUMBER_MARGIN, "0"+str(max(10, w.lines())))
-
     def get_indicator_style_id(self, indicator):
         """Get the indicator style id for this indicator. The key
         is simply the style and fg color.
@@ -329,9 +235,10 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         If the key does not exist, define a new style.
 
         """
-        style = "{},{}".format(indicator.style, indicator.color)
+        style = f"{indicator.style},{indicator.color}"
         if style not in self._indicator_styles:
             w = self.widget
+            assert w is not None
             # style_id = w.indicatorDefine(INDICATOR_STYLE[indicator.style])
             # w.setIndicatorForegroundColor(_make_color(indicator.color),
             #                              style_id)
@@ -340,7 +247,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         return self._indicator_styles[style]
 
     # --------------------------------------------------------------------------
-    # ProxyScintilla API
+    # ProxyCodeEditor API
     # --------------------------------------------------------------------------
     def set_document(self, document):
         """Set the document on the underlying widget."""
@@ -349,18 +256,12 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
     def set_syntax(self, syntax, refresh_style=True):
         """Set the syntax on the underlying widget."""
         # The old lexer will remain as a child unless deleted.
-        if syntax == "python":
-            from pyqcodeeditor.completers import QPythonCompleter
-            from pyqcodeeditor.highlighters import QPythonHighlighter
-
-            self.widget.setHighlighter(QPythonHighlighter())
-            self.widget.setCompleter(QPythonCompleter())
-        elif syntax == "enaml":
-            from ..completers import QEnamlCompleter
-            from ..highlighters import QEnamlHighlighter
-
-            self.widget.setHighlighter(QEnamlHighlighter())
-            self.widget.setCompleter(QEnamlCompleter())
+        Completer = None
+        Highlighter = None
+        if syntax in SYNTAXES:
+            Completer, Highlighter = SYNTAXES[syntax]()
+        self.widget.setHighlighter(Highlighter() if Highlighter is not None else None)
+        self.widget.setCompleter(Completer() if Completer is not None else None)
 
     def set_theme(self, theme):
         """Set the styling theme for the widget."""
@@ -372,8 +273,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
 
     def set_zoom(self, zoom):
         """Set the zoom factor on the widget."""
-        # self.widget.zoomTo(zoom)
-        pass
+        self.widget.zoomTo(zoom)
 
     def get_text(self):
         """Get the text in the document."""

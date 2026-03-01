@@ -109,7 +109,6 @@ class OccWire(OccDependentShape, ProxyWire):
         builder = BRepBuilderAPI_MakeWire()
         for edge in Topology(shape=wire).edges:
             adapter_curve_2d = BRepAdaptor_Curve2d(edge, plane)
-            topo = Topology(shape=edge)
             new_edge = BRepBuilderAPI_MakeEdge(
                 adapter_curve_2d.Curve(),
                 surface,

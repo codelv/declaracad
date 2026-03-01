@@ -1,11 +1,32 @@
-from os.path import dirname, join
+"""
+Copyright (c) 2026, Jairus Martin.
+
+Distributed under the terms of the GPL v3 License.
+
+The full license is in the file LICENSE, distributed with this software.
+"""
+
 from typing import Optional
 
-from enaml.qt.QtCore import QRegularExpression
+from enaml.qt.QtCore import QObject, QRegularExpression
 from enaml.qt.QtGui import QTextDocument
-from pyqcodeeditor.highlighters import QPythonHighlighter
 from pyqcodeeditor.highlighters.QHighlightRule import QHighlightRule
-from pyqcodeeditor.QLanguage import QLanguage
+from pyqcodeeditor.QLanguageCompleter import QLanguageCompleter
+
+from declaracad.core.utils import resource_path
+
+from .python_syntax import QPythonHighlighter
+
+
+class QEnamlCompleter(QLanguageCompleter):
+    def __init__(self, parent: Optional[QObject] = None):
+        super().__init__(parent)
+
+    def languageFile(self) -> str:
+        return resource_path("lang/enaml.json")
+
+    def isBuiltinLanguage(self) -> bool:
+        return False
 
 
 class QEnamlHighlighter(QPythonHighlighter):
@@ -21,17 +42,4 @@ class QEnamlHighlighter(QPythonHighlighter):
         self.m_highlightRules.append(QHighlightRule(self.childDefTypePattern, "Type"))
 
     def languageFile(self) -> str:
-        return join(dirname(dirname(dirname(__file__))), "res", "enaml.json")
-
-    def _loadLanguageRules(self):
-        language = QLanguage(self.languageFile())
-        if not language:
-            return
-        for key in language.keys():
-            names = language.names(key)
-            if not names:
-                continue
-            for name in names:
-                self.m_highlightRules.append(
-                    QHighlightRule(QRegularExpression(rf"\b{name}\b"), key)
-                )
+        return resource_path("lang/enaml.json")

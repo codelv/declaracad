@@ -22,7 +22,7 @@ from OCCT.TopoDS import TopoDS_Shape
 
 try:
     from SMESH.SMDS import SMDS_MeshNode
-except ImportError as e:
+except ImportError:
 
     class SMDS_MeshNode:  # type: ignore
         pass
@@ -299,7 +299,6 @@ class Direction(Point):
         try:
             return gp_Dir(self.x, self.y, self.z)
         except RuntimeError as e:
-            warnings.warn(f"Could not create proxy: {self}")
             raise e
 
     @classmethod

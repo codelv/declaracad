@@ -15,7 +15,7 @@ import logging
 import os
 import signal
 import sys
-from inspect import iscoroutine, iscoroutinefunction
+from inspect import iscoroutinefunction
 from queue import Empty, Queue
 from typing import Any, Callable, Optional
 
@@ -23,7 +23,7 @@ from asyncqtpy import QEventLoop, QEventLoopPolicy
 from atom.api import Bool, Instance, Typed
 from enaml.qt import QT_API
 from enaml.qt.qt_application import QtApplication
-from enaml.qt.QtCore import QTimer
+from enaml.qt.QtCore import Qt, QTimer
 from enaml.qt.QtWidgets import QApplication
 
 from declaracad.core.utils import log
@@ -85,6 +85,13 @@ class Application(QtApplication):
         log.debug("App stopped")
         super().stop()
 
+    def process_events(self):
+        """Let the the app process events during long-running cpu intensive
+        tasks.
+
+        """
+        self._qapp.processEvents()
+
 
 class AsyncApplication(Application):
     """Add asyncio support . Seems like a complete hack compared to twisted
@@ -145,13 +152,6 @@ class AsyncApplication(Application):
     def on_async_exception(self, loop, context):
         """Exception handler that ignores"""
         return loop.default_exception_handler(context)
-
-    def process_events(self):
-        """Let the the app process events during long-running cpu intensive
-        tasks.
-
-        """
-        self._qapp.processEvents()
 
     def deferred_call(self, callback: Callable, *args: Any, **kwargs: Any):
         """Invoke a callable on the next cycle of the main event loop

@@ -8,7 +8,6 @@ The full license is in the file LICENSE, distributed with this software.
 """
 
 import ctypes
-import os
 import sys
 from contextlib import contextmanager
 from typing import Any, Optional
@@ -20,7 +19,7 @@ from enaml.qt import QtGui
 from enaml.qt.qt_control import QtControl
 from enaml.qt.QtCore import QPoint, Qt, QTimer
 from enaml.qt.QtGui import QPalette
-from enaml.qt.QtWidgets import QApplication, QOpenGLWidget
+from enaml.qt.QtWidgets import QOpenGLWidget
 from OCCT import Aspect, TopAbs, V3d
 from OCCT.AIS import (
     AIS_DisplayMode,
@@ -34,7 +33,6 @@ from OCCT.Aspect import (
     Aspect_GFM_VER,
     Aspect_GridDrawMode,
     Aspect_GridType,
-    Aspect_NeutralWindow,
     Aspect_Window,
 )
 from OCCT.Bnd import Bnd_Box
@@ -51,11 +49,10 @@ from OCCT.Graphic3d import (
     Graphic3d_TypeOfShadingModel,
 )
 from OCCT.MeshVS import MeshVS_Mesh, MeshVS_MeshEntityOwner
-from OCCT.OpenGl import OpenGl_Context, OpenGl_GraphicDriver, OpenGl_Window
+from OCCT.OpenGl import OpenGl_Context, OpenGl_GraphicDriver
 from OCCT.Prs3d import Prs3d_Drawer
 from OCCT.PrsMgr import PrsMgr_PresentationManager
 from OCCT.Quantity import Quantity_Color, Quantity_NOC_BLACK, Quantity_NOC_WHITE
-from OCCT.TCollection import TCollection_AsciiString
 from OCCT.TColStd import TColStd_IndexedDataMapOfStringString
 from OCCT.TopoDS import TopoDS_Shape
 from OCCT.V3d import (
@@ -91,7 +88,7 @@ else:
         # libEGL = ctypes.cdll.LoadLibrary("libEGL.so")
         from OCCT.Wayland import Wayland_DisplayConnection, Wayland_Window
 
-        from declaracad.helpers import wayland_display, wayland_params
+        from declaracad.helpers import wayland_display, wayland_params  # noqa: F401
 
         USE_WAYLAND = True
     except ImportError:
@@ -418,7 +415,7 @@ class QtOccViewer(QtControl, ProxyOccViewer):
             log.debug("Init GL context")
             assert self.graphics_driver.InitContext()
 
-        log.debug(f"Create window")
+        log.debug("Create window")
         win_id = widget.winId()
         if sys.platform == "win32":
             window = WNT_Window(capsule(win_id))

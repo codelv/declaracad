@@ -26,7 +26,7 @@ from OCCT.TopTools import TopTools_ListOfShape
 
 try:
     from OCCT.Voxel import Voxel_BooleanOperation
-except ImportError as e:
+except ImportError:
     Voxel_BooleanOperation = None
 
 from declaracad.occ.algo import (

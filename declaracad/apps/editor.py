@@ -11,7 +11,7 @@ import enaml
 import enamlx
 
 from declaracad.core.app import Application
-from declaracad.editor.plugin import Document, EditorPlugin, install_lexers
+from declaracad.editor.plugin import Document, EditorPlugin
 
 with enaml.imports():
     from declaracad.editor.standalone import StandaloneEditor
@@ -25,10 +25,9 @@ def main(filename: str, **kwargs):
     filename: str
         The file path to load
     """
-    enamlx.install()
+    enamlx.install()  # Needed for KeyEvent
     app = Application()
     plugin = EditorPlugin()
-    install_lexers()
     editor = StandaloneEditor(plugin=plugin, doc=Document(name=filename, plugin=plugin))
     editor.show()
     app.start()

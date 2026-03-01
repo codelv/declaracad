@@ -1,16 +1,12 @@
 """
-Copyright (c) 2017-2018, Jairus Martin.
+Copyright (c) 2017-2026, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
-
-Created on Dec 7, 2017
-
-@author: jrm
 """
 
-from atom.api import Bool, Event, ForwardTyped, Instance, Int, Typed, set_default
+from atom.api import Bool, ForwardTyped, Instance, Int, Typed, set_default
 from enaml.core.declarative import d_
 from enaml.qt.qt_factories import QT_FACTORIES
 from enaml.qt.qt_window import QtWindow

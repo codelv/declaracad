@@ -23,7 +23,6 @@ from OCCT.gp import gp_Pnt2d
 from OCCT.ShapeFix import ShapeFix_Shape
 from OCCT.TColgp import TColgp_Array1OfPnt2d
 from OCCT.TopoDS import (
-    TopoDS_Edge,
     TopoDS_Face,
     TopoDS_Shape,
     TopoDS_Vertex,

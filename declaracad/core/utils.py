@@ -10,19 +10,14 @@ Created on Jul 12, 2015
 @author: jrm
 """
 
-import asyncio
 import logging
 import os
 import subprocess
 import sys
 import time
-import traceback
 from contextlib import contextmanager
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
-import jsonpickle
-from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
-from enaml.application import Application, timed_call
 from enaml.icon import Icon, IconImage
 from enaml.image import Image
 
@@ -47,19 +42,23 @@ def clip(s: Any, n: int = 1000) -> str:
 _IMAGE_CACHE: dict[str, Image] = {}
 
 
+def resource_path(name: str) -> str:
+    """Get the path of a file in the resources folder."""
+    path = os.path.dirname(os.path.dirname(__file__))
+    return os.path.join(path, "res", *name.split("/"))
+
+
 def icon_path(name: str) -> str:
     """Load an icon from the res/icons folder using the name
     without the .png
 
     """
-    path = os.path.dirname(os.path.dirname(__file__))
-    return os.path.join(path, "res", "icons", f"{name}.png")
+    return resource_path(f"icons/{name}.png")
 
 
 def load_image(name: str) -> Image:
     """Get and cache an enaml Image for the given icon name."""
     path = icon_path(name)
-    global _IMAGE_CACHE
     if path not in _IMAGE_CACHE:
         with open(path, "rb") as f:
             data = f.read()
@@ -87,11 +86,6 @@ def open_folder(path: str):
     else:
         cmd = "open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([cmd, path])
-
-
-def process_events():
-    """Let the event loop process events"""
-    Application.instance()._qapp.processEvents()
 
 
 @contextmanager

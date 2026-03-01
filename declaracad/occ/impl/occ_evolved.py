@@ -6,7 +6,6 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file LICENSE, distributed with this software.
 """
 
-from atom.api import Instance
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_MakeWire
 from OCCT.BRepOffsetAPI import BRepOffsetAPI_MakeEvolved
 from OCCT.GeomAbs import GeomAbs_Arc, GeomAbs_Intersection, GeomAbs_Tangent
@@ -15,7 +14,6 @@ from OCCT.TopoDS import TopoDS_Edge
 from declaracad.occ.algo import ProxyEvolved
 
 from .occ_algo import OccOperation, coerce_shape
-from .occ_shape import OccShape
 
 
 class OccEvolved(OccOperation, ProxyEvolved):

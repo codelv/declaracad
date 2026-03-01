@@ -1,19 +1,15 @@
 """
-Copyright (c) 2016-2018, Jairus Martin.
+Copyright (c) 2016-2026, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
-
-Created on Sep 30, 2016
-
-@author: jrm
 """
 
 import os
 from typing import ClassVar, Generator, Optional, Union
 
-from atom.api import Bool, Instance, List, Property, Str, Typed, observe
+from atom.api import Bool, Instance, List, Property, Typed, observe
 from OCCT.AIS import AIS_MultipleConnectedInteractive, AIS_Shape, AIS_TexturedShape
 from OCCT.Bnd import Bnd_Box
 from OCCT.BRep import BRep_Builder

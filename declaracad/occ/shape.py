@@ -1,18 +1,13 @@
-# -*- coding: utf-8 -*-
 """
-Copyright (c) 2016-2018, Jairus Martin.
+Copyright (c) 2016-2026, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
-
-Created on Sep 30, 2016
-
-@author: jrm
 """
 
 from math import pi
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional
 
 from atom.api import (
     Atom,
@@ -29,7 +24,6 @@ from atom.api import (
     List,
     Property,
     Str,
-    Tuple,
     Typed,
     observe,
 )
@@ -41,7 +35,8 @@ from enaml.widgets.toolkit_object import ToolkitObject
 #: TODO: This breaks the proxy pattern
 from OCCT.TopoDS import TopoDS_Face, TopoDS_Shape, TopoDS_Shell
 
-from declaracad.core.utils import log, process_events
+from declaracad.core.app import Application
+from declaracad.core.utils import log
 
 from .geom import (
     BBox,
@@ -499,7 +494,8 @@ class Shape(ToolkitObject):
 
         # Generating the model can take a lot of time
         # so process events inbetween to keep the UI from freezing
-        process_events()
+        app = Application.instance()
+        app.process_events()
 
         self.activate_bottom_up()
         self.proxy_is_active = True

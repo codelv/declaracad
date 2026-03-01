@@ -36,14 +36,13 @@ from enaml.application import timed_call
 from enaml.core import enaml_ast
 from enaml.core.parser import parse
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
-from enaml.scintilla.api import Scintilla
 from enaml.scintilla.mono_font import MONO_FONT
 from enaml.workbench.core.execution_event import ExecutionEvent
 
 from declaracad.core.api import Model, Plugin, log
 
-from .lexers import install_lexers  # Install lexer
-from .qt import qt_factories
+from .qt import qt_factories  # noqa: F401
+from .syntaxes import SYNTAXES
 from .themes import THEMES
 
 
@@ -285,7 +284,6 @@ class EditorPlugin(Plugin):
     def start(self):
         """Make sure the documents all open on startup"""
         super().start()
-        install_lexers()
         self.workbench.application.deferred_call(
             self._update_area_layout, {"type": "load"}
         )
@@ -589,7 +587,6 @@ class EditorPlugin(Plugin):
         """Attempt to detect the file syntax"""
         p, ext = os.path.splitext(path)
         file_type = (ext[1:] if ext else "").lower()
-        SYNTAXES = Scintilla.syntax.items
         if file_type in SYNTAXES:
             result = file_type
         else:

@@ -7,20 +7,17 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
-from typing import Optional
-
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeFace,
     BRepBuilderAPI_MakePolygon,
     BRepBuilderAPI_Transform,
 )
 from OCCT.BRepPrimAPI import BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakeRevol
-from OCCT.gp import gp_Ax3, gp_Pnt, gp_Trsf
+from OCCT.gp import gp_Pnt
 
 from declaracad.occ.shape import ProxyHole
 
-from .occ_shape import AZ, DEFAULT_AXIS, OccShape, coerce_axis
-from .topology import Topology
+from .occ_shape import AZ, OccShape, coerce_axis
 
 
 class OccHole(OccShape, ProxyHole):
@@ -48,10 +45,8 @@ class OccHole(OccShape, ProxyHole):
                     poly.Add(gp_Pnt(0, y, 0))
                 # If y == 0 skip the point
                 poly.Add(gp_Pnt(0, r, d2))
-                z = d2
             else:
                 poly.Add(gp_Pnt(0, r, 0))
-                z = 0
 
             if edge_style := d.far_edge:
                 d1 = abs(edge_style.distance)

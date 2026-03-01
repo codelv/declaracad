@@ -19,42 +19,7 @@ from enaml.image import Image
 from enaml.widgets.control import Control, ProxyControl
 
 #: The available syntaxes for the CodeEditor widget.
-SYNTAXES = (
-    "",
-    "bash",
-    "batch",
-    "cmake",
-    "cpp",
-    "csharp",
-    "css",
-    "d",
-    "diff",
-    "enaml",
-    "fortran",
-    "fortran77",
-    "html",
-    "idl",
-    "java",
-    "javascript",
-    "lua",
-    "makefile",
-    "matlab",
-    "octave",
-    "pascal",
-    "perl",
-    "postscript",
-    "pov",
-    "python",
-    "ruby",
-    "spice",
-    "sql",
-    "tcl",
-    "tex",
-    "verilog",
-    "vhdl",
-    "xml",
-    "yaml",
-)
+from declaracad.editor.syntaxes import SYNTAXES
 
 
 class CodeEditorDocument(Atom):
@@ -186,7 +151,7 @@ class CodeEditor(Control):
     document = d_(Typed(CodeEditorDocument, ()))
 
     #: The language syntax to apply to the document.
-    syntax = d_(Enum(*SYNTAXES))
+    syntax = d_(Enum(*SYNTAXES.keys()))
 
     #: The theme to apply to the widget. See the './THEMES' document
     #: for how to create a theme dict for the widget.
@@ -264,7 +229,7 @@ class CodeEditor(Control):
     def _update_proxy(self, change):
         """An observer which sends the document change to the proxy."""
         # The superclass implementation is sufficient.
-        super(CodeEditor, self)._update_proxy(change)
+        super()._update_proxy(change)
 
     # --------------------------------------------------------------------------
     # Public API

@@ -1,10 +1,11 @@
 import asyncio
 import sys
+import traceback
 from typing import Any, Optional, cast
 
 import jsonpickle
 from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
-from enaml.application import deferred_call, timed_call
+from enaml.application import timed_call
 
 from declaracad.core.utils import log
 

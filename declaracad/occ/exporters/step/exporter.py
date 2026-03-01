@@ -21,7 +21,6 @@ from OCCT.Interface import Interface_Static
 from OCCT.STEPCAFControl import STEPCAFControl_Writer
 from OCCT.TCollection import TCollection_HAsciiString
 
-from declaracad.core.utils import log
 from declaracad.occ.api import Shape
 from declaracad.occ.impl.document import create_hascii_list, create_xcaf_document
 from declaracad.viewer.plugin import ModelExporter

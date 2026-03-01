@@ -19,7 +19,6 @@ from enaml.qt.q_resource_helpers import get_cached_qcolor
 from enaml.qt.QtCore import Qt
 
 from enaml.layout.api import vbox, hbox, align
-#from enaml.scintilla.api import Scintilla, ScintillaIndicator, ScintillaMarker
 from enaml.scintilla.mono_font import MONO_FONT
 from enaml.widgets.api import (
     Container, Timer, MultilineField, Menu, Action, PopupView, Label,
@@ -32,7 +31,7 @@ from declaracad.core.utils import load_icon, load_image, log
 from declaracad.core.widgets import PlainTextEdit
 from .themes import THEMES
 from .plugin import Document, format_title
-from .widgets import CodeEditor
+from .widgets import CodeEditor, CodeEditorIndicator, CodeEditorMarker
 
 
 
@@ -69,7 +68,7 @@ def create_indicators(filename, errors):
                 stop = (l, 0)
                 #color = "#FFFF00"
 
-            results.append(ScintillaIndicator(
+            results.append(CodeEditorIndicator(
                 start=start, stop=stop, style="squiggle", color=color,
             ))
         except Exception as e:
@@ -460,10 +459,15 @@ enamldef Editor(CodeEditor): editor:
     func selected_text() -> str:
         return self.proxy.widget.selectedText()
 
-    text_changed :: timer.start()
+    func is_deleted() -> bool:
+        return self.root_object() is self
+
+    text_changed ::
+        if not is_deleted():
+            timer.start()
     zoom << plugin.zoom if plugin else 0
     indicators << create_indicators(doc.name, doc.errors) if doc else []
-    markers << [ScintillaMarker(
+    markers << [CodeEditorMarker(
                     line=i.start[0],
                     image=load_image("exclamation" if i.color=="#FF0000"
                                         else "error"))

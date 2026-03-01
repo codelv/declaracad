@@ -97,7 +97,7 @@ async def run_remote(
 
     """
     try:
-        log.debug("Running remove viewer")
+        log.debug("Running remote viewer")
         assert app.loop is not None
         transport, protocol = await app.loop.create_connection(
             lambda: ViewerProtocol(app=app, view=view, ref=ref), "127.0.0.1", port
@@ -153,7 +153,6 @@ def main(
     log.debug(f"Starting viewer pid={os.getpid()} cwd={os.getcwd()} port={port}")
 
     # Set default surface format to avoid OCCT warnings
-    from enaml.qt.QtCore import Qt
     from enaml.qt.QtGui import QSurfaceFormat
 
     surface_format = QSurfaceFormat()
