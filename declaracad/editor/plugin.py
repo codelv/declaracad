@@ -183,6 +183,9 @@ class Document(Model):
     def exists(self) -> bool:
         return os.path.exists(self.name)
 
+    def load(self):
+        self.source = self._default_source()
+
     def __repr__(self):
         return f"Document<name='{self.name}'>"
 
@@ -542,12 +545,10 @@ class EditorPlugin(Plugin):
 
         #: Otherwise open it
         doc = Document(name=path, unsaved=False)
-        with open(path) as f:
-            doc.source = f.read()
+        doc.load()
         self.documents.append(doc)
         self.active_document = doc
-        editor = self.get_editor()
-        if editor:
+        if editor := self.get_editor():
             editor.set_text(doc.source)
 
     def open_containing_folder(self, event: Union[str, ExecutionEvent]):
@@ -611,8 +612,7 @@ class EditorPlugin(Plugin):
             The document to reload
 
         """
-        with open(document.name) as f:
-            document.source = f.read()
+        document.load()
         # Update the editor
         for item in self.get_editor_items():
             if item.doc == document:

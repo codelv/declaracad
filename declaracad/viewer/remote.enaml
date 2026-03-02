@@ -191,7 +191,7 @@ enamldef ViewerDockItem(DockItem): view:
                 checked << view.document is None
                 triggered :: view.document = None
             Looper: looper:
-                iterable = sorted(editor_plugin.documents)
+                iterable = sorted(editor_plugin.documents, key=lambda doc: doc.name)
                 Action:
                     attr doc = loop.item
                     text = format_title(editor_plugin.documents, doc, doc.name, doc.unsaved)
