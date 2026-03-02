@@ -33,12 +33,12 @@ ALL_STYLES = ["system"] + available_styles()
 
 class DeclaracadPlugin(Plugin):
     #: Project site
-    wiki_page = Str("https;//declaracad.com/")
+    wiki_page = Str("https://declaracad.com/")
 
     #: Dock items to add
     dock_items = List(DockItem)
     dock_layout = Instance(AreaLayout)
-    dock_style = Enum(*reversed(ALL_STYLES)).tag(config=True)
+    dock_style = Enum(*ALL_STYLES).tag(config=True)
 
     #: Settings pages to add
     settings_pages = List(extensions.SettingsPage)
@@ -51,13 +51,13 @@ class DeclaracadPlugin(Plugin):
 
     def start(self):
         """Load all the plugins declaracad is dependent on"""
-        super(DeclaracadPlugin, self).start()
+        super().start()
         self._refresh_dock_items()
         self._refresh_settings_pages()
 
     def _bind_observers(self):
         """Setup the observers for the plugin."""
-        super(DeclaracadPlugin, self)._bind_observers()
+        super()._bind_observers()
         workbench = self.workbench
         point = workbench.get_extension_point(extensions.DOCK_ITEM_POINT)
         point.observe("extensions", self._refresh_dock_items)
@@ -67,7 +67,7 @@ class DeclaracadPlugin(Plugin):
 
     def _unbind_observers(self):
         """Remove the observers for the plugin."""
-        super(DeclaracadPlugin, self)._unbind_observers()
+        super()._unbind_observers()
         workbench = self.workbench
         point = workbench.get_extension_point(extensions.DOCK_ITEM_POINT)
         point.unobserve("extensions", self._refresh_dock_items)

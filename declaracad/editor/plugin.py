@@ -45,6 +45,35 @@ from .qt import qt_factories  # noqa: F401
 from .syntaxes import SYNTAXES
 from .themes import THEMES
 
+EXAMPLE_FILE = """# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+    Cut:
+        color = 'blue'
+        transparency = 0.8
+        Box: box:
+            dx = 50
+            dy = 60
+            dz = 10
+        Looper:
+            attr offset = 8
+            iterable = [
+                (box.x+offset, box.y+offset),
+                (box.x+box.dx-offset, box.y+offset),
+                (box.x+box.dx-offset, box.y+box.dy-offset),
+                (box.x+offset, box.y+box.dy-offset),
+            ]
+            Hole:
+                diameter = 5
+                position = loop.item
+                depth = box.dz
+                far_edge = ("cone", 0.5)
+
+"""
+
 
 def editor_item_factory():
     with enaml.imports():
@@ -150,6 +179,9 @@ class Document(Model):
 
     #: Outline for outline view
     outline = List()
+
+    def exists(self) -> bool:
+        return os.path.exists(self.name)
 
     def __repr__(self):
         return f"Document<name='{self.name}'>"
@@ -419,7 +451,13 @@ class EditorPlugin(Plugin):
     # Document API
     # -------------------------------------------------------------------------
     def _default_documents(self) -> list[Document]:
-        return [Document()]
+        return [
+            Document(
+                name=os.path.expanduser("~/Documents/example.enaml"),
+                unsaved=True,
+                source=EXAMPLE_FILE
+            )
+        ]
 
     def _default_active_document(self) -> Document:
         if not self.documents:

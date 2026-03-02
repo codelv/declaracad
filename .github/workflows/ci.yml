@@ -33,7 +33,7 @@ jobs:
         shell: bash -l {0}
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python -m pytest tests
+        run: python -m pytest tests -v
   check:
     name: Check code on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}

@@ -225,8 +225,21 @@ class ViewerProcess(ProcessLineReceiver):
         protocol = self.protocol
         if protocol is None:
             return
-        name = self.document.name if self.document else "-"
-        protocol.set("filename", name)
+        if doc := self.document:
+            protocol.set("filename", doc.name)
+            protocol.set("source", doc.source)
+            protocol.set("version", doc.version)
+        else:
+            protocol.set("filename", "-")
+
+    @observe("document.source")
+    def _update_source(self, change: dict[str, Any]):
+        protocol = self.protocol
+        if protocol is None:
+            return
+        if doc := self.document:
+            if not doc.exists():
+                protocol.set("source", doc.source)
 
     @observe("document.version")
     def _update_version(self, change: dict[str, Any]):
@@ -355,9 +368,10 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
             log.debug(f"viewer {dock_item.name} connected!")
 
             # Set initial document
-            doc = self.document
-            if doc:
+            if doc := self.document:
                 self.set("filename", doc.name)
+                if not doc.exists():
+                    self.set("source", doc.source)
 
     def on_invoke_command(self, response: dict[str, Any]):
         command_id = response.get("command_id")
@@ -496,7 +510,7 @@ class ViewerPlugin(Plugin):
     def run(self, event=None):
         editor = self.workbench.get_plugin("declaracad.editor").get_editor()
         doc = editor.doc
-        # viewer.set_source(editor.get_text())
+        doc.source = editor.get_text()
         doc.version += 1
 
     def _default_exporters(self) -> list[Type["ModelExporter"]]:

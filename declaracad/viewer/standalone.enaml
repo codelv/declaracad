@@ -134,6 +134,7 @@ enamldef ViewerWindow(FramelessWindow): window:
 
     #: File to load
     attr filename: str = "-"
+    filename :: self.source = ""
 
     #: Source code to load. If empty the file will be read from disk
     attr source: str = ""
@@ -143,7 +144,7 @@ enamldef ViewerWindow(FramelessWindow): window:
 
     #: Rendered version. Use this to manually trigger re-renders when the source
     #: code changes.
-    attr version: int = 1
+    attr version: int = -1
 
     #: IPC protocol for communication with parent process
     attr protocol = None
@@ -153,10 +154,6 @@ enamldef ViewerWindow(FramelessWindow): window:
 
     #: Window Icon
     icon = load_icon('logo')
-
-    # When the filename changes, clear the source so it's loaded from the file
-    filename ::
-        self.source = ""
 
     func screenshot(filename):
         # Take a screenshot and save it
@@ -200,12 +197,16 @@ enamldef ViewerWindow(FramelessWindow): window:
         if protocol and protocol.transport:
             protocol.invoke_method(id, params)
 
-    func load_source():
+    func load_source(filename: str, source: str, version: int) -> list:
         if filename != "-":
             try:
+                print(f"Loading file={filename} version={version}")
                 start_time = datetime.now()
                 # Load the models from source code or disk
-                result = load_model(filename, source)
+                if not os.path.exists(filename):
+                    result = load_model(source, options={"from_string": True}, loader=".enaml")
+                else:
+                    result = load_model(filename)
                 end_time = datetime.now()
                 print(f"Load took {end_time-start_time}")
                 send_message(id='render_success')
@@ -237,7 +238,7 @@ enamldef ViewerWindow(FramelessWindow): window:
                             e = change['value']
                             send_message(id='shape_selection', result=str(e.selection))
                         # Load the 3d models and include them in the viewer
-                        shapes << load_source() if filename and version else []
+                        shapes << load_source(filename, source, version)
 
                         get_actions => ():
                             return viewer.default_actions + [
