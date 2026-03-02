@@ -15,9 +15,36 @@ import enaml
 import importlib
 import declaracad
 import shutil
+from pathlib import Path
 from glob import glob
 from os.path import dirname, split, exists
-from cx_Freeze import setup, Executable
+from cx_Freeze import hooks, setup, Executable
+
+
+def load_declaracad(finder, module):
+    import OCCT
+
+    root = dirname(dirname(dirname(OCCT.__path__[0])))
+    if sys.platform == 'win32':
+        root = os.path.join(root, 'Library', 'lib')
+
+    if sys.platform == 'win32':
+        patterns = ['*.lib']
+    elif sys.platform == 'darwin':
+        patterns = ['*.dylib']
+    else:
+        patterns = ['*.so*']
+
+    # Keep all libraries in venv/lib
+    for pattern in patterns:
+        for source in Path(root).glob(pattern):
+            target = f"lib/{source.name}"
+            finder.lib_files.setdefault(source, target)
+    finder.include_module("declaracad")
+
+# Normal import does not work
+hooks.load_declaracad = load_declaracad
+
 
 def find_enaml_files(*modules):
     """ Find .enaml files to include in the zip """
@@ -49,40 +76,7 @@ def find_data_files(*modules):
     return files.items()
 
 
-def find_extra_libs():
-    """ Find all the libTK*.so files """
-    import OCCT
-    root = dirname(dirname(dirname(OCCT.__path__[0])))
-
-    if sys.platform == 'win32':
-        root = os.path.join(root, 'Library', 'lib')
-        libs = 'TK*.lib'
-    elif sys.platform == 'darwin':
-        libs = 'libTK*.dylib'
-    else:
-        libs = 'libTK*.so'
-
-    results = []
-    pattern = os.path.join(root, libs)
-
-    for filename in glob(pattern):
-        lib = os.path.split(filename)[-1]
-        dest = os.path.join('lib', lib)
-        results.append((filename, dest))
-
-    assert results, "No occt libraries found!"
-    return results
-
 is_windows = sys.platform == 'win32'
-
-
-def cleanup():
-    if is_windows:
-        return
-    shutil
-
-
-
 
 with enaml.imports():
     setup(
@@ -143,7 +137,6 @@ with enaml.imports():
                     '_distutils_hack',
                 ],
                 zip_includes=find_enaml_files('enaml'),
-                include_files=find_extra_libs(),
                 excludes=[
                     'alabaster',
                     'babel',
