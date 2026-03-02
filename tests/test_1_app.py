@@ -20,9 +20,8 @@ try:
 
     opengl_unavailable = False
 
-    if "CI" in os.environ and sys.platform != "win32":
+    if "CI" in os.environ:
         opengl_unavailable = True  # Disable
-
 except ImportError:
     opengl_unavailable = True
 
