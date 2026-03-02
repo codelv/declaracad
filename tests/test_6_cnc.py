@@ -16,7 +16,7 @@ from declaracad.occ.api import load_model
 is_ci = "CI" in os.environ
 
 
-@pytest.mark.skipIf(is_ci, "Disabled in CI")
+@pytest.mark.skipif(is_ci, "Disabled in CI")
 @pytest.mark.parametrize("name", os.listdir("examples/cnc/"))
 def test_cnc_examples(qt_app, name: str):
     path = f"examples/cnc/{name}"
