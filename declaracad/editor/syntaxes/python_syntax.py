@@ -76,6 +76,10 @@ class QPythonHighlighter(QStyleSyntaxHighlighter):
             r"(\b([A-Za-z0-9_]+)\s+[A-Za-z]{1}[A-Za-z0-9_]+\s*[;=])"
         )
 
+        self.m_attributePattern: QRegularExpression = QRegularExpression(
+            r"(\b([A-Za-z]{1}[A-Za-z0-9_]+)\.([A-Za-z]{1}[A-Za-z0-9_]+))"
+        )
+
         self._loadLanguageRules()
 
         # Following rules has higher priority to display
@@ -129,6 +133,24 @@ class QPythonHighlighter(QStyleSyntaxHighlighter):
                 match.capturedLength(2),
                 self.syntaxStyle().getFormat("Function"),
             )
+
+        matchIterator = self.m_attributePattern.globalMatch(text)
+        while matchIterator.hasNext():
+            match = matchIterator.next()
+            obj = match.captured(1)
+            if obj == "self":
+                self.setFormat(
+                    match.capturedStart(3),
+                    match.capturedLength(3),
+                    self.syntaxStyle().getFormat("Field"),
+                )
+            else:
+                self.setFormat(
+                    match.capturedStart(3),
+                    match.capturedLength(3),
+                    self.syntaxStyle().getFormat("Static"),
+                )
+
 
         for rule in self.m_highlightRules:
             matchIterator = rule.pattern.globalMatch(text)

@@ -1,12 +1,5 @@
 {
   "Keyword": [
-    "break",
-    "continue",
-    "do",
-    "for",
-    "while",
-    "if",
-    "else",
     "def",
     "from",
     "import",
@@ -17,8 +10,6 @@
     "not",
     "or",
     "and",
-    "async",
-    "await",
     "attr",
     "alias",
     "enamldef",
@@ -112,6 +103,22 @@
     "dict"
   ],
   "Global": [
-    "None"
+    "None",
+    "True",
+    "False"
+  ],
+  "ControlFlow": [
+    "if",
+    "else",
+    "return",
+    "for",
+    "while",
+    "with",
+    "async",
+    "try",
+    "except",
+    "break",
+    "continue",
+    "await"
   ]
 }

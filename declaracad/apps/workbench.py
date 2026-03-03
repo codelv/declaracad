@@ -16,9 +16,6 @@ import enamlx
 from declaracad.core.utils import log
 from declaracad.core.workbench import DeclaracadWorkbench
 
-enamlx.install()
-
-
 with enaml.imports():
     from declaracad.cnc.manifest import CncManifest
     from declaracad.console.manifest import ConsoleManifest
@@ -31,6 +28,7 @@ with enaml.imports():
 
 
 def main(**kwargs):
+    enamlx.install()
     # Start the workbench
     log.info("Workbench starting")
     workbench = DeclaracadWorkbench()

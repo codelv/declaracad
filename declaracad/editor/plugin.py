@@ -28,6 +28,7 @@ from atom.api import (
     Instance,
     Int,
     List,
+    Range,
     Str,
     Tuple,
     observe,
@@ -270,9 +271,16 @@ class EditorPlugin(Plugin):
     project_path = Str(os.path.expanduser("~/")).tag(config=True)
 
     #: Editor settings
-    theme = Enum("friendly", *THEMES.keys()).tag(config=True)
+    theme = Enum("default", *THEMES.keys()).tag(config=True)
     zoom = Int(0).tag(config=True)  #: Relative to default
+    auto_parentheses = Bool(True).tag(config=True)
+    tab_replace = Bool(True).tag(config=True)
+    tab_width = Range(1, value=4).tag(config=True)
+    auto_indent = Bool(True).tag(config=True)
+    indent_size = Range(1, value=4).tag(config=True)
     show_line_numbers = Bool(True).tag(config=True)
+    line_wrap = Bool(False).tag(config=True)
+
     code_folding = Bool(True).tag(config=True)
     code_fold_style = Enum(
         "plain", "circled", "boxed", "circled-tree", "boxed-tree"
@@ -319,9 +327,10 @@ class EditorPlugin(Plugin):
     def start(self):
         """Make sure the documents all open on startup"""
         super().start()
-        self.workbench.application.deferred_call(
-            self._update_area_layout, {"type": "load"}
-        )
+        if workbench := self.workbench:
+            workbench.application.deferred_call(
+                self._update_area_layout, {"type": "load"}
+            )
 
     # -------------------------------------------------------------------------
     # Editor API

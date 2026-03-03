@@ -1,14 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 Copyright (c) 2017, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
-
-Created on Dec 28, 2017
-
-@author: jrm
 """
 from atom.api import Str, Typed
 from enaml.core.api import Looper, Conditional
@@ -22,7 +17,9 @@ from enaml.qt.QtWidgets import QFontComboBox
 from enaml.core.declarative import d_
 from enaml.qt.QtGui import QFont
 from declaracad.core.api import log
+from declaracad.editor.plugin import EditorPlugin
 from declaracad.editor.themes import THEMES
+
 
 
 class FontCombo(RawWidget):
@@ -59,7 +56,7 @@ class FontCombo(RawWidget):
 
 
 enamldef EditorSettingsPage(Container):
-    attr model
+    attr model: EditorPlugin
 
     Label:
         text = "Editor"
@@ -96,6 +93,32 @@ enamldef EditorSettingsPage(Container):
         CheckBox:
             text = "Show line numbers"
             checked := model.show_line_numbers
+        Label:
+            pass
+        CheckBox:
+            text = "Wrap lines"
+            checked := model.line_wrap
+        Label:
+            pass
+        CheckBox:
+            text = "Auto parentheses"
+            checked := model.auto_parentheses
+        Label:
+            pass
+        CheckBox:
+            text = "Auto indent"
+            checked := model.auto_indent
+        Label:
+            pass
+        CheckBox:
+            text = "Replace tabs"
+            checked := model.tab_replace
+        Label:
+            text = "Tab width"
+        SpinBox:
+            minimum = 1
+            value := model.tab_width
+
         Label:
             pass
         CheckBox:

@@ -32,14 +32,27 @@ class QEnamlCompleter(QLanguageCompleter):
 class QEnamlHighlighter(QPythonHighlighter):
     def __init__(self, document: Optional[QTextDocument] = None):
         super().__init__(document)
-        # self.m_enamldefPattern: QRegularExpression = QRegularExpression(
-        #     r"(\b([A-Za-z0-9_]+(?:\.))*([A-Za-z0-9_]+)(?=\())"
-        # )
-        self.childDefTypePattern: QRegularExpression = QRegularExpression(
-            r"(\s+[A-Za-z]{1}[A-Za-z0-9_]+(?:\s*\:\s*([A-Za-z]{1}[A-Za-z0-9_]+\s*\:\s*)?))"
+        self.m_childDefTypePattern: QRegularExpression = QRegularExpression(
+            r"(^\s+([A-Za-z]{1}[A-Za-z0-9_]+)\s*\:\s*(([A-Za-z]{1}[A-Za-z0-9_]+)\s*\:\s*)?)"
         )
 
-        self.m_highlightRules.append(QHighlightRule(self.childDefTypePattern, "Type"))
+    def highlightBlock(self, text):
+        super().highlightBlock(text)
+        matchIterator = self.m_childDefTypePattern.globalMatch(text)
+        while matchIterator.hasNext():
+            match = matchIterator.next()
+            self.setFormat(
+                match.capturedStart(2),
+                match.capturedLength(2),
+                self.syntaxStyle().getFormat("Type"),
+            )
+
+            if match.hasCaptured(4):
+                self.setFormat(
+                    match.capturedStart(4),
+                    match.capturedLength(4),
+                    self.syntaxStyle().getFormat("Local"),
+                )
 
     def languageFile(self) -> str:
         return resource_path("lang/enaml.json")

@@ -10,6 +10,8 @@ The full license is in the file LICENSE, distributed with this software.
 import enaml
 import enamlx
 
+from enaml.workbench.plugin_manifest import PluginManifest
+
 from declaracad.core.app import Application
 from declaracad.editor.plugin import Document, EditorPlugin
 
@@ -27,7 +29,8 @@ def main(filename: str, **kwargs):
     """
     enamlx.install()  # Needed for KeyEvent
     app = Application()
-    plugin = EditorPlugin()
+    plugin = EditorPlugin(manifest=PluginManifest(id="declaracad.editor"))
+    plugin.start()
     editor = StandaloneEditor(plugin=plugin, doc=Document(name=filename, plugin=plugin))
     editor.show()
     app.start()

@@ -8,6 +8,8 @@
 # ------------------------------------------------------------------------------
 
 import weakref
+import warnings
+import traceback
 
 from atom.api import Typed, Value
 from enaml.colors import parse_color
@@ -23,7 +25,9 @@ from enaml.qt.QtGui import (
     QFont,
     QWheelEvent,
 )
+from enaml.qt.QtWidgets import QTextEdit
 from pyqcodeeditor.QCodeEditor import QCodeEditor as BaseQCodeEditor
+from pyqcodeeditor.QSyntaxStyle import QSyntaxStyle as BaseQSyntaxStyle
 
 from declaracad.editor.syntaxes import SYNTAXES
 from declaracad.editor.widgets import ProxyCodeEditor
@@ -45,8 +49,34 @@ def _make_font(font_str: str) -> QFont:
     return QFont()
 
 
+class QSyntaxStyle(BaseQSyntaxStyle):
+    def __init__(self, theme: dict):
+        super().__init__()
+        try:
+            self._processStyleSchema(theme)
+        except Exception as e:
+            warnings.warn(f"Can't load style schema: {e}")
+            traceback.print_exc()
+
+
 class QCodeEditor(BaseQCodeEditor):
     zoomLevel: int = 0
+
+    def _updateStyle(self):
+        # The original function does not update the background
+        if style := self._syntaxStyle:
+            self.setStyleSheet(
+                "QTextEdit { background-color: %s; selection-background-color: %s; color: %s; }" % (
+                    style.getFormat("Text").background().color().name(),
+                    style.getFormat("Selection").background().color().name(),
+                    style.getFormat("Text").foreground().color().name()
+                )
+            )
+
+        if self._highlighter:
+            self._highlighter.rehighlight()
+
+        self._updateExtraSelection()
 
     def selectAll(self, enabled: bool = True):
         if enabled:
@@ -104,6 +134,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
     #: Marker image to marker ID mapping
     _marker_images = Typed(dict, ())
 
+    _syntax_style = Typed(QSyntaxStyle)
     # --------------------------------------------------------------------------
     # Initialization API
     # --------------------------------------------------------------------------
@@ -217,6 +248,8 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         # widget.setPaper(default_paper)
         widget.setFont(default_font)
 
+        style = self._syntax_style = QSyntaxStyle(theme)
+        widget.setSyntaxStyle(style)
         # Ensure the lexer and syntax tokens
 
     def refresh_autocomplete(self):
@@ -269,7 +302,22 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
 
     def set_settings(self, settings):
         """Set the settings for the widget."""
-        pass
+        w = self.widget
+        if "line_wrap" in settings:
+            if settings["line_wrap"]:
+                w.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+            else:
+                w.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        if "use_tabs" in settings:
+            w.setTabReplace(not settings["use_tabs"])
+        if "tab_width" in settings:
+            w.setTabReplaceSize(settings["tab_width"])
+        if "auto_indent" in settings:
+            w.setAutoIndentation(settings["auto_indent"])
+        if "indent" in settings:
+            w.setDefaultIndent(settings["indent"])
+        if "auto_parentheses" in settings:
+            w.setAutoParentheses(settings["auto_parentheses"])
 
     def set_zoom(self, zoom):
         """Set the zoom factor on the widget."""

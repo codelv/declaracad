@@ -1,10 +1,10 @@
-DEFAULT_THEME = {
-  "name": "Default",
+BREEZE_DARK_THEME = {
+  "name": "Breeze Dark",
   "style": [
     {
       "name": "Text",
-      "foreground": "#000000",
-      "background": "#ffffff"
+      "foreground": "#cfcfc2",
+      "background": "#232629"
     },
     {
       "name": "Link",
@@ -29,8 +29,7 @@ DEFAULT_THEME = {
     },
     {
       "name": "Parentheses",
-      "foreground": "#ff0000",
-      "background": "#b4eeb4"
+      "foreground": "#849f9a",
     },
     {
       "name": "ParenthesesMismatch",
@@ -64,20 +63,24 @@ DEFAULT_THEME = {
       "background": "#ff6464"
     },
     {
+      "name": "ControlFlow",
+      "foreground": "#fbba49"
+    },
+    {
       "name": "Number",
-      "foreground": "#000080"
+      "foreground": "#f67400"
     },
     {
       "name": "String",
-      "foreground": "#008000"
+      "foreground": "#f44f4f"
     },
     {
       "name": "Type",
-      "foreground": "#800080"
+      "foreground": "#31a946"
     },
     {
       "name": "Local",
-      "foreground": "#092e64"
+      "foreground": "#72b0d0"
     },
     {
       "name": "Global",
@@ -89,7 +92,7 @@ DEFAULT_THEME = {
     },
     {
       "name": "Static",
-      "foreground": "#800080"
+      "foreground": "#5aafc1"
     },
     {
       "name": "VirtualMethod",
@@ -99,16 +102,15 @@ DEFAULT_THEME = {
     },
     {
       "name": "Function",
-      "foreground": "#00677c",
-      "background": "#ffffff"
+      "foreground": "#7762c0",
     },
     {
       "name": "Keyword",
-      "foreground": "#808000"
+      "bold": "true",
     },
     {
       "name": "PrimitiveType",
-      "foreground": "#808000"
+      "foreground": "#259f9b"
     },
     {
       "name": "Operator"
@@ -118,7 +120,7 @@ DEFAULT_THEME = {
     },
     {
       "name": "Preprocessor",
-      "foreground": "#000080"
+      "foreground": "#27ae60"
     },
     {
       "name": "Label",
@@ -126,15 +128,15 @@ DEFAULT_THEME = {
     },
     {
       "name": "Comment",
-      "foreground": "#008000"
+      "foreground": "#7a7c7d"
     },
     {
       "name": "Doxygen.Comment",
-      "foreground": "#000080"
+      "foreground": "#7f8c8d"
     },
     {
       "name": "Doxygen.Tag",
-      "foreground": "#0000ff"
+      "foreground": "#3f8058"
     },
     {
       "name": "VisualWhitespace",
@@ -275,7 +277,8 @@ DEFAULT_THEME = {
       "bold": "true"
     },
     {
-      "name": "FunctionDefinition"
+      "name": "FunctionDefinition",
+      "foreground": "#7762c0",
     },
     {
       "name": "OutputArgument",
@@ -283,3 +286,4 @@ DEFAULT_THEME = {
     }
   ]
 }
+

@@ -1,25 +1,15 @@
 {
   "Keyword": [
-    "break",
-    "continue",
-    "do",
-    "for",
-    "while",
-    "if",
-    "else",
     "def",
     "from",
     "pass",
     "import",
-    "return",
     "class",
     "in",
     "is",
     "not",
     "or",
     "and",
-    "async",
-    "await"
   ],
   "Function": [
     "abs",
@@ -109,6 +99,22 @@
     "dict"
   ],
   "Global": [
-    "None"
+    "None",
+    "True",
+    "False"
+  ],
+  "ControlFlow": [
+    "if",
+    "else",
+    "return",
+    "for",
+    "while",
+    "with",
+    "async",
+    "try",
+    "except",
+    "break",
+    "continue",
+    "await"
   ]
 }

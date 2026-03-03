@@ -270,17 +270,20 @@ enamldef Editor(CodeEditor): editor:
     attr error_popup = None
 
     func update_font(theme, font):
+        if 'settings' not in theme:
+            theme['settings'] = {}
         theme['settings']['font'] = font
         return theme.copy()
     theme  << update_font(
         THEMES[plugin.theme] if plugin else THEMES['tango'], editor_font)
     theme :: set_margin_colors()
     settings << {
-        "tab_width": 4,
-        "use_tabs": False,
-        "indent": 4,
+        "line_wrap": plugin.line_wrap,
+        "tab_width": plugin.tab_width,
+        "use_tabs": not plugin.tab_replace,
+        "indent": plugin.indent_size,
         "tab_indents": True,
-        "auto_indent": True,
+        "auto_indent": plugin.auto_indent,
         "backspace_unindents": True,
         "autocompletion_threshold": 1,
         "autocompletion_case_sensitive": True,
@@ -299,7 +302,7 @@ enamldef Editor(CodeEditor): editor:
     func update_settings():
         # Reload everything when the settings change
         set_code_folding()
-        set_margin_colors()
+        #set_margin_colors()
         set_show_scrollbars()
 
     func on_indicator_clicked(line, index, keys):
@@ -324,8 +327,8 @@ enamldef Editor(CodeEditor): editor:
 
     func set_margin_colors():
         w = self.proxy.widget
-        bg = get_cached_qcolor(parse_color(theme['settings']['paper']))
-        fg = get_cached_qcolor(parse_color(theme['settings']['color']))
+        #bg = get_cached_qcolor(parse_color(theme['settings']['paper']))
+        #fg = get_cached_qcolor(parse_color(theme['settings']['color']))
         #w.setMarginsBackgroundColor(bg)
         #w.setFoldMarginColors(bg, bg)
         #w.setMarginsForegroundColor(fg)
