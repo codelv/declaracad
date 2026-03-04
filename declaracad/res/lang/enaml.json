@@ -93,8 +93,6 @@
     "float",
     "int",
     "bool",
-    "True",
-    "False",
     "str",
     "byte",
     "set",

@@ -50,15 +50,31 @@ SOFTWARE.
 """
 
 from enaml.qt.QtCore import QRegularExpression
-from enaml.qt.QtGui import QTextDocument
+from enaml.qt.QtGui import QTextCharFormat, QTextDocument
 from pyqcodeeditor.completers import QPythonCompleter  # noqa: F401
 from pyqcodeeditor.highlighters.QHighlightBlockRule import QHighlightBlockRule
 from pyqcodeeditor.highlighters.QHighlightRule import QHighlightRule
 from pyqcodeeditor.QLanguage import QLanguage
 from pyqcodeeditor.QStyleSyntaxHighlighter import QStyleSyntaxHighlighter
+from pyqcodeeditor.QSyntaxStyle import QSyntaxStyle
 from pyqcodeeditor.utils import index_of
 
 from declaracad.core.utils import resource_path
+
+
+class QHighlightExceptRule(QHighlightRule):
+    """A rule that can exclude itself if another rule is active."""
+
+    def __init__(self, p: QRegularExpression, f: str, excludes: set[str]):
+        super().__init__(p, f)
+        self.excludes = excludes
+
+    def isExcluded(self, style: QSyntaxStyle, f: QTextCharFormat) -> bool:
+        """Check if the given format is in the exclude list."""
+        for name, fmt in style._data.items():
+            if fmt == f:
+                return name in self.excludes
+        return False
 
 
 class QPythonHighlighter(QStyleSyntaxHighlighter):
@@ -85,16 +101,14 @@ class QPythonHighlighter(QStyleSyntaxHighlighter):
         # Following rules has higher priority to display
         # than language specific keys
         # So they must be applied at last.
+        self.m_highlightRules.append(
+            QHighlightRule(
+                QRegularExpression(r"(@[A-Za-z]{1}[A-Za-z0-9_]*)"), "Decorator"
+            )
+        )
         # Numbers
         self.m_highlightRules.append(
             QHighlightRule(QRegularExpression(r"(\b(0b|0x){0,1}[\d.']+\b)"), "Number")
-        )
-        # Strings
-        self.m_highlightRules.append(
-            QHighlightRule(QRegularExpression(r"""("[^\n"]*")"""), "String")
-        )
-        self.m_highlightRules.append(
-            QHighlightRule(QRegularExpression(r"""('[^\n"]*')"""), "String")
         )
         # Single line comment
         self.m_highlightRules.append(
@@ -102,6 +116,17 @@ class QPythonHighlighter(QStyleSyntaxHighlighter):
         )
         self.m_highlightRules.append(
             QHighlightRule(QRegularExpression(r"#[^\n]*"), "Comment")
+        )
+        # Strings
+        self.m_highlightRules.append(
+            QHighlightExceptRule(
+                QRegularExpression(r"""([rft]?"[^\n"]*")"""), "String", {"Comment"}
+            )
+        )
+        self.m_highlightRules.append(
+            QHighlightExceptRule(
+                QRegularExpression(r"""([rft]?'[^\n"]*')"""), "String", {"Comment"}
+            )
         )
         # Multiline string
         self.m_highlightBlockRules.append(
@@ -120,46 +145,55 @@ class QPythonHighlighter(QStyleSyntaxHighlighter):
         )
 
     def highlightBlock(self, text):
+        style = self.syntaxStyle()
         matchIterator = self.m_functionPattern.globalMatch(text)
         while matchIterator.hasNext():
             match = matchIterator.next()
             self.setFormat(
                 match.capturedStart(),
                 match.capturedLength(),
-                self.syntaxStyle().getFormat("Type"),
+                style.getFormat("Type"),
             )
             self.setFormat(
                 match.capturedStart(2),
                 match.capturedLength(2),
-                self.syntaxStyle().getFormat("Function"),
+                style.getFormat("Function"),
             )
 
         matchIterator = self.m_attributePattern.globalMatch(text)
         while matchIterator.hasNext():
             match = matchIterator.next()
-            obj = match.captured(1)
+            obj = match.captured(2)
             if obj == "self":
+                self.setFormat(
+                    match.capturedStart(2),
+                    match.capturedLength(2),
+                    style.getFormat("PySelf"),
+                )
                 self.setFormat(
                     match.capturedStart(3),
                     match.capturedLength(3),
-                    self.syntaxStyle().getFormat("Field"),
+                    style.getFormat("Method"),
                 )
             else:
                 self.setFormat(
                     match.capturedStart(3),
                     match.capturedLength(3),
-                    self.syntaxStyle().getFormat("Static"),
+                    style.getFormat("Static"),
                 )
-
 
         for rule in self.m_highlightRules:
             matchIterator = rule.pattern.globalMatch(text)
             while matchIterator.hasNext():
                 match = matchIterator.next()
+                start = match.capturedStart()
+                if isinstance(rule, QHighlightExceptRule):
+                    if rule.isExcluded(style, self.format(start)):
+                        continue
                 self.setFormat(
-                    match.capturedStart(),
+                    start,
                     match.capturedLength(),
-                    self.syntaxStyle().getFormat(rule.formatName),
+                    style.getFormat(rule.formatName),
                 )
 
         self.setCurrentBlockState(0)
@@ -186,7 +220,7 @@ class QPythonHighlighter(QStyleSyntaxHighlighter):
             self.setFormat(
                 startIndex,
                 matchLength,
-                self.syntaxStyle().getFormat(blockRules.formatName),
+                style.getFormat(blockRules.formatName),
             )
             startIndex = index_of(
                 text, blockRules.startPattern, startIndex + matchLength

@@ -9,7 +9,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 import enaml
 import enamlx
-
 from enaml.workbench.plugin_manifest import PluginManifest
 
 from declaracad.core.app import Application

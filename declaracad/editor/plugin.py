@@ -467,7 +467,7 @@ class EditorPlugin(Plugin):
             Document(
                 name=os.path.expanduser("~/Documents/example.enaml"),
                 unsaved=True,
-                source=EXAMPLE_FILE
+                source=EXAMPLE_FILE,
             )
         ]
 

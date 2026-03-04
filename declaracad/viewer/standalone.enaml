@@ -18,7 +18,7 @@ from enaml.widgets.api import (
 
 from declaracad.occ.api import load_model
 from declaracad.core.widgets import FramelessWindow
-from declaracad.core.utils import log, load_icon
+from declaracad.core.utils import log, load_icon, source_hash
 
 from .plugin import ViewerAction, EmptyFileError
 from .view import ModelViewer
@@ -150,6 +150,10 @@ enamldef ViewerWindow(FramelessWindow): window:
     attr protocol = None
     alias viewer
 
+    #: List of shapes rendered
+    attr cached_digest: bytes
+    attr cached_result: list = []
+
     initial_size = (1, 1) if frameless else (960, 480)
 
     #: Window Icon
@@ -197,6 +201,7 @@ enamldef ViewerWindow(FramelessWindow): window:
         if protocol and protocol.transport:
             protocol.invoke_method(id, params)
 
+
     func load_source(filename: str, source: str, version: int) -> list:
         if filename != "-":
             try:
@@ -204,8 +209,16 @@ enamldef ViewerWindow(FramelessWindow): window:
                 start_time = datetime.now()
                 # Load the models from source code or disk
                 if not os.path.exists(filename):
+                    new_digest = source_hash(source, is_file=False)
+                    if new_digest == cached_digest:
+                        print("Source unchanged. Using cache")
+                        return self.cached_result # Don't reload if it didnt change
                     result = load_model(source, options={"from_string": True}, loader=".enaml")
                 else:
+                    new_digest = source_hash(filename, is_file=True)
+                    if new_digest == cached_digest:
+                        print("Source unchanged. Using cache")
+                        return self.cached_result # Don't reload if it didnt change
                     result = load_model(filename)
                 end_time = datetime.now()
                 print(f"Load took {end_time-start_time}")
@@ -213,6 +226,8 @@ enamldef ViewerWindow(FramelessWindow): window:
                 # Clear clipped planes
                 viewer.clipped_planes = {}
                 viewer.dimensions = []
+                self.cached_result = result
+                self.cached_digest = new_digest
                 return result
             except EmptyFileError as e:
                 # When opening an empty / unsaved file, clear the display

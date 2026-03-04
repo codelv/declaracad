@@ -7,9 +7,9 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ------------------------------------------------------------------------------
 
-import weakref
-import warnings
 import traceback
+import warnings
+import weakref
 
 from atom.api import Typed, Value
 from enaml.colors import parse_color
@@ -66,10 +66,11 @@ class QCodeEditor(BaseQCodeEditor):
         # The original function does not update the background
         if style := self._syntaxStyle:
             self.setStyleSheet(
-                "QTextEdit { background-color: %s; selection-background-color: %s; color: %s; }" % (
+                "QTextEdit { background-color: %s; selection-background-color: %s; color: %s; }"
+                % (
                     style.getFormat("Text").background().color().name(),
                     style.getFormat("Selection").background().color().name(),
-                    style.getFormat("Text").foreground().color().name()
+                    style.getFormat("Text").foreground().color().name(),
                 )
             )
 
@@ -135,6 +136,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
     _marker_images = Typed(dict, ())
 
     _syntax_style = Typed(QSyntaxStyle)
+
     # --------------------------------------------------------------------------
     # Initialization API
     # --------------------------------------------------------------------------

@@ -10,6 +10,7 @@ Created on Jul 12, 2015
 @author: jrm
 """
 
+import hashlib
 import logging
 import os
 import subprocess
@@ -33,6 +34,14 @@ def clip(s: Any, n: int = 1000) -> str:
     if len(v) > n:
         v[:n] + "..."
     return v
+
+
+@contextmanager
+def log_time(start_message: str, done_message: str = "Done! ({} s)"):
+    log.debug(start_message)
+    t = time.time()
+    yield
+    log.debug(done_message.format(round((time.time() - t), 2)))
 
 
 # -----------------------------------------------------------------------------
@@ -88,9 +97,9 @@ def open_folder(path: str):
         subprocess.call([cmd, path])
 
 
-@contextmanager
-def log_time(start_message: str, done_message: str = "Done! ({} s)"):
-    log.debug(start_message)
-    t = time.time()
-    yield
-    log.debug(done_message.format(round((time.time() - t), 2)))
+def source_hash(source: str, is_file: bool = False) -> Optional[bytes]:
+    """Create an md5 hash of the source."""
+    if is_file and os.path.exists(source):
+        with open(source, "rb") as f:
+            return hashlib.md5(f.read()).digest()
+    return hashlib.md5(source).digest()

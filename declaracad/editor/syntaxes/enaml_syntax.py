@@ -10,7 +10,6 @@ from typing import Optional
 
 from enaml.qt.QtCore import QObject, QRegularExpression
 from enaml.qt.QtGui import QTextDocument
-from pyqcodeeditor.highlighters.QHighlightRule import QHighlightRule
 from pyqcodeeditor.QLanguageCompleter import QLanguageCompleter
 
 from declaracad.core.utils import resource_path
