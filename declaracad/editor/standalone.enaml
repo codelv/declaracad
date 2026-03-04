@@ -35,7 +35,7 @@ enamldef EditorMenuBar(MenuBar):
 
 enamldef StandaloneEditor(MainWindow): view:
     attr plugin: EditorPlugin
-    title = "Editor - DeclaraCAD"
+    title << f"Editor - {doc.name} - DeclaraCAD"
     icon = load_icon('logo')
     alias doc: editor_view.editor.doc
     alias editor: editor_view.editor

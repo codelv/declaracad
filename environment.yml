@@ -6,7 +6,7 @@ channels:
  - https://repo.codelv.com
 
 dependencies:
- - python =3.13
+ - python =3.12
  - cxx-compiler
  - pybind11
  - pyocct >=7.9

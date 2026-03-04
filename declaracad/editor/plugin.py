@@ -41,6 +41,7 @@ from enaml.scintilla.mono_font import MONO_FONT
 from enaml.workbench.core.execution_event import ExecutionEvent
 
 from declaracad.core.api import Model, Plugin, log
+from declaracad.core.utils import source_hash
 
 from .qt import qt_factories  # noqa: F401
 from .syntaxes import SYNTAXES
@@ -216,13 +217,15 @@ class Document(Model):
 
     def _observe_source(self, change):
         ext = os.path.splitext(self.name.lower())[-1]
-        if ext in [".py", ".enaml"]:
-            self.errors = []
+        if ext == ".py" or ext == ".enaml":
+            self._update_errors(ext)
             self._update_suggestions(change)
         if change["type"] == "update":
             try:
-                with open(self.name) as f:
-                    self.unsaved = f.read() != self.source
+                if self.exists():
+                    in_mem = source_hash(self.source, is_file=False)
+                    on_disk = source_hash(self.name, is_file=True)
+                    self.unsaved = in_mem != on_disk
             except Exception as e:
                 log.debug(e)
 
@@ -239,6 +242,13 @@ class Document(Model):
         else:
             plugin = workbench.get_plugin("declaracad.editor")
         self.suggestions = plugin.autocomplete(self.source, self.cursor)
+
+    def _update_errors(self, ext: str):
+        if ext == ".enaml":
+            pass # TODO: Parse file
+        elif ext == ".py":
+            pass # TODO: Parse file
+        self.errors = []
 
     def _update_outline(self):
         return []  # TODO: This is annoyingly slow with the latest enaml...

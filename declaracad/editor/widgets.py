@@ -10,7 +10,7 @@ from atom.api import (
     Int,
     List,
     Str,
-    Tuple,
+    FixedTuple,
     Typed,
     set_default,
 )
@@ -39,36 +39,13 @@ class CodeEditorIndicator(Atom):
     """An indicator descriptor."""
 
     #: Starting cursor position of the indicator
-    start = Tuple(int, default=(0, 0))
+    start = FixedTuple(int, int, default=(0, 0))
 
     #: Stop cursor position of the indicator
-    stop = Tuple(int, default=(0, 0))
+    stop = FixedTuple(int, int, default=(0, 0))
 
-    #: Indicator style
-    style = Enum(
-        "squiggle",
-        "plain",
-        "tt",
-        "diagonal",
-        "strike",
-        "hidden",
-        "box",
-        "round_box",
-        "straight_box",
-        "full_box",
-        "dashes",
-        "dots",
-        "squiggle_low",
-        "dot_box",
-        "thick_composition",
-        "thin_composition",
-        "text_color",
-        "triangle",
-        "triangle_character",
-    )
-
-    #: Indicator foreground color
-    color = Str("#000000")
+    #: Indicator format style
+    style = Enum("error", "warning", "info", "hint")
 
 
 class CodeEditorMarker(Atom):
@@ -142,7 +119,7 @@ class CodeEditor(Control):
 
     #: Position of the cursor within the editor in the format (line, column)
     #: This is needed for autocompletion engines to determine the current text
-    cursor_position = d_(Tuple(int, default=(0, 0)), writable=False)
+    cursor_position = d_(FixedTuple(int, int, default=(0, 0)), writable=False)
 
     #: The scintilla document buffer to use in the editor. A default
     #: document will be created automatically for each editor. This

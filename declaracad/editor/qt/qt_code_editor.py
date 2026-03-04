@@ -24,13 +24,14 @@ from enaml.qt.QtGui import (
     QColor,
     QFont,
     QWheelEvent,
+    QTextCharFormat, QCursor
 )
 from enaml.qt.QtWidgets import QTextEdit
 from pyqcodeeditor.QCodeEditor import QCodeEditor as BaseQCodeEditor
 from pyqcodeeditor.QSyntaxStyle import QSyntaxStyle as BaseQSyntaxStyle
 
 from declaracad.editor.syntaxes import SYNTAXES
-from declaracad.editor.widgets import ProxyCodeEditor
+from declaracad.editor.widgets import ProxyCodeEditor, CodeEditorIndicator
 
 
 def _make_color(color_str: str) -> QColor:
@@ -154,10 +155,10 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         self.set_settings(d.settings)
         self.set_zoom(d.zoom)
         self.refresh_style()
-        if d.indicators:
-            self.set_indicators(d.indicators)
-        if d.markers:
-            self.set_markers(d.markers)
+        if indicators := d.indicators:
+            self.set_indicators(indicators)
+        if markers := d.markers:
+            self.set_markers(markers)
         self.widget.textChanged.connect(self.on_text_changed)
         self.widget.cursorPositionChanged.connect(self.on_cursor_position_changed)
 
@@ -363,14 +364,48 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         """
         pass
 
-    def set_indicators(self, indicators):
+    def set_indicators(self, indicators: list[CodeEditorIndicator]):
         """Set the indicators of the widget.
 
         This lets certain text be highlighted or underlined with a given
         style to indicate something (errors) within the editor.
 
         """
-        pass
+        w = self.widget
+        extra_selections = []
+        for indicator in indicators:
+            # Create cursor
+            cursor = w.textCursor()
+            cursor.movePosition(QTextCursor.Start);
+            cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, indicator.start[0] - 1);
+            cursor.movePosition(QTextCursor.StartOfBlock);
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, indicator.start[1]);
+
+            if indicator.stop[0] > indicator.start[0]:
+                cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor, indicator.stop[0] - indicator.start[0]);
+
+            cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor);
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1]);
+
+            # Set style
+            style = w._syntaxStyle()
+            indicator_format = QTextCharFormat(w.currentCharFormat())
+            indicator_format.setFontUnderline(True)
+            if indicator.style == "error" or indicator.style == "warning":
+                fmt = style.getFormat(indicator.style.title())
+                indicator_format.setUnderlineColor(fmt.underlineColor())
+                indicator_format.setUnderlineColor(fmt.underlineStyle())
+            elif indicator.style == "info":
+                fmt = style.getFormat("Warning")
+                indicator_format.setUnderlineColor(fmt.underlineColor())
+                indicator_format.setUnderlineColor(QTextCharFormat.DotLine)
+            elif indicator.style == "hint":
+                fmt = style.getFormat("Text")
+                indicator_format.setUnderlineColor(fmt.foreground().color())
+                indicator_format.setUnderlineColor(QTextCharFormat.DotLine)
+
+            extra_selections.append(QTextEdit.ExtraSelection(cursor, indicator_format))
+        w.setExtraSelections(extra_selections)
 
     # --------------------------------------------------------------------------
     # Reimplementations
