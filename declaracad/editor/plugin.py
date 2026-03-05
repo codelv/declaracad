@@ -245,9 +245,9 @@ class Document(Model):
 
     def _update_errors(self, ext: str):
         if ext == ".enaml":
-            pass # TODO: Parse file
+            pass  # TODO: Parse file
         elif ext == ".py":
-            pass # TODO: Parse file
+            pass  # TODO: Parse file
         self.errors = []
 
     def _update_outline(self):

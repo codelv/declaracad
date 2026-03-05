@@ -6,11 +6,10 @@ from atom.api import (
     Constant,
     Enum,
     Event,
+    FixedTuple,
     ForwardTyped,
     Int,
     List,
-    Str,
-    FixedTuple,
     Typed,
     set_default,
 )

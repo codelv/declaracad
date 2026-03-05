@@ -35,7 +35,7 @@ from .widgets import CodeEditor, CodeEditorIndicator, CodeEditorMarker
 
 
 
-def create_indicators(filename, errors):
+def create_indicators(filename: str, errors: list[str]) -> list[CodeEditorIndicator]:
     """ Create error indicators by reading the traceback """
     results = []
 
@@ -94,6 +94,22 @@ enamldef ErrorPopup(PopupView):
             foreground << theme.get('settings', {}).get('color', '#000000')
             text = message
 
+enamldef NotificationPopup(PopupView):
+    foreground = 'white'
+    background = 'rgba(30, 30, 30, 0.85)'
+    window_type = 'tool_tip'
+    parent_anchor = (0.0, 0.0)
+    anchor = (0.0, 0.0)
+    offset = (10, 10)
+    timeout = 5
+    fade_in_duration = 200
+    fade_out_duration = 200
+    attr message: str = ""
+    Container:
+        Label:
+            foreground = 'white'
+            text << message
+            align = 'left'
 
 enamldef EditorGotoBar(Container): bar:
     attr editor
@@ -268,12 +284,35 @@ enamldef Editor(CodeEditor): editor:
     attr editor_font: str << f'{plugin.font_size}pt "{plugin.font_family}"'
     editor_font :: style_timer.start()
     attr error_popup = None
+    attr notification: NotificationPopup
+
+    func show_notification(message: str) -> NotificationPopup:
+        """ Display a notification message.
+
+        Parameters
+        ----------
+        message: String
+            The message to show
+
+        """
+        log.debug(f"Editor notification: {message}")
+        self.hide_notification()
+        popup = NotificationPopup(self, message=message)
+        popup.show()
+        self.notification = popup
+        return popup
+
+    func hide_notification():
+        """ Hide the previous notification message if any """
+        if popup := self.notification:
+            popup.close()
 
     func update_font(theme, font):
         if 'settings' not in theme:
             theme['settings'] = {}
         theme['settings']['font'] = font
         return theme.copy()
+
     theme  << update_font(
         THEMES[plugin.theme] if plugin else THEMES['tango'], editor_font)
     theme :: set_margin_colors()
@@ -470,11 +509,13 @@ enamldef Editor(CodeEditor): editor:
             timer.start()
     zoom << plugin.zoom if plugin else 0
     indicators << create_indicators(doc.name, doc.errors) if doc else []
-    markers << [CodeEditorMarker(
-                    line=i.start[0],
-                    image=load_image("exclamation" if i.color=="#FF0000"
-                                        else "error"))
-                    for i in indicators]
+    markers << [
+        CodeEditorMarker(
+            line=i.start[0],
+            image=load_image("exclamation" if i.color=="#FF0000" else "error")
+        )
+        for i in indicators
+    ]
 
     Timer: timer:
         interval = 500
@@ -491,6 +532,7 @@ enamldef Editor(CodeEditor): editor:
 
 enamldef EditorView(Container): view:
     padding = 0
+
     alias editor
     Conditional:
         condition << editor.show_find_bar or editor.show_replace_bar

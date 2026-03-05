@@ -102,4 +102,4 @@ def source_hash(source: str, is_file: bool = False) -> Optional[bytes]:
     if is_file and os.path.exists(source):
         with open(source, "rb") as f:
             return hashlib.md5(f.read()).digest()
-    return hashlib.md5(source).digest()
+    return hashlib.md5(source.encode()).digest()

@@ -20,22 +20,21 @@ from enaml.qt.q_resource_helpers import (
     QFont_from_Font,
 )
 from enaml.qt.qt_control import QtControl
-from enaml.qt.QtCore import Qt, QRegularExpression, Signal
+from enaml.qt.QtCore import QRegularExpression, Qt, Signal
 from enaml.qt.QtGui import (
     QColor,
     QFont,
-    QWheelEvent,
-    QTextDocument,
     QTextCharFormat,
     QTextCursor,
-    QCursor
+    QTextDocument,
+    QWheelEvent,
 )
 from enaml.qt.QtWidgets import QTextEdit
 from pyqcodeeditor.QCodeEditor import QCodeEditor as BaseQCodeEditor
 from pyqcodeeditor.QSyntaxStyle import QSyntaxStyle as BaseQSyntaxStyle
 
 from declaracad.editor.syntaxes import SYNTAXES
-from declaracad.editor.widgets import ProxyCodeEditor, CodeEditorIndicator
+from declaracad.editor.widgets import CodeEditorIndicator, ProxyCodeEditor
 
 
 def _make_color(color_str: str) -> QColor:
@@ -100,10 +99,10 @@ class QCodeEditor(BaseQCodeEditor):
         line: int = -1,
         index: int = -1,
         show: bool = True,
-        posix: bool = False
+        posix: bool = False,
     ) -> bool:
         if regex:
-            query =  QRegularExpression(text)
+            query = QRegularExpression(text)
         else:
             query = text
         flags = QTextDocument.FindFlags()
@@ -431,15 +430,25 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
             # Create cursor
             cursor = w.textCursor()
             cursor.movePosition(QTextCursor.Start)
-            cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, indicator.start[0] - 1)
+            cursor.movePosition(
+                QTextCursor.NextBlock, QTextCursor.MoveAnchor, indicator.start[0] - 1
+            )
             cursor.movePosition(QTextCursor.StartOfBlock)
-            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, indicator.start[1])
+            cursor.movePosition(
+                QTextCursor.NextCharacter, QTextCursor.MoveAnchor, indicator.start[1]
+            )
 
             if indicator.stop[0] > indicator.start[0]:
-                cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor, indicator.stop[0] - indicator.start[0])
+                cursor.movePosition(
+                    QTextCursor.NextBlock,
+                    QTextCursor.KeepAnchor,
+                    indicator.stop[0] - indicator.start[0],
+                )
 
             cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
-            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1])
+            cursor.movePosition(
+                QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1]
+            )
 
             # Set style
             style = w._syntaxStyle()
