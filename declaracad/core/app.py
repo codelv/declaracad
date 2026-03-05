@@ -16,7 +16,6 @@ import os
 import signal
 import sys
 from inspect import iscoroutinefunction
-from queue import Empty, Queue
 from typing import Any, Callable, Optional
 
 from asyncqtpy import QEventLoop, QEventLoopPolicy
@@ -100,7 +99,7 @@ class AsyncApplication(Application):
     """
 
     loop = Instance(QEventLoop, factory=asyncio.get_event_loop)
-    queue = Instance(Queue, ())
+    queue = Instance(asyncio.Queue, ())
     running = Bool()
 
     def __init__(self, platform: Optional[str] = None):
@@ -132,21 +131,16 @@ class AsyncApplication(Application):
     def stop(self):
         """Stop the application"""
         self.running = False
-        self.queue.put(None)
+        self.queue.put_nowait(None)
         super().stop()
 
     async def main(self):
         """Run any async deferred calls in the main ui loop."""
         while self.running:
-            try:
-                task = self.queue.get(block=False)
-                if task is None:
-                    break
-                await task
-            except Empty:
-                await asyncio.sleep(0.1)
-            # except Exception as e:
-            #    log.exception(e)
+            task = await self.queue.get()
+            if task is None:
+                break
+            await task
         log.debug("Main finished")
 
     def on_async_exception(self, loop, context):
@@ -171,9 +165,9 @@ class AsyncApplication(Application):
 
             async def deferred_task():
                 task = self.loop.create_task(callback(*args, **kwargs))
-                self.queue.put(task)
+                await self.queue.put(task)
 
-            return self.queue.put(deferred_task())
+            return self.queue.put_nowait(deferred_task())
         return super().deferred_call(callback, *args, **kwargs)
 
     def timed_call(self, ms: float, callback: Callable, *args: Any, **kwargs: Any):
@@ -198,7 +192,7 @@ class AsyncApplication(Application):
 
             async def deferred_task():
                 task = self.loop.create_task(callback(*args, **kwargs))
-                self.queue.put(task)
+                await self.queue.put(task)
 
-            return super().timed_call(ms, self.queue.put, deferred_task())
+            return super().timed_call(ms, self.queue.put_nowait, deferred_task())
         return super().timed_call(ms, callback, *args, **kwargs)
