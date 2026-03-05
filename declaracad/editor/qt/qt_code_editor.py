@@ -10,6 +10,7 @@
 import traceback
 import warnings
 import weakref
+from typing import Optional
 
 from atom.api import Typed, Value
 from enaml.colors import parse_color
@@ -19,12 +20,15 @@ from enaml.qt.q_resource_helpers import (
     QFont_from_Font,
 )
 from enaml.qt.qt_control import QtControl
-from enaml.qt.QtCore import Qt
+from enaml.qt.QtCore import Qt, QRegularExpression, Signal
 from enaml.qt.QtGui import (
     QColor,
     QFont,
     QWheelEvent,
-    QTextCharFormat, QCursor
+    QTextDocument,
+    QTextCharFormat,
+    QTextCursor,
+    QCursor
 )
 from enaml.qt.QtWidgets import QTextEdit
 from pyqcodeeditor.QCodeEditor import QCodeEditor as BaseQCodeEditor
@@ -61,7 +65,9 @@ class QSyntaxStyle(BaseQSyntaxStyle):
 
 
 class QCodeEditor(BaseQCodeEditor):
-    zoomLevel: int = 0
+    zoom_level: int = 0
+    last_search: Optional[tuple[str | QRegularExpression, int, bool, bool]] = None
+    searchWrapped = Signal()
 
     def _updateStyle(self):
         # The original function does not update the background
@@ -80,11 +86,59 @@ class QCodeEditor(BaseQCodeEditor):
 
         self._updateExtraSelection()
 
+    def selectedText(self) -> str:
+        return self.textCursor().selectedText()
+
+    def findFirst(
+        self,
+        text: str,
+        regex: bool = True,
+        case_sensitive: bool = False,
+        words_only: bool = False,
+        wrap: bool = True,
+        forward: bool = True,
+        line: int = -1,
+        index: int = -1,
+        show: bool = True,
+        posix: bool = False
+    ) -> bool:
+        if regex:
+            query =  QRegularExpression(text)
+        else:
+            query = text
+        flags = QTextDocument.FindFlags()
+        if case_sensitive:
+            flags |= QTextDocument.FindCaseSensitively
+        if words_only:
+            flags |= QTextDocument.FindWholeWords
+        if not forward:
+            flags |= QTextDocument.FindBackward
+        self.last_search = (query, flags, wrap, show)
+        return self.findNext()
+
+    def findNext(self) -> Optional[bool]:
+        search = self.last_search
+        if not search:
+            return None
+        query, flags, wrap, show = search
+        cursor = self.textCursor()
+        doc = self.document()
+        new_cursor = doc.find(query, cursor, flags)
+        found = not new_cursor.isNull()
+        if wrap and not found:
+            cursor.movePosition(QTextCursor.Start)
+            new_cursor = doc.find(query, cursor, options=flags)
+            found = not new_cursor.isNull()
+            self.searchWrapped.emit()
+        if found and show:
+            self.setTextCursor(new_cursor)
+        return found
+
     def selectAll(self, enabled: bool = True):
         if enabled:
             super().selectAll()
         else:
-            super().textCursor().clearSelection()
+            self.textCursor().clearSelection()
 
     def wheelEvent(self, event: QWheelEvent):
         """Overridden to use ctrl + mouse wheel to zoom"""
@@ -99,20 +153,20 @@ class QCodeEditor(BaseQCodeEditor):
 
     def zoomIn(self, value: int = 1):
         # Overridden to track zoom level
-        self.zoomTo(self.zoomLevel + value)
+        self.zoomTo(self.zoom_level + value)
 
     def zoomOut(self, value: int = 1):
         # Overridden to track zoom level
-        self.zoomTo(self.zoomLevel - value)
+        self.zoomTo(self.zoom_level - value)
 
     def zoomTo(self, value: int):
         """Zoom to a specific zoom level."""
         new_zoom = max(-10, min(20, value))
-        if new_zoom > self.zoomLevel:
-            super().zoomIn(new_zoom - self.zoomLevel)
+        if new_zoom > self.zoom_level:
+            super().zoomIn(new_zoom - self.zoom_level)
         else:
-            super().zoomOut(self.zoomLevel - new_zoom)
-        self.zoomLevel = new_zoom
+            super().zoomOut(self.zoom_level - new_zoom)
+        self.zoom_level = new_zoom
 
 
 class QtCodeEditor(QtControl, ProxyCodeEditor):
@@ -376,16 +430,16 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         for indicator in indicators:
             # Create cursor
             cursor = w.textCursor()
-            cursor.movePosition(QTextCursor.Start);
-            cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, indicator.start[0] - 1);
-            cursor.movePosition(QTextCursor.StartOfBlock);
-            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, indicator.start[1]);
+            cursor.movePosition(QTextCursor.Start)
+            cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, indicator.start[0] - 1)
+            cursor.movePosition(QTextCursor.StartOfBlock)
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, indicator.start[1])
 
             if indicator.stop[0] > indicator.start[0]:
-                cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor, indicator.stop[0] - indicator.start[0]);
+                cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor, indicator.stop[0] - indicator.start[0])
 
-            cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor);
-            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1]);
+            cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1])
 
             # Set style
             style = w._syntaxStyle()
