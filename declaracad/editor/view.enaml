@@ -10,7 +10,6 @@ Created on Dec 10, 2015
 @author: jrm
 """
 import os
-import re
 
 from enaml.application import deferred_call
 from enaml.core.api import Looper, Conditional
@@ -24,7 +23,7 @@ from enaml.widgets.api import (
     Container, Timer, MultilineField, Menu, Action, PopupView, Label,
     Field, PushButton, SpinBox
 )
-from enamlx.widgets.api import KeyEvent
+from enamlx.widgets.api import KeyEvent, TableView, TableViewRow, TableViewItem
 
 from declaracad.core.api import DockItem
 from declaracad.core.utils import load_icon, load_image, log
@@ -32,49 +31,6 @@ from declaracad.core.widgets import PlainTextEdit
 from .themes import THEMES
 from .plugin import Document, format_title
 from .widgets import CodeEditor, CodeEditorIndicator, CodeEditorMarker
-
-
-
-def create_indicators(filename: str, errors: list[str]) -> list[CodeEditorIndicator]:
-    """ Create error indicators by reading the traceback """
-    results = []
-
-    for line in errors:
-        try:
-            # From traceback
-            m = re.match('File "(.+)", line (\d+)', line.strip())
-            if m:
-                tag = m.groups()
-                if tag[0] not in ("Enaml", filename):
-                    continue
-            else:
-                # From code inspection
-                tag = line.split(":")[0:3]
-                if len(tag) < 2:
-                    continue
-            try:
-                l = int(tag[1])
-            except:
-                continue
-
-
-            color = "#FF0000"
-            try:
-                c = int(tag[2])
-                start = (l-1, 0)
-                stop = (l-1, c)
-            except:
-                start = (l-1, 0)
-                stop = (l, 0)
-                #color = "#FFFF00"
-
-            results.append(CodeEditorIndicator(
-                start=start, stop=stop, style="squiggle", color=color,
-            ))
-        except Exception as e:
-            print(e)
-    return results
-
 
 
 enamldef ErrorPopup(PopupView):
@@ -314,7 +270,9 @@ enamldef Editor(CodeEditor): editor:
         return theme.copy()
 
     theme  << update_font(
-        THEMES[plugin.theme] if plugin else THEMES['tango'], editor_font)
+        THEMES[plugin.theme if plugin else 'default'],
+        editor_font
+    )
     theme :: set_margin_colors()
     settings << {
         "line_wrap": plugin.line_wrap,
@@ -327,56 +285,24 @@ enamldef Editor(CodeEditor): editor:
         "autocompletion_threshold": 1,
         "autocompletion_case_sensitive": True,
         "show_line_numbers": plugin.show_line_numbers,
+        "show_scrollbars": plugin.show_scrollbars,
         "code_folding": plugin.code_folding,
         "show_scrollbars": plugin.show_scrollbars # Not used but here so we update
     }
     autocomplete = 'all'
-    settings :: update_settings()
-    activated ::
-        set_text(doc.source)
-        w = self.proxy.widget
-        #w.indicatorReleased.connect(self.on_indicator_clicked)
-        update_settings()
+    activated :: set_text(doc.source)
 
-    func update_settings():
-        # Reload everything when the settings change
-        set_code_folding()
-        #set_margin_colors()
-        set_show_scrollbars()
-
-    func on_indicator_clicked(line, index, keys):
+    indicator_clicked ::
         if error_popup:
             error_popup.hide()
             editor.error_popup = None
-            return
-        editor.error_popup = ErrorPopup(
-            self,
-            theme=self.theme,
-            message="\n".join(doc.errors[-5:]).strip()
-        )
-        editor.error_popup.show()
-
-    func set_code_folding():
-        w = self.proxy.widget
-        # style = w.FoldStyle.NoFoldStyle
-        # if plugin.code_folding:
-        #     name = plugin.code_fold_style.title().replace('-', '')
-        #     style = getattr(w.FoldStyle, f'{name}FoldStyle')
-        # w.setFolding(style)
-
-    func set_margin_colors():
-        w = self.proxy.widget
-        #bg = get_cached_qcolor(parse_color(theme['settings']['paper']))
-        #fg = get_cached_qcolor(parse_color(theme['settings']['color']))
-        #w.setMarginsBackgroundColor(bg)
-        #w.setFoldMarginColors(bg, bg)
-        #w.setMarginsForegroundColor(fg)
-
-    func set_show_scrollbars():
-        w = self.proxy.widget
-        policy = Qt.ScrollBarAsNeeded if plugin.show_scrollbars else Qt.ScrollBarAlwaysOff
-        #w.setHorizontalScrollBarPolicy(policy)
-        #w.setVerticalScrollBarPolicy(policy)
+        else:
+            editor.error_popup = ErrorPopup(
+                self,
+                theme=self.theme,
+                message="\n".join(doc.errors[-5:]).strip()
+            )
+            editor.error_popup.show()
 
     func get_comment_token():
         if not doc.name:
@@ -508,11 +434,11 @@ enamldef Editor(CodeEditor): editor:
         if not is_deleted():
             timer.start()
     zoom << plugin.zoom if plugin else 0
-    indicators << create_indicators(doc.name, doc.errors) if doc else []
+    indicators << doc.errors
     markers << [
         CodeEditorMarker(
             line=i.start[0],
-            image=load_image("exclamation" if i.color=="#FF0000" else "error")
+            image=load_image("error" if i.style == "error" else "exclamation")
         )
         for i in indicators
     ]
@@ -634,15 +560,37 @@ enamldef EditorDockItem(DockItem): view:
                                     {'editor': view})
 
 
+INDICATOR_ICONS = {
+    'error': 'exclamation',
+    'warning': 'error',
+    'info': 'information',
+    'hint': 'information',
+}
+
 enamldef ErrorsDockItem(DockItem):
   title = "Errors"
   name = 'errors-item'
   icon = load_icon('bug')
+
   Container:
       padding = 0
-      minimum_size = (320, 320)
-      MultilineField:
-          text << "\n".join(plugin.active_document.errors)
+      TableView: table:
+          minimum_size = (320, 320)
+          horizontal_headers = ['Problem', 'Line','Column']
+          horizontal_stretch = True
+          items << plugin.active_document.errors
+          Looper:
+              iterable << range(table.visible_rows)
+              TableViewRow:
+                    row << table.visible_row + loop.index
+                    attr item << table.items[self.row]
+                    TableViewItem:
+                        icon << load_icon(INDICATOR_ICONS.get(item.style, 'error'))
+                        text << item.title
+                    TableViewItem:
+                        text << f"{item.start[0]}"
+                    TableViewItem:
+                        text << f"{item.start[1]}"
 
 
 enamldef OutputDockItem(DockItem):

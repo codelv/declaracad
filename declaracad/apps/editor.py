@@ -11,7 +11,7 @@ import enaml
 import enamlx
 from enaml.workbench.plugin_manifest import PluginManifest
 
-from declaracad.core.app import Application
+from declaracad.core.app import AsyncApplication as Application
 from declaracad.editor.plugin import Document, EditorPlugin
 
 with enaml.imports():
@@ -28,8 +28,12 @@ def main(filename: str, **kwargs):
     """
     enamlx.install()  # Needed for KeyEvent
     app = Application()
-    plugin = EditorPlugin(manifest=PluginManifest(id="declaracad.editor"))
-    plugin.start()
-    editor = StandaloneEditor(plugin=plugin, doc=Document(name=filename, plugin=plugin))
+    doc = Document(name=filename)
+    plugin = EditorPlugin(
+        manifest=PluginManifest(id="declaracad.editor"),
+        enable_langserver=kwargs.get("langserver") is True,
+    )
+    plugin.start(doc)
+    editor = StandaloneEditor(plugin=plugin, doc=plugin.active_document)
     editor.show()
     app.start()

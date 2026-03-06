@@ -116,6 +116,13 @@ def launch_editor(args):
     editor.main(**args.__dict__)
 
 
+def launch_langserver(args):
+    init_logging("%(message)s")
+    from declaracad.apps import langserver
+
+    langserver.main(**args.__dict__)
+
+
 def launch_workbench(args):
     init_logging()
     from declaracad.apps import workbench
@@ -188,10 +195,15 @@ def main():
     editor = subparsers.add_parser("edit", help="Edit a file")
     editor.set_defaults(func=launch_editor)
     editor.add_argument("filename", help="File to edit")
+    editor.add_argument("--langserver", action="store_true", help="Start langserver")
 
     console = subparsers.add_parser("console", help="Open an ipython console")
     console.set_defaults(func=launch_console)
     editor.add_argument("-c", help="Command to run")
+
+    langserver = subparsers.add_parser("langserver", help="Run the langserver")
+    langserver.set_defaults(func=launch_langserver)
+    langserver.add_argument("port", help="Port to connect to")
 
     args = parser.parse_args()
 

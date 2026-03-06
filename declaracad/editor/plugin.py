@@ -1,24 +1,18 @@
 """
-Copyright (c) 2017-2022, Jairus Martin.
+Copyright (c) 2017-2026, Jairus Martin.
 
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
-
-Created on Dec 10, 2015
-
-@author: jrm
 """
 
-import ast as python_ast
+import asyncio
 import os
 import subprocess
 import sys
-from textwrap import dedent
 from typing import Optional, Union
 
 import enaml
-import jedi
 from atom.api import (
     Bool,
     ContainerList,
@@ -31,21 +25,23 @@ from atom.api import (
     Range,
     Str,
     Tuple,
+    Typed,
     observe,
 )
-from enaml.application import timed_call
-from enaml.core import enaml_ast
-from enaml.core.parser import parse
+from enaml.application import deferred_call, timed_call
 from enaml.layout.api import InsertItem, InsertTab, RemoveItem
 from enaml.scintilla.mono_font import MONO_FONT
 from enaml.workbench.core.execution_event import ExecutionEvent
 
 from declaracad.core.api import Model, Plugin, log
-from declaracad.core.utils import source_hash
+from declaracad.core.protocol import JsonRpcProtocol, ProcessLineReceiver
+from declaracad.core.utils import get_bootstrap_cmd, source_hash
 
+from .langserver import Outline, ParseResult
 from .qt import qt_factories  # noqa: F401
 from .syntaxes import SYNTAXES
 from .themes import THEMES
+from .widgets import CodeEditorIndicator
 
 EXAMPLE_FILE = """# Created in DeclaraCAD
 from declaracad.occ.api import *
@@ -74,6 +70,14 @@ enamldef Assembly(Part):
                 depth = box.dz
                 far_edge = ("cone", 0.5)
 
+"""
+
+NEW_FILE_SOURCE = """# Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef Assembly(Part):
+    Box:
+        pass
 """
 
 
@@ -130,29 +134,6 @@ def format_title(
     return name
 
 
-def parse_python(source: str) -> list:
-    ast = parse(source)
-    nodes = []
-    # Walk ast and pull out nodes we're insterested in
-    for node in ast.body:
-        if isinstance(node, enaml_ast.EnamlDef):
-            nodes.append(node)
-        elif isinstance(node, enaml_ast.PythonModule):
-            for n in node.ast.body:
-                if isinstance(n, (python_ast.ClassDef, python_ast.FunctionDef)):
-                    nodes.append(n)
-    # Hack to workaround a segfault when the tree's items are emptied
-    if not nodes:
-        nodes.append(ast)
-    return nodes
-
-
-def parse_gcode(source: str) -> list:
-    from declaracad.cnc import gcode
-
-    return [gcode.parse(source)]
-
-
 class Document(Model):
     #: Name of the current document
     name = Str().tag(config=True)
@@ -168,7 +149,7 @@ class Document(Model):
     version = Int(1)
 
     #: Any linting errors
-    errors = ContainerList(str)
+    errors = List(CodeEditorIndicator)
 
     #: Any script output
     output = ContainerList(str)
@@ -180,7 +161,10 @@ class Document(Model):
     plugin = ForwardTyped(lambda: EditorPlugin)
 
     #: Outline for outline view
-    outline = List()
+    outline = List(Outline)
+
+    #: Parsing task
+    parsing = Bool()
 
     def exists(self) -> bool:
         return os.path.exists(self.name)
@@ -207,7 +191,7 @@ class Document(Model):
             with open(self.name) as f:
                 return f.read()
         except Exception as e:
-            self.errors = [str(e)]
+            self.errors = [CodeEditorIndicator(title=str(e))]
         return ""
 
     def _observe_unsaved(self, change):
@@ -216,10 +200,7 @@ class Document(Model):
             self.version += 1
 
     def _observe_source(self, change):
-        ext = os.path.splitext(self.name.lower())[-1]
-        if ext == ".py" or ext == ".enaml":
-            self._update_errors(ext)
-            self._update_suggestions(change)
+        deferred_call(self.reparse)
         if change["type"] == "update":
             try:
                 if self.exists():
@@ -229,48 +210,119 @@ class Document(Model):
             except Exception as e:
                 log.debug(e)
 
-    def _update_suggestions(self, change):
-        """Determine code completion suggestions for the current cursor
-        position in the document.
-        """
-        from declaracad.core.workbench import DeclaracadWorkbench
-
-        workbench = DeclaracadWorkbench.instance()
-        if workbench is None:
-            # Workbench may be empty when standalone
-            plugin = self.plugin
-        else:
-            plugin = workbench.get_plugin("declaracad.editor")
-        self.suggestions = plugin.autocomplete(self.source, self.cursor)
-
-    def _update_errors(self, ext: str):
-        if ext == ".enaml":
-            pass  # TODO: Parse file
-        elif ext == ".py":
-            pass  # TODO: Parse file
-        self.errors = []
-
-    def _update_outline(self):
-        return []  # TODO: This is annoyingly slow with the latest enaml...
-        from declaracad.core.workbench import DeclaracadWorkbench
-
+    async def reparse(self):
+        if self.parsing:
+            log.debug(f"Reparse '{self.name}' skipped. alreading parsing")
+            return
+        self.parsing = True
         try:
-            workbench = DeclaracadWorkbench.instance()
-            if workbench is None:
-                # Workbench may be empty when standalone
-                plugin = self.plugin
-            else:
-                plugin = workbench.get_plugin("declaracad.editor")
-            syntax = plugin.detect_syntax(self.source)
-            if syntax in ("python", "enaml"):
-                self.outline = parse_python(self.source)
-            elif syntax == "gcode":
-                self.outline = parse_gcode(self.source)
-            else:
-                self.outline = []
+            plugin = self.plugin
+            if not plugin:
+                log.debug(f"Reparse '{self.name}' skipped. No plugin")
+                return
+            langserver = plugin.langserver
+            if not langserver or not plugin.langserver.connected:
+                log.debug(f"Reparse '{self.name}' skipped. Langserver not connected")
+                return
+            log.debug(f"Reparse '{self.name}'")
+
+            response: Optional[ParseResult] = await langserver.parse(
+                self.name, self.source
+            )
+            if not response:
+                return
+            self.errors = [
+                CodeEditorIndicator(
+                    title=f"{p.type}: {p.msg}",
+                    style=p.level,
+                    start=(p.lineno, p.offset),
+                    stop=(p.end_lineno, p.end_offset),
+                )
+                for p in response.problems
+            ]
+            self.outline = response.outline
         except Exception as e:
-            # We could set errors here?
-            self.outline = [e]
+            log.exception(e)
+        finally:
+            self.parsing = False
+
+
+class LangServerRemoteProtocol(JsonRpcProtocol):
+    #: Reference to the Editor plugin
+    plugin = ForwardTyped(lambda: EditorPlugin)
+
+    def connection_made(self, transport):
+        self.transport = transport
+        self.connected = True
+        log.debug(f"Langserver connected {transport}")
+        deferred_call(self.parse_active_document)
+
+    def connection_lost(self, err):
+        self.connected = False
+        log.debug(f"Langserver connection lost {err}")
+
+    def on_print(self, message: str):
+        log.debug(f"langserver: {message}")
+
+    async def parse_active_document(self):
+        if doc := self.plugin.active_document:
+            await doc.reparse()
+
+    async def parse(self, filename: str, source: str) -> Optional[ParseResult]:
+        return await self.invoke_method("parse", filename, source)
+
+
+class LangServerProcess(ProcessLineReceiver):
+    #: Process handle
+    plugin = ForwardTyped(lambda: EditorPlugin)
+    process = Instance(object)
+
+    #: Set to avoid restarting
+    terminated = Bool()
+
+    #: Count restarts so we can detect issues with startup
+    restarts = Int()
+
+    #: Max number it will attempt to restart
+    max_retries = Int(3)
+
+    async def start(self):
+        cmd = get_bootstrap_cmd() + ["langserver", f"{self.plugin.port}"]
+        log.debug(f"Starting langserver '{' '.join(cmd)}'")
+        loop = asyncio.get_event_loop()
+        self.process = await loop.subprocess_exec(lambda: self, *cmd)
+        return self.process
+
+    def data_received(self, data: bytes):
+        """Called for stdout data and stderr data if err_to_out is True
+
+        Parameters
+        ----------
+        data: Bytes
+            The data received
+
+        """
+        log.debug(f"langserver | {data.decode().rstrip()}")
+
+    def restart(self):
+        self.restarts += 1
+        if self.restarts > self.max_retries:
+            log.debug("langserver | Restarts exceeded. Aborting")
+            if workbench := self.plugin.workbench:
+                workbench.message_critical(
+                    "Langserver failed to start",
+                    "Could not get the langserver to start after several attempts.",
+                )
+            return
+        log.debug("langserver | Attempting to restart")
+        deferred_call(self.start)
+
+    def process_exited(self, reason=None):
+        log.warning(f"langserver | process ended: {reason}")
+        if not self.terminated:
+            # Clear the filename on crash so it works when reset
+            self.restart()
+        log.warning("langserver | stdout closed")
 
 
 class EditorPlugin(Plugin):
@@ -334,13 +386,45 @@ class EditorPlugin(Plugin):
     sys_path = List().tag(config=True)
     _area_saves_pending = Int()
 
-    def start(self):
+    # Langserver
+    enable_langserver = Bool(True)
+    langserver = Typed(LangServerRemoteProtocol)
+    port = Int()
+    langserver_server = Instance(asyncio.Server)
+    langserver_process = Typed(LangServerProcess)
+
+    def start(self, initial_document: Optional[Document] = None):
         """Make sure the documents all open on startup"""
         super().start()
-        if workbench := self.workbench:
-            workbench.application.deferred_call(
-                self._update_area_layout, {"type": "load"}
-            )
+        if initial_document:
+            # If using the standalone editor avoid loading all
+            # the workbench's documents which are restored automatically
+            # in the super() call.
+            self._state_excluded = ["documents", "active_document"]
+            self.documents = [initial_document]
+            self.active_document = initial_document
+        for doc in self.documents:
+            doc.plugin = self
+        if self.enable_langserver:
+            deferred_call(self.start_langserver)
+        if self.workbench is not None:
+            deferred_call(self._update_area_layout, {"type": "load"})
+
+    async def start_langserver(self):
+        """Start both a server to listen for a langserver connection
+        and the langserver process."""
+        loop = asyncio.get_event_loop()
+        self.langserver = LangServerRemoteProtocol(plugin=self)
+        server = self.langserver_server = await loop.create_server(
+            lambda: self.langserver, "127.0.0.1", 0
+        )
+        socket = server.sockets[0]
+        ip, self.port = socket.getsockname()
+        log.info(f"Listening for langserver on dcad://{ip}:{self.port}")
+        langserver_process = self.langserver_process = LangServerProcess(
+            err_to_out=True, plugin=self
+        )
+        deferred_call(langserver_process.start)
 
     # -------------------------------------------------------------------------
     # Editor API
@@ -356,6 +440,9 @@ class EditorPlugin(Plugin):
         """
         if change["type"] == "create":
             return
+
+        if not self.workbench:
+            return  # standalone editor
 
         #: Get the dock area
         area = self.get_dock_area()
@@ -478,6 +565,7 @@ class EditorPlugin(Plugin):
                 name=os.path.expanduser("~/Documents/example.enaml"),
                 unsaved=True,
                 source=EXAMPLE_FILE,
+                plugin=self,
             )
         ]
 
@@ -497,17 +585,7 @@ class EditorPlugin(Plugin):
             return
         if not os.path.dirname(path):
             path = os.path.join(self.project_path, path)
-        doc = Document(
-            name=path,
-            source=dedent("""
-                # Created in DeclaraCAD
-                from declaracad.occ.api import *
-
-                enamldef Assembly(Part):
-                    Box:
-                        pass
-                """).lstrip(),
-        )
+        doc = Document(name=path, plugin=self, source=NEW_FILE_SOURCE)
         self.documents.append(doc)
         self.active_document = doc
 
@@ -563,7 +641,7 @@ class EditorPlugin(Plugin):
         log.debug("Opening '%s'", path)
 
         #: Otherwise open it
-        doc = Document(name=path, unsaved=False)
+        doc = Document(name=path, unsaved=False, plugin=self)
         doc.load()
         self.documents.append(doc)
         self.active_document = doc
@@ -659,50 +737,3 @@ class EditorPlugin(Plugin):
     def _refresh_sys_path(self, change):
         if change["type"] == "update":
             self.sys_path = self._default_sys_path()
-
-    def autocomplete(self, source: str, cursor: tuple[int, int]) -> list[str]:
-        """Return a list of autocomplete suggestions for the given text.
-        Results are based on the modules loaded.
-
-        Parameters
-        ----------
-            source: str
-                Source code to autocomplete
-            cursor: (line, column)
-                Position of the editor
-        Return
-        ------
-            result: list
-                List of autocompletion strings
-        """
-        # return []
-        try:
-            #: TODO: Move to separate process
-            line, column = cursor
-            project = jedi.Project(self.project_path, sys_path=self.sys_path)
-            script = jedi.Script(source, project=project)
-
-            #: Get suggestions
-            results = []
-            for c in script.complete(line, column):
-                results.append(c.name)
-
-                #: Try to get a signature if the docstring matches
-                #: something Scintilla will use (ex "func(..." or "Class(...")
-                #: Scintilla ignores docstrings without a comma in the args
-                if c.type in ("function", "class", "instance"):
-                    docstring = c.docstring()
-
-                    #: Remove self arg
-                    docstring = docstring.replace("(self,", "(")
-
-                    if docstring.startswith(f"{c.name}("):
-                        results.append(docstring)
-                        continue
-
-            return results
-        except Exception as e:
-            log.debug(f"Autocomplete error: {e}")
-            #: Autocompletion may fail for random reasons so catch all errors
-            #: as we don't want the editor to exit because of this
-            return []

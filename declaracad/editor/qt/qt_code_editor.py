@@ -10,7 +10,7 @@
 import traceback
 import warnings
 import weakref
-from typing import Optional
+from typing import Any, Optional
 
 from atom.api import Typed, Value
 from enaml.colors import parse_color
@@ -31,6 +31,7 @@ from enaml.qt.QtGui import (
 )
 from enaml.qt.QtWidgets import QTextEdit
 from pyqcodeeditor.QCodeEditor import QCodeEditor as BaseQCodeEditor
+from pyqcodeeditor.QSyntaxStyle import UNDERLINE_STYLES
 from pyqcodeeditor.QSyntaxStyle import QSyntaxStyle as BaseQSyntaxStyle
 
 from declaracad.editor.syntaxes import SYNTAXES
@@ -62,11 +63,49 @@ class QSyntaxStyle(BaseQSyntaxStyle):
             warnings.warn(f"Can't load style schema: {e}")
             traceback.print_exc()
 
+    def _processStyleSchema(self, style_schema: dict[str, Any]):
+        """Overridden because the default doesn't set underlineColor"""
+        name = style_schema.get("name")
+        if not isinstance(name, str) or name.strip() == "":
+            return
+        styles = style_schema.get("style")
+        if not isinstance(styles, list):
+            return
+        self._loaded = True
+
+        for style in styles:
+            if not isinstance(style, dict):
+                continue
+            style_name = style.get("name")
+            if not isinstance(style_name, str) or style_name.strip() == "":
+                continue
+            style_format = QTextCharFormat()
+            if "background" in style:
+                style_format.setBackground(QColor(style["background"]))
+            if "foreground" in style:
+                style_format.setForeground(QColor(style["foreground"]))
+            if style.get("bold") == "true":
+                style_format.setFontWeight(QFont.Bold)
+            if style.get("italic") == "true":
+                style_format.setFontItalic(True)
+            if "underlineColor" in style:
+                style_format.setUnderlineColor(QColor(style["underlineColor"]))
+            if "underlineStyle" in style:
+                style_format.setUnderlineStyle(
+                    UNDERLINE_STYLES.get(
+                        style["underlineStyle"],
+                        QTextCharFormat.UnderlineStyle.NoUnderline,
+                    )
+                )
+            self._data[style_name] = style_format
+
 
 class QCodeEditor(BaseQCodeEditor):
     zoom_level: int = 0
     last_search: Optional[tuple[str | QRegularExpression, int, bool, bool]] = None
     searchWrapped = Signal()
+    indicatorReleased = Signal()
+    indicators: list[QTextEdit.ExtraSelection] = []
 
     def _updateStyle(self):
         # The original function does not update the background
@@ -84,6 +123,25 @@ class QCodeEditor(BaseQCodeEditor):
             self._highlighter.rehighlight()
 
         self._updateExtraSelection()
+
+    def _updateExtraSelection(self):
+        """Overridden to add indicators"""
+        extra = []
+        self._highlightCurrentLine(extra)
+        self._highlightParenthesis(extra)
+        self.setExtraSelections(extra + self.indicators)
+
+    def setIndicators(self, indicators: list[QTextEdit.ExtraSelection]):
+        self.indicators = indicators
+        self._updateExtraSelection()
+
+    def setCursorPosition(self, lineno: int, column: int):
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.Start)
+        cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, lineno - 1)
+        cursor.movePosition(QTextCursor.StartOfBlock)
+        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, column)
+        self.setTextCursor(cursor)
 
     def selectedText(self) -> str:
         return self.textCursor().selectedText()
@@ -214,6 +272,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
             self.set_markers(markers)
         self.widget.textChanged.connect(self.on_text_changed)
         self.widget.cursorPositionChanged.connect(self.on_cursor_position_changed)
+        self.widget.indicatorReleased.connect(self.on_indicator_clicked)
 
     def destroy(self):
         """A reimplemented destructor.
@@ -242,8 +301,12 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         """Handle the 'cursorPositionChanged' signal on the widget."""
         d = self.declaration
         if d is not None:
-            # d.cursor_position = self.widget.getCursorPosition()
-            pass
+            cursor = self.widget.textCursor()
+            d.cursor_position = (cursor.position(), cursor.positionInBlock())
+
+    def on_indicator_clicked(self, data):
+        """Handle the 'indicatorReleased' signal on the widget."""
+        pass
 
     # --------------------------------------------------------------------------
     # Helper Methods
@@ -374,18 +437,39 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
             w.setDefaultIndent(settings["indent"])
         if "auto_parentheses" in settings:
             w.setAutoParentheses(settings["auto_parentheses"])
+        if "show_scrollbars" in settings:
+            policy = (
+                Qt.ScrollBarAsNeeded
+                if settings["show_scrollbars"]
+                else Qt.ScrollBarAlwaysOff
+            )
+            w.setHorizontalScrollBarPolicy(policy)
+            w.setVerticalScrollBarPolicy(policy)
+        if "show_folding" in settings:
+            pass
+            # style = w.FoldStyle.NoFoldStyle
+            # if plugin.code_folding:
+            #     name = plugin.code_fold_style.title().replace('-', '')
+            #     style = getattr(w.FoldStyle, f'{name}FoldStyle')
+            # w.setFolding(style)
 
-    def set_zoom(self, zoom):
+    def set_zoom(self, zoom: int):
         """Set the zoom factor on the widget."""
         self.widget.zoomTo(zoom)
 
-    def get_text(self):
+    def get_text(self) -> str:
         """Get the text in the document."""
         return self.widget.toPlainText()
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         """Set the text in the document."""
         self.widget.setPlainText(text)
+
+    def goto_position(self, lineno: int, column: int = 0):
+        """Goto the start of the given line and ensure the cursor is visible."""
+        w = self.widget
+        w.setCursorPosition(lineno, column)
+        w.ensureCursorVisible()
 
     def set_autocomplete(self, mode):
         """Set the autocompletion mode"""
@@ -426,9 +510,12 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         """
         w = self.widget
         extra_selections = []
+        style = w._syntaxStyle
         for indicator in indicators:
             # Create cursor
             cursor = w.textCursor()
+
+            # Set start position
             cursor.movePosition(QTextCursor.Start)
             cursor.movePosition(
                 QTextCursor.NextBlock, QTextCursor.MoveAnchor, indicator.start[0] - 1
@@ -438,6 +525,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
                 QTextCursor.NextCharacter, QTextCursor.MoveAnchor, indicator.start[1]
             )
 
+            # Set end position
             if indicator.stop[0] > indicator.start[0]:
                 cursor.movePosition(
                     QTextCursor.NextBlock,
@@ -445,30 +533,41 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
                     indicator.stop[0] - indicator.start[0],
                 )
 
-            cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
-            cursor.movePosition(
-                QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1]
-            )
+                cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
+                cursor.movePosition(
+                    QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1]
+                )
+            elif indicator.stop[1] > indicator.start[1]:
+                # Same line
+                cursor.movePosition(
+                    QTextCursor.NextCharacter,
+                    QTextCursor.KeepAnchor,
+                    indicator.stop[1] - indicator.start[1],
+                )
 
             # Set style
-            style = w._syntaxStyle()
             indicator_format = QTextCharFormat(w.currentCharFormat())
             indicator_format.setFontUnderline(True)
             if indicator.style == "error" or indicator.style == "warning":
                 fmt = style.getFormat(indicator.style.title())
                 indicator_format.setUnderlineColor(fmt.underlineColor())
-                indicator_format.setUnderlineColor(fmt.underlineStyle())
+                indicator_format.setUnderlineStyle(fmt.underlineStyle())
             elif indicator.style == "info":
                 fmt = style.getFormat("Warning")
                 indicator_format.setUnderlineColor(fmt.underlineColor())
-                indicator_format.setUnderlineColor(QTextCharFormat.DotLine)
+                indicator_format.setUnderlineStyle(QTextCharFormat.DotLine)
             elif indicator.style == "hint":
                 fmt = style.getFormat("Text")
                 indicator_format.setUnderlineColor(fmt.foreground().color())
-                indicator_format.setUnderlineColor(QTextCharFormat.DotLine)
+                indicator_format.setUnderlineStyle(QTextCharFormat.DotLine)
 
-            extra_selections.append(QTextEdit.ExtraSelection(cursor, indicator_format))
-        w.setExtraSelections(extra_selections)
+            indicator_format.setToolTip(indicator.title)
+
+            item = QTextEdit.ExtraSelection()
+            item.cursor = cursor
+            item.format = indicator_format
+            extra_selections.append(item)
+        w.setIndicators(extra_selections)
 
     # --------------------------------------------------------------------------
     # Reimplementations

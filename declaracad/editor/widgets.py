@@ -1,5 +1,11 @@
-# Copy of enamls scintilla eidtor
+# ------------------------------------------------------------------------------
+# Copyright (c) 2026, Jairus Martin
+# Copyright (c) 2013-2025, Nucleic Development Team.
+#
+# Distributed under the terms of the Modified BSD License from enaml
+# ------------------------------------------------------------------------------
 import uuid
+from typing import Any
 
 from atom.api import (
     Atom,
@@ -10,6 +16,7 @@ from atom.api import (
     ForwardTyped,
     Int,
     List,
+    Str,
     Typed,
     set_default,
 )
@@ -46,6 +53,9 @@ class CodeEditorIndicator(Atom):
     #: Indicator format style
     style = Enum("error", "warning", "info", "hint")
 
+    #: Message to display
+    title = Str()
+
 
 class CodeEditorMarker(Atom):
     """A marker descriptor"""
@@ -63,7 +73,7 @@ class ProxyCodeEditor(ProxyControl):
     #: A reference to the CodeEditor declaration.
     declaration = ForwardTyped(lambda: CodeEditor)
 
-    def set_document(self, document):
+    def set_document(self, document: CodeEditorDocument):
         raise NotImplementedError
 
     def set_syntax(self, lexer):
@@ -72,28 +82,31 @@ class ProxyCodeEditor(ProxyControl):
     def set_theme(self, theme):
         raise NotImplementedError
 
-    def set_settings(self, settings):
+    def set_settings(self, settings: dict[str, Any]):
         raise NotImplementedError
 
-    def set_zoom(self, zoom):
+    def set_zoom(self, zoom: int):
         raise NotImplementedError
 
-    def get_text(self):
+    def get_text(self) -> str:
         raise NotImplementedError
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         raise NotImplementedError
 
-    def set_autocomplete(self, source):
+    def set_autocomplete(self, source: str):
         raise NotImplementedError
 
-    def set_autocompletions(self, options):
+    def set_autocompletions(self, completions: list[str]):
         raise NotImplementedError
 
-    def set_indicators(self, indicators):
+    def set_indicators(self, indicators: list[CodeEditorIndicator]):
         raise NotImplementedError
 
-    def set_markers(self, markers):
+    def set_markers(self, markers: list[CodeEditorMarker]):
+        raise NotImplementedError
+
+    def goto_position(self, lineno: int, column: int = 0):
         raise NotImplementedError
 
 
@@ -156,6 +169,9 @@ class CodeEditor(Control):
     #: Indicators to display.
     indicators = d_(List(CodeEditorIndicator))
 
+    #: An event emitted when one of the indicators is clicked
+    indicator_clicked = d_(Event(CodeEditorIndicator), writable=False)
+
     #: A reference to the ProxyCodeEditor object.
     proxy = Typed(ProxyCodeEditor)
 
@@ -210,12 +226,12 @@ class CodeEditor(Control):
     # --------------------------------------------------------------------------
     # Public API
     # --------------------------------------------------------------------------
-    def get_text(self):
+    def get_text(self) -> str:
         """Get the text in the current document.
 
         Returns
         -------
-        result : unicode
+        result : str
             The text in the current document.
 
         """
@@ -223,14 +239,28 @@ class CodeEditor(Control):
             return self.proxy.get_text()
         return ""
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         """Set the text in the current document.
 
         Parameters
         ----------
-        text : unicode
+        text : str
             The text to apply to the current document.
 
         """
         if self.proxy_is_active:
             self.proxy.set_text(text)
+
+    def goto_position(self, lineno: int, column: int = 0):
+        """Goto the given line and column in the current document.
+
+        Parameters
+        ----------
+        lineno : int
+            The line number to go to.
+        column: int
+            The column within the line to go to.
+
+        """
+        if self.proxy_is_active:
+            self.proxy.goto_position(lineno, column)

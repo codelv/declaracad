@@ -15,9 +15,16 @@ from enaml.widgets.api import Container
 from enamlx.widgets.api import TreeView, TreeViewItem, TreeViewColumn
 from declaracad.core.api import DockItem
 from declaracad.core.utils import load_icon
+from .plugin import Outline
 
+OUTLINE_ICONS = {
+    "function": "tag",
+    "class": "brick",
+    "enamldef": "bricks",
+    "error": "exclamation",
+}
 
-def format_node(node):
+def format_node(node: Outline):
     """ Create a node for the outline
 
     Returns
@@ -47,6 +54,14 @@ enamldef OutlineDockItem(DockItem): view:
     name = 'code-outline-item'
     icon = load_icon('chart_organisation')
 
+    func goto_item(item: Outline):
+        editor = plugin.get_editor()
+        editor.goto_position(item.lineno, 0)
+
+        # Retract the item if shown
+        dock_area = view.parent
+        dock_area.update_layout(RetractItem(item=view.name))
+
     Container:
         padding = 0
         TreeView: tree:
@@ -58,21 +73,11 @@ enamldef OutlineDockItem(DockItem): view:
             Looper:
                 iterable << tree.items
                 TreeViewItem:
-                    attr obj << format_node(loop.item)
-                    icon << load_icon(obj[0])
-                    text << obj[1]
-                    double_clicked ::
-                        editor = plugin.get_editor()
-                        # Go to the line
-                        widget = editor.proxy.widget
-                        widget.setCursorPosition(max(0,loop.item.lineno-2), 0)
-                        widget.ensureCursorVisible()
-                        # Retract the item if shown
-                        dock_area = view.parent
-                        dock_area.update_layout(RetractItem(item=view.name))
-
+                    attr item: Outline << loop.item
+                    icon << load_icon(OUTLINE_ICONS.get(item.type, "tag"))
+                    text << item.label
+                    double_clicked :: goto_item(item)
                     TreeViewColumn:
-                        text << obj[2]
+                        text << item.type
                     TreeViewColumn:
-                        text << str(getattr(loop.item, 'lineno', 0))
-
+                        text << f"{item.lineno}"

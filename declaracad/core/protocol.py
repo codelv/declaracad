@@ -5,7 +5,6 @@ from typing import Any, Optional, cast
 
 import jsonpickle
 from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
-from enaml.application import timed_call
 
 from declaracad.core.utils import log
 
@@ -22,6 +21,15 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
 
     #: Set when the protocol is ready
     connected = Bool(False)
+
+    #: Log messages
+    debug = Bool()
+
+    # Asyncio event lop
+    loop = Value()
+
+    def _default_loop(self):
+        return asyncio.get_event_loop()
 
     def invoke_method(self, method: str, *args, **kwargs) -> asyncio.Future[Any]:
         """Invoke the method with the attribute "on_{method}" on the remote
@@ -42,9 +50,10 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
                 log.error(f"Could not send message: {message} after several attempts")
                 return
             log.debug(f"Note: Message delayed {self}: {message}")
-            timed_call(1000, self.send_message, message, attempts - 1)
+            self.loop.call_later(1, self.send_message, message, attempts - 1)
             return
-        log.debug(message)
+        if self.debug:
+            log.debug(message)
         encoded_msg = jsonpickle.dumps(message).encode()
         self.transport.write(encoded_msg + b"\r\n")
 
@@ -72,7 +81,8 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         """
         if not line:
             return None
-        log.info(f"Received message '{line}'")
+        if self.debug:
+            log.info(f"Received message '{line}'")
         try:
             request: dict[str, Any] = jsonpickle.loads(line)
         except Exception as e:
@@ -142,6 +152,7 @@ class RemoteLogger(Atom):
     protocol = Instance(JsonRpcProtocol)
 
     #: Original stderr and stdout
+    attached = Bool()
     stdout = Value()
     stderr = Value()
 

@@ -103,3 +103,19 @@ def source_hash(source: str, is_file: bool = False) -> Optional[bytes]:
         with open(source, "rb") as f:
             return hashlib.md5(f.read()).digest()
     return hashlib.md5(source.encode()).digest()
+
+
+def get_bootstrap_cmd() -> list[str]:
+    """Get the command to the main executable depending on how it's run.
+    If frozen use declaracad, otherwise use python -m declaracad
+
+    Returns
+    -------
+    cmd: List[str]
+        The command to run declaracad
+    """
+    is_frozen = getattr(sys, "frozen", False)
+    cmd = [sys.executable]
+    if not sys.executable.endswith("declaracad") and not is_frozen:
+        cmd.extend(["-m", "declaracad"])
+    return cmd

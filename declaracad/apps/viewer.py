@@ -20,8 +20,8 @@ from atom.api import Instance, Str, Typed
 
 from declaracad.console.plugin import ConsolePlugin
 from declaracad.core.app import AsyncApplication as Application
+from declaracad.core.protocol import JsonRpcProtocol, RemoteLogger
 from declaracad.core.utils import log
-from declaracad.viewer.protocol import JsonRpcProtocol, RemoteLogger
 
 with enaml.imports():
     from declaracad.viewer.standalone import ViewerWindow
