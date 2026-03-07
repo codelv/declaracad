@@ -109,6 +109,30 @@ class ProxyCodeEditor(ProxyControl):
     def goto_position(self, lineno: int, column: int = 0):
         raise NotImplementedError
 
+    def cut(self):
+        raise NotImplementedError
+
+    def copy(self):
+        raise NotImplementedError
+
+    def paste(self):
+        raise NotImplementedError
+
+    def undo(self):
+        raise NotImplementedError
+
+    def redo(self):
+        raise NotImplementedError
+
+    def select_all(self):
+        raise NotImplementedError
+
+    def deselect_all(self):
+        raise NotImplementedError
+
+    def delete_line(self):
+        raise NotImplementedError
+
 
 class CodeEditor(Control):
     """A CodeEditor text editing control.
@@ -264,3 +288,40 @@ class CodeEditor(Control):
         """
         if self.proxy_is_active:
             self.proxy.goto_position(lineno, column)
+
+    def cut(self):
+        if self.proxy_is_active:
+            self.proxy.cut()
+
+    def copy(self):
+        if self.proxy_is_active:
+            self.proxy.copy()
+
+    def paste(self):
+        if self.proxy_is_active:
+            self.proxy.paste()
+
+    def undo(self):
+        if self.proxy_is_active:
+            self.proxy.undo()
+
+    def redo(self):
+        if self.proxy_is_active:
+            self.proxy.redo()
+
+    def select_all(self):
+        if self.proxy_is_active:
+            self.proxy.select_all()
+
+    def deselect_all(self):
+        if self.proxy_is_active:
+            self.proxy.deselect_all()
+
+    def selected_text(self) -> str:
+        if self.proxy_is_active:
+            return self.proxy.selected_text()
+        return ""
+
+    def delete_line(self):
+        if self.proxy_is_active:
+            self.proxy.delete_line()

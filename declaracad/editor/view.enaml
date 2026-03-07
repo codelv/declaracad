@@ -77,8 +77,7 @@ enamldef EditorGotoBar(Container): bar:
     func go_to_line():
         w = editor.proxy.widget
         n = max(0, sb.value-1)
-        w.setCursorPosition(n, 0)
-        w.ensureLineVisible(n)
+        editor.goto_position(n, 0)
         editor.set_focus()
         editor.show_goto_bar = False
     Label: lbl:
@@ -380,12 +379,12 @@ enamldef Editor(CodeEditor): editor:
             start_line, start_col = w.getCursorPosition()
             text = w.text(start_line)
             if text.lstrip().startswith(token):
-                # Select full ine
-                w.setSelection(start_line, 0, start_line, len(text)-1)
+                # Select full line
+                w.setSelection(start_line, 0, start_line, len(text))
 
                 # Replace
                 w.replaceSelectedText(text.replace(token, '', 1).rstrip("\n"))
-                w.setCursorPosition(start_line, start_col)
+                w.setCursorPosition(start_line, start_col - 1)
 
     func toggle_comments():
         """ Toggle comments """
@@ -402,30 +401,6 @@ enamldef Editor(CodeEditor): editor:
             uncomment_lines()
         else:
             comment_lines()
-
-    func cut():
-        self.proxy.widget.cut()
-
-    func copy():
-        self.proxy.widget.copy()
-
-    func paste():
-        self.proxy.widget.paste()
-
-    func undo():
-        self.proxy.widget.undo()
-
-    func redo():
-        self.proxy.widget.redo()
-
-    func select_all():
-        self.proxy.widget.selectAll(True)
-
-    func deselect():
-        self.proxy.widget.selectAll(False)
-
-    func selected_text() -> str:
-        return self.proxy.widget.selectedText()
 
     func is_deleted() -> bool:
         return self.root_object() is self
@@ -572,25 +547,31 @@ enamldef ErrorsDockItem(DockItem):
   name = 'errors-item'
   icon = load_icon('bug')
 
+  func goto_error(indicator: CodeEditorIndicator):
+      editor: Editor = plugin.get_editor()
+      editor.goto_position(*indicator.start)
+
   Container:
       padding = 0
       TableView: table:
           minimum_size = (320, 320)
-          horizontal_headers = ['Problem', 'Line','Column']
+          horizontal_headers = ['Line','Column', 'Problem']
           horizontal_stretch = True
+          show_vertical_header = False
           items << plugin.active_document.errors
           Looper:
               iterable << range(table.visible_rows)
               TableViewRow:
                     row << table.visible_row + loop.index
-                    attr item << table.items[self.row]
+                    attr indicator: CodeEditorIndicator << table.items[self.row]
+                    double_clicked :: goto_error(indicator)
                     TableViewItem:
-                        icon << load_icon(INDICATOR_ICONS.get(item.style, 'error'))
-                        text << item.title
+                        text << f"{indicator.start[0]}"
                     TableViewItem:
-                        text << f"{item.start[0]}"
+                        text << f"{indicator.start[1]}"
                     TableViewItem:
-                        text << f"{item.start[1]}"
+                        icon << load_icon(INDICATOR_ICONS.get(indicator.style, 'error'))
+                        text << indicator.title
 
 
 enamldef OutputDockItem(DockItem):

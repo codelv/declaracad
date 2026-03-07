@@ -54,6 +54,40 @@ def _make_font(font_str: str) -> QFont:
     return QFont()
 
 
+def _cursor_move_to(
+    cursor: QTextCursor, start: tuple[int, int], end: Optional[tuple[int, int]] = None
+):
+    """Moves the cursor anchor to the given start line number and column. If an end is given
+    set the selection to the end line and column. If either column the block length for
+    the respective line numbers do not go beyond the block end.
+    """
+    cursor.movePosition(QTextCursor.Start)
+    cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, start[0] - 1)
+    block = cursor.block()
+    if 0 <= start[1] < block.length():
+        cursor.movePosition(QTextCursor.StartOfBlock)
+        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, start[1])
+    else:
+        # Clip
+        cursor.movePosition(QTextCursor.EndOfBlock)
+
+    if end is None:
+        return
+
+    # Set end position
+    if end[0] > start[0]:
+        cursor.movePosition(
+            QTextCursor.NextBlock, QTextCursor.KeepAnchor, end[0] - start[0]
+        )
+        block = cursor.document().findBlock(cursor.anchor())
+
+    if 0 <= end[1] < block.length():
+        cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
+        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, end[1])
+    else:
+        cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+
+
 class QSyntaxStyle(BaseQSyntaxStyle):
     def __init__(self, theme: dict):
         super().__init__()
@@ -137,14 +171,63 @@ class QCodeEditor(BaseQCodeEditor):
 
     def setCursorPosition(self, lineno: int, column: int):
         cursor = self.textCursor()
-        cursor.movePosition(QTextCursor.Start)
-        cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, lineno - 1)
-        cursor.movePosition(QTextCursor.StartOfBlock)
-        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, column)
+        _cursor_move_to(cursor, (lineno, column))
         self.setTextCursor(cursor)
+
+    def getCursorPosition(self) -> tuple[int, int]:
+        cursor = self.textCursor()
+        return (cursor.blockNumber() + 1, cursor.positionInBlock())
+
+    def text(self, lineno: int) -> str:
+        """Get the text of the line"""
+        block = self.document().findBlockByNumber(lineno - 1)
+        return block.text()
 
     def selectedText(self) -> str:
         return self.textCursor().selectedText()
+
+    def hasSelectedText(self) -> bool:
+        return self.textCursor().hasSelection()
+
+    def replaceSelectedText(self, text: str):
+        cursor = self.textCursor()
+        try:
+            cursor.beginEditBlock()
+            cursor.removeSelectedText()
+            cursor.insertText(text)
+        finally:
+            cursor.endEditBlock()
+
+    def getSelection(self) -> tuple[int, int, int, int]:
+        """Returns tuple of start_line, start_col, end_line, end_col"""
+        doc = self.document()
+        cursor = self.textCursor()
+        start_offset = cursor.selectionStart()
+        start_block = doc.findBlock(start_offset)
+        start_line = start_block.blockNumber() + 1
+        start_col = start_offset - start_block.position()
+        end_offset = cursor.selectionEnd()
+        end_block = doc.findBlock(end_offset)
+        end_line = end_block.blockNumber() + 1
+        end_col = end_offset - start_block.position()
+        return (start_line, start_col, end_line, end_col)
+
+    def setSelection(
+        self, start_line: int, start_col: int, end_line: int, end_col: int
+    ):
+        cursor = self.textCursor()
+        _cursor_move_to(cursor, (start_line, start_col), (end_line, end_col))
+        self.setTextCursor(cursor)
+
+    def insertAt(self, text: str, lineno: int, col: int):
+        pos = self.getCursorPosition()
+        self.setCursorPosition(lineno, col)
+        self.insertPlainText(text)
+        self.setCursorPosition(*pos)
+
+    def lines(self) -> int:
+        """Return number of lines"""
+        return self.document().lineCount()
 
     def findFirst(
         self,
@@ -195,7 +278,9 @@ class QCodeEditor(BaseQCodeEditor):
         if enabled:
             super().selectAll()
         else:
-            self.textCursor().clearSelection()
+            cursor = self.textCursor()
+            cursor.clearSelection()
+            self.setTextCursor(cursor)
 
     def wheelEvent(self, event: QWheelEvent):
         """Overridden to use ctrl + mouse wheel to zoom"""
@@ -469,7 +554,18 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         """Goto the start of the given line and ensure the cursor is visible."""
         w = self.widget
         w.setCursorPosition(lineno, column)
-        w.ensureCursorVisible()
+        w.ensureCursorVisible
+
+    def delete_line(self):
+        """Delete the current line"""
+        w = self.widget
+        cursor = w.textCursor()
+        # Clear line
+        cursor.movePosition(QTextCursor.StartOfBlock)
+        cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+        cursor.removeSelectedText()
+        # Remove line
+        cursor.deleteChar()
 
     def set_autocomplete(self, mode):
         """Set the autocompletion mode"""
@@ -514,35 +610,11 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         for indicator in indicators:
             # Create cursor
             cursor = w.textCursor()
-
-            # Set start position
-            cursor.movePosition(QTextCursor.Start)
-            cursor.movePosition(
-                QTextCursor.NextBlock, QTextCursor.MoveAnchor, indicator.start[0] - 1
-            )
-            cursor.movePosition(QTextCursor.StartOfBlock)
-            cursor.movePosition(
-                QTextCursor.NextCharacter, QTextCursor.MoveAnchor, indicator.start[1]
-            )
-
-            # Set end position
-            if indicator.stop[0] > indicator.start[0]:
-                cursor.movePosition(
-                    QTextCursor.NextBlock,
-                    QTextCursor.KeepAnchor,
-                    indicator.stop[0] - indicator.start[0],
-                )
-
-                cursor.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
-                cursor.movePosition(
-                    QTextCursor.NextCharacter, QTextCursor.KeepAnchor, indicator.stop[1]
-                )
-            elif indicator.stop[1] > indicator.start[1]:
-                # Same line
-                cursor.movePosition(
-                    QTextCursor.NextCharacter,
-                    QTextCursor.KeepAnchor,
-                    indicator.stop[1] - indicator.start[1],
+            _cursor_move_to(cursor, indicator.start, indicator.stop)
+            if not cursor.hasSelection():
+                # Highlight the whole line
+                _cursor_move_to(
+                    cursor, (indicator.start[0], 0), (indicator.stop[0], -1)
                 )
 
             # Set style
@@ -568,6 +640,30 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
             item.format = indicator_format
             extra_selections.append(item)
         w.setIndicators(extra_selections)
+
+    def cut(self):
+        self.widget.cut()
+
+    def copy(self):
+        self.widget.copy()
+
+    def paste(self):
+        self.widget.paste()
+
+    def undo(self):
+        self.widget.undo()
+
+    def redo(self):
+        self.widget.redo()
+
+    def select_all(self):
+        self.widget.selectAll(True)
+
+    def deselect_all(self):
+        self.widget.selectAll(False)
+
+    def selected_text(self) -> str:
+        return self.widget.selectedText()
 
     # --------------------------------------------------------------------------
     # Reimplementations

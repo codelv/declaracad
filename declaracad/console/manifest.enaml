@@ -59,7 +59,7 @@ enamldef ConsoleManifest(PluginManifest):
         DockItem:
             plugin_id = 'declaracad.console'
             factory = console_factory
-            layout = 'left'
+            layout = 'bottom'
     Extension:
         id = 'actions'
         point = 'enaml.workbench.ui.actions'

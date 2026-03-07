@@ -37,7 +37,7 @@ from declaracad.core.api import Model, Plugin, log
 from declaracad.core.protocol import JsonRpcProtocol, ProcessLineReceiver
 from declaracad.core.utils import get_bootstrap_cmd, source_hash
 
-from .langserver import Outline, ParseResult
+from .parsers import Outline, ParseResult
 from .qt import qt_factories  # noqa: F401
 from .syntaxes import SYNTAXES
 from .themes import THEMES
@@ -227,19 +227,22 @@ class Document(Model):
             log.debug(f"Reparse '{self.name}'")
 
             response: Optional[ParseResult] = await langserver.parse(
-                self.name, self.source
+                self.name, self.source, self.version
             )
             if not response:
                 return
-            self.errors = [
-                CodeEditorIndicator(
+            errors = []
+            for p in response.problems:
+                log.debug(f"Problem: {p.__getstate__()}")
+                indicator = CodeEditorIndicator(
                     title=f"{p.type}: {p.msg}",
                     style=p.level,
                     start=(p.lineno, p.offset),
                     stop=(p.end_lineno, p.end_offset),
                 )
-                for p in response.problems
-            ]
+                errors.append(indicator)
+
+            self.errors = errors
             self.outline = response.outline
         except Exception as e:
             log.exception(e)
@@ -268,8 +271,10 @@ class LangServerRemoteProtocol(JsonRpcProtocol):
         if doc := self.plugin.active_document:
             await doc.reparse()
 
-    async def parse(self, filename: str, source: str) -> Optional[ParseResult]:
-        return await self.invoke_method("parse", filename, source)
+    async def parse(
+        self, filename: str, source: str, version: int
+    ) -> Optional[ParseResult]:
+        return await self.invoke_method("parse", filename, source, version)
 
 
 class LangServerProcess(ProcessLineReceiver):

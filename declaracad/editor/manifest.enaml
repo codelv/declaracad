@@ -153,7 +153,7 @@ def goto_in_editor(event: ExecutionEvent):
     editor = plugin.get_editor()
     editor.show_goto_bar = True
     editor.show_replace_bar = False
-    editor.show_show_find_bar = False
+    editor.show_find_bar = False
 
 
 def editor_action(event: ExecutionEvent, action: str):
@@ -233,7 +233,8 @@ def outline_item_factory():
 EDITOR_ACTIONS = [
     f"declaracad.editor.{action}" for action in (
         'comment_lines', 'uncomment_lines', 'toggle_comments',
-        'undo', 'redo', 'cut', 'copy', 'paste', 'select_all', 'deselect',
+        'undo', 'redo', 'cut', 'copy', 'paste', 'select_all', 'deselect_all',
+        'delete_line'
     )
 ]
 
@@ -258,7 +259,7 @@ enamldef EditorManifest(PluginManifest):
         DockItem:
             plugin_id = 'declaracad.editor'
             factory = errors_item_factory
-            layout = 'left'
+            layout = 'bottom'
         DockItem:
             plugin_id = 'declaracad.editor'
             factory = output_item_factory
@@ -429,7 +430,7 @@ enamldef EditorManifest(PluginManifest):
             label = 'Deselect'
             shortcut = 'Ctrl+Shift+A'
             group = 'selection'
-            command = 'declaracad.editor.deselect'
+            command = 'declaracad.editor.deselect_all'
         ActionItem:
             path = '/edit/find'
             label = 'Find'
@@ -448,6 +449,12 @@ enamldef EditorManifest(PluginManifest):
             shortcut = 'Ctrl+L'
             group = 'find'
             command = 'declaracad.editor.goto_line'
+        ActionItem:
+            path = '/edit/delete_line'
+            label = 'Delete line'
+            shortcut = 'Ctrl+D'
+            group = 'selection'
+            command = 'declaracad.editor.delete_line'
         ActionItem:
             path = '/edit/comment'
             label = 'Comment'
