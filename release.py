@@ -34,6 +34,33 @@ def patch_cx_freeze():
     if IS_WINDOWS:
         return
 
+    from cx_Freeze.command.bdist_appimage import bdist_appimage
+
+    original_save_as_file = bdist_appimage.save_as_file
+
+    def save_as_file_patched(self, data, outfile, mode="r"):
+        # Patch AppRun to use the embedded font config.
+        # Otherwise it tries to use a path in the build hosts conda env
+        # which does not exist at runtime (unless built locally)
+        if outfile.endswith("AppRun"):
+            lines = data.split("\n")
+            lines.insert(
+                len(lines)-2,
+                'export FONTCONFIG_FILE="${FONTCONFIG_FILE:-$APPDIR/etc/fonts/fonts.conf}"'
+            )
+            lines.insert(
+                len(lines)-2,
+                'export FONTCONFIG_PATH="${FONTCONFIG_PATH:-$APPDIR/etc/fonts/}"'
+            )
+            data = "\n".join(lines)
+            print("Patched AppRun")
+            print(data)
+
+        original_save_as_file(self, data, outfile, mode)
+
+    bdist_appimage.save_as_file = save_as_file_patched
+
+
     def qt_qtcore_patched(self, finder, module) -> None:
         """Include plugins for the module."""
         name = _qt_implementation(module)
@@ -209,6 +236,7 @@ with enaml.imports():
                     "alabaster",
                     "babel",
                     "wx",
+                    "debugpy",
                     "tkinter",
                     "matplotlib",
                     "matplotlib_inline",
@@ -217,7 +245,7 @@ with enaml.imports():
                     "zmq.eventloop.minitornado",
                     "sphinx",
                     "vtkmodules",
-                    "wheel" "debugpy",
+                    "wheel",
                 ],
             )
         ),
