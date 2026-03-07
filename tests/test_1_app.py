@@ -62,6 +62,6 @@ def test_themes():
     from declaracad.editor.themes import THEMES
 
     for name, theme in THEMES.items():
-        assert isinstance(theme['name'], str)
-        assert isinstance(theme['style'], list)
-        assert isinstance(theme['style'][0], dict)
+        assert isinstance(theme["name"], str)
+        assert isinstance(theme["style"], list)
+        assert isinstance(theme["style"][0], dict)
