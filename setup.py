@@ -5,11 +5,13 @@ Distributed under the terms of the GPL v3 License.
 The full license is in the file COPYING.txt, distributed with this software.
 Created on Dec 13, 2017
 """
+
 import os
 import re
 import sys
-from setuptools import setup, find_packages
 from glob import glob
+
+from setuptools import find_packages, setup
 
 try:
     from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -26,7 +28,7 @@ requirements = [
     "asyncqtpy",  # asyncio + qt
     "pyserial>=3.5",
     "lxml",
-    "pyqcodeeditor", # text editor
+    "pyqcodeeditor",  # text editor
     "ezdxf",
     "pdf4py",
 ]
@@ -43,6 +45,7 @@ if sys.platform == "win32":
 def find_include(name: str) -> str:
     prefix = os.path.dirname(os.path.dirname(sys.executable))
     return os.path.join(prefix, "include", name)
+
 
 def find_lib(name: str) -> str:
     prefix = os.path.dirname(os.path.dirname(sys.executable))
@@ -84,8 +87,8 @@ if Pybind11Extension is not None:
             os.path.join(pyocct_dir, "src"),
         ],
         libraries=[
-            #"TKernel", "TKOpenGl", "TKVoxel"
-            #"Qt6Core",
+            # "TKernel", "TKOpenGl", "TKVoxel"
+            # "Qt6Core",
             "TKernel",
             "TKOpenGl",
             "Qt6Gui",

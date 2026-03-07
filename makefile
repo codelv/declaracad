@@ -2,15 +2,15 @@ docs:
 	cd docs
 	make html
 isort:
-	isort --profile=black declaracad tests
+	isort --profile=black declaracad tests *.py
 typecheck:
 	mypy declaracad tests --ignore-missing-imports
 lintcheck:
-	flake8 --ignore=E501,E203,W503 declaracad tests
+	flake8 --ignore=E501,E203,W503 declaracad tests *.py
 reformat:
-	black declaracad tests
-	clang-format -i src/*.cpp
-	clang-format -i src/*.h
+	black declaracad tests *.py
+	#clang-format -i src/*.cpp
+	#clang-format -i src/*.h
 test:
 	pytest -v tests --cov declaracad --cov-report xml --asyncio-mode auto
 cleancache:

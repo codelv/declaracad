@@ -9,8 +9,8 @@ Created on Dec 6, 2015
 
 @author: jrm
 """
-from declaracad import main
-        
 
-if __name__ == '__main__':
+from declaracad import main
+
+if __name__ == "__main__":
     main()
