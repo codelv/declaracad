@@ -17,10 +17,11 @@ import time
 import jsonpickle
 
 from declaracad.core.app import Application
-from declaracad.occ.api import load_model
-from declaracad.occ.exporters import export_shapes
+
 # These imports are required for the application to find the appropriate nodes
 from declaracad.fea.impl import fea_factories  # noqa: F401
+from declaracad.occ.api import load_model
+from declaracad.occ.exporters import export_shapes
 from declaracad.occ.impl import occ_factories  # noqa: F401
 
 
@@ -36,7 +37,7 @@ def main(**kwargs):
     model = kwargs.pop("model")
     output = kwargs.pop("output")
     # An Application is required
-    app = Application(platform="xcb")
+    Application(platform="offscreen")
     t0 = time.time()
 
     sys.stdout.flush()

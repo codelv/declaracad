@@ -44,20 +44,32 @@ class ParseResult(Atom):
 
 
 def enaml_parser():
-    # Import the enaml parser
     from .enaml_parser import parse_enaml
 
     return parse_enaml
 
 
 def python_parser():
-    # Import the python parser
     from .python_parser import parse_python
 
     return parse_python
 
 
+def json_parser():
+    from .json_parser import parse_json
+
+    return parse_json
+
+
+def xml_parser():
+    from .xml_parser import parse_xml
+
+    return parse_xml
+
+
 PARSERS = {
     "enaml": enaml_parser,
     "python": python_parser,
+    "json": json_parser,
+    "xml": xml_parser,
 }

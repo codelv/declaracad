@@ -31,6 +31,15 @@ enamldef EditorMenuBar(MenuBar):
         Action:
             text = 'Goto line'
             triggered :: editor.show_replace_bar = True
+        Action:
+            text = 'Comment'
+            triggered :: editor.comment_lines()
+        Action:
+            text = 'Uncomment'
+            triggered :: editor.uncomment_lines()
+        Action:
+            text = 'Toggle comments'
+            triggered :: editor.toggle_comments()
 
 
 enamldef StandaloneEditor(MainWindow): view:

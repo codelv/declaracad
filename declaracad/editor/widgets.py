@@ -130,6 +130,15 @@ class ProxyCodeEditor(ProxyControl):
     def deselect_all(self):
         raise NotImplementedError
 
+    def comment_lines(self):
+        raise NotImplementedError
+
+    def uncomment_lines(self):
+        raise NotImplementedError
+
+    def toggle_comments(self):
+        raise NotImplementedError
+
     def delete_line(self):
         raise NotImplementedError
 
@@ -321,6 +330,18 @@ class CodeEditor(Control):
         if self.proxy_is_active:
             return self.proxy.selected_text()
         return ""
+
+    def comment_lines(self):
+        if self.proxy.is_active:
+            self.proxy.comment_lines()
+
+    def uncomment_lines(self):
+        if self.proxy.is_active:
+            self.proxy.uncomment_lines()
+
+    def toggle_comments(self):
+        if self.proxy.is_active:
+            self.proxy.toggle_comments()
 
     def delete_line(self):
         if self.proxy_is_active:

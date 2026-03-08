@@ -184,7 +184,10 @@ class QCodeEditor(BaseQCodeEditor):
         return block.text()
 
     def selectedText(self) -> str:
-        return self.textCursor().selectedText()
+        """Get the selected text"""
+        # If the selected text spans a line break it contains a unicode
+        # paragraph separator instead of a new line. The replace reverts it back.
+        return self.textCursor().selectedText().replace("\u2029", "\n")
 
     def hasSelectedText(self) -> bool:
         return self.textCursor().hasSelection()
@@ -333,6 +336,9 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
     _marker_images = Typed(dict, ())
 
     _syntax_style = Typed(QSyntaxStyle)
+
+    #: Token used for comments
+    _comment_token = Typed(str)
 
     # --------------------------------------------------------------------------
     # Initialization API
@@ -490,15 +496,16 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         """Set the document on the underlying widget."""
         pass
 
-    def set_syntax(self, syntax, refresh_style=True):
+    def set_syntax(self, syntax: str, refresh_style=True):
         """Set the syntax on the underlying widget."""
         # The old lexer will remain as a child unless deleted.
-        Completer = None
-        Highlighter = None
         if syntax in SYNTAXES:
-            Completer, Highlighter = SYNTAXES[syntax]()
+            Completer, Highlighter, comment_token = SYNTAXES[syntax]()
+        else:
+            Completer = Highlighter = comment_token = None
         self.widget.setHighlighter(Highlighter() if Highlighter is not None else None)
         self.widget.setCompleter(Completer() if Completer is not None else None)
+        self._comment_token = comment_token
 
     def set_theme(self, theme):
         """Set the styling theme for the widget."""
@@ -664,6 +671,98 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
 
     def selected_text(self) -> str:
         return self.widget.selectedText()
+
+    def comment_lines(self):
+        """Adds a comment to the given lines"""
+        token = self._comment_token
+        if not token:
+            return
+        w = self.widget
+        if w.hasSelectedText():
+            # Change selection to use full lines
+            start_line, start_col, end_line, end_col = w.getSelection()
+            w.setSelection(start_line, 0, end_line, len(w.text(end_line)) - 1)
+            lines = w.selectedText().split("\n")
+
+            # Determine min whitespace of selected lines
+            col = min([len(it) - len(it.lstrip()) for it in lines if it.strip()])
+
+            # Insert comment token and ignoring empty lines
+            if col == 0:
+                lines = [token + it if it.strip() else it for it in lines]
+            else:
+                lines = [
+                    it[0:col] + token + it[col:] if it.strip() else it for it in lines
+                ]
+
+            # Replace with commented text
+            w.replaceSelectedText("\n".join(lines))
+
+            # Restore selection
+            if lines[-1].strip():  # If we modified the last line
+                end_col += len(token)
+            w.setSelection(start_line, start_col, end_line, end_col)
+        else:
+            start_line, start_col = w.getCursorPosition()
+            text = w.text(start_line)
+            col = len(text) - len(text.lstrip())
+            if not text.lstrip().startswith(token):
+                w.insertAt(token, start_line, col)
+
+            # Restore cursor pos
+            if col < start_col:
+                start_col += len(token)
+            w.setCursorPosition(start_line, start_col)
+
+    def uncomment_lines(self):
+        """Remove comments from selected or current lines"""
+        token = self._comment_token
+        if not token:
+            return
+        w = self.widget
+        if w.hasSelectedText():
+            # Change selection to use full lines
+            start_line, start_col, end_line, end_col = w.getSelection()
+            lines = []
+            for line in w.selectedText().split("\n"):
+                startswith_comment = line.lstrip().startswith(token)
+                if startswith_comment:
+                    line = line.replace(token, "", 1)
+                lines.append(line)
+            print(lines)
+            w.replaceSelectedText("\n".join(lines))
+
+            # If the last line was edited decrease end_col
+            if startswith_comment:
+                end_col -= len(token)
+
+            w.setSelection(start_line, start_col, end_line, end_col)
+        else:
+            start_line, start_col = w.getCursorPosition()
+            text = w.text(start_line)
+            if text.lstrip().startswith(token):
+                # Select full line
+                w.setSelection(start_line, 0, start_line, len(text))
+
+                # Replace
+                w.replaceSelectedText(text.replace(token, "", 1).rstrip("\n"))
+                w.setCursorPosition(start_line, start_col - 1)
+
+    def toggle_comments(self):
+        """Toggle comments"""
+        token = self._comment_token
+        if not token:
+            return
+        w = self.widget
+        if w.hasSelectedText():
+            start_line, start_col, end_line, end_col = w.getSelection()
+        else:
+            start_line, start_col = w.getCursorPosition()
+        text = w.text(start_line)
+        if text.lstrip().startswith(token):
+            self.uncomment_lines()
+        else:
+            self.comment_lines()
 
     # --------------------------------------------------------------------------
     # Reimplementations

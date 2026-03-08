@@ -375,6 +375,7 @@ class EditorPlugin(Plugin):
             "nc": "gcode",
             "ncc": "gcode",
             "tap": "gcode",
+            "svg": "xml",
         }
     ).tag(config=True)
 
