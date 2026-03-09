@@ -7,6 +7,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 """
 
+import os
+
 from OCCT.TopoDS import TopoDS_Shape
 
 from declaracad.occ.api import load_model
@@ -44,3 +46,65 @@ enamldef Assembly(Part):
         ".enaml",
     )[0]
     assert isinstance(assembly.render(), TopoDS_Shape)
+
+
+def test_export_svg(qt_app):
+    options = {"from_string": True}
+    if os.path.exists("drawing.svg"):
+        os.remove("drawing.svg")
+    assembly = load_model(
+        """
+       # Created in DeclaraCAD
+from declaracad.occ.api import *
+
+enamldef Drawing(Part):
+    Arc:
+       radius = 1
+       points = [(0, 0), (0, 1)]
+    Polyline: polyline:
+        points = [(0, 0), (0.5, 0.5), (1, 0)]
+    Arc: arc:
+        #points = [(0, 0), (1, 0), (0, 1)]
+        radius = 1
+        points = [(0, 0), (0, 1)]
+    Ellipse: ellipse:
+       color = 'blue'
+       # rotation = pi/2
+       major_radius = 4
+       minor_radius = 2
+    Bezier: quad_bezier:
+        position = (1, 0)
+        points = [(0, 0), (1, 0), (0, 1)]
+    Bezier: cubic_bezier:
+        position = (2, 0)
+        points = [(0, 0), (1, 0), (1, 1), (0, 1)]
+    Rectangle: rect:
+        width = 0.25
+        height = 0.125
+    Circle: circle:
+        radius = 0.1
+    BSpline: bspline:
+        points = [(0, 0), (0.5, 0.5), (1, 0), (1.5, 0.5)]
+    Rectangle: rounded_rect:
+        #position = (0, 2)
+        rx = 0.5
+        width = 2
+        height = 3
+
+enamldef Assembly(Part):
+    Axis:
+        pass
+
+    Drawing: drawing:
+        pass
+
+    Export:
+        shapes = [drawing]
+        options = {"author": "Author"}
+        filename = "drawing.svg"
+    """,
+        options,
+        ".enaml",
+    )[0]
+    assert isinstance(assembly.render(), TopoDS_Shape)
+    assert os.path.exists("drawing.svg")

@@ -14,9 +14,9 @@ import os
 import re
 import warnings
 from math import cos, pi, radians, sin, sqrt, tan
+from xml.etree import ElementTree as etree
 
 from atom.api import Atom, Dict, ForwardTyped, Instance, Str
-from lxml import etree
 from OCCT.BRep import BRep_Builder
 from OCCT.BRepBuilderAPI import (
     BRepBuilderAPI_MakeEdge,
@@ -195,7 +195,7 @@ class OccSvgNode(Atom):
     transform = Instance(gp_Trsf, ())
 
     #: Element
-    element = Instance(etree._Element)
+    element = Instance(etree.Element)
 
     #: Parsed style fields
     style = Dict()

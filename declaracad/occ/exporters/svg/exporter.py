@@ -8,10 +8,10 @@ The full license is in the file LICENSE, distributed with this software.
 """
 
 from math import pi
+from xml.etree import ElementTree as etree
 
 import enaml
 from atom.api import Float, Str
-from lxml import etree
 from OCCT.Adaptor3d import Adaptor3d_Curve
 from OCCT.BRepAdaptor import BRepAdaptor_Curve
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
@@ -130,8 +130,16 @@ def bspline_to_path(curve: Adaptor3d_Curve) -> str:
     return " ".join(data)
 
 
-def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree._Element:
-    svg = etree.Element("svg", nsmap=NSMAP)
+def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree.Element:
+    svg = etree.Element("svg")
+    for ns, url in NSMAP.items():
+
+        if ns is not None:
+            etree.register_namespace(ns, url)
+            svg.attrib[f"xmlns:{ns}"] = url
+        else:
+            svg.attrib["xmlns"] = url
+
     bbox = Topology.bbox(wires)
     t = gp_Trsf()
     t.SetScale(gp_Pnt(0, 0, 0), scale)
@@ -327,12 +335,14 @@ class SvgExporter(ModelExporter):
         if self.title or self.author or self.description:
             self.set_metadata(doc)
 
+        # Pretty print
+        etree.indent(doc, space=" ")
+
         with open(self.path, "wb") as f:
-            result = etree.tostring(doc, pretty_print=True, xml_declaration=False)
-            # print(result)
+            result = etree.tostring(doc, encoding="utf-8", xml_declaration=True)
             f.write(result)
 
-    def set_metadata(self, doc: etree._Element):
+    def set_metadata(self, doc: etree.Element):
         """Populate the metadata"""
         metadata = etree.SubElement(doc, "metadata")
         rdf = etree.SubElement(metadata, "{%s}RDF" % RDF_NS)

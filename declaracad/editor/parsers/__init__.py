@@ -72,4 +72,5 @@ PARSERS = {
     "python": python_parser,
     "json": json_parser,
     "xml": xml_parser,
+    "svg": xml_parser,
 }

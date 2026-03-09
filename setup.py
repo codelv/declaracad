@@ -27,7 +27,6 @@ requirements = [
     "enamlx",
     "asyncqtpy",  # asyncio + qt
     "pyserial>=3.5",
-    "lxml",
     "pyqcodeeditor",  # text editor
     "ezdxf",
     "pdf4py",
