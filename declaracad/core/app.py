@@ -19,7 +19,7 @@ from inspect import iscoroutinefunction
 from typing import Any, Callable, Optional
 
 from asyncqtpy import QEventLoop, QEventLoopPolicy
-from atom.api import Bool, Instance, Typed
+from atom.api import Bool, Instance, Set, Typed
 from enaml.qt import QT_API
 from enaml.qt.qt_application import QtApplication
 from enaml.qt.QtCore import Qt, QTimer
@@ -98,8 +98,12 @@ class AsyncApplication(Application):
 
     """
 
+    #: The Qt implementation of the asyncio event loop
     loop = Instance(QEventLoop, factory=asyncio.get_event_loop)
-    queue = Instance(asyncio.Queue, ())
+
+    #: Set of background tasks scheduled
+    tasks = Set(asyncio.Task)
+
     running = Bool()
 
     def __init__(self, platform: Optional[str] = None):
@@ -116,32 +120,14 @@ class AsyncApplication(Application):
     def start(self):
         """Run using the event loop"""
         log.info("Application starting")
-        self.running = True
         loop = self.loop
         loop.set_exception_handler(self.on_async_exception)
         try:
+            self.running = True
             with loop:
-                loop.run_until_complete(self.main())
-        except RuntimeError as e:
-            if "loop stopped" not in f"{e}":
-                raise
+                loop.run_forever()
         finally:
             self.running = False
-
-    def stop(self):
-        """Stop the application"""
-        self.running = False
-        self.queue.put_nowait(None)
-        super().stop()
-
-    async def main(self):
-        """Run any async deferred calls in the main ui loop."""
-        while self.running:
-            task = await self.queue.get()
-            if task is None:
-                break
-            await task
-        log.debug("Main finished")
 
     def on_async_exception(self, loop, context):
         """Exception handler that ignores"""
@@ -149,7 +135,8 @@ class AsyncApplication(Application):
 
     def deferred_call(self, callback: Callable, *args: Any, **kwargs: Any):
         """Invoke a callable on the next cycle of the main event loop
-        thread.
+        thread. If the callback is an async function, schedule it as a
+        background task.
 
         Parameters
         ----------
@@ -162,12 +149,10 @@ class AsyncApplication(Application):
 
         """
         if iscoroutinefunction(callback) or kwargs.pop("async_", None):
-
-            async def deferred_task():
-                task = self.loop.create_task(callback(*args, **kwargs))
-                await self.queue.put(task)
-
-            return self.queue.put_nowait(deferred_task())
+            task = self.loop.create_task(callback(*args, **kwargs))
+            self.tasks.add(task)
+            task.add_done_callback(self.tasks.discard)
+            return task
         return super().deferred_call(callback, *args, **kwargs)
 
     def timed_call(self, ms: float, callback: Callable, *args: Any, **kwargs: Any):
@@ -189,10 +174,5 @@ class AsyncApplication(Application):
 
         """
         if iscoroutinefunction(callback) or kwargs.pop("async_", None):
-
-            async def deferred_task():
-                task = self.loop.create_task(callback(*args, **kwargs))
-                await self.queue.put(task)
-
-            return super().timed_call(ms, self.queue.put_nowait, deferred_task())
+            return super().timed_call(ms, self.deferred_call, callback, *args, **kwargs)
         return super().timed_call(ms, callback, *args, **kwargs)

@@ -16,19 +16,21 @@ Posix platforms only, Python 3.9+ only.
 Windows event loops can not wait for serial ports with the current
 implementation. It should be possible to get that working though.
 """
+
 import asyncio
-import os
 import logging
+import os
 import urllib.parse
 from functools import partial
-from enaml.application import deferred_call
-from typing import Any, Callable, Coroutine, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import serial
+from enaml.application import deferred_call
 
 __version__ = "0.16"
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class SerialTransport(asyncio.Transport):
     """An asyncio transport model of a serial communication channel.
