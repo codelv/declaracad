@@ -6,7 +6,7 @@ from typing import Any, Optional, cast
 import jsonpickle
 from atom.api import Atom, Bool, Bytes, ContainerList, Dict, Instance, Int, Value
 
-from declaracad.core.utils import log
+from declaracad.core.utils import clip, log
 
 
 class JsonRpcProtocol(Atom, asyncio.Protocol):
@@ -91,7 +91,7 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
                     "id": None,
                     "error": {
                         "code": -32700,
-                        "message": f'Parse error: "{line}"',
+                        "message": f'JsonRpcParseError: "{clip(line, 200)}"',
                         "error": f"{e}",
                     },
                 }
