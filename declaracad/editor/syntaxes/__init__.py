@@ -54,7 +54,7 @@ def gcode_syntax():
 
 # dict[str, tuple[QCompleter, QSyntaxHighlighter, Optional[str]]
 SYNTAXES = {
-    "": lambda: (None, None, str),
+    "": lambda: (None, None, None),
     "python": python_syntax,
     "enaml": enaml_syntax,
     "cpp": cpp_syntax,
