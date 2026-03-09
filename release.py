@@ -45,12 +45,12 @@ def patch_cx_freeze():
         if outfile.endswith("AppRun"):
             lines = data.split("\n")
             lines.insert(
-                len(lines)-2,
-                'export FONTCONFIG_FILE="${FONTCONFIG_FILE:-$APPDIR/etc/fonts/fonts.conf}"'
+                len(lines) - 2,
+                'export FONTCONFIG_FILE="${FONTCONFIG_FILE:-$APPDIR/etc/fonts/fonts.conf}"',
             )
             lines.insert(
-                len(lines)-2,
-                'export FONTCONFIG_PATH="${FONTCONFIG_PATH:-$APPDIR/etc/fonts/}"'
+                len(lines) - 2,
+                'export FONTCONFIG_PATH="${FONTCONFIG_PATH:-$APPDIR/etc/fonts/}"',
             )
             data = "\n".join(lines)
             print("Patched AppRun")
@@ -59,7 +59,6 @@ def patch_cx_freeze():
         original_save_as_file(self, data, outfile, mode)
 
     bdist_appimage.save_as_file = save_as_file_patched
-
 
     def qt_qtcore_patched(self, finder, module) -> None:
         """Include plugins for the module."""
@@ -130,6 +129,18 @@ def find_fonts() -> list[tuple[str, str]]:
         return []
     etc_dir = os.path.join(os.environ["CONDA_PREFIX"], "etc")
     return [(os.path.join(etc_dir, "fonts"), "etc/fonts")]
+
+
+def find_bin_excludes():
+    # Exclude QtQuick and QtQml libs
+    if IS_WINDOWS or "CONDA_PREFIX" not in os.environ:
+        return []
+    lib_dir = os.path.join(os.environ["CONDA_PREFIX"], "lib")
+    bin_excludes = []
+    for pattern in ("libQt6Qml*.so*", "libQt6Quick*.so*"):
+        for source in Path(lib_dir).glob(pattern):
+            bin_excludes.append(source.name)
+    return bin_excludes
 
 
 patch_cx_freeze()
@@ -213,7 +224,6 @@ with enaml.imports():
                     "qtconsole",
                     "re",
                     "sqlite3",
-                    "sphinx",
                     "serial",
                     "scipy",
                     "stack_data",
@@ -228,25 +238,28 @@ with enaml.imports():
                     "wcwidth",
                     "zipfile",
                     "xml",
-                    "xmlrpc",
                     "_distutils_hack",
                 ],
                 zip_includes=find_enaml_files("enaml"),
                 excludes=[
                     "alabaster",
                     "babel",
-                    "wx",
                     "debugpy",
-                    "tkinter",
+                    "enamlx.qt.qt_occ_viewer",
+                    "lib2to3",
                     "matplotlib",
                     "matplotlib_inline",
-                    "lib2to3",
-                    "enamlx.qt.qt_occ_viewer",
-                    "zmq.eventloop.minitornado",
+                    "pytest",
+                    "_pytest",
                     "sphinx",
+                    "tkinter",
                     "vtkmodules",
                     "wheel",
+                    "wx",
+                    "xmlrpc",
+                    "zmq.eventloop.minitornado",
                 ],
+                bin_excludes=find_bin_excludes(),
             )
         ),
         executables=[
@@ -257,8 +270,6 @@ with enaml.imports():
                 target_name="declaracad",
                 shortcut_name="DeclaraCAD" if IS_WINDOWS else None,
                 shortcut_dir="DesktopFolder" if IS_WINDOWS else None,
-                # stdout doesn't
-                # base='Win32GUI' is_windows else None
             )
         ],
     )
