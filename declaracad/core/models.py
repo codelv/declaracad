@@ -16,7 +16,7 @@ import traceback
 
 import enaml
 import jsonpickle as pickle
-from atom.api import Atom, Dict, List, Member, Str
+from atom.api import Atom, Dict, List, Member, Set, Str
 from enaml.widgets.api import Container
 from enaml.workbench.plugin import Plugin as EnamlPlugin
 
@@ -78,8 +78,12 @@ class Plugin(EnamlPlugin):
 
     #: File used to save and restore the state for this plugin
     _state_file = Str()
-    _state_excluded = List()
     _state_members = List(Member)
+
+    #: Set of fields which are frozen. These will not be modified by
+    #: saving and restoring.
+    frozen_fields = Set()
+    _frozen_state = Dict()
 
     # -------------------------------------------------------------------------
     # Plugin API
@@ -124,7 +128,14 @@ class Plugin(EnamlPlugin):
                 with enaml.imports():
                     with open(self._state_file, "r") as f:
                         state = pickle.loads(f.read())
+
+                frozen_state = {}
+                for k in self.frozen_fields:
+                    if k in state:
+                        frozen_state[k] = state.pop(k)
+
                 self.__setstate__(state)
+                self._frozen_state = frozen_state
                 # log.debug("Plugin {} state restored from: {}".format(
                 #    self.manifest.id, self._state_file))
         except Exception:
@@ -154,9 +165,13 @@ class Plugin(EnamlPlugin):
                 for m in self.members().values()
                 if not m.metadata or not m.metadata.get("config", False)
             ]
-            for k in excluded + self._state_excluded:
+            for k in excluded:
                 if k in state:
                     del state[k]
+
+            # Replace any frozen members
+            state.update(self._frozen_state)
+
             state = pickle.dumps(state)
 
             #: Pretty format it

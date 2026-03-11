@@ -30,6 +30,8 @@ def main(filename: str, **kwargs):
     app = Application()
     doc = Document(name=filename)
     plugin = EditorPlugin(
+        # Don't overwrite changes to documents
+        frozen_fields={"documents", "active_document"},
         manifest=PluginManifest(id="declaracad.editor"),
         enable_langserver=kwargs.get("langserver") is True,
     )

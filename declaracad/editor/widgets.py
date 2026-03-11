@@ -130,6 +130,12 @@ class ProxyCodeEditor(ProxyControl):
     def deselect_all(self):
         raise NotImplementedError
 
+    def indent_lines(self):
+        raise NotImplementedError
+
+    def unindent_lines(self):
+        raise NotImplementedError
+
     def comment_lines(self):
         raise NotImplementedError
 
@@ -330,6 +336,14 @@ class CodeEditor(Control):
         if self.proxy_is_active:
             return self.proxy.selected_text()
         return ""
+
+    def indent_lines(self):
+        if self.proxy.is_active:
+            self.proxy.indent_lines()
+
+    def unindent_lines(self):
+        if self.proxy.is_active:
+            self.proxy.unindent_lines()
 
     def comment_lines(self):
         if self.proxy.is_active:

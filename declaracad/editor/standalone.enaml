@@ -40,6 +40,12 @@ enamldef EditorMenuBar(MenuBar):
         Action:
             text = 'Toggle comments'
             triggered :: editor.toggle_comments()
+        Action:
+            text = 'Indent'
+            triggered :: editor.indent_lines()
+        Action:
+            text = 'Unindent'
+            triggered :: editor.unindent_lines()
 
 
 enamldef StandaloneEditor(MainWindow): view:

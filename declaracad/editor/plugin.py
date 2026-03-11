@@ -406,7 +406,6 @@ class EditorPlugin(Plugin):
             # If using the standalone editor avoid loading all
             # the workbench's documents which are restored automatically
             # in the super() call.
-            self._state_excluded = ["documents", "active_document"]
             self.documents = [initial_document]
             self.active_document = initial_document
         for doc in self.documents:

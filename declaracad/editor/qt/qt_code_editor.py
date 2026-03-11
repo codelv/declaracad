@@ -24,6 +24,7 @@ from enaml.qt.QtCore import QRegularExpression, Qt, Signal
 from enaml.qt.QtGui import (
     QColor,
     QFont,
+    QKeyEvent,
     QTextCharFormat,
     QTextCursor,
     QTextDocument,
@@ -136,13 +137,14 @@ class QSyntaxStyle(BaseQSyntaxStyle):
 
 class QCodeEditor(BaseQCodeEditor):
     zoom_level: int = 0
+    zoomChanged = Signal(int)
     last_search: Optional[tuple[str | QRegularExpression, int, bool, bool]] = None
     searchWrapped = Signal()
     indicatorReleased = Signal()
     indicators: list[QTextEdit.ExtraSelection] = []
 
     def _updateStyle(self):
-        # The original function does not update the background
+        """Overridden since original function does not update the background color"""
         if style := self._syntaxStyle:
             self.setStyleSheet(
                 "QTextEdit { background-color: %s; selection-background-color: %s; color: %s; }"
@@ -165,6 +167,51 @@ class QCodeEditor(BaseQCodeEditor):
         self._highlightParenthesis(extra)
         self.setExtraSelections(extra + self.indicators)
 
+    def keyPressEvent(self, e: QKeyEvent, **kwargs):
+        """Overridden to support block indentation and zoom reset"""
+        key = e.key()
+        if (
+            self._autoIndentation
+            and (key == Qt.Key_Tab or key == Qt.Key_Backtab)
+            and self.hasSelectedText()
+        ):
+            if key == Qt.Key_Tab:
+                self.indentSelectedLines()
+            else:
+                self.unindentSelectedLines()
+            return
+        if key == Qt.Key_0 and e.modifiers() & Qt.ControlModifier:
+            self.zoomTo(0)  # Reset zoom on Ctrl + 0
+            return
+        return super().keyPressEvent(e, **kwargs)
+
+    def indentSelectedLines(self):
+        """Indent all selected lines"""
+        indent = self._tabReplace if self._replaceTab else "\t"
+        n = len(indent)
+        start_line, start_col, end_line, end_col = self.getSelection()
+        self.setSelection(start_line, 0, end_line, -1)
+        replacement = "\n".join(
+            f"{indent}{line}" for line in self.selectedText().splitlines()
+        )
+        self.replaceSelectedText(replacement)
+        self.setSelection(start_line, start_col + n, end_line, end_col + n)
+
+    def unindentSelectedLines(self):
+        """Unindent all selected lines"""
+        indent = self._tabReplace if self._replaceTab else "\t"
+        n = len(indent)
+        start_line, start_col, end_line, end_col = self.getSelection()
+        self.setSelection(start_line, 0, end_line, -1)
+        replacement = "\n".join(
+            line[n:] if line.startswith(indent) else line
+            for line in self.selectedText().splitlines()
+        )
+        self.replaceSelectedText(replacement)
+        self.setSelection(
+            start_line, max(0, start_col - n), end_line, max(0, end_col - n)
+        )
+
     def setIndicators(self, indicators: list[QTextEdit.ExtraSelection]):
         self.indicators = indicators
         self._updateExtraSelection()
@@ -175,6 +222,7 @@ class QCodeEditor(BaseQCodeEditor):
         self.setTextCursor(cursor)
 
     def getCursorPosition(self) -> tuple[int, int]:
+        """Get the current cursor position as a tuple of (lineno, col)"""
         cursor = self.textCursor()
         return (cursor.blockNumber() + 1, cursor.positionInBlock())
 
@@ -193,6 +241,8 @@ class QCodeEditor(BaseQCodeEditor):
         return self.textCursor().hasSelection()
 
     def replaceSelectedText(self, text: str):
+        """Replace the selected text with the given text. If there is no selection
+        this is equivalent to doing an insert."""
         cursor = self.textCursor()
         try:
             cursor.beginEditBlock()
@@ -309,9 +359,12 @@ class QCodeEditor(BaseQCodeEditor):
         new_zoom = max(-10, min(20, value))
         if new_zoom > self.zoom_level:
             super().zoomIn(new_zoom - self.zoom_level)
+        elif new_zoom == self.zoom_level:
+            return
         else:
             super().zoomOut(self.zoom_level - new_zoom)
         self.zoom_level = new_zoom
+        self.zoomChanged.emit(new_zoom)
 
 
 class QtCodeEditor(QtControl, ProxyCodeEditor):
@@ -364,6 +417,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
         self.widget.textChanged.connect(self.on_text_changed)
         self.widget.cursorPositionChanged.connect(self.on_cursor_position_changed)
         self.widget.indicatorReleased.connect(self.on_indicator_clicked)
+        self.widget.zoomChanged.connect(self.on_zoom_changed)
 
     def destroy(self):
         """A reimplemented destructor.
@@ -398,6 +452,12 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
     def on_indicator_clicked(self, data):
         """Handle the 'indicatorReleased' signal on the widget."""
         pass
+
+    def on_zoom_changed(self, zoom: int):
+        """Handle the 'zoomChanged' signal on the widget."""
+        d = self.declaration
+        if d is not None:
+            d.zoom = zoom
 
     # --------------------------------------------------------------------------
     # Helper Methods
@@ -672,6 +732,12 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
     def selected_text(self) -> str:
         return self.widget.selectedText()
 
+    def indent_lines(self):
+        self.widget.indentSelectedLines()
+
+    def unindent_lines(self):
+        self.widget.unindentSelectedLines()
+
     def comment_lines(self):
         """Adds a comment to the given lines"""
         token = self._comment_token
@@ -682,7 +748,7 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
             # Change selection to use full lines
             start_line, start_col, end_line, end_col = w.getSelection()
             w.setSelection(start_line, 0, end_line, len(w.text(end_line)) - 1)
-            lines = w.selectedText().split("\n")
+            lines = w.selectedText().splitlines()
 
             # Determine min whitespace of selected lines
             col = min([len(it) - len(it.lstrip()) for it in lines if it.strip()])
@@ -724,12 +790,11 @@ class QtCodeEditor(QtControl, ProxyCodeEditor):
             # Change selection to use full lines
             start_line, start_col, end_line, end_col = w.getSelection()
             lines = []
-            for line in w.selectedText().split("\n"):
+            for line in w.selectedText().splitlines():
                 startswith_comment = line.lstrip().startswith(token)
                 if startswith_comment:
                     line = line.replace(token, "", 1)
                 lines.append(line)
-            print(lines)
             w.replaceSelectedText("\n".join(lines))
 
             # If the last line was edited decrease end_col
