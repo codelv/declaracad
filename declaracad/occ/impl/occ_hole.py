@@ -26,7 +26,11 @@ class OccHole(OccShape, ProxyHole):
     def create_shape(self):
         d = self.declaration
         r = d.diameter / 2
+        if r <= 0:
+            raise ValueError("Hole radius must be greater than zero")
         h = d.depth
+        if h <= 0:
+            raise ValueError("Hole depth must be greater than zero")
         if d.far_edge.distance or d.near_edge.distance:
             poly = BRepBuilderAPI_MakePolygon()
 
