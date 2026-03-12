@@ -4,38 +4,21 @@ Copyright (c) 2017, Jairus Martin.
 Distributed under the terms of the GPL v3 License.
 
 The full license is in the file LICENSE, distributed with this software.
-
-Created on Dec 10, 2015
-
-@author: jrm
 """
 from enaml.layout.api import vbox, hbox, align
 from enaml.widgets.api import (
     Container, ObjectCombo, Menu, Action, Field, MultilineField, PushButton,
-    PopupView, RawWidget, Label
+    PopupView, Label
 )
-from enaml.qt.QtCore import Qt
-from enaml.qt.QtGui import QTextCursor
-from enaml.qt.QtWidgets import QPlainTextEdit
 from enaml.application import deferred_call
+from enaml.qt.QtCore import Qt
 from enamlx.widgets.api import KeyEvent
+
 from declaracad.core.api import DockItem, log
 from declaracad.core.utils import load_icon
-
+from declaracad.core.widgets import PlainTextEdit
 
 from .plugin import CncPlugin, Device
-
-
-class PlainTextEdit(RawWidget):
-    """ QTextEdit used by the MultiLineField is horribly slow at appending
-    text. This widget is significantly faster.
-
-    """
-    def create_widget(self, parent):
-        widget = QPlainTextEdit(parent)
-        widget.setReadOnly(True)
-        widget.setMaximumBlockCount(10000)
-        return widget
 
 
 enamldef NotificationPopup(PopupView):
@@ -71,6 +54,7 @@ enamldef CommView(Container): view:
     attr history_index: int = -1
     attr history_limit: int = 40
     attr notification: NotificationPopup = None
+    attr connected: bool << bool(device and device.connected)
     initialized ::
         # On startup observe the device's last output
         if device:
@@ -89,45 +73,28 @@ enamldef CommView(Container): view:
             new.observe('last_write', watch_output)
 
     func watch_output(change):
-        if not plugin.output_enabled:
-            return
-        widget = comm_log.proxy.widget
-        try:
-            msg = change['value'].decode()
-            widget.moveCursor(QTextCursor.End)
-            if plugin.strip_whitespace:
-                widget.insertPlainText(msg.strip())
-            else:
-                widget.insertPlainText(msg)
-            widget.moveCursor(QTextCursor.End)
-            scroll_to_end()
-        except:
-            pass # Ignore decode errors
+        if plugin.output_enabled:
+            self.append_message(change['value'])
 
     func watch_input(change):
-        if not plugin.input_enabled:
-            return
-        widget = comm_log.proxy.widget
-        try:
-            msg = change['value'].decode()
-            widget.moveCursor(QTextCursor.End)
-            widget.insertPlainText(msg.strip() if plugin.strip_whitespace else msg)
-            widget.moveCursor(QTextCursor.End)
-            scroll_to_end()
-        except:
-            pass # Ignore decode errors
+        if plugin.input_enabled:
+            self.append_message(change['value'])
 
-    func scroll_to_end():
-        if not plugin.autoscroll:
-            return
-        # Scroll to end
-        widget = comm_log.proxy.widget
-        scroll_bar = widget.verticalScrollBar()
-        scroll_bar.setValue(scroll_bar.maximum())
+    func append_message(value: bytes):
+        """ Decode and add the message to the log output view """
+        try:
+            msg = value.decode()
+            comm_log.append(msg.strip() if plugin.strip_whitespace else msg)
+            if plugin.autoscroll:
+                comm_log.scroll_to_end()
+        except Exception as e:
+            log.debug(e)
 
     func send_text():
         if device and device.connected:
             msg = to_send.text
+            if not msg:
+                return
             # Add to history
             add_to_history(msg)
             if plugin.add_newline:
@@ -171,11 +138,11 @@ enamldef CommView(Container): view:
 
     Container:
         constraints = [
-                vbox(hbox(cmb_conn, btn_open, btn_clear, btn_autoscroll),
-                    comm_log,
-                    hbox(to_send, btn_send)),
-                align('v_center', cmb_conn, btn_open, btn_clear, btn_autoscroll),
-                align('v_center', to_send, btn_send),
+            vbox(hbox(cmb_conn, btn_open, btn_clear, btn_autoscroll),
+                comm_log,
+                hbox(to_send, btn_send)),
+            align('v_center', cmb_conn, btn_open, btn_clear, btn_autoscroll),
+            align('v_center', to_send, btn_send),
         ]
 
         ObjectCombo: cmb_conn:
@@ -184,10 +151,10 @@ enamldef CommView(Container): view:
             selected := view.device
         PushButton: btn_open:
             #text << "Close" if opened else "Open"
-            icon << load_icon("disconnect" if device and device.connected else "connect")
-            tool_tip << "Connected. Click to disconnect" if device and device.connected else "Disconnected. Click to Connect"
+            icon << load_icon("disconnect" if connected else "connect")
+            tool_tip << "Connected. Click to disconnect" if connected else "Disconnected. Click to Connect"
             clicked ::
-                if device and device.connected:
+                if connected:
                     device.busy = False # Force send to quit
                     deferred_call(device.disconnect)
                 else:
@@ -195,7 +162,7 @@ enamldef CommView(Container): view:
         PushButton: btn_clear:
             icon = load_icon("bin")
             tool_tip = "Clear console"
-            clicked :: comm_log.proxy.widget.clear()
+            clicked :: comm_log.clear()
         PushButton: btn_autoscroll:
             icon << load_icon("lock_open") if plugin.autoscroll else load_icon("lock")
             tool_tip = "Auto scroll"
@@ -205,16 +172,15 @@ enamldef CommView(Container): view:
             hug_height = 'weak'
             hug_width = 'weak'
         Field: to_send:
-            enabled << bool(device and device.connected)
-            placeholder << "Enter a command.." if enabled else "Disconnected... reconnect first."
+            enabled << connected
+            placeholder << "Enter a command.." if connected else "Disconnected... reconnect first."
             tool_tip = "Press enter to send"
-            #KeyEvent:
-            #    keys = ['return']
-            #    released :: send_text()
             KeyEvent:
                 released ::
                     code = change['value']['code']
-                    if len(plugin.history):
+                    if code == Qt.Key_Return:
+                        send_text()
+                    elif len(plugin.history):
                         if code == Qt.Key_Up:
                             n = len(plugin.history)
                             view.history_index = max(-n, history_index-1)
@@ -228,17 +194,15 @@ enamldef CommView(Container): view:
 
         PushButton: btn_send:
             text = "Send"
-            enabled << bool(device and device.connected)
+            enabled << connected
             clicked :: send_text()
 
 
-
 enamldef ComChannelDockItem(DockItem): dock_item:
-    title = 'Channel'
-    name = 'com-channel-{}'.format(id(self))
-    icon = load_icon('disconnect')
+    title = "Channel"
+    name = f"com-channel-{id(self)}"
+    icon = load_icon("disconnect")
     title_bar_right_clicked :: menu.popup()
     CommView:
         padding = 0
         plugin << dock_item.plugin
-

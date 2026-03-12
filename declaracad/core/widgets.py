@@ -11,7 +11,7 @@ from enaml.core.declarative import d_
 from enaml.qt.qt_factories import QT_FACTORIES
 from enaml.qt.qt_window import QtWindow
 from enaml.qt.QtCore import Qt
-from enaml.qt.QtGui import QWindow
+from enaml.qt.QtGui import QTextCursor, QWindow
 from enaml.qt.QtWidgets import QPlainTextEdit, QWidget
 from enaml.widgets.api import DockArea, DockItem, RawWidget, Window
 from enaml.workbench.api import Plugin
@@ -99,6 +99,25 @@ class PlainTextEdit(RawWidget):
         widget.setReadOnly(True)
         widget.setMaximumBlockCount(1000)
         return widget
+
+    def clear(self):
+        """Clear the widget text"""
+        if self.proxy_is_active:
+            self.proxy.widget.clear()
+
+    def append(self, text: str):
+        """Append text to the end of the input"""
+        if self.proxy.proxy_is_active:
+            widget = self.proxy.widget
+            widget.moveCursor(QTextCursor.End)
+            widget.insertPlainText(text)
+            widget.moveCursor(QTextCursor.End)
+
+    def scroll_to_end(self):
+        if self.proxy_is_active:
+            widget = self.proxy.widget
+            scroll_bar = widget.verticalScrollBar()
+            scroll_bar.setValue(scroll_bar.maximum())
 
 
 class QtFramelessWindow(QtWindow):

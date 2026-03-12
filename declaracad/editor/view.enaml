@@ -515,7 +515,7 @@ enamldef OutputDockItem(DockItem):
         Action:
             text = "Clear window"
             triggered ::
-                output.proxy.widget.setPlainText("")
+                output.clear()
                 active_document.output = []
 
     Container:
