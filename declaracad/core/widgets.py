@@ -102,20 +102,19 @@ class PlainTextEdit(RawWidget):
 
     def clear(self):
         """Clear the widget text"""
-        if self.proxy_is_active:
-            self.proxy.widget.clear()
+        if widget := self.get_widget():
+            widget.clear()
 
     def append(self, text: str):
         """Append text to the end of the input"""
-        if self.proxy.proxy_is_active:
+        if widget := self.get_widget():
             widget = self.proxy.widget
             widget.moveCursor(QTextCursor.End)
             widget.insertPlainText(text)
             widget.moveCursor(QTextCursor.End)
 
     def scroll_to_end(self):
-        if self.proxy_is_active:
-            widget = self.proxy.widget
+        if widget := self.get_widget():
             scroll_bar = widget.verticalScrollBar()
             scroll_bar.setValue(scroll_bar.maximum())
 
