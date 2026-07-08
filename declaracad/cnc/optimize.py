@@ -26,6 +26,7 @@ def optimize_moves(
     start_point: Point,
     reverse: bool = False,
     optimizer_timeout: float = 120,
+    enabled: bool = True,
 ) -> list[TopoDS_Wire]:
     """Use Dijkstra's algorithm to find the shortest path between
     a set of wires. Ported from Inkcut
@@ -38,13 +39,15 @@ def optimize_moves(
         Starting point
     reverse: Bool
         Revers the point order
+    enabled: Bool
+        If False, disable optimization
     Returns
     -------
     wires: List[TopoDS_Wires]
         Wires in the optimal move order
 
     """
-    if len(wires) < 2:
+    if len(wires) < 2 or not enabled:
         return wires
     now = time.time()
     time_limit = now + optimizer_timeout
@@ -79,7 +82,10 @@ def optimize_moves(
 
 
 def optimize_points(
-    points: list[Point], start_point: Point, optimizer_timeout: float = 120
+    points: list[Point],
+    start_point: Point,
+    optimizer_timeout: float = 120,
+    enabled: bool = True,
 ) -> list[Point]:
     """Use Dijkstra's algorithm to find the shortest path between
     a set of points. Ported from Inkcut
@@ -97,7 +103,7 @@ def optimize_points(
         Points in the optimal move order
 
     """
-    if len(points) < 2:
+    if len(points) < 2 or not enabled:
         return points
     now = time.time()
     time_limit = now + optimizer_timeout

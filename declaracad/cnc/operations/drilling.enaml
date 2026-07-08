@@ -36,6 +36,9 @@ enamldef DrillingOperation(Operation): operation:
     #: List of circular edges, cylinder faces, or points
     attr holes: list = []
 
+    #: Whether to re-order hole cut order to optimize move times
+    attr optimize: bool = True
+
     # ------------------------------------------------------------------------
     # Operation options
     # ------------------------------------------------------------------------
@@ -95,7 +98,8 @@ enamldef DrillingOperation(Operation): operation:
     attr drill_data << optimize_order(
         [find_center(h) for h in holes],
         start_point,
-        lambda d: d.center
+        lambda d: d.center,
+        enabled=optimize,
     )
     attr path = generate_path(drill_data)
 
