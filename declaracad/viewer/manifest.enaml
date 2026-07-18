@@ -43,7 +43,10 @@ def export(event: ExecutionEvent):
         )
     with enaml.imports():
         from .dialogs import ExportDialog
-    ExportDialog(ui.window, plugin=plugin, event=event).exec_()
+    dialog = ExportDialog(ui.window, plugin=plugin, event=event)
+    # Support editing without re-opening dialog
+    dialog.proxy.set_modality('non_modal')
+    dialog.show()
 
 
 def screenshot(event: ExecutionEvent):
@@ -51,7 +54,10 @@ def screenshot(event: ExecutionEvent):
     plugin = event.workbench.get_plugin('declaracad.viewer')
     with enaml.imports():
         from .dialogs import ScreenCaptureDialog
-    ScreenCaptureDialog(ui.window, plugin=plugin, event=event).exec_()
+    dialog = ScreenCaptureDialog(ui.window, plugin=plugin, event=event)
+    # Support editing without re-opening dialog
+    dialog.proxy.set_modality('non_modal')
+    dialog.show()
 
 
 def plugin_factory():
