@@ -158,7 +158,7 @@ enamldef ModelViewer(OccViewer): viewer:
         'd': menu_dimensions.keymap,
         'v': menu_view_direction.keymap,
         's': menu_selection_mode.keymap,
-        'p': menu_projection.keymap,
+        'p': menu_projection.keymap | menu_properties.keymap,
         'c': menu_clip_planes.keymap,
         'u': menu_display_units.keymap,
         'l': {
@@ -195,6 +195,18 @@ enamldef ModelViewer(OccViewer): viewer:
         s = UNIT_SCALE.get(u, 1)
         p = UNIT_PRECISON.get(u, 3)
         return f'{round(value*s, p)} {u}'
+
+    func format_area(value):
+        u = self.display_units
+        s = UNIT_SCALE.get(u, 1) ** 2
+        p = UNIT_PRECISON.get(u, 3)
+        return f'{round(value*s, p)} {u}²'
+
+    func format_volume(value):
+        u = self.display_units
+        s = UNIT_SCALE.get(u, 1) ** 3
+        p = UNIT_PRECISON.get(u, 3)
+        return f'{round(value*s, p)} {u}³'
 
     func format_point(point):
         u = self.display_units
@@ -779,6 +791,41 @@ enamldef ModelViewer(OccViewer): viewer:
             Action:
                 text = 'Clear all'
                 triggered :: viewer.dimensions = []
+        Menu: menu_properties:
+            title = 'Properties'
+            attr keymap = {
+                'a': action_show_area.triggered,
+                'v': action_show_volume.triggered,
+            }
+            Action: action_show_area:
+                text = 'Area'
+                tool_tip = 'Calculate area of the selected shapes'
+                triggered ::
+                    shapes = viewer.get_selected_shapes()
+                    if shapes:
+                        try:
+                            area = 0  # in mm^2
+                            for shape in shapes:
+                                area += Topology(shape=shape).area
+
+                            message = f"Area: {viewer.format_area(area)}"
+                        except Exception as e:
+                            message = f"Could not calculate area: {e}"
+                        viewer.show_notification(message)
+            Action: action_show_volume:
+                text = 'Volume'
+                tool_tip = 'Calculate the volume of the selected shapes'
+                triggered ::
+                    shapes = viewer.get_selected_shapes()
+                    if shapes:
+                        try:
+                            volume = 0
+                            for shape in shapes:
+                                volume += Topology(shape=shape).volume
+                            message = f"Volume: {viewer.format_volume(volume)}"
+                        except Exception as e:
+                            message = f"Could not calculate volume: {e}"
+                        viewer.show_notification(message)
         Menu:
             title = 'Rendering'
             Looper:

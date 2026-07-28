@@ -17,7 +17,7 @@ import sys
 from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler
 
-version = "0.6.0"
+version = "0.6.1"
 
 LOG_FORMAT = "%(asctime)-15s | %(levelname)-7s | %(name)s | %(message)s"
 
