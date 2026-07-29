@@ -16,7 +16,19 @@ import uuid
 from typing import Union
 
 import serial
-from atom.api import Bool, Bytes, ContainerList, Enum, Float, Instance, Int, List, Str
+from atom.api import (
+    Atom,
+    Bool,
+    Bytes,
+    ContainerList,
+    Enum,
+    Float,
+    Instance,
+    Int,
+    List,
+    Str,
+    observe,
+)
 from enaml.application import Application
 from serial.tools.list_ports import comports
 
@@ -351,6 +363,65 @@ class Device(Model, asyncio.Protocol):
         await self.write(f"G0 X{x} Y{y} Z{z}\n")
 
 
+class Job(Atom):
+    """Tracks sending a file to a device"""
+
+    filename = Str()
+    progress = Float()
+    status = Enum("ready", "running", "paused", "aborted", "complete")
+    start_line = Int()
+    current_line = Int()
+    line_count = Int()
+
+    def abort(self):
+        if self.status not in ("running", "paused"):
+            raise RuntimeError(f"Cannot abort job in '{self.status}' state")
+        self.status = "aborted"
+
+    @observe("line_count", "current_line")
+    def _update_progress(self, change):
+        if self.line_count > 0:
+            self.progress = max(0, min(100, self.current_line / self.line_count * 100))
+
+    async def run(self, device: Device):
+        rate = device.config.send_rate
+        app = Application.instance()
+
+        if self.status not in ("ready", "aborted", "complete"):
+            raise RuntimeError("Cannot run a running job")
+        self.status = "running"
+        start_line = self.start_line
+        with open(self.filename, "rb") as f:
+            # Count lines
+            line_count = 0
+            for line in f:
+                line_count += 1
+            self.line_count = line_count
+            self.current_line = 0
+            f.seek(0)
+
+            await device.connect()
+
+            for line in f:
+                if self.status == "aborted":
+                    break
+                self.current_line += 1
+                if self.current_line < start_line:
+                    continue
+                if not device.connected:
+                    raise IOError("Device disconnected")
+                if not device.busy:
+                    raise RuntimeError("Send cancelled")
+                if rate:
+                    await asyncio.sleep(rate)
+                app.process_events()
+                await device.write(line)
+
+            # If not aborted
+            if self.status == "running":
+                self.status = "complete"
+
+
 class CncPlugin(Plugin):
     connection_types = [SerialConfig]
 
@@ -359,6 +430,9 @@ class CncPlugin(Plugin):
 
     #: Active device device
     device = Instance(Device, ()).tag(config=True)
+
+    #: Job
+    job = Instance(Job).tag(config=False)
 
     #: Monitor fields
     add_newline = Bool(False).tag(config=True)
@@ -436,23 +510,12 @@ class CncPlugin(Plugin):
             The path to the file
         """
         device = self.device
-        if not device or device.busy:
+        job = self.job
+        if not device or device.busy or (job and job.status == "running"):
             return
         device.busy = True
-        rate = device.config.send_rate
-        app = Application.instance()
         try:
-            with open(filename, "rb") as f:
-                await device.connect()
-                for line in f:
-                    if not device.connected:
-                        raise IOError("Device disconnected")
-                    if not device.busy:
-                        raise RuntimeError("Send cancelled")
-                    if rate:
-                        await asyncio.sleep(rate)
-                    app.process_events()
-                    await device.write(line)
-
+            job = self.job = Job(filename=filename)
+            await job.run(device)
         finally:
             device.busy = False

@@ -8,7 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 from enaml.layout.api import vbox, hbox, align
 from enaml.widgets.api import (
     Container, ObjectCombo, Menu, Action, Field, MultilineField, PushButton,
-    PopupView, Label
+    PopupView, Label, ProgressBar
 )
 from enaml.application import deferred_call
 from enaml.qt.QtCore import Qt
@@ -18,7 +18,7 @@ from declaracad.core.api import DockItem, log
 from declaracad.core.utils import load_icon
 from declaracad.core.widgets import PlainTextEdit
 
-from .plugin import CncPlugin, Device
+from .plugin import CncPlugin, Device, Job
 
 
 enamldef NotificationPopup(PopupView):
@@ -54,6 +54,8 @@ enamldef CommView(Container): view:
     attr history_index: int = -1
     attr history_limit: int = 40
     attr notification: NotificationPopup = None
+    attr job: Job := plugin.job
+    attr locked: bool << device and device.busy
     attr connected: bool << bool(device and device.connected)
     initialized ::
         # On startup observe the device's last output
@@ -140,8 +142,10 @@ enamldef CommView(Container): view:
         constraints = [
             vbox(hbox(cmb_conn, btn_open, btn_clear, btn_autoscroll),
                 comm_log,
+                hbox(progress_bar, job_status, btn_job),
                 hbox(to_send, btn_send)),
             align('v_center', cmb_conn, btn_open, btn_clear, btn_autoscroll),
+            align('v_center', progress_bar, job_status, btn_job),
             align('v_center', to_send, btn_send),
         ]
 
@@ -171,14 +175,38 @@ enamldef CommView(Container): view:
         PlainTextEdit: comm_log:
             hug_height = 'weak'
             hug_width = 'weak'
+        ProgressBar: progress_bar:
+            visible << job is not None
+            value << int(job.progress) if job else 0
+        Label: job_status:
+            visible << job is not None
+            tool_tip = "Job progress"
+            text << f"{job.current_line} / {job.line_count}" if job else ""
+        PushButton: btn_job:
+            visible << job is not None
+            text << "Abort" if job and job.status == "running" else "Close"
+            tool_tip = "Job actions"
+            clicked ::
+                if job.status == "running":
+                    job.abort()
+                else:
+                    plugin.job = None
+
         Field: to_send:
-            enabled << connected
-            placeholder << "Enter a command.." if connected else "Disconnected... reconnect first."
+            enabled << connected and not locked
+            placeholder <<
+                if not connected:
+                    return "Disconnected... reconnect first."
+                elif locked:
+                    return "Sending file.. please wait."
+                return "Enter a command.."
             tool_tip = "Press enter to send"
             KeyEvent:
                 released ::
                     code = change['value']['code']
-                    if code == Qt.Key_Return:
+                    if locked:
+                        pass
+                    elif code == Qt.Key_Return:
                         send_text()
                     elif len(plugin.history):
                         if code == Qt.Key_Up:
@@ -194,8 +222,9 @@ enamldef CommView(Container): view:
 
         PushButton: btn_send:
             text = "Send"
-            enabled << connected
+            enabled << connected and not locked
             clicked :: send_text()
+
 
 
 enamldef ComChannelDockItem(DockItem): dock_item:
