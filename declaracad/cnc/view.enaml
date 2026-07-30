@@ -134,6 +134,7 @@ enamldef CommView(Container): view:
 
         """
         self.hide_notification()
+        log.info(f"CNC Notification: {message}")
         popup = NotificationPopup(self, message=message, **kwargs)
         popup.show()
         self.notification = popup

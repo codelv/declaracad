@@ -70,6 +70,10 @@ class SerialTransport(asyncio.Transport):
         self._poll_wait_time = 0.0005
         self._max_out_waiting = 1024
 
+        # Callback to notify what data was actually written
+        # If the buffer is empty thi
+        self._wrote_callback = lambda data: None
+
         # XXX how to support url handlers too
 
         # Asynchronous I/O requires non-blocking devices
@@ -304,18 +308,22 @@ class SerialTransport(asyncio.Transport):
             self._write_buffer.append(data)
         except serial.SerialException as exc:
             self._fatal_error(exc, "Fatal write error on serial transport")
+            self._wrote_callback(b"")
             return
         except BaseException as exc:
             self._fatal_error(exc, "Unhandled fatal write error on serial transport")
+            self._wrote_callback(b"")
             return
         else:
             if n == len(data):
                 # All data written
+                self._wrote_callback(data)
                 if self._closing:
                     self._close()
                 return
 
             self._write_buffer.append(data[n:])  # Try again later
+            self._wrote_callback(data[:n])
 
         self._maybe_pause_protocol()
         self._ensure_writer()

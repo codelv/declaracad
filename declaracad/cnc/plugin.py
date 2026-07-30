@@ -11,7 +11,6 @@ Created on Aug 8, 2018
 """
 
 import asyncio
-import time
 import uuid
 from typing import Union
 
@@ -102,6 +101,7 @@ class SerialConnection(Connection):
     handle = Instance(object)
     config = Instance(SerialConfig, ()).tag(config=True)
     transport = Instance(SerialTransport)
+    pending_write = Instance(asyncio.Future)
 
     @classmethod
     def get_connections(cls):
@@ -129,9 +129,33 @@ class SerialConnection(Connection):
             xonxoff=config.xonxoff,
             rtscts=config.rtscts,
         )
+        # This is a patched in function in declaracad/core/serial.py
+        transport = self.handle[0]
+        transport._wrote_callback = self.on_write_complete
 
-    async def write(self, data: Union[str, bytes]):
-        self.transport.write(data)
+    def on_write_complete(self, data: bytes):
+        # This is invoked in SerialTransport._write_data
+        future = self.pending_write
+        if future and not future.done():
+            if not data:
+                future.set_result(False)  # failed
+            elif self.transport.get_write_buffer_size() == 0:
+                future.set_result(True)  # complete
+            # else not done
+
+    async def write(self, data: Union[str, bytes]) -> bool:
+        if future := self.pending_write:
+            await future
+        try:
+            loop = asyncio.get_event_loop()
+            future = self.pending_write = loop.create_future()
+            # Write just puts it into the write buffer
+            # So wait until the buffer is empty (all written)
+            # or the connection drops
+            self.transport.write(data)
+            return await future
+        finally:
+            self.pending_write = None
 
     async def disconnect(self):
         if self.transport:
@@ -230,11 +254,13 @@ class Device(Model, asyncio.Protocol):
     # Protocol API
     # -------------------------------------------------------------------------
     def connection_made(self, transport):
-        self.connected = True
         self.connection.transport = transport
+        self.connected = True
+        self.paused = False
 
     def connection_lost(self, exc):
         self.connected = False
+        self.paused = False
         self.errors = f"{exc}"
 
     def data_received(self, data: bytes):
@@ -248,46 +274,26 @@ class Device(Model, asyncio.Protocol):
         self.last_read = data
 
     def pause_writing(self):
-        # print(self.connection.transport.get_write_buffer_size())
-        pass
+        self.paused = True
 
     def resume_writing(self):
-        # print(self.connection.transport.get_write_buffer_size())
-        pass
-
-    async def wait_until(self, fn, timeout=30, message="Timeout hit", rate=0.1):
-        """Wait for the fn to return true or until the timeout hits
-
-        Parameters
-        ----------
-        fn: Callable
-            A function that returns a boolean when ready
-        timeout: Float or None
-            Time in seconds to wait before giving an error or None
-            to block forever
-        message: Str
-            Message to set on the error if a timeout occurs
-        rate: Float
-            Time in seconds to wait before checking the fn again
-
-        """
-        start = time.time()
-        while not fn():
-            await asyncio.sleep(rate)
-            if timeout is not None and (time.time() - start) > timeout:
-                raise TimeoutError(message)
+        self.paused = False
 
     # -------------------------------------------------------------------------
     # Device API
     # -------------------------------------------------------------------------
-    async def connect(self):
+    async def connect(self, timeout: float = 30):
         """Make the connection and wait until connection_made is called."""
         if self.connected:
             return
-        await self.connection.connect(self)
-
-        # Wait for it to connect
-        await self.wait_until(lambda: self.connected, 30, message="Connection timeout")
+        loop = asyncio.get_event_loop()
+        future = loop.create_future()
+        self.observe("connected", future.set_result)
+        try:
+            await self.connection.connect(self)
+            await asyncio.wait_for(future, timeout)
+        finally:
+            self.unobserve("connected", future.set_result)
 
     async def write(self, data: Union[str, bytes]):
         """Write the data and wait until the write buffer is empty.
@@ -298,37 +304,39 @@ class Device(Model, asyncio.Protocol):
             Data to write to the device
 
         """
-        if not self.connected:
-            return IOError("Not connected")
         if not isinstance(data, bytes):
             data = data.encode()
 
         # Manual flow control sleep until unpaused
-        while self.paused and self.connected:
-            await asyncio.sleep(0.001)
+        if self.paused:
+            loop = asyncio.get_event_loop()
+            future = loop.create_future()
+            self.observe("paused", future.set_result)
+            try:
+                await future
+            finally:
+                self.unobserve("paused", future.set_result)
         if not self.connected:
             return IOError("Connection lost")
 
         self.last_write = data
-        # Write just puts it into the write buffer
-        # So wait until the buffer is empty (all written)
-        # or the connection drops
-        self.connection.transport.write(data)
-        get_buffer_size = self.connection.transport.get_write_buffer_size
-        await self.wait_until(
-            lambda: not self.connected or get_buffer_size() == 0, timeout=None
-        )
-        if not self.connected:
-            raise IOError("Connection dropped")
+        await self.connection.write(data)
 
-    async def disconnect(self):
+    async def disconnect(self, timeout: float = 0):
         """Drop the connection. This will call connection_lost when it is
         actually closed.
 
         """
         if not self.connected:
             return
-        await self.connection.disconnect()
+        loop = asyncio.get_event_loop()
+        future = loop.create_future()
+        self.observe("connected", future.set_result)
+        try:
+            await self.connection.disconnect()
+            await asyncio.wait_for(future, timeout)
+        finally:
+            self.unobserve("connected", future.set_result)
 
     def convert(self, point: Point):
         """Convert a point based on this device's configuration
