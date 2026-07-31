@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import traceback
+from io import BytesIO
 from typing import Any, Optional, cast
 
 import jsonpickle
@@ -27,6 +28,13 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
 
     # Asyncio event lop
     loop = Value()
+
+    #: Message separator
+    separator = Bytes(b"\0")
+
+    #: Message buffer
+    #: TODO: This is unbounded
+    read_buffer = Instance(BytesIO, ())
 
     def _default_loop(self):
         return asyncio.get_event_loop()
@@ -55,7 +63,8 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
         if self.debug:
             log.debug(message)
         encoded_msg = jsonpickle.dumps(message).encode()
-        self.transport.write(encoded_msg + b"\r\n")
+        self.transport.write(encoded_msg)
+        self.transport.write(self.separator)
 
     def data_received(self, data: bytes):
         """Process stdin as json-rpc request
@@ -66,32 +75,35 @@ class JsonRpcProtocol(Atom, asyncio.Protocol):
             The data received from stdin.
 
         """
-        # TODO: Handle partial reads
-        for line in data.split(b"\n"):
-            self.line_received(line.decode())
+        self.read_buffer.write(data)
+        separator = self.separator
+        while separator in data:
+            message, data = self.read_buffer.getvalue().split(separator, maxsplit=1)
+            self.read_buffer = BytesIO(data)
+            self.message_received(message.decode())
 
-    def line_received(self, line: str) -> Optional[asyncio.Future]:
+    def message_received(self, msg: str) -> Optional[asyncio.Future]:
         """Called when a newline is received
 
         Parameters
         ----------
-        line: String
+        msg: String
             The data
 
         """
-        if not line:
+        if not msg:
             return None
         if self.debug:
-            log.info(f"Received message '{line}'")
+            log.info(f"Received message '{msg}'")
         try:
-            request: dict[str, Any] = jsonpickle.loads(line)
+            request: dict[str, Any] = jsonpickle.loads(msg)
         except Exception as e:
             return self.send_message(
                 {
                     "id": None,
                     "error": {
                         "code": -32700,
-                        "message": f'JsonRpcParseError: "{clip(line, 200)}"',
+                        "message": f'JsonRpcParseError: "{clip(msg, 200)}"',
                         "error": f"{e}",
                     },
                 }

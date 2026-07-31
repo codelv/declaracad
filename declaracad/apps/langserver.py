@@ -47,6 +47,8 @@ class LangServerProtocol(JsonRpcProtocol):
             if ext in PARSERS:
                 parse = PARSERS[ext]()
                 return parse(filename, source)
+            else:
+                log.debug("No parser for '{ext}'")
         except Exception as e:
             log.exception(e)
         return None
