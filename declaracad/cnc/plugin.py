@@ -28,7 +28,6 @@ from atom.api import (
     Str,
     observe,
 )
-from enaml.application import Application
 from serial.tools.list_ports import comports
 
 from declaracad.core.api import Model, Plugin, log
@@ -393,7 +392,6 @@ class Job(Atom):
 
     async def run(self, device: Device):
         rate = device.config.send_rate
-        app = Application.instance()
 
         if self.status not in ("ready", "aborted", "complete"):
             raise RuntimeError("Cannot run a running job")
@@ -420,9 +418,7 @@ class Job(Atom):
                     raise IOError("Device disconnected")
                 if not device.busy:
                     raise RuntimeError("Send cancelled")
-                if rate:
-                    await asyncio.sleep(rate)
-                app.process_events()
+                await asyncio.sleep(rate)
                 await device.write(line)
 
             # If not aborted

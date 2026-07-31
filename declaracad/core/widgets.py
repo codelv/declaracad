@@ -11,7 +11,7 @@ from enaml.core.declarative import d_
 from enaml.qt.qt_factories import QT_FACTORIES
 from enaml.qt.qt_window import QtWindow
 from enaml.qt.QtCore import Qt
-from enaml.qt.QtGui import QTextCursor, QWindow
+from enaml.qt.QtGui import QTextCursor, QTextOption, QWindow
 from enaml.qt.QtWidgets import QPlainTextEdit, QWidget
 from enaml.widgets.api import DockArea, DockItem, RawWidget, Window
 from enaml.workbench.api import Plugin
@@ -94,10 +94,14 @@ class PlainTextEdit(RawWidget):
 
     """
 
+    #: Lines to display
+    maximum_block_count = d_(Int(500))
+
     def create_widget(self, parent):
         widget = QPlainTextEdit(parent)
         widget.setReadOnly(True)
-        widget.setMaximumBlockCount(1000)
+        widget.setMaximumBlockCount(self.maximum_block_count)
+        widget.setWordWrapMode(QTextOption.NoWrap)
         return widget
 
     def clear(self):
@@ -108,7 +112,6 @@ class PlainTextEdit(RawWidget):
     def append(self, text: str):
         """Append text to the end of the input"""
         if widget := self.get_widget():
-            widget = self.proxy.widget
             widget.moveCursor(QTextCursor.End)
             widget.insertPlainText(text)
             widget.moveCursor(QTextCursor.End)

@@ -57,6 +57,7 @@ enamldef CommView(Container): view:
     attr job: Job := plugin.job
     attr locked: bool << device and device.busy
     attr connected: bool << bool(device and device.connected)
+    alias comm_log
     initialized ::
         # On startup observe the device's last output
         if device:
@@ -75,20 +76,20 @@ enamldef CommView(Container): view:
             new.observe('last_write', watch_output)
 
     func watch_output(change):
-        if plugin.output_enabled:
+        if self.plugin.output_enabled:
             self.append_message(change['value'])
 
     func watch_input(change):
-        if plugin.input_enabled:
+        if self.plugin.input_enabled:
             self.append_message(change['value'])
 
     func append_message(value: bytes):
         """ Decode and add the message to the log output view """
         try:
             msg = value.decode()
-            comm_log.append(msg.strip() if plugin.strip_whitespace else msg)
-            if plugin.autoscroll:
-                comm_log.scroll_to_end()
+            self.comm_log.append(msg.strip() if self.plugin.strip_whitespace else msg)
+            if self.plugin.autoscroll:
+                self.comm_log.scroll_to_end()
         except Exception as e:
             log.debug(e)
 
@@ -232,6 +233,7 @@ enamldef ComChannelDockItem(DockItem): dock_item:
     title = "Channel"
     name = f"com-channel-{id(self)}"
     icon = load_icon("disconnect")
+    closable = False
     title_bar_right_clicked :: menu.popup()
     CommView:
         padding = 0

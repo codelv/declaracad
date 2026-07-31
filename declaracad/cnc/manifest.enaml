@@ -87,7 +87,7 @@ enamldef CncManifest(PluginManifest):
         DockItem:
             plugin_id = 'declaracad.cnc'
             factory = com_channel_factory
-            layout = 'left'
+            layout = 'bottom'
     Extension:
         id = 'actions'
         point = 'enaml.workbench.ui.actions'
