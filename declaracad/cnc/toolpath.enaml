@@ -17,7 +17,7 @@ from declaracad.occ.api import (
 )
 from declaracad.core.utils import log
 from declaracad.cnc.gcode import Movement, save_to_file
-from .optimize import optimize_moves
+from .optimize import optimize_toolpath
 
 
 def get_device():
@@ -100,7 +100,7 @@ enamldef Toolpath(Part): toolpath:
 
         """
         if self.optimize:
-            wires = optimize_moves(wires, start_point, reverse)
+            wires = optimize_toolpath(wires, start_point, reverse, group_xy=True)
         pos = start_point
         cmds = []
         z = self.clearance
@@ -110,9 +110,9 @@ enamldef Toolpath(Part): toolpath:
                 points = [p for p in reversed(points)]
             next_point = points[0]
 
-            # Only lift if necessary
+            # Only add a lift to clearance height if x or y changes
             # eg if multiple passes are done on the same wire dont lift between
-            if next_point != pos:
+            if not next_point.equal2d(pos):
                 cmds.append(Movement(
                     rapid=True,
                     points=[

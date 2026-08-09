@@ -21,12 +21,14 @@ from declaracad.core.utils import log
 from declaracad.occ.geom import Point, coerce_point
 
 
-def optimize_moves(
+def optimize_toolpath(
     wires: list[TopoDS_Wire],
     start_point: Point,
     reverse: bool = False,
     optimizer_timeout: float = 120,
     enabled: bool = True,
+    group_xy: bool = True,
+    tolerance: int = 6,
 ) -> list[TopoDS_Wire]:
     """Use Dijkstra's algorithm to find the shortest path between
     a set of wires. Ported from Inkcut
@@ -41,6 +43,10 @@ def optimize_moves(
         Revers the point order
     enabled: Bool
         If False, disable optimization
+    group_xy: bool
+        If True, optimize only x,y and sort by z-depth
+    tolerance: int
+        When group_xy is enabled, the tolerance for grouping x and y
     Returns
     -------
     wires: List[TopoDS_Wires]
@@ -53,6 +59,21 @@ def optimize_moves(
     time_limit = now + optimizer_timeout
 
     subpaths: list[BRepAdaptor_CompCurve] = [BRepAdaptor_CompCurve(w) for w in wires]
+
+    if group_xy:
+        groups: dict[tuple[float, float], list[BRepAdaptor_CompCurve]] = {}
+
+        for sp in subpaths:
+            t = sp.LastParameter() if reverse else sp.FirstParameter()
+            pnt = sp.Value(t)
+            k = (round(pnt.X(), tolerance), round(pnt.Y(), tolerance))
+            if k in groups:
+                groups[k].append(sp)
+            else:
+                groups[k] = [sp]
+        # Optimize only the first curve from each group
+        subpaths = [it[0] for it in groups.values()]
+
     result: list[BRepAdaptor_CompCurve] = []
     sp = subpaths[0]
     p = start_point.proxy
@@ -78,7 +99,26 @@ def optimize_moves(
             log.warning("Shortest path search aborted (time limit reached)")
             break
 
-    return [sp.Wire() for sp in result]
+    optimized = []
+    if group_xy:
+        # Ungroup the wires and order by highest z first
+        for sp in result:
+            t = sp.LastParameter() if reverse else sp.FirstParameter()
+            pnt = sp.Value(t)
+            k = (round(pnt.X(), tolerance), round(pnt.Y(), tolerance))
+            wires = groups[k]
+            wires.sort(
+                key=lambda w: -sp.Value(
+                    sp.LastParameter() if reverse else sp.FirstParameter()
+                ).Z()
+            )
+            for sp in wires:
+                optimized.append(sp.Wire())
+        return optimized
+    else:
+        for sp in result:
+            optimized.append(sp.Wire())
+    return optimized
 
 
 def optimize_points(

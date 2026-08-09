@@ -180,6 +180,12 @@ class Point(Atom):
         p = self.__coerce__(other)
         return self.proxy.IsEqual(p.proxy, tol or settings.tolerance)
 
+    def equal2d(self, other, tol=None):
+        """Check if points are equal ignoring the Z value."""
+        t = tol or settings.tolerance
+        p = self.__coerce__(other)
+        return abs(self.x - p.x) < t and abs(self.y - p.y) < t
+
     def __mul__(self, other):
         return self.__class__(self.x * other, self.y * other, self.z * other)
 
