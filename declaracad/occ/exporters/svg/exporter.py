@@ -8,6 +8,7 @@ The full license is in the file LICENSE, distributed with this software.
 """
 
 from math import pi
+from typing import Callable
 from xml.etree import ElementTree as etree
 
 import enaml
@@ -27,6 +28,8 @@ from OCCT.TopoDS import TopoDS_Wire
 from declaracad.occ.api import Point, Shape, Topology
 from declaracad.occ.impl.occ_shape import AX
 from declaracad.viewer.plugin import ModelExporter
+
+AttributeProcessor = Callable[[etree.Element, TopoDS_Wire, int], None]
 
 RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 CC_NS = "http://creativecommons.org/ns#"
@@ -130,7 +133,23 @@ def bspline_to_path(curve: Adaptor3d_Curve) -> str:
     return " ".join(data)
 
 
-def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree.Element:
+def default_attribute_processor(node: etree.Element, wire: TopoDS_Wire, i: int):
+    node.attrib.update(
+        {
+            "id": f"wire{i}",
+            "fill": "none",
+            "stroke": "black",
+            "stroke-width": "0.05mm",
+            "vector-effect": "non-scaling-stroke",
+        }
+    )
+
+
+def create_svg_from_wires(
+    wires: list[TopoDS_Wire],
+    scale: float = 1,
+    attribute_processor: AttributeProcessor = default_attribute_processor,
+) -> etree.Element:
     svg = etree.Element("svg")
     for ns, url in NSMAP.items():
 
@@ -150,8 +169,7 @@ def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree.E
         f"{fmt(bbox.xmin)} {fmt(bbox.ymin)} {fmt(bbox.dx)} {fmt(bbox.dy)}"
     )
     g = etree.SubElement(svg, "g")
-    stroke_color = "black"
-    for original_wire in wires:
+    for i, original_wire in enumerate(wires):
         wire = Topology.cast_shape(BRepBuilderAPI_Transform(original_wire, t).Shape())
         edges = Topology(shape=wire).edges
         if len(edges) == 1:
@@ -161,8 +179,6 @@ def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree.E
             start, end = topo.start_point, topo.end_point
             if Topology.is_line(edge):
                 node = etree.SubElement(g, "line")
-                node.attrib["stroke"] = stroke_color
-                node.attrib["vector-effect"] = "non-scaling-stroke"
                 node.attrib["x1"] = fmt(start.x)
                 node.attrib["y1"] = fmt(start.y)
                 node.attrib["x2"] = fmt(end.x)
@@ -171,76 +187,58 @@ def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree.E
                 if start == end:
                     c = curve.Circle()
                     center = Point(c.Location())
-                    circle = etree.SubElement(g, "circle")
-                    circle.attrib["stroke"] = stroke_color
-                    circle.attrib["vector-effect"] = "non-scaling-stroke"
-                    circle.attrib["fill"] = "none"
-                    circle.attrib["r"] = fmt(c.Radius())
-                    circle.attrib["cx"] = fmt(center.x)
-                    circle.attrib["cy"] = fmt(center.y)
+                    node = etree.SubElement(g, "circle")
+                    node.attrib["r"] = fmt(c.Radius())
+                    node.attrib["cx"] = fmt(center.x)
+                    node.attrib["cy"] = fmt(center.y)
                 else:
-                    path = etree.SubElement(g, "path")
-                    path.attrib["stroke"] = stroke_color
-                    path.attrib["vector-effect"] = "non-scaling-stroke"
-                    path.attrib["fill"] = "none"
+                    node = etree.SubElement(g, "path")
                     arc = circle_to_path(curve)
-                    path.attrib["d"] = f"M {pnt(start)} {arc}"
+                    node.attrib["d"] = f"M {pnt(start)} {arc}"
             elif Topology.is_ellipse(edge):
                 if start == end:
                     curve = Topology.cast_curve(edge)
                     center = Point(curve.Location())
                     r = curve.MajorRadius()
                     r2 = curve.MinorRadius()
-                    ellipse = etree.SubElement(g, "ellipse")
-                    ellipse.attrib["stroke"] = stroke_color
-                    ellipse.attrib["vector-effect"] = "non-scaling-stroke"
-                    ellipse.attrib["fill"] = "none"
-                    ellipse.attrib["cx"] = fmt(center.x)
-                    ellipse.attrib["cy"] = fmt(center.y)
+                    node = etree.SubElement(g, "ellipse")
+                    node.attrib["cx"] = fmt(center.x)
+                    node.attrib["cy"] = fmt(center.y)
                     if r == r2:
-                        ellipse.attrib["rx"] = fmt(r)
-                        ellipse.attrib["ry"] = fmt(r)
+                        node.attrib["rx"] = fmt(r)
+                        node.attrib["ry"] = fmt(r)
                     else:
                         ax = curve.Directrix1()
                         ay = curve.Directrix2()
                         angle = ax.Angle(AX)
                         if angle != 0:
-                            ellipse.attrib["transform"] = (
+                            node.attrib["transform"] = (
                                 f"rotate({fmt(angle)} {pnt(center)})"
                             )
                         px = Point(ax.Location())
                         py = Point(ay.Location())
                         if center.distance(px) >= center.distance(py):
-                            ellipse.attrib["rx"] = fmt(r)
-                            ellipse.attrib["ry"] = fmt(r2)
+                            node.attrib["rx"] = fmt(r)
+                            node.attrib["ry"] = fmt(r2)
                         else:
-                            ellipse.attrib["rx"] = fmt(r2)
-                            ellipse.attrib["ry"] = fmt(r)
+                            node.attrib["rx"] = fmt(r2)
+                            node.attrib["ry"] = fmt(r)
                 else:
-                    path = etree.SubElement(g, "path")
-                    path.attrib["stroke"] = stroke_color
-                    path.attrib["vector-effect"] = "non-scaling-stroke"
-                    path.attrib["fill"] = "none"
+                    node = etree.SubElement(g, "path")
                     arc = ellipse_to_path(curve)
-                    path.attrib["d"] = f"M {pnt(start)} {arc}"
+                    node.attrib["d"] = f"M {pnt(start)} {arc}"
             elif Topology.is_bezier_curve(edge):
-                path = etree.SubElement(g, "path")
-                path.attrib["stroke"] = stroke_color
-                path.attrib["vector-effect"] = "non-scaling-stroke"
-                path.attrib["fill"] = "none"
+                node = etree.SubElement(g, "path")
                 bezier = bezier_to_path(curve)
-                path.attrib["d"] = f"M {pnt(start)} {bezier}"
+                node.attrib["d"] = f"M {pnt(start)} {bezier}"
             elif Topology.is_bspline_curve(edge):
-                path = etree.SubElement(g, "path")
-                path.attrib["stroke"] = stroke_color
-                path.attrib["vector-effect"] = "non-scaling-stroke"
-                path.attrib["fill"] = "none"
+                node = etree.SubElement(g, "path")
                 bspline = bspline_to_path(curve)
-                path.attrib["d"] = f"M {pnt(start)} {bspline}"
+                node.attrib["d"] = f"M {pnt(start)} {bspline}"
             else:
                 raise ValueError(f"Cannot convert {curve} to svg")
         else:
-            path = etree.SubElement(g, "path")
+            node = etree.SubElement(g, "path")
             data = []
             for edge in edges:
                 curve = BRepAdaptor_Curve(edge)
@@ -263,10 +261,8 @@ def create_svg_from_wires(wires: list[TopoDS_Wire], scale: float = 1) -> etree.E
 
             if wire.Closed():
                 data.append("Z")
-            path.attrib["fill"] = "none"
-            path.attrib["stroke"] = stroke_color
-            path.attrib["vector-effect"] = "non-scaling-stroke"
-            path.attrib["d"] = " ".join(data)
+            node.attrib["d"] = " ".join(data)
+        attribute_processor(node, original_wire, i)
 
     return svg
 
