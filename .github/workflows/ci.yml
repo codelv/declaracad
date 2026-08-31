@@ -13,7 +13,7 @@ jobs:
         os: ['ubuntu-latest', 'windows-latest']
     steps:
       - name: "Download"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "Install OpenGL"
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
@@ -43,7 +43,7 @@ jobs:
         os: ['ubuntu-latest', 'windows-latest']
     steps:
       - name: "Download"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "Install OpenGL"
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
@@ -76,7 +76,7 @@ jobs:
         os: ['ubuntu-latest', 'windows-latest']
     steps:
       - name: "Download"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "Install OpenGL"
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
