@@ -365,13 +365,13 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
         self.plugin.workbench.invoke_command(command_id, parameters)
 
     def on_render_error(self, response: dict[str, Any]):
-        if self.document:
+        if doc := self.document:
             msg = response["error"]["message"].split("\n")
-            self.document.errors.extend(msg)
+            doc.add_error_message(msg)
 
     def on_render_success(self, response: dict[str, Any]):
-        if self.document:
-            self.document.errors = []
+        if doc := self.document:
+            doc.errors = []
 
     def on_print(self, message):
         m = message.strip()
@@ -380,14 +380,14 @@ class RemoteViewerServerProtocol(JsonRpcProtocol):
 
     def on_shape_selection(self, response):
         #: TODO: Do something with this?
-        if self.document:
-            self.document.append_output(str(response["result"]))
+        if doc := self.document:
+            doc.append_output(str(response["result"]))
 
     def error_received(self, request_id, error):
         super().error_received(request_id, error)
-        if self.document:
+        if doc := self.document:
             msg = str(error.get("message", "") or error)
-            self.document.append_output(msg)
+            doc.append_output(msg)
 
     def unhandled_response(self, response):
         log.warning(f"Unhandled response: {response}")

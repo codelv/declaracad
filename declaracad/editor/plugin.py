@@ -175,6 +175,11 @@ class Document(Model):
     def __repr__(self):
         return f"Document<name='{self.name}'>"
 
+    def add_error_message(self, msg: str, **kwargs):
+        if not msg:
+            return
+        self.errors.append(CodeEditorIndicator(title=msg, **kwargs))
+
     def append_output(self, output: str):
         """Limit output to 1000 entries"""
         if len(self.output) > 1000:
