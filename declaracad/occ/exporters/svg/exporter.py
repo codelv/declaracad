@@ -8,11 +8,11 @@ The full license is in the file LICENSE, distributed with this software.
 """
 
 from math import pi
-from typing import Callable
+from typing import Callable as CallableType
 from xml.etree import ElementTree as etree
 
 import enaml
-from atom.api import Float, Str
+from atom.api import Callable, Float, Str
 from OCCT.Adaptor3d import Adaptor3d_Curve
 from OCCT.BRepAdaptor import BRepAdaptor_Curve
 from OCCT.BRepBuilderAPI import BRepBuilderAPI_Transform
@@ -29,7 +29,8 @@ from declaracad.occ.api import Point, Shape, Topology
 from declaracad.occ.impl.occ_shape import AX
 from declaracad.viewer.plugin import ModelExporter
 
-AttributeProcessor = Callable[[etree.Element, TopoDS_Wire, int], None]
+AttributeProcessorFn = CallableType[[etree.Element, TopoDS_Wire, int], None]
+PostProcessorFn = CallableType[[etree.Element, list[TopoDS_Wire]], None]
 
 RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 CC_NS = "http://creativecommons.org/ns#"
@@ -139,7 +140,7 @@ def default_attribute_processor(node: etree.Element, wire: TopoDS_Wire, i: int):
             "id": f"wire{i}",
             "fill": "none",
             "stroke": "black",
-            "stroke-width": "0.05mm",
+            "stroke-width": "0.1",
             "vector-effect": "non-scaling-stroke",
         }
     )
@@ -148,7 +149,7 @@ def default_attribute_processor(node: etree.Element, wire: TopoDS_Wire, i: int):
 def create_svg_from_wires(
     wires: list[TopoDS_Wire],
     scale: float = 1,
-    attribute_processor: AttributeProcessor = default_attribute_processor,
+    attribute_processor: AttributeProcessorFn = default_attribute_processor,
 ) -> etree.Element:
     svg = etree.Element("svg")
     for ns, url in NSMAP.items():
@@ -267,6 +268,11 @@ def create_svg_from_wires(
     return svg
 
 
+def default_post_processor(doc: etree.Element, wires: list[TopoDS_Wire]):
+    # Pretty print
+    etree.indent(doc, space=" ")
+
+
 class SvgExporter(ModelExporter):
     extension = "svg"
 
@@ -275,6 +281,10 @@ class SvgExporter(ModelExporter):
     author = Str()
 
     scale = Float(1.0, strict=False)
+
+    #: Processor functions
+    attr_processor = Callable(default_attribute_processor)
+    post_processor = Callable(default_post_processor)
 
     @classmethod
     def get_options_view(cls):
@@ -325,14 +335,14 @@ class SvgExporter(ModelExporter):
             #    pass
         if not wires:
             raise RuntimeError("No wires to export")
-        doc = create_svg_from_wires(wires, self.scale)
+        doc = create_svg_from_wires(wires, self.scale, self.attr_processor)
 
         # Set metadata
         if self.title or self.author or self.description:
             self.set_metadata(doc)
 
-        # Pretty print
-        etree.indent(doc, space=" ")
+        # Post process svg
+        self.post_processor(doc, wires)
 
         with open(self.path, "wb") as f:
             result = etree.tostring(doc, encoding="utf-8", xml_declaration=True)
