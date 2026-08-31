@@ -1321,3 +1321,7 @@ class Export(ToolkitObject):
 
     #: Export options
     options = d_(Dict())
+
+    #: Event fired when the export is complete
+    #: The argument is the file path
+    exported = d_(Event(str))

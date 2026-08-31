@@ -32,6 +32,7 @@ class OccExport(ProxyExport):
                 path = os.path.abspath(os.path.expanduser(filename))
                 export_shapes(path, shapes, **d.options)
                 print(f"Exported {path}")
+                d.exported(path)
             except Exception:
                 print("Export failed:")
                 traceback.print_exc()
